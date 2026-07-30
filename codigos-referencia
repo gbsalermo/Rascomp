@@ -1,0 +1,226 @@
+// CategoryDTO.java
+package br.edu.ufrb.rascomp.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CategoryDTO {
+    private Long id;
+
+    @NotBlank(message = "nome é obrigatório")
+    private String nome;
+
+    @NotBlank(message = "codigo é obrigatório")
+    private String codigo;
+
+    private String descricao;
+    private Integer pesoMin;
+    private Integer pesoMax;
+
+    @NotNull(message = "tipoPontuacao é obrigatório")
+    private String tipoPontuacao; // ROUNDS / TEMPO
+}
+
+// Category.java
+package br.edu.ufrb.rascomp.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.Instant;
+
+@Entity
+@Table(name = "categories", uniqueConstraints = @UniqueConstraint(columnNames = "codigo"))
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Category {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String nome;
+
+    @Column(nullable = false, unique = true)
+    private String codigo;
+
+    @Column(columnDefinition = "text")
+    private String descricao;
+
+    private Integer pesoMin;
+    private Integer pesoMax;
+
+    private String tipoPontuacao;
+
+    @CreationTimestamp
+    private Instant createdAt;
+}
+
+// CategoryRepository.java
+package br.edu.ufrb.rascomp.repository;
+
+import br.edu.ufrb.rascomp.entity.Category;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface CategoryRepository extends JpaRepository<Category, Long> {
+    Optional<Category> findByCodigo(String codigo);
+}
+
+// ResourceNotFoundException.java
+package br.edu.ufrb.rascomp.exception;
+
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) { super(message); }
+}
+
+// CategoryService.java
+package br.edu.ufrb.rascomp.service;
+
+import br.edu.ufrb.rascomp.dto.CategoryDTO;
+
+import java.util.List;
+
+public interface CategoryService {
+    List<CategoryDTO> findAll();
+    CategoryDTO findById(Long id);
+    CategoryDTO create(CategoryDTO dto);
+    CategoryDTO update(Long id, CategoryDTO dto);
+    void delete(Long id);
+}
+
+// CategoryServiceImpl.java
+package br.edu.ufrb.rascomp.service.impl;
+
+import br.edu.ufrb.rascomp.dto.CategoryDTO;
+import br.edu.ufrb.rascomp.entity.Category;
+import br.edu.ufrb.rascomp.exception.ResourceNotFoundException;
+import br.edu.ufrb.rascomp.repository.CategoryRepository;
+import br.edu.ufrb.rascomp.service.CategoryService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class CategoryServiceImpl implements CategoryService {
+
+    private final CategoryRepository repo;
+
+    public CategoryServiceImpl(CategoryRepository repo) {
+        this.repo = repo;
+    }
+
+    private CategoryDTO toDto(Category e) {
+        return new CategoryDTO(
+            e.getId(),
+            e.getNome(),
+            e.getCodigo(),
+            e.getDescricao(),
+            e.getPesoMin(),
+            e.getPesoMax(),
+            e.getTipoPontuacao()
+        );
+    }
+
+    private void updateEntityFromDto(Category e, CategoryDTO d) {
+        e.setNome(d.getNome());
+        e.setCodigo(d.getCodigo());
+        e.setDescricao(d.getDescricao());
+        e.setPesoMin(d.getPesoMin());
+        e.setPesoMax(d.getPesoMax());
+        e.setTipoPontuacao(d.getTipoPontuacao());
+    }
+
+    @Override
+    public List<CategoryDTO> findAll() {
+        return repo.findAll().stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public CategoryDTO findById(Long id) {
+        Category c = repo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+        return toDto(c);
+    }
+
+    @Override
+    public CategoryDTO create(CategoryDTO dto) {
+        Category e = Category.builder().build();
+        updateEntityFromDto(e, dto);
+        Category saved = repo.save(e);
+        return toDto(saved);
+    }
+
+    @Override
+    public CategoryDTO update(Long id, CategoryDTO dto) {
+        Category e = repo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+        updateEntityFromDto(e, dto);
+        return toDto(repo.save(e));
+    }
+
+    @Override
+    public void delete(Long id) {
+        if (!repo.existsById(id)) throw new ResourceNotFoundException("Category not found: " + id);
+        repo.deleteById(id);
+    }
+}
+
+// CategoryController.java
+package br.edu.ufrb.rascomp.controller;
+
+import br.edu.ufrb.rascomp.dto.CategoryDTO;
+import br.edu.ufrb.rascomp.service.CategoryService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/categories")
+public class CategoryController {
+
+    private final CategoryService service;
+
+    public CategoryController(CategoryService service) { this.service = service; }
+
+    @GetMapping
+    public ResponseEntity<List<CategoryDTO>> list() {
+        return ResponseEntity.ok(service.findAll());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CategoryDTO> get(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<CategoryDTO> create(@Valid @RequestBody CategoryDTO dto) {
+        CategoryDTO created = service.create(dto);
+        return ResponseEntity.created(URI.create("/api/categories/" + created.getId())).body(created);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CategoryDTO> update(@PathVariable Long id, @Valid @RequestBody CategoryDTO dto) {
+        return ResponseEntity.ok(service.update(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+}
