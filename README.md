@@ -6,7 +6,7 @@ Java Spring Boot • Vue.js • PostgreSQL
 Plataforma para gerenciar competições de robôs (sumo e follow-line). Backend em Spring Boot com Camunda para orquestração de partidas e dois front‑ends: Gestão (autenticado) e Vitrine pública (somente leitura).
 
 ⚠️ Projeto em desenvolvimento
-Leia o arquivo CONTINUIDADE.md (Documento de Continuidade do projeto) para status atual, histórico de mudanças e decisões.
+Leia o arquivo rascomp/docs/CONTINUIDADE.md (Documento de Continuidade do projeto) para status atual, histórico de mudanças e decisões.
 
 🎯 Funcionalidades Principais
 - Gestão de competições, categorias, equipes, competidores e robôs

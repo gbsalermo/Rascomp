@@ -1,0 +1,497 @@
+// TipoCategoria.java
+package br.edu.ufrb.rascomp.entity;
+
+public enum TipoCategoria {
+    SUMO,
+    SEGUIDOR_LINHA
+}
+
+// Category.java
+package br.edu.ufrb.rascomp.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.Instant;
+import java.io.Serializable;
+
+@Entity
+@Table(name = "categories", uniqueConstraints = @UniqueConstraint(columnNames = "codigo"))
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Category implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String nome;
+
+    @Column(nullable = false, unique = true)
+    private String codigo;
+
+    @Column(columnDefinition = "text")
+    private String descricao;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoCategoria tipo;
+
+    @CreationTimestamp
+    private Instant createdAt;
+
+    @OneToOne(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private RegrasSumo regrasSumo;
+
+    @OneToOne(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private RegrasSeguidorLinha regrasSeguidorLinha;
+}
+// RegrasSumo.java
+package br.edu.ufrb.rascomp.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.io.Serializable;
+
+@Entity
+@Table(name = "regras_sumo")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class RegrasSumo implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne
+    @JoinColumn(name = "category_id", nullable = false, unique = true)
+    private Category category;
+
+    @Column(name = "peso_min")
+    private Integer pesoMin;
+
+    @Column(name = "peso_max")
+    private Integer pesoMax;
+
+    @Column(name = "exige_inspecao", nullable = false)
+    private boolean exigeInspecao; // obrigatórios na configuração
+
+    @Column(name = "max_tentativas_inspecao", nullable = false)
+    private Integer maxTentativasInspecao; // obrigatório na configuração
+}
+
+// RegrasSeguidorLinha.java
+package br.edu.ufrb.rascomp.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.io.Serializable;
+
+@Entity
+@Table(name = "regras_seguidor_linha")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class RegrasSeguidorLinha implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne
+    @JoinColumn(name = "category_id", nullable = false, unique = true)
+    private Category category;
+
+    @Column(name = "max_tempo_segundos")
+    private Integer maxTempoSegundos;
+
+    @Column(name = "numero_checkpoints")
+    private Integer numeroCheckpoints;
+}
+
+// DTOs
+// CategoryRequestDTO.java
+package br.edu.ufrb.rascomp.dto;
+
+import br.edu.ufrb.rascomp.entity.TipoCategoria;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import lombok.Data;
+
+@Data
+public class CategoryRequestDTO {
+    @NotBlank(message = "nome é obrigatório")
+    private String nome;
+
+    @NotBlank(message = "codigo é obrigatório")
+    private String codigo;
+
+    private String descricao;
+
+    @NotNull(message = "tipo é obrigatório")
+    private TipoCategoria tipo;
+
+    // Opcionalmente preenchidos conforme tipo
+
+    @Valid
+    private RegrasSumoDTO regrasSumo;
+
+    @Valid
+    private RegrasSeguidorLinhaDTO regrasSeguidorLinha;
+}
+
+// RegrasSumoDTO.java
+package br.edu.ufrb.rascomp.dto;
+
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+@Data
+public class RegrasSumoDTO {
+    private Integer pesoMin;
+    private Integer pesoMax;
+
+    @NotNull(message = "exigeInspecao é obrigatório para RegrasSumo")
+    private Boolean exigeInspecao;
+
+    @NotNull(message = "maxTentativasInspecao é obrigatório para RegrasSumo")
+    private Integer maxTentativasInspecao;
+}
+
+// RegrasSeguidorLinhaDTO.java
+package br.edu.ufrb.rascomp.dto;
+
+import lombok.Data;
+
+@Data
+public class RegrasSeguidorLinhaDTO {
+    private Integer maxTempoSegundos;
+    private Integer numeroCheckpoints;
+}
+
+// CategoryResponseDTO.java
+package br.edu.ufrb.rascomp.dto;
+
+import br.edu.ufrb.rascomp.entity.TipoCategoria;
+import lombok.Data;
+
+import java.time.Instant;
+
+@Data
+public class CategoryResponseDTO {
+    private Long id;
+    private String nome;
+    private String codigo;
+    private String descricao;
+    private TipoCategoria tipo;
+    private Instant createdAt;
+
+    // Apenas um dos dois será preenchido conforme tipo
+    private RegrasSumoDTO regrasSumo;
+    private RegrasSeguidorLinhaDTO regrasSeguidorLinha;
+}
+
+// Repositories
+// CategoryRepository.java
+package br.edu.ufrb.rascomp.repository;
+
+import br.edu.ufrb.rascomp.entity.Category;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface CategoryRepository extends JpaRepository<Category, Long> {
+    Optional<Category> findByCodigo(String codigo);
+
+    @EntityGraph(attributePaths = {"regrasSumo", "regrasSeguidorLinha"})
+    @Override
+    List<Category> findAll();
+
+    @EntityGraph(attributePaths = {"regrasSumo", "regrasSeguidorLinha"})
+    @Override
+    Optional<Category> findById(Long id);
+}
+
+// RegrasSumoRepository.java
+package br.edu.ufrb.rascomp.repository;
+
+import br.edu.ufrb.rascomp.entity.RegrasSumo;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface RegrasSumoRepository extends JpaRepository<RegrasSumo, Long> {
+    Optional<RegrasSumo> findByCategoryId(Long categoryId);
+}
+
+// RegrasSeguidorLinhaRepository.java
+package br.edu.ufrb.rascomp.repository;
+
+import br.edu.ufrb.rascomp.entity.RegrasSeguidorLinha;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface RegrasSeguidorLinhaRepository extends JpaRepository<RegrasSeguidorLinha, Long> {
+    Optional<RegrasSeguidorLinha> findByCategoryId(Long categoryId);
+}
+
+// Exceptions
+// ResourceNotFoundException.java
+package br.edu.ufrb.rascomp.exception; // (ou um pacote tipo br.edu.ufrb.rascomp.exception.handler)
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<String> handleNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<String> handleValidation(ValidationException ex) {
+        return ResponseEntity.badRequest().body(ex.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleBeanValidation(MethodArgumentNotValidException ex) {
+        var erros = ex.getBindingResult().getFieldErrors().stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .toList();
+        return ResponseEntity.badRequest().body(erros);
+    }
+}
+
+// ResourceNotFoundException.java
+package br.edu.ufrb.rascomp.exception;
+
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) { super(message); }
+}
+
+// ValidationException.java
+package br.edu.ufrb.rascomp.exception;
+
+public class ValidationException extends RuntimeException {
+    public ValidationException(String message) { super(message); }
+}
+// Service
+// CategoryService.java
+package br.edu.ufrb.rascomp.service;
+
+import br.edu.ufrb.rascomp.dto.*;
+import br.edu.ufrb.rascomp.entity.*;
+import br.edu.ufrb.rascomp.exception.ResourceNotFoundException;
+import br.edu.ufrb.rascomp.exception.ValidationException;
+import br.edu.ufrb.rascomp.repository.CategoryRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class CategoryService {
+
+    private final CategoryRepository categoryRepository;
+
+    public CategoryService(CategoryRepository categoryRepository) {
+        this.categoryRepository = categoryRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoryResponseDTO> findAll() {
+        return categoryRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public CategoryResponseDTO findById(Long id) {
+        return categoryRepository.findById(id).map(this::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+    }
+
+    public CategoryResponseDTO create(CategoryRequestDTO dto) {
+        validateRulesConsistency(dto);
+
+        Category category = Category.builder()
+                .nome(dto.getNome())
+                .codigo(dto.getCodigo())
+                .descricao(dto.getDescricao())
+                .tipo(dto.getTipo())
+                .build();
+
+        aplicarRegras(category, dto);
+
+        Category saved = categoryRepository.save(category);
+        return toResponse(saved);
+    }
+
+    public CategoryResponseDTO update(Long id, CategoryRequestDTO dto) {
+        validateRulesConsistency(dto);
+
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+
+        category.setNome(dto.getNome());
+        category.setCodigo(dto.getCodigo());
+        category.setDescricao(dto.getDescricao());
+        category.setTipo(dto.getTipo());
+
+        // Limpa a regra antiga que não corresponde mais ao tipo atual
+        // (orphanRemoval cuida de apagar a linha órfã ao salvar)
+        if (dto.getTipo() == TipoCategoria.SUMO) {
+            category.setRegrasSeguidorLinha(null);
+        } else if (dto.getTipo() == TipoCategoria.SEGUIDOR_LINHA) {
+            category.setRegrasSumo(null);
+        }
+
+        aplicarRegras(category, dto);
+
+        Category saved = categoryRepository.save(category);
+        return toResponse(saved);
+    }
+
+    public void delete(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+
+        // cascade = ALL cuida de apagar RegrasSumo/RegrasSeguidorLinha junto
+        categoryRepository.delete(category);
+    }
+
+    private void aplicarRegras(Category category, CategoryRequestDTO dto) {
+        if (dto.getTipo() == TipoCategoria.SUMO) {
+            RegrasSumoDTO rs = dto.getRegrasSumo();
+            RegrasSumo regras = category.getRegrasSumo() != null
+                    ? category.getRegrasSumo()
+                    : RegrasSumo.builder().category(category).build();
+
+            regras.setPesoMin(rs.getPesoMin());
+            regras.setPesoMax(rs.getPesoMax());
+            regras.setExigeInspecao(rs.getExigeInspecao());
+            regras.setMaxTentativasInspecao(rs.getMaxTentativasInspecao());
+
+            category.setRegrasSumo(regras);
+        } else if (dto.getTipo() == TipoCategoria.SEGUIDOR_LINHA) {
+            RegrasSeguidorLinhaDTO rsl = dto.getRegrasSeguidorLinha();
+            RegrasSeguidorLinha regras = category.getRegrasSeguidorLinha() != null
+                    ? category.getRegrasSeguidorLinha()
+                    : RegrasSeguidorLinha.builder().category(category).build();
+
+            regras.setMaxTempoSegundos(rsl.getMaxTempoSegundos());
+            regras.setNumeroCheckpoints(rsl.getNumeroCheckpoints());
+
+            category.setRegrasSeguidorLinha(regras);
+        }
+    }
+
+    private void validateRulesConsistency(CategoryRequestDTO dto) {
+        boolean sumo = dto.getRegrasSumo() != null;
+        boolean seguidor = dto.getRegrasSeguidorLinha() != null;
+
+        if (sumo && seguidor) throw new ValidationException("Apenas uma regra deve ser preenchida conforme o tipo da categoria");
+        if (!sumo && !seguidor) throw new ValidationException("A regra específica da categoria é obrigatória");
+
+        if (dto.getTipo() == TipoCategoria.SUMO && !sumo) throw new ValidationException("regrasSumo obrigatório para tipo SUMO");
+        if (dto.getTipo() == TipoCategoria.SEGUIDOR_LINHA && !seguidor) throw new ValidationException("regrasSeguidorLinha obrigatório para tipo SEGUIDOR_LINHA");
+    }
+
+    private CategoryResponseDTO toResponse(Category c) {
+        CategoryResponseDTO r = new CategoryResponseDTO();
+        r.setId(c.getId());
+        r.setNome(c.getNome());
+        r.setCodigo(c.getCodigo());
+        r.setDescricao(c.getDescricao());
+        r.setTipo(c.getTipo());
+        r.setCreatedAt(c.getCreatedAt());
+
+        if (c.getTipo() == TipoCategoria.SUMO && c.getRegrasSumo() != null) {
+            RegrasSumo rs = c.getRegrasSumo();
+            RegrasSumoDTO dto = new RegrasSumoDTO();
+            dto.setPesoMin(rs.getPesoMin());
+            dto.setPesoMax(rs.getPesoMax());
+            dto.setExigeInspecao(rs.isExigeInspecao());
+            dto.setMaxTentativasInspecao(rs.getMaxTentativasInspecao());
+            r.setRegrasSumo(dto);
+        } else if (c.getTipo() == TipoCategoria.SEGUIDOR_LINHA && c.getRegrasSeguidorLinha() != null) {
+            RegrasSeguidorLinha rsl = c.getRegrasSeguidorLinha();
+            RegrasSeguidorLinhaDTO dto = new RegrasSeguidorLinhaDTO();
+            dto.setMaxTempoSegundos(rsl.getMaxTempoSegundos());
+            dto.setNumeroCheckpoints(rsl.getNumeroCheckpoints());
+            r.setRegrasSeguidorLinha(dto);
+        }
+
+        return r;
+    }
+}
+
+// Controller
+// CategoryController.java
+package br.edu.ufrb.rascomp.controller;
+
+import br.edu.ufrb.rascomp.dto.CategoryRequestDTO;
+import br.edu.ufrb.rascomp.dto.CategoryResponseDTO;
+import br.edu.ufrb.rascomp.service.CategoryService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/categories")
+public class CategoryController {
+
+    private final CategoryService service;
+
+    public CategoryController(CategoryService service) { this.service = service; }
+
+    @GetMapping
+    public ResponseEntity<List<CategoryResponseDTO>> list() {
+        return ResponseEntity.ok(service.findAll());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CategoryResponseDTO> get(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<CategoryResponseDTO> create(@Valid @RequestBody CategoryRequestDTO dto) {
+        CategoryResponseDTO created = service.create(dto);
+        return ResponseEntity.created(URI.create("/api/categories/" + created.getId())).body(created);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CategoryResponseDTO> update(@PathVariable Long id, @Valid @RequestBody CategoryRequestDTO dto) {
+        return ResponseEntity.ok(service.update(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+}

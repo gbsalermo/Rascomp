@@ -546,6 +546,73 @@ Regras operacionais
 Próxima ação (aguardando sua autorização)
 - Iniciar CRUD de Category (seguir checklist acima). Confirme para começar — quando confirmar, vou criar os arquivos esqueleto (Entity, DTO, Repository, Service interface+impl, Controller, Exception stub, tests skeleton) e adicionar a entrada inicial no CONTINUIDADE.md com timestamp.
 
+REDESENHO: Category como composição (2026-07-29T22:49:00-03:00)
+- Alteração: a entidade Category foi redesenhada para atuar como entidade comum com tipos, enquanto regras específicas foram extraídas para tabelas próprias (OneToOne): RegrasSumo e RegrasSeguidorLinha.
+- Novos artefatos (adicionados ao codigos-referencia):
+  - enum TipoCategoria { SUMO, SEGUIDOR_LINHA }
+  - Category (id, nome, codigo, descricao, tipo, createdAt)
+  - RegrasSumo (id, category_id FK, pesoMin, pesoMax, exigeInspecao, maxTentativasInspecao)
+  - RegrasSeguidorLinha (id, category_id FK, maxTempoSegundos, numeroCheckpoints)
+  - DTOs: CategoryRequestDTO, CategoryResponseDTO, RegrasSumoDTO, RegrasSeguidorLinhaDTO
+  - Repositories: CategoryRepository, RegrasSumoRepository, RegrasSeguidorLinhaRepository
+  - Service/Controller: regras de validação (criar/atualizar exigem a regra correta conforme tipo) implementadas no esqueleto do codigos-referencia.
+
+Observações importantes:
+- Nos objetos RegrasSumo, os campos exigeInspecao (boolean) e maxTentativasInspecao (Integer) são obrigatórios na configuração: representam a política de inspeção para categorias do tipo SUMO e serão referenciados pela futura entidade Inspecao (quando implementada) para decidir quando exigir inspeção e quantas tentativas permitir.
+- A entidade Inspecao será implementada em etapa futura e deverá referenciar Registration/Robot e usar os campos de RegrasSumo para validação das tentativas. Não implementar Inspecao agora — apenas registrar esta dependência no plano.
+- O arquivo rascomp/docs/codigos-referencia foi atualizado substituindo o conteúdo antigo pelo novo conjunto de classes (Category composition). Copie/cole os trechos nas packages correspondentes quando for implementar manualmente.
+
+Próximo passo recomendado:
+- Você implementa manualmente os arquivos em src/main/java conforme o codigos-referencia atualizado. Depois de implementar, rodar mvn package e testes com H2 e registrar resultados/payloads no CONTINUIDADE.md.
+
+ALTERAÇÕES RECENTES REALIZADAS PELO USUÁRIO — 2026-07-30T00:06:55-03:00
+- O usuário alterou manualmente trechos do módulo Category e adicionou comentários de regras de negócio específicas sob RegrasSumo e RegrasSeguidorLinha. Mudanças observadas (codigos-referencia):
+  - Adição de relacionamentos bidirecionais OneToOne (Category ↔ RegrasSumo / RegrasSeguidorLinha) com cascade ALL e orphanRemoval para simplificar persistência.
+  - Inclusão de EntityGraph em CategoryRepository para sempre carregar tabelas de regras quando necessário.
+  - Padronização: as entidades agora implementam Serializable.
+  - Serviço unificado: substituição de interface + implementação por uma única classe de serviço Category (@Service) contendo a lógica de criar/atualizar/excluir com aplicação das regras.
+  - Comentários e observações sobre inspeção (RegrasSumo) e regras de competição (SUMO e SEGUIDOR_LINHA) foram adicionados no codigos-referencia como referência para implementação futura.
+
+Status: marcado como feito no codigos-referencia; recomenda-se sincronizar esses arquivos para src/main/java quando pronto.
+
+PENDÊNCIAS (regras de negócio extraídas dos comentários do usuário e a implementar) — incluídas no backlog de próximos passos:
+1) Entidade Inspecao (registro de inspeções) — obrigatório para SUMO
+   - Criar entidade Inspecao ligada a Registration (ou Robot) com campos mínimos: id, registration (FK), robot (FK), tentativaNumero (int), resultado (enum APROVADO/REPROVADO), timestamp, observacoes.
+   - Regras: usar RegrasSumo.exigeInspecao e maxTentativasInspecao para decidir quando exigir inspeção e quantas tentativas permitir.
+   - Ações: ao atingir maxTentativasInspecao com todas reprovadas, marcar Registration como DESCLASSIFICADA e impedir geração de Match para esse registro.
+
+2) Validação pré-match para SUMO
+   - Antes de permitir que um Robot/Registration entre em um Match, verificar se RegrasSumo.exigeInspecao == true e se existe ao menos uma Inspecao APROVADA dentro do limite de tentativas. Se não, negar participação (status PENDENTE ou DESCLASSIFICADA conforme tentativas).
+   - Integrar essa checagem no fluxo de inscrição/validação e no processo Camunda que gera o bracket/matches.
+
+3) Regras de adjudicação (determinando vencedor, perdedor, desclassificado) — SUMO
+   - Definir e implementar critérios de vitória e desclassificação específicos de SUMO, por exemplo:
+     - Vitória por knockout ou por pontos ao final de N rounds (configurar N por categoria se necessário).
+     - Desclassificação imediata por violação grave (e.g., exceder pesoMax quando aplicável, conduta antidesportiva, tentativa não corrigida após vistoria técnica).
+     - Penalidades por toques fora de arena, imobilização ilegal, etc. (detalhar e codificar infrações), com mapeamento para resultado do Match (VENCEDOR / PERDEDOR / DESCLASSIFICADO).
+   - Ações: criar serviços para avaliar MatchResult de SUMO e atualizar Match.status e vencedor conforme lógica codificada; registrar motivo da desclassificação.
+
+4) Regras de adjudicação — SEGUIDOR_LINHA
+   - Determinar vencedor por menor tempo de percurso, considerando:
+     - Número de checkpoints alcançados (numeroCheckpoints); falha em checkpoints implica penalidade de tempo ou desclassificação (decidir política).
+     - Tempo máximo (maxTempoSegundos) — ultrapassar -> desclassificação ou tempo penalizado (definir política padrão: desclassificar após exceder maxTempoSegundos).
+   - Ações: implementar avaliação de prova para calcular tempo final + aplicar penalidades e definir vencedor/perdedor/desclassificado.
+
+5) Integração com Camunda / geração de bracket
+   - Adaptar processo de geração de bracket para respeitar status de Registration (DESCLASSIFICADA) e regras de elegibilidade (inspeção aprovada, peso dentro do permitido, etc.).
+   - Inserir tarefas de verificação automática (Service Tasks) que consultem os serviços de regras antes de criar matches.
+
+6) Testes e evidências
+   - Criar testes unitários e de integração que cubram:
+     - Fluxo de inspeção (Inspecao) e aplicação de maxTentativasInspecao.
+     - Casos de adjudicação SUMO (vitória por knockout, vitória por pontos, desclassificação por peso/infrações).
+     - Casos de adjudicação SEGUIDOR_LINHA (tempo, checkpoints, timeout/desclassificação).
+
+Observação: estas pendências são derivadas dos comentários que você adicionou em codigos-referencia. Detalhes finos (por exemplo: quantos rounds, quais infrações garantem desclassificação imediata, penalidade de tempo por checkpoint perdido) deverão ser definidos formalmente em uma seção de regras do evento antes da implementação — posso ajudar a padronizar esse documento de regras se desejar.
+
+---
+
+
 
 HISTÓRICO COMPLETO
 
@@ -568,5 +635,27 @@ FUTURO: política de manutenção do documento
 - Posso automatizar a criação dessa entrada (resumo por comando) se você autorizar commits automáticos após mudanças — confirme se deseja essa automação.
 
 ---
-
 Fim do documento de continuidade consolidado.
+
+
+REGISTRO DE MOVIMENTAÇÃO DE ARQUIVOS — 2026-07-29T21:36:00-03:00
+
+- Movidos para `rascomp/docs/`:
+  - `codigos-referencia` (arquivo com códigos de referência para o CRUD de Category)
+  - `CONTINUIDADE.md` (documento de continuidade central)
+
+Observações importantes:
+- O arquivo `codigos-referencia` foi originalmente rastreado no repositório remoto. Para que ele seja de fato ignorado pelo Git, é necessário remover a versão rastreada no índice remoto/local com o comando abaixo (só execute se desejar remover do histórico remoto):
+
+  git rm --cached codigos-referencia
+  git commit -m "Remove codigos-referencia from repo; keep local reference file in docs"
+  git push
+
+  Nota: conforme regra do projeto, apenas o mantenedor/autorizado (você) deve executar commits. Não executarei esses comandos sem sua autorização explícita.
+
+- Atualizei o README para apontar para `rascomp/docs/CONTINUIDADE.md`.
+
+Próximo passo recomendado:
+- Se deseja que `codigos-referencia` deixe de aparecer no GitHub, execute os comandos git acima (git rm --cached + commit + push). Posso preparar a mensagem de commit pronta para você copiar.
+
+---
