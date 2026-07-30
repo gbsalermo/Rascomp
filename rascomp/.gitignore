@@ -33,4 +33,4 @@ build/
 .vscode/
 
 # Local reference codes (ignored)
-codigos-referencia
+.codigos-referencia
