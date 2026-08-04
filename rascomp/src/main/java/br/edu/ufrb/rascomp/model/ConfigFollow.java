@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,13 +19,12 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "parametros_follow")
+@Table(name = "config_follow")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString
 public class ConfigFollow implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
@@ -33,16 +33,21 @@ public class ConfigFollow implements Serializable {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
-	@OneToOne
-	@JoinColumn(name = "category_id", nullable = false, unique = true)
-	private CompetitionCategory category;
+	@OneToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "competition_category_id", nullable = false, unique = true)
+	private CompetitionCategory competitionCategory;
 	
-	@Column(name = "numero_tomadas", nullable = false)
+	@Column(nullable = false)
 	private Integer numeroTomadas;  //ex: 3 tomadas/tentativas por robo
 	
-	@Column(name = "tentativas_por_tomadas")
-	private Integer tentativasPorTomada; //ex: os 3 melhoresTempos
+	@Column(nullable = false)
+	private Integer tentativasPorTomada; //quantidade máxima de tentativas permitidas em cada tomada
 	
+	@Column(nullable = false)
+    private Integer maxTempoSegundos; // tempo máximo permitido para uma tentativa do robô concluir o percurso
+
+    @Column(nullable = false)
+    private Integer numeroCheckpoints; // quantidade total de checkpoints existentes no percurso da categoria
 	
 	}
 

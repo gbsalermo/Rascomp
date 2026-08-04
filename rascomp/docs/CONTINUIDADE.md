@@ -1,6 +1,6 @@
 Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-03T22:45:54-03:00
+Última atualização: 2026-08-04T19:00:48-03:00
 
 1. Objetivo
 
@@ -49,7 +49,6 @@ O assistente orienta, revisa e prepara códigos de referência.
 Toda etapa concluída deve ser registrada neste documento.
 
 Testes e validações só devem ser marcados como concluídos após execução local.
-
 
 4. Status atual
 
@@ -181,19 +180,33 @@ impedir associação com categoria de outra modalidade;
 
 não existir como configuração solta sem categoria.
 
-Campos iniciais:
+Campos definidos:
 
 id
 
 competitionCategory
-
-pesoMin
 
 pesoMax
 
 exigeInspecao
 
 maxTentativasInspecao
+
+numeroRounds
+
+roundsParaVencer
+
+permiteRoundDesempate
+
+Decisões:
+
+não haverá pesoMin;
+
+o peso real do robô será registrado futuramente no módulo de inspeção;
+
+numeroRounds representa apenas os rounds regulares;
+
+rounds adicionais poderão ocorrer quando houver empate, anulação, cancelamento ou problema técnico.
 
 5.3 Implementar ConfigFollow
 
@@ -209,15 +222,27 @@ impedir associação com categoria de outra modalidade;
 
 não existir como configuração solta sem categoria.
 
-Campos iniciais:
+Campos definidos:
 
 id
 
 competitionCategory
 
+numeroTomadas
+
+tentativasPorTomada
+
 maxTempoSegundos
 
 numeroCheckpoints
+
+Decisões:
+
+ConfigFollow guarda apenas regras fixas da categoria;
+
+tempos realizados, conclusão, penalidades e validade pertencem ao módulo de resultados;
+
+o melhor tempo não será armazenado diretamente na configuração.
 
 Os códigos de referência dessas duas configurações estão no documento:
 
@@ -253,6 +278,10 @@ Implementar Competition.
 
 Implementar Registration.
 
+Implementar TentativaSeguidorLinha vinculada à inscrição.
+
+Implementar o serviço de apuração e ranking do Seguidor de Linha.
+
 Implementar Bracket.
 
 Implementar Match e MatchResult.
@@ -279,15 +308,29 @@ critérios de vitória, penalidade e desclassificação.
 
 Seguidor de Linha
 
-tempo máximo;
+criar futuramente a entidade TentativaSeguidorLinha;
 
-checkpoints;
+vincular cada tentativa a uma Registration;
 
-penalidades;
+registrar número da tomada e número da tentativa;
 
-critério de classificação por menor tempo;
+registrar se a tentativa foi concluída;
 
-desclassificação por exceder limite definido.
+registrar o tempo obtido;
+
+prever status como válida, anulada, cancelada ou não concluída;
+
+registrar checkpoints alcançados e penalidades quando a regra for definida;
+
+calcular o melhor tempo sob demanda;
+
+selecionar a menor tentativa válida de cada tomada;
+
+selecionar o menor tempo entre as tomadas válidas;
+
+usar o resultado calculado para classificação e ranking;
+
+desclassificar ou invalidar resultados que excedam as regras da categoria.
 
 Chaveamento e partidas
 
@@ -314,3 +357,5 @@ integrar fluxo BPMN do Camunda.
 2026-07-29 — Categoria redesenhada para separar modalidade e configurações específicas.
 
 2026-08-03T22:45:54-03:00 — CRUD CompetitionCategory marcado como implementado, com campo ativo mantido. Próximas etapas definidas: testes com H2, ConfigSumo e ConfigFollow.
+
+2026-08-04T19:00:48-03:00 — Planejamento atualizado: incluída a entidade futura TentativaSeguidorLinha, vinculada a Registration, e o serviço de apuração do melhor tempo e ranking do Seguidor de Linha.
