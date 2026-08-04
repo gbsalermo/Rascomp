@@ -1,46 +1,24 @@
-Continuidade do Projeto — Rascomp
+# Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-04T19:00:48-03:00
+Última atualização: 2026-08-03T22:45:54-03:00
 
-1. Objetivo
+## 1. Objetivo
 
-Plataforma para gestão de competições de robôs da RAS-UFRB, com:
+Plataforma para gestão de competições de robôs da RAS-UFRB, com backend Spring Boot, painel de gestão, vitrine pública, inscrições, equipes, robôs, categorias, resultados, chaveamentos e integração futura com Camunda.
 
-backend Spring Boot;
+## 2. Stack e convenções
 
-painel de gestão autenticado;
+- Java 21
+- Spring Boot 3
+- Spring Data JPA
+- Jakarta Validation
+- Lombok
+- H2 durante o desenvolvimento
+- PostgreSQL na produção
+- Package root: `br.edu.ufrb.rascomp`
+- Estrutura por camadas: `controller`, `dto`, `model`, `repository`, `service`, `exception`
 
-vitrine pública;
-
-categorias para Sumô e Seguidor de Linha;
-
-inscrições, equipes, robôs, chaveamentos e partidas;
-
-integração futura com Camunda;
-
-PostgreSQL na etapa de produção.
-
-2. Stack e convenções
-
-Java 21
-
-Spring Boot 3
-
-Spring Data JPA
-
-Jakarta Validation
-
-Lombok
-
-H2 durante o desenvolvimento
-
-PostgreSQL na produção
-
-Package root: br.edu.ufrb.rascomp
-
-Estrutura por camadas: controller, dto, model, repository, service, exception
-
-3. Regra de trabalho
+## 3. Regra de trabalho
 
 O mantenedor implementa e realiza os commits.
 
@@ -50,125 +28,87 @@ Toda etapa concluída deve ser registrada neste documento.
 
 Testes e validações só devem ser marcados como concluídos após execução local.
 
+
 4. Status atual
 
-Projeto base
+### Projeto base
 
-Status: concluído
+Status: **concluído**
 
-Projeto Rascomp criado.
+- Projeto Rascomp criado.
+- Package root definido.
+- Estrutura inicial de pacotes criada.
+- H2 definido como banco inicial.
+- PostgreSQL, Flyway e Camunda planejados para etapas posteriores.
 
-Package root definido.
+### CRUD `CompetitionCategory`
 
-Estrutura inicial de pacotes criada.
+Status: **implementado — aguardando testes com H2**
 
-H2 definido como banco inicial.
+Arquivos concluídos:
 
-PostgreSQL e Flyway planejados para etapa posterior.
+- `CompetitionCategory`
+- `Modalidade`
+- `CompetitionCategoryDTO`
+- `CompetitionCategoryRepository`
+- `CompetitionCategoryService`
+- `CompetitionCategoryController`
 
-Camunda planejado para depois dos CRUDs e da geração de chaveamento.
+Decisões:
 
-CRUD CompetitionCategory
+- uma modalidade pode possuir várias categorias;
+- exemplos: Mini Sumô, Sumô 3 kg e Seguidor de Linha;
+- campo `ativo` mantido;
+- exclusão lógica;
+- consultas por modalidade e por modalidade ativa;
+- `ConfigSumo` e `ConfigFollow` são configurações dependentes da categoria.
 
-Status: implementado — aguardando testes
+### `ConfigSumo`
 
-Arquivos considerados concluídos:
+Status: **em implementação**
 
-CompetitionCategory
+Campos definidos:
 
-Modalidade
+- `id`
+- `competitionCategory`
+- `pesoMax`
+- `exigeInspecao`
+- `maxTentativasInspecao`
+- `numeroRounds`
+- `roundsParaVencer`
+- `permiteRoundDesempate`
 
-CompetitionCategoryDTO
+Decisões:
 
-CompetitionCategoryRepository
+- não haverá peso mínimo;
+- o peso real do robô será registrado futuramente no módulo de inspeção;
+- `numeroRounds` representa apenas os rounds regulares;
+- rounds adicionais poderão ocorrer quando houver empate, anulação, cancelamento ou problema técnico;
+- rounds sem vencedor não contam para `roundsParaVencer`.
 
-CompetitionCategoryService
+### `ConfigFollow`
 
-CompetitionCategoryController
+Status: **entity definida — CRUD pendente**
 
-Decisões aplicadas:
+Campos definidos:
 
-Category foi substituída por CompetitionCategory.
+- `id`
+- `competitionCategory`
+- `numeroTomadas`
+- `tentativasPorTomada`
+- `maxTempoSegundos`
+- `numeroCheckpoints`
 
-Uma modalidade pode possuir várias categorias.
+Decisões:
 
-Exemplos:
+- `ConfigFollow` guarda apenas regras fixas da categoria;
+- cada robô poderá possuir várias tomadas e várias tentativas por tomada;
+- tempos realizados, conclusão, validade, checkpoints alcançados e penalidades pertencem ao módulo de resultados;
+- o melhor tempo será calculado sob demanda, não armazenado diretamente na configuração.
 
-Sumô 500 g → modalidade SUMO
+## 5. Entidade futura — `TentativaSeguidorLinha`
 
-Sumô 3 kg → modalidade SUMO
-
-Seguidor de Linha Open → modalidade SEGUIDOR_LINHA
-
-O campo codigo não será utilizado.
-
-O campo ativo foi mantido.
-
-A exclusão é lógica, definindo ativo = false.
-
-Consultas por modalidade e por modalidade ativa foram mantidas.
-
-ConfigSumo e ConfigFollow serão configurações dependentes da categoria.
-
-Endpoints previstos:
-
-POST   /api/v1/categorias
-GET    /api/v1/categorias
-GET    /api/v1/categorias/{id}
-GET    /api/v1/categorias/por-modalidade?modalidade=SUMO
-GET    /api/v1/categorias/por-modalidade/ativas?modalidade=SUMO
-PUT    /api/v1/categorias/{id}
-DELETE /api/v1/categorias/{id}
-
-5. Próxima etapa
-
-5.1 Testar CompetitionCategory com H2
-
-Status: próximo passo
-
-Validar:
-
-Inicialização da aplicação.
-
-Criação das tabelas pelo Hibernate.
-
-Cadastro de categoria Sumô.
-
-Cadastro de categoria Seguidor de Linha.
-
-Listagem completa.
-
-Busca por ID.
-
-Filtro por modalidade.
-
-Filtro por modalidade ativa.
-
-Atualização.
-
-Exclusão lógica.
-
-Comportamento das validações do DTO.
-
-Mensagem de categoria não encontrada.
-
-Registrar depois dos testes:
-
-comandos executados;
-
-endpoints testados;
-
-payloads principais;
-
-erros encontrados;
-
-correções aplicadas;
-
-resultado final.
-
-5.2 Implementar ConfigSumo
-
-Status: pendente
+Status: **planejada para depois de `Registration`**
 
 Responsabilidade:
 
@@ -180,33 +120,19 @@ impedir associação com categoria de outra modalidade;
 
 não existir como configuração solta sem categoria.
 
-Campos definidos:
+Campos iniciais:
 
 id
 
 competitionCategory
+
+pesoMin
 
 pesoMax
 
 exigeInspecao
 
 maxTentativasInspecao
-
-numeroRounds
-
-roundsParaVencer
-
-permiteRoundDesempate
-
-Decisões:
-
-não haverá pesoMin;
-
-o peso real do robô será registrado futuramente no módulo de inspeção;
-
-numeroRounds representa apenas os rounds regulares;
-
-rounds adicionais poderão ocorrer quando houver empate, anulação, cancelamento ou problema técnico.
 
 5.3 Implementar ConfigFollow
 
@@ -222,27 +148,15 @@ impedir associação com categoria de outra modalidade;
 
 não existir como configuração solta sem categoria.
 
-Campos definidos:
+Campos iniciais:
 
 id
 
 competitionCategory
 
-numeroTomadas
-
-tentativasPorTomada
-
 maxTempoSegundos
 
 numeroCheckpoints
-
-Decisões:
-
-ConfigFollow guarda apenas regras fixas da categoria;
-
-tempos realizados, conclusão, penalidades e validade pertencem ao módulo de resultados;
-
-o melhor tempo não será armazenado diretamente na configuração.
 
 Os códigos de referência dessas duas configurações estão no documento:
 
@@ -278,10 +192,6 @@ Implementar Competition.
 
 Implementar Registration.
 
-Implementar TentativaSeguidorLinha vinculada à inscrição.
-
-Implementar o serviço de apuração e ranking do Seguidor de Linha.
-
 Implementar Bracket.
 
 Implementar Match e MatchResult.
@@ -292,9 +202,9 @@ Implementar segurança JWT.
 
 Preparar PostgreSQL, Docker e Flyway.
 
-7. Backlog de regras futuras
+## 7. Backlog de regras futuras
 
-Sumô
+### Sumô
 
 inspeção obrigatória conforme configuração;
 
@@ -308,54 +218,31 @@ critérios de vitória, penalidade e desclassificação.
 
 Seguidor de Linha
 
-criar futuramente a entidade TentativaSeguidorLinha;
+tempo máximo;
 
-vincular cada tentativa a uma Registration;
+checkpoints;
 
-registrar número da tomada e número da tentativa;
+penalidades;
 
-registrar se a tentativa foi concluída;
+critério de classificação por menor tempo;
 
-registrar o tempo obtido;
-
-prever status como válida, anulada, cancelada ou não concluída;
-
-registrar checkpoints alcançados e penalidades quando a regra for definida;
-
-calcular o melhor tempo sob demanda;
-
-selecionar a menor tentativa válida de cada tomada;
-
-selecionar o menor tempo entre as tomadas válidas;
-
-usar o resultado calculado para classificação e ranking;
-
-desclassificar ou invalidar resultados que excedam as regras da categoria.
+desclassificação por exceder limite definido.
 
 Chaveamento e partidas
 
-impedir participação de inscrições inelegíveis;
+- impedir participação de inscrições inelegíveis;
+- gerar chaveamento;
+- registrar resultados;
+- avançar vencedores;
+- emitir atualizações para a vitrine;
+- integrar fluxo BPMN do Camunda.
 
-gerar chaveamento;
+## 8. Histórico resumido
 
-registrar resultados;
-
-avançar vencedores;
-
-emitir atualizações para a vitrine;
-
-integrar fluxo BPMN do Camunda.
-
-8. Histórico resumido
-
-2026-07-28 — Documento inicial e planejamento do backend.
-
-2026-07-29 — Projeto renomeado para Rascomp e package root ajustado.
-
-2026-07-29 — Estrutura inicial de pacotes e códigos de referência criada.
-
-2026-07-29 — Categoria redesenhada para separar modalidade e configurações específicas.
-
-2026-08-03T22:45:54-03:00 — CRUD CompetitionCategory marcado como implementado, com campo ativo mantido. Próximas etapas definidas: testes com H2, ConfigSumo e ConfigFollow.
+- 2026-07-28 — Documento inicial e planejamento do backend.
+- 2026-07-29 — Projeto renomeado para Rascomp e package root ajustado.
+- 2026-07-29 — Estrutura inicial e códigos de referência criados.
+- 2026-08-03 — CRUD `CompetitionCategory` marcado como implementado.
+- 2026-08-04 — Planejamento atualizado com `ConfigSumo`, `ConfigFollow` e futura entidade `TentativaSeguidorLinha` vinculada a `Registration`.
 
 2026-08-04T19:00:48-03:00 — Planejamento atualizado: incluída a entidade futura TentativaSeguidorLinha, vinculada a Registration, e o serviço de apuração do melhor tempo e ranking do Seguidor de Linha.
