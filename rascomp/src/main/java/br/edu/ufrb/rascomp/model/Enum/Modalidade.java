@@ -1,6 +1,6 @@
 package br.edu.ufrb.rascomp.model.Enum;
 
-public enum TipoCategoria {
+public enum Modalidade {
 	
 	SUMO,
 	FOLLOW_LINE

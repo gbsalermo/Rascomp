@@ -18,14 +18,14 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "regras_sumo")
+@Table(name = "parametros_sumo")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @ToString
-public class RegrasSumo implements Serializable{
+public class ConfigSumo implements Serializable{
 	
 	private static final long serialVersionUID = 1L;
 
@@ -35,7 +35,7 @@ public class RegrasSumo implements Serializable{
 	
 	@OneToOne
 	@JoinColumn(name = "category_id", nullable = false, unique = true)
-	private Category category;
+	private CompetitionCategory category;
 	
 	@Column(name = "peso_min")
 	private Integer pesoMin;

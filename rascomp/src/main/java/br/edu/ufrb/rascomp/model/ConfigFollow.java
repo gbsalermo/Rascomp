@@ -18,14 +18,14 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "regras_follow_line")
+@Table(name = "parametros_follow")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @ToString
-public class RegrasFollow implements Serializable {
+public class ConfigFollow implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -35,7 +35,7 @@ public class RegrasFollow implements Serializable {
 	
 	@OneToOne
 	@JoinColumn(name = "category_id", nullable = false, unique = true)
-	private Category category;
+	private CompetitionCategory category;
 	
 	@Column(name = "numero_tomadas", nullable = false)
 	private Integer numeroTomadas;  //ex: 3 tomadas/tentativas por robo

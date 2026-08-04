@@ -1,11 +1,11 @@
 package br.edu.ufrb.rascomp.model;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
-import br.edu.ufrb.rascomp.model.Enum.TipoCategoria;
+import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,23 +17,20 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
 @Entity
-@Table(name = "categories", uniqueConstraints = @UniqueConstraint(columnNames = "codigo"))
+@Table(name = "categories")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"regrasSumo", "regrasSeguidorLinha"})
-public class Category implements Serializable {
+public class CompetitionCategory implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -41,26 +38,28 @@ public class Category implements Serializable {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
-	@Column(nullable = false)
+	@Column(nullable = false, length = 100)
 	private String nome;
-	
-	@Column(nullable = false, unique = true)
-	private String codigo;
-	
-	@Column(columnDefinition = "text")
+		
+	@Column(length = 500)
 	private String descricao;
 	
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private TipoCategoria tipo;
+	private Modalidade modalidade;
+	
+	@Builder.Default
+	@Column(nullable = false)
+    private Boolean ativo = true;
+	
+	@OneToOne(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	private ConfigSumo configSumo;
+	
+	@OneToOne(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	private ConfigFollow configFollow;
 	
 	@CreationTimestamp
-	private Instant createdAt;
-	
-	@OneToOne(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-	private RegrasSumo regrasSumo;
-	
-	@OneToOne(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-	private RegrasFollow regrasFollow;
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime dataCadastro;
 	
 }
