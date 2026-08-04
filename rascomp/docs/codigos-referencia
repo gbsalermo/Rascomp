@@ -1,28 +1,63 @@
-// TipoCategoria.java
-package br.edu.ufrb.rascomp.entity;
+Códigos de Referência — ConfigSumo e ConfigFollow
 
-public enum TipoCategoria {
-    SUMO,
-    SEGUIDOR_LINHA
-}
+Este documento serve como referência para implementação manual.Os códigos seguem o padrão atual do Rascomp:
 
-// Category.java
-package br.edu.ufrb.rascomp.entity;
+Spring Boot 3
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+Java 21
 
-import java.time.Instant;
+Spring Data JPA
+
+Jakarta Validation
+
+Lombok
+
+DTO único por entidade
+
+Service em classe única
+
+exclusão física da configuração
+
+relacionamento dependente de CompetitionCategory
+
+endpoints aninhados à categoria
+
+Ajuste o nome SEGUIDOR_LINHA caso o valor real do seu enum Modalidade esteja diferente.
+
+1. Ajuste necessário em CompetitionCategory
+
+Os nomes usados em mappedBy devem ser iguais ao atributo das entidades filhas: competitionCategory.
+
+package br.edu.ufrb.rascomp.model;
+
 import java.io.Serializable;
 
+import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 @Entity
-@Table(name = "categories", uniqueConstraints = @UniqueConstraint(columnNames = "codigo"))
-@Data
+@Table(name = "competition_categories")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Category implements Serializable {
+public class CompetitionCategory implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -33,465 +68,693 @@ public class Category implements Serializable {
     @Column(nullable = false)
     private String nome;
 
-    @Column(nullable = false, unique = true)
-    private String codigo;
-
-    @Column(columnDefinition = "text")
+    @Column(length = 500)
     private String descricao;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TipoCategoria tipo;
+    private Modalidade modalidade;
 
-    @CreationTimestamp
-    private Instant createdAt;
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean ativo = true;
 
-    @OneToOne(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private RegrasSumo regrasSumo;
+    @OneToOne(
+        mappedBy = "competitionCategory",
+        fetch = FetchType.LAZY,
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    private ConfigSumo configSumo;
 
-    @OneToOne(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private RegrasSeguidorLinha regrasSeguidorLinha;
+    @OneToOne(
+        mappedBy = "competitionCategory",
+        fetch = FetchType.LAZY,
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    private ConfigFollow configFollow;
 }
-// RegrasSumo.java
-package br.edu.ufrb.rascomp.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
+2. ConfigSumo
+
+2.1 Entity
+
+package br.edu.ufrb.rascomp.model;
+
 import java.io.Serializable;
+import java.math.BigDecimal;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Table(name = "regras_sumo")
-@Data
+@Table(name = "config_sumo")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RegrasSumo implements Serializable {
+public class ConfigSumo implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "category_id", nullable = false, unique = true)
-    private Category category;
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+        name = "competition_category_id",
+        nullable = false,
+        unique = true
+    )
+    private CompetitionCategory competitionCategory;
 
-    @Column(name = "peso_min")
-    private Integer pesoMin;
+    @Column(nullable = false, precision = 8, scale = 3)
+    private BigDecimal pesoMin;
 
-    @Column(name = "peso_max")
-    private Integer pesoMax;
+    @Column(nullable = false, precision = 8, scale = 3)
+    private BigDecimal pesoMax;
 
-    @Column(name = "exige_inspecao", nullable = false)
-    private boolean exigeInspecao; // obrigatórios na configuração
-
-    @Column(name = "max_tentativas_inspecao", nullable = false)
-    private Integer maxTentativasInspecao; // obrigatório na configuração
-}
-
-// RegrasSeguidorLinha.java
-package br.edu.ufrb.rascomp.entity;
-
-import jakarta.persistence.*;
-import lombok.*;
-import java.io.Serializable;
-
-@Entity
-@Table(name = "regras_seguidor_linha")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class RegrasSeguidorLinha implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @OneToOne
-    @JoinColumn(name = "category_id", nullable = false, unique = true)
-    private Category category;
-
-    @Column(name = "max_tempo_segundos")
-    private Integer maxTempoSegundos;
-
-    @Column(name = "numero_checkpoints")
-    private Integer numeroCheckpoints;
-}
-
-// DTOs
-// CategoryRequestDTO.java
-package br.edu.ufrb.rascomp.dto;
-
-import br.edu.ufrb.rascomp.entity.TipoCategoria;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.Valid;
-import lombok.Data;
-
-@Data
-public class CategoryRequestDTO {
-    @NotBlank(message = "nome é obrigatório")
-    private String nome;
-
-    @NotBlank(message = "codigo é obrigatório")
-    private String codigo;
-
-    private String descricao;
-
-    @NotNull(message = "tipo é obrigatório")
-    private TipoCategoria tipo;
-
-    // Opcionalmente preenchidos conforme tipo
-
-    @Valid
-    private RegrasSumoDTO regrasSumo;
-
-    @Valid
-    private RegrasSeguidorLinhaDTO regrasSeguidorLinha;
-}
-
-// RegrasSumoDTO.java
-package br.edu.ufrb.rascomp.dto;
-
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-
-@Data
-public class RegrasSumoDTO {
-    private Integer pesoMin;
-    private Integer pesoMax;
-
-    @NotNull(message = "exigeInspecao é obrigatório para RegrasSumo")
+    @Column(nullable = false)
     private Boolean exigeInspecao;
 
-    @NotNull(message = "maxTentativasInspecao é obrigatório para RegrasSumo")
+    @Column(nullable = false)
     private Integer maxTentativasInspecao;
 }
 
-// RegrasSeguidorLinhaDTO.java
+2.2 DTO
+
 package br.edu.ufrb.rascomp.dto;
 
-import lombok.Data;
+import java.math.BigDecimal;
 
-@Data
-public class RegrasSeguidorLinhaDTO {
-    private Integer maxTempoSegundos;
-    private Integer numeroCheckpoints;
-}
+import br.edu.ufrb.rascomp.model.ConfigSumo;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-// CategoryResponseDTO.java
-package br.edu.ufrb.rascomp.dto;
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class ConfigSumoDTO {
 
-import br.edu.ufrb.rascomp.entity.TipoCategoria;
-import lombok.Data;
-
-import java.time.Instant;
-
-@Data
-public class CategoryResponseDTO {
     private Long id;
-    private String nome;
-    private String codigo;
-    private String descricao;
-    private TipoCategoria tipo;
-    private Instant createdAt;
 
-    // Apenas um dos dois será preenchido conforme tipo
-    private RegrasSumoDTO regrasSumo;
-    private RegrasSeguidorLinhaDTO regrasSeguidorLinha;
-}
+    private Long competitionCategoryId;
 
-// Repositories
-// CategoryRepository.java
-package br.edu.ufrb.rascomp.repository;
+    @NotNull(message = "Peso mínimo é obrigatório")
+    @DecimalMin(value = "0.0", inclusive = true,
+            message = "Peso mínimo não pode ser negativo")
+    private BigDecimal pesoMin;
 
-import br.edu.ufrb.rascomp.entity.Category;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
+    @NotNull(message = "Peso máximo é obrigatório")
+    @DecimalMin(value = "0.001",
+            message = "Peso máximo deve ser maior que zero")
+    private BigDecimal pesoMax;
 
-import java.util.List;
-import java.util.Optional;
+    @NotNull(message = "Informe se a inspeção é obrigatória")
+    private Boolean exigeInspecao;
 
-public interface CategoryRepository extends JpaRepository<Category, Long> {
-    Optional<Category> findByCodigo(String codigo);
+    @NotNull(message = "Máximo de tentativas é obrigatório")
+    @Min(value = 1, message = "Deve existir pelo menos uma tentativa")
+    private Integer maxTentativasInspecao;
 
-    @EntityGraph(attributePaths = {"regrasSumo", "regrasSeguidorLinha"})
-    @Override
-    List<Category> findAll();
-
-    @EntityGraph(attributePaths = {"regrasSumo", "regrasSeguidorLinha"})
-    @Override
-    Optional<Category> findById(Long id);
-}
-
-// RegrasSumoRepository.java
-package br.edu.ufrb.rascomp.repository;
-
-import br.edu.ufrb.rascomp.entity.RegrasSumo;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.Optional;
-
-public interface RegrasSumoRepository extends JpaRepository<RegrasSumo, Long> {
-    Optional<RegrasSumo> findByCategoryId(Long categoryId);
-}
-
-// RegrasSeguidorLinhaRepository.java
-package br.edu.ufrb.rascomp.repository;
-
-import br.edu.ufrb.rascomp.entity.RegrasSeguidorLinha;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.Optional;
-
-public interface RegrasSeguidorLinhaRepository extends JpaRepository<RegrasSeguidorLinha, Long> {
-    Optional<RegrasSeguidorLinha> findByCategoryId(Long categoryId);
-}
-
-// Exceptions
-// ResourceNotFoundException.java
-package br.edu.ufrb.rascomp.exception; // (ou um pacote tipo br.edu.ufrb.rascomp.exception.handler)
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<String> handleNotFound(ResourceNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-    }
-
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<String> handleValidation(ValidationException ex) {
-        return ResponseEntity.badRequest().body(ex.getMessage());
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleBeanValidation(MethodArgumentNotValidException ex) {
-        var erros = ex.getBindingResult().getFieldErrors().stream()
-                .map(err -> err.getField() + ": " + err.getDefaultMessage())
-                .toList();
-        return ResponseEntity.badRequest().body(erros);
+    public ConfigSumoDTO(ConfigSumo entity) {
+        this.id = entity.getId();
+        this.competitionCategoryId =
+                entity.getCompetitionCategory().getId();
+        this.pesoMin = entity.getPesoMin();
+        this.pesoMax = entity.getPesoMax();
+        this.exigeInspecao = entity.getExigeInspecao();
+        this.maxTentativasInspecao =
+                entity.getMaxTentativasInspecao();
     }
 }
 
-// ResourceNotFoundException.java
-package br.edu.ufrb.rascomp.exception;
+2.3 Repository
 
-public class ResourceNotFoundException extends RuntimeException {
-    public ResourceNotFoundException(String message) { super(message); }
+package br.edu.ufrb.rascomp.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import br.edu.ufrb.rascomp.model.ConfigSumo;
+
+@Repository
+public interface ConfigSumoRepository
+        extends JpaRepository<ConfigSumo, Long> {
+
+    Optional<ConfigSumo> findByCompetitionCategoryId(
+            Long competitionCategoryId);
+
+    boolean existsByCompetitionCategoryId(
+            Long competitionCategoryId);
 }
 
-// ValidationException.java
-package br.edu.ufrb.rascomp.exception;
+2.4 Service
 
-public class ValidationException extends RuntimeException {
-    public ValidationException(String message) { super(message); }
-}
-// Service
-// CategoryService.java
 package br.edu.ufrb.rascomp.service;
 
-import br.edu.ufrb.rascomp.dto.*;
-import br.edu.ufrb.rascomp.entity.*;
-import br.edu.ufrb.rascomp.exception.ResourceNotFoundException;
-import br.edu.ufrb.rascomp.exception.ValidationException;
-import br.edu.ufrb.rascomp.repository.CategoryRepository;
+import java.math.BigDecimal;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import br.edu.ufrb.rascomp.dto.ConfigSumoDTO;
+import br.edu.ufrb.rascomp.model.CompetitionCategory;
+import br.edu.ufrb.rascomp.model.ConfigSumo;
+import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
+import br.edu.ufrb.rascomp.repository.ConfigSumoRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 
 @Service
-@Transactional
-public class CategoryService {
+@RequiredArgsConstructor
+public class ConfigSumoService {
 
-    private final CategoryRepository categoryRepository;
+    private final ConfigSumoRepository configSumoRepository;
+    private final CompetitionCategoryRepository competitionCategoryRepository;
 
-    public CategoryService(CategoryRepository categoryRepository) {
-        this.categoryRepository = categoryRepository;
+    @Transactional
+    public ConfigSumoDTO criar(
+            Long categoryId,
+            ConfigSumoDTO dto) {
+
+        CompetitionCategory category = buscarCategoria(categoryId);
+        validarModalidade(category);
+        validarConfiguracaoInexistente(categoryId);
+        validarPesos(dto);
+
+        ConfigSumo config = new ConfigSumo();
+        config.setCompetitionCategory(category);
+        preencherConfig(config, dto);
+
+        ConfigSumo salvo = configSumoRepository.save(config);
+
+        return new ConfigSumoDTO(salvo);
     }
 
     @Transactional(readOnly = true)
-    public List<CategoryResponseDTO> findAll() {
-        return categoryRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
+    public ConfigSumoDTO buscarPorCategoria(Long categoryId) {
+        return new ConfigSumoDTO(buscarConfigPorCategoria(categoryId));
     }
 
-    @Transactional(readOnly = true)
-    public CategoryResponseDTO findById(Long id) {
-        return categoryRepository.findById(id).map(this::toResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+    @Transactional
+    public ConfigSumoDTO atualizar(
+            Long categoryId,
+            ConfigSumoDTO dto) {
+
+        ConfigSumo config = buscarConfigPorCategoria(categoryId);
+
+        validarModalidade(config.getCompetitionCategory());
+        validarPesos(dto);
+        preencherConfig(config, dto);
+
+        ConfigSumo atualizado = configSumoRepository.save(config);
+
+        return new ConfigSumoDTO(atualizado);
     }
 
-    public CategoryResponseDTO create(CategoryRequestDTO dto) {
-        validateRulesConsistency(dto);
-
-        Category category = Category.builder()
-                .nome(dto.getNome())
-                .codigo(dto.getCodigo())
-                .descricao(dto.getDescricao())
-                .tipo(dto.getTipo())
-                .build();
-
-        aplicarRegras(category, dto);
-
-        Category saved = categoryRepository.save(category);
-        return toResponse(saved);
+    @Transactional
+    public void deletar(Long categoryId) {
+        ConfigSumo config = buscarConfigPorCategoria(categoryId);
+        configSumoRepository.delete(config);
     }
 
-    public CategoryResponseDTO update(Long id, CategoryRequestDTO dto) {
-        validateRulesConsistency(dto);
-
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
-
-        category.setNome(dto.getNome());
-        category.setCodigo(dto.getCodigo());
-        category.setDescricao(dto.getDescricao());
-        category.setTipo(dto.getTipo());
-
-        // Limpa a regra antiga que não corresponde mais ao tipo atual
-        // (orphanRemoval cuida de apagar a linha órfã ao salvar)
-        if (dto.getTipo() == TipoCategoria.SUMO) {
-            category.setRegrasSeguidorLinha(null);
-        } else if (dto.getTipo() == TipoCategoria.SEGUIDOR_LINHA) {
-            category.setRegrasSumo(null);
-        }
-
-        aplicarRegras(category, dto);
-
-        Category saved = categoryRepository.save(category);
-        return toResponse(saved);
+    private CompetitionCategory buscarCategoria(Long categoryId) {
+        return competitionCategoryRepository.findById(categoryId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Categoria não encontrada com o id: "
+                                        + categoryId));
     }
 
-    public void delete(Long id) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
-
-        // cascade = ALL cuida de apagar RegrasSumo/RegrasSeguidorLinha junto
-        categoryRepository.delete(category);
+    private ConfigSumo buscarConfigPorCategoria(Long categoryId) {
+        return configSumoRepository
+                .findByCompetitionCategoryId(categoryId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Configuração de Sumô não encontrada "
+                                + "para a categoria: " + categoryId));
     }
 
-    private void aplicarRegras(Category category, CategoryRequestDTO dto) {
-        if (dto.getTipo() == TipoCategoria.SUMO) {
-            RegrasSumoDTO rs = dto.getRegrasSumo();
-            RegrasSumo regras = category.getRegrasSumo() != null
-                    ? category.getRegrasSumo()
-                    : RegrasSumo.builder().category(category).build();
-
-            regras.setPesoMin(rs.getPesoMin());
-            regras.setPesoMax(rs.getPesoMax());
-            regras.setExigeInspecao(rs.getExigeInspecao());
-            regras.setMaxTentativasInspecao(rs.getMaxTentativasInspecao());
-
-            category.setRegrasSumo(regras);
-        } else if (dto.getTipo() == TipoCategoria.SEGUIDOR_LINHA) {
-            RegrasSeguidorLinhaDTO rsl = dto.getRegrasSeguidorLinha();
-            RegrasSeguidorLinha regras = category.getRegrasSeguidorLinha() != null
-                    ? category.getRegrasSeguidorLinha()
-                    : RegrasSeguidorLinha.builder().category(category).build();
-
-            regras.setMaxTempoSegundos(rsl.getMaxTempoSegundos());
-            regras.setNumeroCheckpoints(rsl.getNumeroCheckpoints());
-
-            category.setRegrasSeguidorLinha(regras);
+    private void validarModalidade(CompetitionCategory category) {
+        if (category.getModalidade() != Modalidade.SUMO) {
+            throw new IllegalArgumentException(
+                    "ConfigSumo só pode ser associada "
+                    + "a uma categoria da modalidade SUMO.");
         }
     }
 
-    private void validateRulesConsistency(CategoryRequestDTO dto) {
-        boolean sumo = dto.getRegrasSumo() != null;
-        boolean seguidor = dto.getRegrasSeguidorLinha() != null;
+    private void validarConfiguracaoInexistente(Long categoryId) {
+        if (configSumoRepository
+                .existsByCompetitionCategoryId(categoryId)) {
 
-        if (sumo && seguidor) throw new ValidationException("Apenas uma regra deve ser preenchida conforme o tipo da categoria");
-        if (!sumo && !seguidor) throw new ValidationException("A regra específica da categoria é obrigatória");
-
-        if (dto.getTipo() == TipoCategoria.SUMO && !sumo) throw new ValidationException("regrasSumo obrigatório para tipo SUMO");
-        if (dto.getTipo() == TipoCategoria.SEGUIDOR_LINHA && !seguidor) throw new ValidationException("regrasSeguidorLinha obrigatório para tipo SEGUIDOR_LINHA");
+            throw new IllegalArgumentException(
+                    "A categoria já possui uma configuração de Sumô.");
+        }
     }
 
-    private CategoryResponseDTO toResponse(Category c) {
-        CategoryResponseDTO r = new CategoryResponseDTO();
-        r.setId(c.getId());
-        r.setNome(c.getNome());
-        r.setCodigo(c.getCodigo());
-        r.setDescricao(c.getDescricao());
-        r.setTipo(c.getTipo());
-        r.setCreatedAt(c.getCreatedAt());
+    private void validarPesos(ConfigSumoDTO dto) {
+        BigDecimal minimo = dto.getPesoMin();
+        BigDecimal maximo = dto.getPesoMax();
 
-        if (c.getTipo() == TipoCategoria.SUMO && c.getRegrasSumo() != null) {
-            RegrasSumo rs = c.getRegrasSumo();
-            RegrasSumoDTO dto = new RegrasSumoDTO();
-            dto.setPesoMin(rs.getPesoMin());
-            dto.setPesoMax(rs.getPesoMax());
-            dto.setExigeInspecao(rs.isExigeInspecao());
-            dto.setMaxTentativasInspecao(rs.getMaxTentativasInspecao());
-            r.setRegrasSumo(dto);
-        } else if (c.getTipo() == TipoCategoria.SEGUIDOR_LINHA && c.getRegrasSeguidorLinha() != null) {
-            RegrasSeguidorLinha rsl = c.getRegrasSeguidorLinha();
-            RegrasSeguidorLinhaDTO dto = new RegrasSeguidorLinhaDTO();
-            dto.setMaxTempoSegundos(rsl.getMaxTempoSegundos());
-            dto.setNumeroCheckpoints(rsl.getNumeroCheckpoints());
-            r.setRegrasSeguidorLinha(dto);
+        if (minimo != null
+                && maximo != null
+                && minimo.compareTo(maximo) > 0) {
+
+            throw new IllegalArgumentException(
+                    "O peso mínimo não pode ser maior "
+                    + "que o peso máximo.");
         }
+    }
 
-        return r;
+    private void preencherConfig(
+            ConfigSumo config,
+            ConfigSumoDTO dto) {
+
+        config.setPesoMin(dto.getPesoMin());
+        config.setPesoMax(dto.getPesoMax());
+        config.setExigeInspecao(dto.getExigeInspecao());
+        config.setMaxTentativasInspecao(
+                dto.getMaxTentativasInspecao());
     }
 }
 
-// Controller
-// CategoryController.java
+2.5 Controller
+
 package br.edu.ufrb.rascomp.controller;
 
-import br.edu.ufrb.rascomp.dto.CategoryRequestDTO;
-import br.edu.ufrb.rascomp.dto.CategoryResponseDTO;
-import br.edu.ufrb.rascomp.service.CategoryService;
-import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URI;
-import java.util.List;
+import br.edu.ufrb.rascomp.dto.ConfigSumoDTO;
+import br.edu.ufrb.rascomp.service.ConfigSumoService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/categories")
-public class CategoryController {
+@RequestMapping("/api/v1/categorias/{categoryId}/config-sumo")
+@RequiredArgsConstructor
+public class ConfigSumoController {
 
-    private final CategoryService service;
-
-    public CategoryController(CategoryService service) { this.service = service; }
-
-    @GetMapping
-    public ResponseEntity<List<CategoryResponseDTO>> list() {
-        return ResponseEntity.ok(service.findAll());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<CategoryResponseDTO> get(@PathVariable Long id) {
-        return ResponseEntity.ok(service.findById(id));
-    }
+    private final ConfigSumoService configSumoService;
 
     @PostMapping
-    public ResponseEntity<CategoryResponseDTO> create(@Valid @RequestBody CategoryRequestDTO dto) {
-        CategoryResponseDTO created = service.create(dto);
-        return ResponseEntity.created(URI.create("/api/categories/" + created.getId())).body(created);
+    public ResponseEntity<ConfigSumoDTO> criar(
+            @PathVariable Long categoryId,
+            @Valid @RequestBody ConfigSumoDTO dto) {
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(configSumoService.criar(categoryId, dto));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<CategoryResponseDTO> update(@PathVariable Long id, @Valid @RequestBody CategoryRequestDTO dto) {
-        return ResponseEntity.ok(service.update(id, dto));
+    @GetMapping
+    public ResponseEntity<ConfigSumoDTO> buscarPorCategoria(
+            @PathVariable Long categoryId) {
+
+        return ResponseEntity.ok(
+                configSumoService.buscarPorCategoria(categoryId));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.delete(id);
+    @PutMapping
+    public ResponseEntity<ConfigSumoDTO> atualizar(
+            @PathVariable Long categoryId,
+            @Valid @RequestBody ConfigSumoDTO dto) {
+
+        return ResponseEntity.ok(
+                configSumoService.atualizar(categoryId, dto));
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deletar(
+            @PathVariable Long categoryId) {
+
+        configSumoService.deletar(categoryId);
         return ResponseEntity.noContent().build();
     }
+}
+
+3. ConfigFollow
+
+3.1 Entity
+
+package br.edu.ufrb.rascomp.model;
+
+import java.io.Serializable;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "config_follow")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ConfigFollow implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+        name = "competition_category_id",
+        nullable = false,
+        unique = true
+    )
+    private CompetitionCategory competitionCategory;
+
+    @Column(nullable = false)
+    private Integer maxTempoSegundos;
+
+    @Column(nullable = false)
+    private Integer numeroCheckpoints;
+}
+
+3.2 DTO
+
+package br.edu.ufrb.rascomp.dto;
+
+import br.edu.ufrb.rascomp.model.ConfigFollow;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class ConfigFollowDTO {
+
+    private Long id;
+
+    private Long competitionCategoryId;
+
+    @NotNull(message = "Tempo máximo é obrigatório")
+    @Min(value = 1, message = "Tempo máximo deve ser maior que zero")
+    private Integer maxTempoSegundos;
+
+    @NotNull(message = "Número de checkpoints é obrigatório")
+    @Min(value = 1, message = "Deve existir pelo menos um checkpoint")
+    private Integer numeroCheckpoints;
+
+    public ConfigFollowDTO(ConfigFollow entity) {
+        this.id = entity.getId();
+        this.competitionCategoryId =
+                entity.getCompetitionCategory().getId();
+        this.maxTempoSegundos = entity.getMaxTempoSegundos();
+        this.numeroCheckpoints = entity.getNumeroCheckpoints();
+    }
+}
+
+3.3 Repository
+
+package br.edu.ufrb.rascomp.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import br.edu.ufrb.rascomp.model.ConfigFollow;
+
+@Repository
+public interface ConfigFollowRepository
+        extends JpaRepository<ConfigFollow, Long> {
+
+    Optional<ConfigFollow> findByCompetitionCategoryId(
+            Long competitionCategoryId);
+
+    boolean existsByCompetitionCategoryId(
+            Long competitionCategoryId);
+}
+
+3.4 Service
+
+package br.edu.ufrb.rascomp.service;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.edu.ufrb.rascomp.dto.ConfigFollowDTO;
+import br.edu.ufrb.rascomp.model.CompetitionCategory;
+import br.edu.ufrb.rascomp.model.ConfigFollow;
+import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
+import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class ConfigFollowService {
+
+    private final ConfigFollowRepository configFollowRepository;
+    private final CompetitionCategoryRepository competitionCategoryRepository;
+
+    @Transactional
+    public ConfigFollowDTO criar(
+            Long categoryId,
+            ConfigFollowDTO dto) {
+
+        CompetitionCategory category = buscarCategoria(categoryId);
+        validarModalidade(category);
+        validarConfiguracaoInexistente(categoryId);
+
+        ConfigFollow config = new ConfigFollow();
+        config.setCompetitionCategory(category);
+        preencherConfig(config, dto);
+
+        ConfigFollow salvo = configFollowRepository.save(config);
+
+        return new ConfigFollowDTO(salvo);
+    }
+
+    @Transactional(readOnly = true)
+    public ConfigFollowDTO buscarPorCategoria(Long categoryId) {
+        return new ConfigFollowDTO(
+                buscarConfigPorCategoria(categoryId));
+    }
+
+    @Transactional
+    public ConfigFollowDTO atualizar(
+            Long categoryId,
+            ConfigFollowDTO dto) {
+
+        ConfigFollow config =
+                buscarConfigPorCategoria(categoryId);
+
+        validarModalidade(config.getCompetitionCategory());
+        preencherConfig(config, dto);
+
+        ConfigFollow atualizado =
+                configFollowRepository.save(config);
+
+        return new ConfigFollowDTO(atualizado);
+    }
+
+    @Transactional
+    public void deletar(Long categoryId) {
+        ConfigFollow config =
+                buscarConfigPorCategoria(categoryId);
+
+        configFollowRepository.delete(config);
+    }
+
+    private CompetitionCategory buscarCategoria(Long categoryId) {
+        return competitionCategoryRepository.findById(categoryId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Categoria não encontrada com o id: "
+                                        + categoryId));
+    }
+
+    private ConfigFollow buscarConfigPorCategoria(Long categoryId) {
+        return configFollowRepository
+                .findByCompetitionCategoryId(categoryId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Configuração de Seguidor de Linha "
+                                + "não encontrada para a categoria: "
+                                + categoryId));
+    }
+
+    private void validarModalidade(CompetitionCategory category) {
+        if (category.getModalidade()
+                != Modalidade.SEGUIDOR_LINHA) {
+
+            throw new IllegalArgumentException(
+                    "ConfigFollow só pode ser associada "
+                    + "a uma categoria da modalidade "
+                    + "SEGUIDOR_LINHA.");
+        }
+    }
+
+    private void validarConfiguracaoInexistente(Long categoryId) {
+        if (configFollowRepository
+                .existsByCompetitionCategoryId(categoryId)) {
+
+            throw new IllegalArgumentException(
+                    "A categoria já possui uma configuração "
+                    + "de Seguidor de Linha.");
+        }
+    }
+
+    private void preencherConfig(
+            ConfigFollow config,
+            ConfigFollowDTO dto) {
+
+        config.setMaxTempoSegundos(
+                dto.getMaxTempoSegundos());
+        config.setNumeroCheckpoints(
+                dto.getNumeroCheckpoints());
+    }
+}
+
+3.5 Controller
+
+package br.edu.ufrb.rascomp.controller;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import br.edu.ufrb.rascomp.dto.ConfigFollowDTO;
+import br.edu.ufrb.rascomp.service.ConfigFollowService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/v1/categorias/{categoryId}/config-follow")
+@RequiredArgsConstructor
+public class ConfigFollowController {
+
+    private final ConfigFollowService configFollowService;
+
+    @PostMapping
+    public ResponseEntity<ConfigFollowDTO> criar(
+            @PathVariable Long categoryId,
+            @Valid @RequestBody ConfigFollowDTO dto) {
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(configFollowService.criar(categoryId, dto));
+    }
+
+    @GetMapping
+    public ResponseEntity<ConfigFollowDTO> buscarPorCategoria(
+            @PathVariable Long categoryId) {
+
+        return ResponseEntity.ok(
+                configFollowService.buscarPorCategoria(categoryId));
+    }
+
+    @PutMapping
+    public ResponseEntity<ConfigFollowDTO> atualizar(
+            @PathVariable Long categoryId,
+            @Valid @RequestBody ConfigFollowDTO dto) {
+
+        return ResponseEntity.ok(
+                configFollowService.atualizar(categoryId, dto));
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deletar(
+            @PathVariable Long categoryId) {
+
+        configFollowService.deletar(categoryId);
+        return ResponseEntity.noContent().build();
+    }
+}
+
+4. Endpoints resultantes
+
+ConfigSumo
+
+POST   /api/v1/categorias/{categoryId}/config-sumo
+GET    /api/v1/categorias/{categoryId}/config-sumo
+PUT    /api/v1/categorias/{categoryId}/config-sumo
+DELETE /api/v1/categorias/{categoryId}/config-sumo
+
+ConfigFollow
+
+POST   /api/v1/categorias/{categoryId}/config-follow
+GET    /api/v1/categorias/{categoryId}/config-follow
+PUT    /api/v1/categorias/{categoryId}/config-follow
+DELETE /api/v1/categorias/{categoryId}/config-follow
+
+5. Payloads para teste
+
+Criar ConfigSumo
+
+{
+  "pesoMin": 0.0,
+  "pesoMax": 0.5,
+  "exigeInspecao": true,
+  "maxTentativasInspecao": 3
+}
+
+Criar ConfigFollow
+
+{
+  "maxTempoSegundos": 180,
+  "numeroCheckpoints": 5
 }

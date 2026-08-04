@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "categories")
+@Table(name = "competition_categories")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -52,10 +52,10 @@ public class CompetitionCategory implements Serializable {
 	@Column(nullable = false)
     private Boolean ativo = true;
 	
-	@OneToOne(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToOne(mappedBy = "competitionCategory", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	private ConfigSumo configSumo;
 	
-	@OneToOne(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToOne(mappedBy = "competitionCategory", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	private ConfigFollow configFollow;
 	
 	@CreationTimestamp
