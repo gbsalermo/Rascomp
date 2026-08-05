@@ -47,10 +47,17 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- Banco -->
+        <!-- Banco PostgreSQL -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Banco H2 para desenvolvimento -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
 
@@ -70,7 +77,8 @@
             <artifactId>camunda-bpm-spring-boot-starter</artifactId>
             <version>${camunda.version}</version>
         </dependency>
-        <!-- Camunda REST API (opcional agora, útil pra debug) -->
+
+        <!-- Camunda REST API -->
         <dependency>
             <groupId>org.camunda.bpm.springboot</groupId>
             <artifactId>camunda-bpm-spring-boot-starter-rest</artifactId>
