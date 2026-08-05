@@ -10,8 +10,8 @@ import br.edu.ufrb.rascomp.model.ConfigSumo;
 @Repository
 public interface ConfigSumoRepository extends JpaRepository<ConfigSumo, Long>{
 	
-	Optional<ConfigSumo> findByCategoryId(Long categoryId);
+	Optional<ConfigSumo> findByCategoryId(Long competitionCategoryId);
 	
-	boolean existsByCategoryId(Long categoryId);
+	boolean existsByCompetitionCategoryId(Long competitionCategoryId);
 
 }
