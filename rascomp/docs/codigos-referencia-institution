@@ -1,0 +1,460 @@
+Códigos de Referência — Institution
+
+Este documento contém o CRUD completo de Institution seguindo o padrão atual do Rascomp:
+
+- Spring Boot 3
+- Java 21
+- Spring Data JPA
+- Jakarta Validation
+- Lombok
+- DTO único por entidade
+- Service em classe única
+- exclusão lógica pelo campo ativo
+- endpoints em /api/v1/instituicoes
+
+1. Entity
+
+package br.edu.ufrb.rascomp.model;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "institutions")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Institution implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 150)
+    private String nome;
+
+    @Column(nullable = false, unique = true, length = 20)
+    private String sigla;
+
+    @Column(length = 100)
+    private String cidade;
+
+    @Column(length = 2)
+    private String estado;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean ativo = true;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime dataCadastro;
+}
+
+2. DTO
+
+package br.edu.ufrb.rascomp.dto;
+
+import java.time.LocalDateTime;
+
+import br.edu.ufrb.rascomp.model.Institution;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class InstitutionDTO {
+
+    private Long id;
+
+    @NotBlank(message = "Nome é obrigatório")
+    @Size(max = 150, message = "Nome deve possuir no máximo 150 caracteres")
+    private String nome;
+
+    @NotBlank(message = "Sigla é obrigatória")
+    @Size(max = 20, message = "Sigla deve possuir no máximo 20 caracteres")
+    private String sigla;
+
+    @Size(max = 100, message = "Cidade deve possuir no máximo 100 caracteres")
+    private String cidade;
+
+    @Pattern(
+        regexp = "^[A-Za-z]{2}$",
+        message = "Estado deve possuir exatamente duas letras"
+    )
+    private String estado;
+
+    private Boolean ativo;
+
+    private LocalDateTime dataCadastro;
+
+    public InstitutionDTO(Institution entity) {
+        this.id = entity.getId();
+        this.nome = entity.getNome();
+        this.sigla = entity.getSigla();
+        this.cidade = entity.getCidade();
+        this.estado = entity.getEstado();
+        this.ativo = entity.getAtivo();
+        this.dataCadastro = entity.getDataCadastro();
+    }
+}
+
+3. Repository
+
+package br.edu.ufrb.rascomp.repository;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import br.edu.ufrb.rascomp.model.Institution;
+
+@Repository
+public interface InstitutionRepository
+        extends JpaRepository<Institution, Long> {
+
+    Optional<Institution> findBySiglaIgnoreCase(String sigla);
+
+    boolean existsBySiglaIgnoreCase(String sigla);
+
+    boolean existsBySiglaIgnoreCaseAndIdNot(String sigla, Long id);
+
+    List<Institution> findByAtivoTrueOrderByNomeAsc();
+
+    List<Institution> findAllByOrderByNomeAsc();
+}
+
+4. Service
+
+package br.edu.ufrb.rascomp.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.edu.ufrb.rascomp.dto.InstitutionDTO;
+import br.edu.ufrb.rascomp.model.Institution;
+import br.edu.ufrb.rascomp.repository.InstitutionRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class InstitutionService {
+
+    private final InstitutionRepository institutionRepository;
+
+    @Transactional
+    public InstitutionDTO criar(InstitutionDTO dto) {
+        normalizar(dto);
+        validarSiglaDuplicada(dto.getSigla());
+
+        Institution institution = new Institution();
+        preencherInstitution(institution, dto);
+        institution.setAtivo(
+                dto.getAtivo() != null ? dto.getAtivo() : true
+        );
+
+        Institution salva = institutionRepository.save(institution);
+
+        return new InstitutionDTO(salva);
+    }
+
+    @Transactional(readOnly = true)
+    public List<InstitutionDTO> listarTodos() {
+        return institutionRepository
+                .findAllByOrderByNomeAsc()
+                .stream()
+                .map(InstitutionDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<InstitutionDTO> listarAtivas() {
+        return institutionRepository
+                .findByAtivoTrueOrderByNomeAsc()
+                .stream()
+                .map(InstitutionDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public InstitutionDTO buscarPorId(Long id) {
+        return new InstitutionDTO(buscarEntidade(id));
+    }
+
+    @Transactional(readOnly = true)
+    public InstitutionDTO buscarPorSigla(String sigla) {
+        Institution institution = institutionRepository
+                .findBySiglaIgnoreCase(sigla.trim())
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Instituição não encontrada com a sigla: "
+                                        + sigla
+                        )
+                );
+
+        return new InstitutionDTO(institution);
+    }
+
+    @Transactional
+    public InstitutionDTO atualizar(Long id, InstitutionDTO dto) {
+        Institution institution = buscarEntidade(id);
+
+        normalizar(dto);
+        validarSiglaDuplicadaNaAtualizacao(dto.getSigla(), id);
+
+        preencherInstitution(institution, dto);
+
+        if (dto.getAtivo() != null) {
+            institution.setAtivo(dto.getAtivo());
+        }
+
+        Institution atualizada = institutionRepository.save(institution);
+
+        return new InstitutionDTO(atualizada);
+    }
+
+    @Transactional
+    public void deletar(Long id) {
+        Institution institution = buscarEntidade(id);
+        institution.setAtivo(false);
+        institutionRepository.save(institution);
+    }
+
+    @Transactional
+    public InstitutionDTO reativar(Long id) {
+        Institution institution = buscarEntidade(id);
+        institution.setAtivo(true);
+
+        Institution reativada = institutionRepository.save(institution);
+
+        return new InstitutionDTO(reativada);
+    }
+
+    private Institution buscarEntidade(Long id) {
+        return institutionRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Instituição não encontrada com o id: " + id
+                        )
+                );
+    }
+
+    private void validarSiglaDuplicada(String sigla) {
+        if (institutionRepository.existsBySiglaIgnoreCase(sigla)) {
+            throw new IllegalArgumentException(
+                    "Já existe uma instituição cadastrada com a sigla: "
+                            + sigla
+            );
+        }
+    }
+
+    private void validarSiglaDuplicadaNaAtualizacao(
+            String sigla,
+            Long id) {
+
+        if (institutionRepository
+                .existsBySiglaIgnoreCaseAndIdNot(sigla, id)) {
+
+            throw new IllegalArgumentException(
+                    "Já existe outra instituição cadastrada com a sigla: "
+                            + sigla
+            );
+        }
+    }
+
+    private void normalizar(InstitutionDTO dto) {
+        dto.setNome(dto.getNome().trim());
+        dto.setSigla(dto.getSigla().trim().toUpperCase());
+
+        if (dto.getCidade() != null) {
+            dto.setCidade(dto.getCidade().trim());
+        }
+
+        if (dto.getEstado() != null) {
+            dto.setEstado(dto.getEstado().trim().toUpperCase());
+        }
+    }
+
+    private void preencherInstitution(
+            Institution institution,
+            InstitutionDTO dto) {
+
+        institution.setNome(dto.getNome());
+        institution.setSigla(dto.getSigla());
+        institution.setCidade(dto.getCidade());
+        institution.setEstado(dto.getEstado());
+    }
+}
+
+5. Controller
+
+package br.edu.ufrb.rascomp.controller;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import br.edu.ufrb.rascomp.dto.InstitutionDTO;
+import br.edu.ufrb.rascomp.service.InstitutionService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/v1/instituicoes")
+@RequiredArgsConstructor
+public class InstitutionController {
+
+    private final InstitutionService institutionService;
+
+    @PostMapping
+    public ResponseEntity<InstitutionDTO> criar(
+            @Valid @RequestBody InstitutionDTO dto) {
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(institutionService.criar(dto));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<InstitutionDTO>> listar(
+            @RequestParam(defaultValue = "false") boolean apenasAtivas) {
+
+        if (apenasAtivas) {
+            return ResponseEntity.ok(
+                    institutionService.listarAtivas()
+            );
+        }
+
+        return ResponseEntity.ok(
+                institutionService.listarTodos()
+        );
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<InstitutionDTO> buscarPorId(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                institutionService.buscarPorId(id)
+        );
+    }
+
+    @GetMapping("/por-sigla")
+    public ResponseEntity<InstitutionDTO> buscarPorSigla(
+            @RequestParam String sigla) {
+
+        return ResponseEntity.ok(
+                institutionService.buscarPorSigla(sigla)
+        );
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<InstitutionDTO> atualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody InstitutionDTO dto) {
+
+        return ResponseEntity.ok(
+                institutionService.atualizar(id, dto)
+        );
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(
+            @PathVariable Long id) {
+
+        institutionService.deletar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/reativar")
+    public ResponseEntity<InstitutionDTO> reativar(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                institutionService.reativar(id)
+        );
+    }
+}
+
+6. Endpoints
+
+POST   /api/v1/instituicoes
+GET    /api/v1/instituicoes
+GET    /api/v1/instituicoes?apenasAtivas=true
+GET    /api/v1/instituicoes/{id}
+GET    /api/v1/instituicoes/por-sigla?sigla=UFRB
+PUT    /api/v1/instituicoes/{id}
+DELETE /api/v1/instituicoes/{id}
+PATCH  /api/v1/instituicoes/{id}/reativar
+
+7. Payload para criação
+
+{
+  "nome": "Universidade Federal do Recôncavo da Bahia",
+  "sigla": "UFRB",
+  "cidade": "Cruz das Almas",
+  "estado": "BA",
+  "ativo": true
+}
+
+8. Payload para atualização
+
+{
+  "nome": "Universidade Federal do Recôncavo da Bahia",
+  "sigla": "UFRB",
+  "cidade": "Cruz das Almas",
+  "estado": "BA",
+  "ativo": true
+}
+
+9. Ordem de implementação
+
+1. Institution
+2. InstitutionDTO
+3. InstitutionRepository
+4. InstitutionService
+5. InstitutionController
+6. adicionar instituições de teste ao DataInitializer
+7. executar testes no Postman
