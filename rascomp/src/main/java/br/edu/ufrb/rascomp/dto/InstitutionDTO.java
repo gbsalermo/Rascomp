@@ -24,7 +24,7 @@ public class InstitutionDTO {
 	private String nome;
 	
 	@NotBlank(message = "Sigla é obrigatória")
-	@Size(max = 150, message = "Sigla deve possuir no máximo 20 caracteres")
+	@Size(max = 20, message = "Sigla deve possuir no máximo 20 caracteres")
 	private String sigla;
 	
 	@Size(max = 100, message = "Cidade deve possuir no máximo 100 caracteres")

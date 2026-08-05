@@ -72,7 +72,7 @@ public class InstitutionService {
 		Institution institution = buscarEntidade(id);
 		
 		normalizar(dto);
-		validarSiglaDuplicadaNaAtualização(dto.getSigla(), id);
+		validarSiglaDuplicadaNaAtualizacao(dto.getSigla(), id);
 		preencherInstitution(institution, dto);
 		
 		if(dto.getAtivo() != null) {
@@ -114,7 +114,7 @@ public class InstitutionService {
 					"Já existe uma instituição cadastrada com a sigla: " + sigla);		
 		}}
 		
-	private void validarSiglaDuplicadaNaAtualização(String sigla, Long id) {
+	private void validarSiglaDuplicadaNaAtualizacao(String sigla, Long id) {
 		
 		if(institutionRepository.existsBySiglaIgnoreCaseAndIdNot(sigla, id)) {
 			
