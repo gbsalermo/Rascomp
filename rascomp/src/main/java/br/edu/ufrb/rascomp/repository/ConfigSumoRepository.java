@@ -8,10 +8,9 @@ import org.springframework.stereotype.Repository;
 import br.edu.ufrb.rascomp.model.ConfigSumo;
 
 @Repository
-public interface ConfigSumoRepository extends JpaRepository<ConfigSumo, Long>{
-	
-	Optional<ConfigSumo> findByCategoryId(Long competitionCategoryId);
-	
-	boolean existsByCompetitionCategoryId(Long competitionCategoryId);
+public interface ConfigSumoRepository extends JpaRepository<ConfigSumo, Long> {
 
+    Optional<ConfigSumo> findByCompetitionCategoryId(Long competitionCategoryId);
+
+    boolean existsByCompetitionCategoryId(Long competitionCategoryId);
 }
