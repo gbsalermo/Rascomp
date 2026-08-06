@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import br.edu.ufrb.rascomp.model.Competitor;
 
 @Repository
-public interface CompetitorRepository extends JpaRepository<CompetitorRepository, Long>{
+public interface CompetitorRepository extends JpaRepository<Competitor, Long>{
 
 	
 	List<Competitor> findAllByOrderByNomeAsc();
