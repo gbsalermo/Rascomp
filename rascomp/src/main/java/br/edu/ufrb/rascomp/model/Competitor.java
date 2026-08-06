@@ -20,35 +20,39 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "teams")
+@Table(name = "competitors")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Team  implements Serializable{
-
+public class Competitor implements Serializable {
+	
 	private static final long serialVersionUID = 1L;
+	
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
-	
-	@Column(nullable = false, length = 120)
+	@Column(nullable = false, length = 150)
 	private String nome;
 	
+	@Column(nullable = false, unique = true, length = 150)
+	private String email;
+	
+	@Column(length = 20)
+	private String telefone;
 	
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "institution_id", nullable = false)
-	private Institution institution;
-
+	@JoinColumn(name = "team_id", nullable = false)
+	private Team team;
 	
-
 	@Column(nullable = false)
 	private Boolean ativo = true;
-	
 	
 	@CreationTimestamp
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime dataCadastro;
+	
+	
 }
