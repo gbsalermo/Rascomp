@@ -21,34 +21,39 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "robots", uniqueConstraints = {@UniqueConstraint(name = "uk_robot_nome_team", columnNames = {"nome", "team_id"})})
+@Table(
+    name = "robots",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_robot_nome_team",
+        columnNames = {"nome", "team_id"}
+    )
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Robot implements Serializable{
+public class Robot implements Serializable {
 
-	private static final long seriaVersionUID = 1L;
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	@Column(nullable = false, length = 120)
-	private String nome; 
-	
-	@Column(length = 500)
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 120)
+    private String nome;
+
+    @Column(length = 500)
     private String descricao;
-	
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
-	
-	@Column(nullable = false)
+
+    @Column(nullable = false)
     private Boolean ativo = true;
-	
-	@CreationTimestamp
+
+    @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime dataCadastro;
-	
 }
