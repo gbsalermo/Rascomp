@@ -26,11 +26,11 @@ public class TeamDTO {
 	
 	
 	@NotNull
-	private Institution institutionId;
+	private Long institutionId;
 	
-	private Institution institutionNome;
+	private String institutionNome;
 	
-	private Institution institutionSigla;
+	private String institutionSigla;
 	
 	private Boolean ativo;
 	
@@ -41,9 +41,9 @@ public class TeamDTO {
 		
 		this.id = entity.getId();
 		this.nome = entity.getNome();
-		this.institutionId = entity.getInstitutionId();
-		this.institutionNome = entity.getInstitutionNome();
-		this.institutionSigla = entity.getInstitutionSigla();
+		this.institutionId = entity.getInstitution().getId();
+		this.institutionNome = entity.getInstitution().getNome();
+		this.institutionSigla = entity.getInstitution().getSigla();
 		this.ativo = entity.getAtivo();
 		this.dataCadastro = entity.getDataCadastro();
 		

@@ -26,7 +26,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Team  implements Serializable{
 
 	private static final long serialVersionUID = 1L;
@@ -42,17 +41,10 @@ public class Team  implements Serializable{
 	
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "institution_id", nullable = false)
-	private Institution institutionId;
+	private Institution institution;
+
 	
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "institution_Nome", nullable = false)
-	private Institution institutionNome;
-	
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "institution_Sigla", nullable = false)
-	private Institution institutionSigla;
-	
-	
+
 	@Column(nullable = true)
 	private Boolean ativo;
 	

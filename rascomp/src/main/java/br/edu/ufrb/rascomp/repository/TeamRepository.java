@@ -13,8 +13,12 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
 	List<Team> findAllByOrderByNomeAsc();
 	
 	List<Team> findByAtivoTrueOrderByNomeAsc();
-
-	List<Team> findByInstitutionId();
 	
-	List<Team> findByAtivoTrueAndInstitutionId();
+	List<Team> findByInstitutionIdOrderByNomeAsc(Long institutionId);
+
+	List<Team> findByInstitutionIdAndAtivoTrueOrderByNomeAsc(Long institutionId);
+
+    boolean existsByNomeIgnoreCaseAndInstitutionId(String nome, Long institutionId);
+
+    boolean existsByNomeIgnoreCaseAndInstitutionIdAndIdNot(String nome, Long institutionId,Long id);
 }
