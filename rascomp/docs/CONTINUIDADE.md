@@ -1,6 +1,6 @@
 # Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-05T11:48:00-03:00
+Última atualização: 2026-08-06T11:20:00-03:00
 
 ## 1. Objetivo
 
@@ -22,9 +22,7 @@ Plataforma para gestão de competições de robôs da RAS-UFRB, com backend Spri
 
 O mantenedor implementa e realiza os commits.
 
-O assistente orienta, revisa e prepara referências conceituais.
-
-A partir de 2026-08-05, os códigos de referência não devem conter implementações completas prontas para copiar. O material deve priorizar raciocínio e repetição do padrão do projeto.
+O assistente orienta, revisa e prepara referências conceituais ou implementações completas quando isso for solicitado explicitamente para acelerar o projeto.
 
 O único arquivo local de referência será:
 
@@ -32,23 +30,7 @@ O único arquivo local de referência será:
 
 Esse arquivo deve permanecer no `.gitignore` e não deve ser versionado.
 
-Para cada novo CRUD, a referência deve apresentar:
-
-- CRUD semelhante já existente no projeto;
-- responsabilidade da entidade;
-- atributos e tipos;
-- anotações da classe;
-- anotações de cada atributo;
-- relacionamentos e cardinalidades;
-- regras de negócio;
-- métodos esperados no Repository;
-- responsabilidades e validações do Service;
-- endpoints e anotações do Controller;
-- estrutura esperada do DTO;
-- observações e pontos de atenção;
-- checklist de implementação.
-
-Não incluir classes completas, salvo quando o usuário pedir explicitamente uma correção pontual.
+Por padrão, as referências devem priorizar raciocínio, regras, relacionamentos, métodos esperados e checklist. Classes completas podem ser fornecidas quando o usuário pedir explicitamente um CRUD pronto para implementar.
 
 Toda etapa concluída deve ser registrada neste documento.
 
@@ -128,7 +110,39 @@ Regras implementadas:
 - reativação;
 - atualização com validação de duplicidade da sigla.
 
-Próximo CRUD: **Team**.
+### CRUD `Team`
+
+Status: **implementado — ajustes finais e testes pendentes**
+
+Arquivos existentes:
+
+- `Team`
+- `TeamDTO`
+- `TeamRepository`
+- `TeamService`
+- `TeamController`
+
+Regras implementadas:
+
+- relacionamento `ManyToOne` com `Institution`;
+- instituição obrigatória e validada no Service;
+- bloqueio de vínculo com instituição inativa;
+- nome único dentro da mesma instituição;
+- listagem completa e apenas de equipes ativas;
+- filtro por instituição;
+- exclusão lógica;
+- reativação condicionada à instituição ativa;
+- atualização com validação de duplicidade.
+
+Ajustes ainda recomendados antes dos testes:
+
+- usar tabela `teams` em minúsculo;
+- definir `ativo` como `nullable = false`;
+- inicializar `ativo` com `true` ou garantir sempre seu preenchimento pelo Service;
+- remover import não utilizado de `Builder` em `Team`;
+- executar a aplicação para validar os métodos derivados do `TeamRepository`.
+
+Próximo CRUD: **Competitor**.
 
 ## 5. Entidades futuras
 
@@ -144,7 +158,7 @@ Responsabilidade:
 
 ## 6. Ordem de implementação
 
-1. Implementar `Team`.
+1. Ajustar e testar `Team`.
 2. Implementar `Competitor`.
 3. Implementar `Robot`.
 4. Implementar `Competition`.
@@ -157,7 +171,7 @@ Responsabilidade:
 11. Implementar segurança JWT.
 12. Preparar PostgreSQL, Docker e Flyway.
 
-Os testes manuais de `CompetitionCategory`, `ConfigSumo`, `ConfigFollow` e `Institution` continuam pendentes e devem ser executados antes de considerar esses módulos validados.
+Os testes manuais de `CompetitionCategory`, `ConfigSumo`, `ConfigFollow`, `Institution` e `Team` continuam pendentes e devem ser executados antes de considerar esses módulos validados.
 
 ## 7. Backlog de regras futuras
 
@@ -193,4 +207,6 @@ Os testes manuais de `CompetitionCategory`, `ConfigSumo`, `ConfigFollow` e `Inst
 - 2026-08-03 — CRUD `CompetitionCategory` implementado.
 - 2026-08-04 — `ConfigSumo`, `ConfigFollow` e futura `TentativaSeguidorLinha` planejados e implementados parcialmente.
 - 2026-08-05 — CRUD `Institution` concluído.
-- 2026-08-05 — Estratégia de códigos de referência alterada para orientação conceitual, sem código completo para copiar.
+- 2026-08-05 — Estratégia de códigos de referência alterada para orientação conceitual.
+- 2026-08-06 — CRUD `Team` implementado, com ajustes finais e testes pendentes.
+- 2026-08-06 — Próximo módulo definido: `Competitor`.
