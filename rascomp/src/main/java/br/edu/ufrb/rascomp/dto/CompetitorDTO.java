@@ -54,6 +54,7 @@ public class CompetitorDTO {
 		this.institutionId = entity.getTeam().getInstitution().getId();
 		this.institutionNome = entity.getTeam().getInstitution().getNome();
 		this.institutionSigla = entity.getTeam().getInstitution().getSigla();
+		this.ativo = entity.getAtivo();
 		this.dataCadastro = entity.getDataCadastro();
 	}
 }
