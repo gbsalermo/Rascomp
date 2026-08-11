@@ -30,6 +30,11 @@ public class MatchController {
     public ResponseEntity<MatchDTO> criar(@Valid @RequestBody MatchDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(matchService.criar(dto));
     }
+    
+    @GetMapping
+    public ResponseEntity<List<MatchDTO>> listar() {
+        return ResponseEntity.ok(matchService.listarTodos());
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<MatchDTO> buscarPorId(@PathVariable Long id) {

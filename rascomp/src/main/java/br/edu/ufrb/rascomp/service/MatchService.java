@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.edu.ufrb.rascomp.dto.CompetitorDTO;
 import br.edu.ufrb.rascomp.dto.MatchDTO;
 import br.edu.ufrb.rascomp.model.Bracket;
 import br.edu.ufrb.rascomp.model.Match;
@@ -37,6 +38,15 @@ public class MatchService {
         match.setStatus(dto.getStatus() != null ? dto.getStatus() : definirStatusInicial(a, b));
         match.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
         return new MatchDTO(matchRepository.save(match));
+    }
+    
+    @Transactional(readOnly = true)
+    public List<MatchDTO> listarTodos() {
+        return matchRepository
+                .findAll()
+                .stream()
+                .map(MatchDTO::new)
+                .toList();
     }
 
     @Transactional(readOnly = true)

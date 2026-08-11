@@ -1,5 +1,7 @@
 package br.edu.ufrb.rascomp.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +39,31 @@ public class MatchResultService {
         return new MatchResultDTO(resultRepository.save(result));
     }
 
+    @Transactional(readOnly = true)
+    public List<MatchResultDTO> listarTodos() {
+        return resultRepository.findAllByOrderByIdAsc()
+                .stream()
+                .map(MatchResultDTO::new)
+                .toList();
+    }
+    
+    @Transactional(readOnly = true)
+    public List<MatchResultDTO> listarPorChaveamento(Long bracketId) {
+        return resultRepository.findByMatchBracketIdOrderByIdAsc(bracketId)
+                .stream()
+                .map(MatchResultDTO::new)
+                .toList();
+    }
+    
+    @Transactional(readOnly = true)
+    public List<MatchResultDTO> listarPorCompeticao(Long competitionId) {
+        return resultRepository
+                .findByMatchBracketCompetitionIdOrderByIdAsc(competitionId)
+                .stream()
+                .map(MatchResultDTO::new)
+                .toList();
+    }
+    
     @Transactional(readOnly = true)
     public MatchResultDTO buscarPorId(Long id) {
         return new MatchResultDTO(buscarResult(id));

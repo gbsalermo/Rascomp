@@ -1,5 +1,7 @@
 package br.edu.ufrb.rascomp.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,6 +30,25 @@ public class MatchResultController {
         return ResponseEntity.status(HttpStatus.CREATED).body(resultService.criar(dto));
     }
 
+    @GetMapping
+    public ResponseEntity<List<MatchResultDTO>> listarTodos() {
+        return ResponseEntity.ok(resultService.listarTodos());
+    }
+    
+    @GetMapping("/por-chaveamento")
+    public ResponseEntity<List<MatchResultDTO>> listarPorChaveamento(
+            @RequestParam Long bracketId) {
+        return ResponseEntity.ok(
+                resultService.listarPorChaveamento(bracketId));
+    }
+    
+    @GetMapping("/por-competicao")
+    public ResponseEntity<List<MatchResultDTO>> listarPorCompeticao(
+            @RequestParam Long competitionId) {
+        return ResponseEntity.ok(
+                resultService.listarPorCompeticao(competitionId));
+    }
+    
     @GetMapping("/{id}")
     public ResponseEntity<MatchResultDTO> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(resultService.buscarPorId(id));
