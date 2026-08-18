@@ -4,5 +4,6 @@ public enum StatusRegistration {
     PENDENTE,
     APROVADA,
     REJEITADA,
-    CANCELADA
+    CANCELADA,
+    DESCLASSIFICADA
 }
