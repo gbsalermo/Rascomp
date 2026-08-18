@@ -47,7 +47,7 @@ public class BracketGenerationService {
         }
 
         Bracket bracket = criarBracket(competition, category);
-        gerarPrimeiraRodada(bracket, participantes);
+        gerarArvoreCompleta(bracket, participantes);
 
         bracket.setStatus(StatusBracket.GERADO);
         return new BracketDTO(bracketRepository.save(bracket));
@@ -71,11 +71,39 @@ public class BracketGenerationService {
         return bracketRepository.save(bracket);
     }
 
-    private void gerarPrimeiraRodada(Bracket bracket, List<Registration> participantes) {
+    private void gerarArvoreCompleta(Bracket bracket, List<Registration> participantes) {
         int tamanhoChave = proximaPotenciaDeDois(participantes.size());
+        int totalRodadas = calcularTotalRodadas(tamanhoChave);
+
+        List<Match> partidas = new ArrayList<>();
+        partidas.addAll(criarPrimeiraRodada(bracket, participantes, tamanhoChave));
+
+        for (int rodada = 2; rodada <= totalRodadas; rodada++) {
+            int quantidadePartidas = tamanhoChave / (int) Math.pow(2, rodada);
+
+            for (int ordem = 1; ordem <= quantidadePartidas; ordem++) {
+                Match match = new Match();
+                match.setBracket(bracket);
+                match.setRodada(rodada);
+                match.setOrdem(ordem);
+                match.setRegistrationA(null);
+                match.setRegistrationB(null);
+                match.setStatus(StatusMatch.AGUARDANDO_PARTICIPANTES);
+                match.setAtivo(true);
+                partidas.add(match);
+            }
+        }
+
+        matchRepository.saveAll(partidas);
+    }
+
+    private List<Match> criarPrimeiraRodada(
+            Bracket bracket,
+            List<Registration> participantes,
+            int tamanhoChave) {
+
         int quantidadePartidas = tamanhoChave / 2;
         int quantidadeByes = tamanhoChave - participantes.size();
-
         List<Match> partidas = new ArrayList<>();
         int indiceParticipante = 0;
 
@@ -101,7 +129,7 @@ public class BracketGenerationService {
             partidas.add(match);
         }
 
-        matchRepository.saveAll(partidas);
+        return partidas;
     }
 
     private int proximaPotenciaDeDois(int quantidade) {
@@ -110,6 +138,18 @@ public class BracketGenerationService {
             potencia *= 2;
         }
         return potencia;
+    }
+
+    private int calcularTotalRodadas(int tamanhoChave) {
+        int rodadas = 0;
+        int tamanhoAtual = tamanhoChave;
+
+        while (tamanhoAtual > 1) {
+            tamanhoAtual /= 2;
+            rodadas++;
+        }
+
+        return rodadas;
     }
 
     private void validarAtivos(Competition competition, CompetitionCategory category) {
