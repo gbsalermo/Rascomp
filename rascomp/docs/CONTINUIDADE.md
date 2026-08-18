@@ -1,6 +1,6 @@
 # Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-06T20:38:00-03:00
+Última atualização: 2026-08-17T22:59:00-03:00
 
 ## 1. Objetivo
 
@@ -42,246 +42,121 @@ Status: **concluído**
 
 - estrutura inicial criada;
 - H2 configurado como banco de desenvolvimento;
-- DataInitializer disponível para dados de teste;
-- PostgreSQL, Flyway, Docker, JWT e Camunda planejados para etapas posteriores.
+- DataInitializer expandido com cenário integrado para testes;
+- aplicação já subiu corretamente com os relacionamentos JPA e dados de teste;
+- PostgreSQL, Flyway, Docker e JWT permanecem para etapas posteriores.
 
-### `CompetitionCategory`, `ConfigSumo` e `ConfigFollow`
+### CRUDs principais
 
-Status: **implementados — testes pendentes**
+Status: **implementados e smoke tests manuais executados**
 
-Decisões principais:
+Módulos:
 
-- categoria define a modalidade;
-- `ConfigSumo` e `ConfigFollow` são configurações dependentes da categoria;
-- exclusão e validações específicas permanecem conforme o padrão já implementado.
-
-### `Institution`
-
-Status: **implementado — testes pendentes**
-
-Regras principais:
-
-- sigla única;
-- normalização de dados;
-- exclusão lógica e reativação;
-- listagem completa e somente ativas.
-
-### `Team`
-
-Status: **implementado — testes pendentes**
-
-Regras principais:
-
-- relacionamento `ManyToOne` com `Institution`;
-- nome único dentro da instituição;
-- instituição deve estar ativa;
-- exclusão lógica e reativação.
-
-### `Competitor`
-
-Status: **implementado — testes pendentes**
-
-Regras principais:
-
-- relacionamento `ManyToOne` com `Team`;
-- e-mail único e normalizado;
-- equipe e instituição devem estar ativas;
-- exclusão lógica e reativação.
-
-### `Robot`
-
-Status: **implementado — testes pendentes**
-
-Regras principais:
-
-- relacionamento `ManyToOne` com `Team`;
-- nome único dentro da equipe;
-- equipe e instituição devem estar ativas;
-- categoria não é armazenada diretamente no robô;
-- categoria será definida por meio de `Registration`;
-- exclusão lógica e reativação.
-
-Correção realizada:
-
-- `serialVersionUID` corrigido na entidade `Robot`.
-
-### `Competition`
-
-Status: **implementado — testes pendentes**
-
-Arquivos:
-
-- `Competition`
-- `CompetitionDTO`
-- `CompetitionRepository`
-- `CompetitionService`
-- `CompetitionController`
-- `StatusCompetition`
-
-Regras principais:
-
-- período de inscrições;
-- período de realização;
-- validação da ordem das datas;
-- nome único;
-- status da competição;
-- exclusão lógica e reativação;
-- listagem por status.
-
-### `Registration`
-
-Status: **implementado — testes pendentes**
-
-Arquivos:
-
-- `Registration`
-- `RegistrationDTO`
-- `RegistrationRepository`
-- `RegistrationService`
-- `RegistrationController`
-- `StatusRegistration`
-
-Relacionamentos:
-
-- `Competition`;
-- `CompetitionCategory`;
+- `CompetitionCategory`, `ConfigSumo`, `ConfigFollow`;
+- `Institution`;
 - `Team`;
-- `Robot`.
+- `Competitor`;
+- `Robot`;
+- `Competition`;
+- `Registration`;
+- `TentativaSeguidorLinha`;
+- `Bracket`;
+- `Match`;
+- `MatchResult`.
 
-Regras principais:
+Decisões principais mantidas:
 
-- competição, categoria, equipe, instituição e robô devem estar ativos;
-- criação permitida apenas com inscrições abertas e dentro do período configurado;
-- robô deve pertencer à equipe informada;
-- um robô não pode ser inscrito duas vezes na mesma categoria da mesma competição;
-- exclusão lógica altera o status para `CANCELADA`;
-- reativação retorna a inscrição para `PENDENTE`.
-
-### `TentativaSeguidorLinha`
-
-Status: **implementado — testes pendentes**
-
-Arquivos:
-
-- `TentativaSeguidorLinha`
-- `TentativaSeguidorLinhaDTO`
-- `TentativaSeguidorLinhaRepository`
-- `TentativaSeguidorLinhaService`
-- `TentativaSeguidorLinhaController`
-
-Regras principais:
-
-- pertence a uma `Registration`;
-- inscrição deve estar ativa e aprovada;
-- categoria deve possuir modalidade `FOLLOW_LINE`;
-- combinação de inscrição, tomada e número da tentativa é única;
-- armazena tempo, checkpoints, penalidade, conclusão e validade;
-- exclusão física adotada por ser registro dependente da inscrição.
-
-Pendente para evolução:
-
-- validar quantidade máxima de tomadas e tentativas usando `ConfigFollow`;
-- validar tempo máximo e quantidade máxima de checkpoints;
-- criar serviço de melhor tempo e ranking.
-
-### `Bracket`
-
-Status: **implementado — testes pendentes**
-
-Arquivos:
-
-- `Bracket`
-- `BracketDTO`
-- `BracketRepository`
-- `BracketService`
-- `BracketController`
-- `StatusBracket`
-
-Regras principais:
-
-- pertence a uma competição e categoria;
-- somente um chaveamento por competição e categoria;
-- competição e categoria devem estar ativas;
-- exclusão lógica altera o status para `CANCELADO`;
-- geração automática das partidas ainda não foi implementada.
-
-### `Match`
-
-Status: **implementado — testes pendentes**
-
-Arquivos:
-
-- `Match`
-- `MatchDTO`
-- `MatchRepository`
-- `MatchService`
-- `MatchController`
-- `StatusMatch`
-
-Regras principais:
-
-- pertence a um `Bracket`;
-- combinação de chaveamento, rodada e ordem é única;
-- participantes são inscrições aprovadas da mesma competição e categoria do chaveamento;
-- participantes devem ser diferentes;
-- permite um participante nulo para representar `BYE`;
-- exclusão lógica altera o status para `CANCELADA`.
-
-### `MatchResult`
-
-Status: **implementado — testes pendentes**
-
-Arquivos:
-
-- `MatchResult`
-- `MatchResultDTO`
-- `MatchResultRepository`
-- `MatchResultService`
-- `MatchResultController`
-
-Regras principais:
-
-- relacionamento `OneToOne` com `Match`;
-- uma partida possui no máximo um resultado;
-- vencedor deve ser um dos participantes;
-- resultado com pontos diferentes exige vencedor;
-- resultado empatado não aceita vencedor;
-- salvar resultado finaliza a partida;
-- exclusão física do resultado restaura o status inicial da partida.
-
-Pendente para evolução:
-
-- modelagem específica de rounds do Sumô;
-- avanço automático do vencedor no chaveamento;
-- tratamento de anulação, desclassificação e vitória por ausência.
-
-## 5. Decisões de modelagem
-
-- `Robot` não possui modalidade nem categoria diretamente.
-- `Registration` é o ponto de ligação entre competição, categoria, equipe e robô.
-- `TentativaSeguidorLinha` é dependente de uma inscrição aprovada.
-- `Bracket` representa um chaveamento de uma categoria dentro de uma competição.
-- `MatchResult` foi separado de `Match` para não sobrecarregar a entidade da partida.
+- `Robot` não possui modalidade/categoria diretamente;
+- `Registration` liga competição, categoria, equipe e robô;
+- `Bracket` representa o chaveamento de uma categoria dentro de uma competição;
+- `MatchResult` permanece separado de `Match`;
 - partidas aceitam participante nulo para suportar `BYE`.
-- a geração automática do chaveamento e o avanço de vencedores serão serviços específicos posteriores, não parte do CRUD básico.
 
-## 6. Próximas etapas
+### Tratamento global de exceções
 
-1. Executar compilação completa do projeto.
-2. Corrigir erros de métodos derivados ou imports encontrados durante a inicialização.
-3. Testar todos os CRUDs com H2 e Postman.
-4. Atualizar o `DataInitializer` com dados coerentes para todos os relacionamentos.
-5. Criar tratamento global de exceções.
-6. Criar testes automatizados.
-7. Implementar geração automática de chaveamento.
-8. Implementar avanço automático de vencedores.
-9. Implementar apuração e ranking do Seguidor de Linha.
-10. Implementar regras detalhadas de rounds e inspeção do Sumô.
-11. Integrar Camunda.
-12. Implementar segurança JWT.
-13. Preparar PostgreSQL, Docker e Flyway.
+Status: **etapa iniciada/conforme implementação local**
 
-## 7. Histórico resumido
+Objetivo:
+
+- substituir respostas genéricas do Spring por erros padronizados para recurso inexistente, regra de negócio, validação, parâmetros inválidos e conflitos de integridade.
+
+### `TentativaSeguidorLinha` + `ConfigFollow`
+
+Status: **implementado — testes locais pendentes**
+
+Regras agora aplicadas no `TentativaSeguidorLinhaService`:
+
+- busca obrigatória do `ConfigFollow` da categoria da inscrição;
+- tomada deve estar entre 1 e `numeroTomadas`;
+- número da tentativa deve estar entre 1 e `tentativasPorTomada`;
+- checkpoints devem estar entre 0 e `numeroCheckpoints`;
+- tentativa acima de `maxTempoSegundos` continua registrada, mas é marcada automaticamente como inválida;
+- as mesmas regras são aplicadas na criação e atualização;
+- validade final deixa de depender somente do valor enviado pelo cliente.
+
+### Ranking do Seguidor de Linha
+
+Status: **implementado — testes locais pendentes**
+
+Arquivos adicionados:
+
+- `RankingFollowDTO`;
+- `RankingFollowService`;
+- `RankingFollowController`.
+
+Regras da primeira versão:
+
+- ranking por competição e categoria;
+- categoria deve ser ativa e `FOLLOW_LINE`;
+- considera somente inscrições ativas e aprovadas;
+- considera somente tentativas válidas, concluídas e com tempo registrado;
+- tempo final = tempo bruto + penalidade;
+- seleciona a melhor tentativa de cada inscrição;
+- ordena por menor tempo final;
+- em empate, usa menor tempo bruto e depois `registrationId`;
+- atribui posição sequencial;
+- endpoint: `GET /api/v1/ranking/seguidor-linha?competitionId={id}&categoryId={id}`.
+
+### `Bracket`, `Match` e `MatchResult`
+
+Status: **CRUD implementado; automações pendentes**
+
+Ainda faltam:
+
+- geração automática do chaveamento;
+- geração das rodadas futuras;
+- avanço automático de vencedores;
+- tratamento automático de `BYE`;
+- regras específicas de Sumô.
+
+### Sumô
+
+Status: **regras avançadas pendentes**
+
+Próxima modelagem esperada:
+
+- inspeção do robô por inscrição;
+- limite de tentativas de inspeção;
+- peso máximo conforme `ConfigSumo`;
+- rounds por partida;
+- consolidação automática do vencedor;
+- desclassificação, ausência e desempate.
+
+## 5. Próximas etapas
+
+1. Compilar/subir o projeto após as ETAPAS A e B.
+2. Testar limites de `ConfigFollow` via Postman.
+3. Testar ranking do Seguidor de Linha com múltiplos robôs e penalidades.
+4. Criar testes automatizados para as regras já implementadas.
+5. Implementar geração automática de chaveamento.
+6. Implementar geração da árvore completa de partidas.
+7. Implementar avanço automático de vencedores e `BYE`.
+8. Implementar inspeção e rounds do Sumô.
+9. Integrar Camunda aos fluxos que realmente precisarem de processo/orquestração.
+10. Implementar segurança JWT.
+11. Preparar PostgreSQL, Docker e Flyway.
+
+## 6. Histórico resumido
 
 - 2026-07-28 — Documento inicial e planejamento do backend.
 - 2026-07-29 — Projeto renomeado para Rascomp e package root ajustado.
@@ -290,4 +165,6 @@ Pendente para evolução:
 - 2026-08-05 — CRUD `Institution` concluído.
 - 2026-08-06 — CRUDs `Team`, `Competitor` e `Robot` implementados.
 - 2026-08-06 — CRUDs `Competition`, `Registration`, `TentativaSeguidorLinha`, `Bracket`, `Match` e `MatchResult` implementados.
-- 2026-08-06 — Todos os módulos permanecem com testes locais pendentes.
+- 2026-08-10 — aplicação validada subindo com H2, JPA, Camunda e DataInitializer.
+- 2026-08-17 — `ConfigFollow` passou a validar `TentativaSeguidorLinha`.
+- 2026-08-17 — primeira versão do ranking do Seguidor de Linha implementada.
