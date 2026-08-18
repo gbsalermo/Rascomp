@@ -1,12 +1,12 @@
 # Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-17T23:20:00-03:00
+Última atualização: 2026-08-17T23:28:00-03:00
 
 ## 1. Objetivo e prazo
 
 Plataforma para gestão de competições de robôs da RAS-UFRB, com backend Spring Boot, inscrições, equipes, robôs, categorias, resultados, chaveamentos e integração futura com Camunda.
 
-Meta imediata: concluir o projeto base com **backend + dois frontends até 30/08/2026**. A prioridade é fechar o contrato funcional do backend e ir rapidamente para os frontends.
+Meta imediata: concluir o projeto base com **backend + dois frontends até 30/08/2026**. A prioridade é congelar rapidamente o contrato funcional do backend e iniciar os frontends.
 
 ## 2. Stack consolidada
 
@@ -30,34 +30,21 @@ Spring Boot
     -> MySQL
 ```
 
-Já aplicado:
+Migrations atuais:
 
-- `mysql-connector-j`;
-- `flyway-mysql`;
-- MySQL configurado no `application.properties`;
-- `ddl-auto=validate`;
-- Flyway habilitado;
-- `V1__create_rascomp_schema.sql` com schema base;
-- `V2__create_inspecoes_sumo.sql` para inspeções do Sumô;
-- tabela `Institution` normalizada para `institutions`.
-
-Configuração padrão:
-
-```text
-DB_URL=jdbc:mysql://localhost:3306/rascomp?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bahia
-DB_USERNAME=root
-DB_PASSWORD=
-```
+- `V1__create_rascomp_schema.sql` — schema base;
+- `V2__create_inspecoes_sumo.sql` — inspeção do Sumô;
+- `V3__create_rounds_sumo.sql` — rounds do Sumô.
 
 ## 3. Estratégia de desenvolvimento e testes
 
-Os testes completos serão executados depois do fechamento das regras avançadas restantes para evitar retrabalho durante a corrida para os frontends.
+Os testes completos serão executados depois do fechamento das regras avançadas para evitar retrabalho antes dos frontends.
 
-Arquivo de referência dos testes:
+Arquivo de testes:
 
 `docs/TESTES_POSTMAN.md`
 
-Arquivo local não versionado de referência de código:
+Arquivo local não versionado de referência:
 
 `docs/CODIGOS_REFERENCIA.md`
 
@@ -65,7 +52,7 @@ Arquivo local não versionado de referência de código:
 
 ### CRUDs principais
 
-Status: **implementados**
+Status: **implementados**.
 
 - `CompetitionCategory`
 - `ConfigSumo`
@@ -81,169 +68,178 @@ Status: **implementados**
 - `Match`
 - `MatchResult`
 
-### Tratamento global de exceções
-
-Status: **implementação/conferência final pendente na bateria de testes**.
-
 ### ETAPA A — ConfigFollow validando TentativaSeguidorLinha
 
 Status: **implementado — testes finais pendentes**.
-
-Regras:
-
-- limites de tomadas;
-- tentativas por tomada;
-- checkpoints;
-- tempo máximo;
-- tentativa acima do tempo permanece registrada, mas é inválida.
 
 ### ETAPA B — RankingFollowService
 
 Status: **implementado — testes finais pendentes**.
 
-Regras:
-
-- ranking por competição/categoria;
-- somente inscrições ativas e aprovadas;
-- somente tentativas válidas e concluídas;
-- tempo final = tempo bruto + penalidade;
-- melhor tentativa de cada inscrição;
-- desempate por tempo final, tempo bruto e `registrationId`.
-
-Endpoint:
-
-```text
-GET /api/v1/ranking/seguidor-linha?competitionId={id}&categoryId={id}
-```
-
 ### ETAPA C — geração automática da primeira rodada
 
 Status: **implementado — testes finais pendentes**.
 
-Endpoint:
-
-```text
-POST /api/v1/chaveamentos/gerar?competitionId={id}&categoryId={id}
-```
-
-Regras:
-
-- somente inscrições ativas e `APROVADA`;
-- mínimo de 2 participantes;
-- próxima potência de 2 define o tamanho da chave;
-- quantidade de BYEs = tamanho da chave - quantidade de participantes;
-- participantes são embaralhados antes da montagem, sorteando também quem recebe BYE;
-- BYE é ausência de adversário na chave, diferente de W.O. futuro.
+- próxima potência de dois define o tamanho da chave;
+- BYEs completam a chave;
+- participantes são sorteados antes da montagem.
 
 ### ETAPA D — árvore completa do chaveamento
 
 Status: **implementado — testes finais pendentes**.
 
-- todas as rodadas até a final são criadas de uma vez;
-- rodadas futuras começam `AGUARDANDO_PARTICIPANTES`;
-- estrutura pronta para receber vencedores automaticamente.
+- todas as rodadas até a final são criadas;
+- rodadas futuras começam `AGUARDANDO_PARTICIPANTES`.
 
 ### ETAPA E — avanço automático de vencedor + BYE
 
 Status: **implementado — testes finais pendentes**.
 
-Novo serviço:
-
-- `BracketProgressionService`.
-
-Regras:
-
-- partida de ordem ímpar alimenta `registrationA` da próxima partida;
-- partida de ordem par alimenta `registrationB`;
-- próxima ordem calculada por `(ordem + 1) / 2`;
-- quando somente um slot está preenchido, status permanece `AGUARDANDO_PARTICIPANTES`;
-- quando ambos os slots são preenchidos, status passa para `AGENDADA`;
-- `MatchResultService` passou a avançar automaticamente o vencedor após registrar resultado;
-- partidas `BYE` não recebem resultado manual;
-- BYEs são finalizados e avançados automaticamente durante a geração do chaveamento;
-- participantes da primeira rodada são sorteados com `Collections.shuffle`;
-- ao finalizar a última partida, o `Bracket` passa para `FINALIZADO`;
-- alteração de participante é bloqueada se a próxima partida já estiver iniciada/finalizada.
+- `BracketProgressionService` preenche automaticamente a próxima partida;
+- ordem ímpar -> `registrationA`;
+- ordem par -> `registrationB`;
+- próxima ordem = `(ordem + 1) / 2`;
+- BYE avança automaticamente sem resultado manual;
+- final encerra o `Bracket`.
 
 ### ETAPA F — inspeção do Sumô
 
 Status: **implementado — testes finais pendentes**.
 
-Arquivos adicionados:
+Arquivos:
 
 - `InspecaoSumo`;
 - `InspecaoSumoDTO`;
 - `InspecaoSumoRepository`;
 - `InspecaoSumoService`;
-- `InspecaoSumoController`;
-- migration `V2__create_inspecoes_sumo.sql`.
+- `InspecaoSumoController`.
 
-Novo status de inscrição:
+Regras:
+
+- inspeção por `Registration`;
+- peso comparado com `ConfigSumo.pesoMax`;
+- limite por `maxTentativasInspecao`;
+- última reprovação permitida -> `Registration.DESCLASSIFICADA`;
+- `exigeInspecao=true` exige inspeção aprovada para competir.
+
+### ETAPA G — rounds do Sumô
+
+Status: **implementado — testes finais pendentes**.
+
+Arquivos adicionados:
+
+- `StatusRoundSumo`;
+- `RoundSumo`;
+- `RoundSumoDTO`;
+- `RoundSumoRepository`;
+- `RoundSumoService`;
+- `RoundSumoController`;
+- migration `V3__create_rounds_sumo.sql`.
+
+Status possíveis do round:
 
 ```text
-DESCLASSIFICADA
+FINALIZADO
+EMPATADO
+ANULADO
+CANCELADO
 ```
 
 Regras:
 
-- inspeção vinculada à `Registration`;
-- somente inscrição ativa, aprovada e de categoria `SUMO` pode ser inspecionada;
-- configuração é obtida de `ConfigSumo`;
-- número da tentativa de inspeção é calculado pelo backend;
-- peso aprovado quando `pesoMedido <= pesoMax`;
-- bloqueia novas inspeções depois de uma aprovação;
-- respeita `maxTentativasInspecao`;
-- se a última tentativa permitida falhar, a inscrição passa para `DESCLASSIFICADA`;
-- se `exigeInspecao=false`, a inscrição aprovada é considerada apta mesmo sem inspeção;
-- se `exigeInspecao=true`, precisa existir inspeção aprovada.
+- round pertence a uma `Match`;
+- somente partidas da modalidade `SUMO` aceitam rounds;
+- partida deve possuir os dois participantes;
+- ambos os participantes devem estar aptos pela regra de inspeção;
+- número do round é calculado automaticamente pelo backend;
+- `FINALIZADO` exige vencedor;
+- vencedor deve ser um dos participantes da partida;
+- `EMPATADO`, `ANULADO` e `CANCELADO` não aceitam vencedor;
+- rounds regulares respeitam `ConfigSumo.numeroRounds`;
+- somente um round adicional é permitido quando `permiteRoundDesempate=true` e ainda não existe vencedor;
+- ao registrar o primeiro round, partida `AGENDADA` passa para `EM_ANDAMENTO`.
 
 Endpoints:
 
 ```text
-POST /api/v1/inspecoes-sumo
-GET  /api/v1/inspecoes-sumo/{id}
-GET  /api/v1/inspecoes-sumo/por-inscricao?registrationId={id}
-GET  /api/v1/inspecoes-sumo/ultima?registrationId={id}
-GET  /api/v1/inspecoes-sumo/aptidao?registrationId={id}
+POST /api/v1/rounds-sumo
+GET  /api/v1/rounds-sumo/{id}
+GET  /api/v1/rounds-sumo/por-partida?matchId={id}
 ```
 
-## 5. Próxima regra — ETAPA G
+### ETAPA H — resultado automático do Sumô
 
-Próxima implementação prioritária:
+Status: **implementado — testes finais pendentes**.
 
-**Rounds do Sumô**.
+Fluxo:
 
-Modelo esperado:
+```text
+RoundSumo registrado
+    -> conta vitórias de A e B
+    -> compara com ConfigSumo.roundsParaVencer
+    -> ao atingir o limite cria MatchResult automaticamente
+    -> Match passa para FINALIZADA
+    -> BracketProgressionService avança o vencedor
+    -> se for a final, Bracket passa para FINALIZADO
+```
 
-- `RoundSumo` relacionado a `Match`;
-- número do round;
-- vencedor opcional;
-- motivo/status do round;
-- rounds regulares definidos por `ConfigSumo.numeroRounds`;
-- vitórias necessárias definidas por `roundsParaVencer`;
-- round adicional quando permitido e necessário;
-- somente participantes aptos pela inspeção podem competir;
-- ao atingir vitórias necessárias, gerar/consolidar `MatchResult` e usar a ETAPA E para avançar o vencedor.
+Decisões:
+
+- `MatchResult` do Sumô não é criado manualmente pelo frontend;
+- POST manual de resultado para partida `SUMO` é rejeitado;
+- atualização e exclusão manual de resultado automático do Sumô também são bloqueadas;
+- `pontosA` e `pontosB` do `MatchResult` representam as vitórias em rounds de cada participante;
+- observação automática identifica que o resultado foi consolidado pelos rounds;
+- resultados de outras modalidades continuam usando o fluxo manual existente de `MatchResultService`.
+
+## 5. Contrato atual relevante para frontend
+
+### Seguidor de Linha
+
+```text
+POST /api/v1/tentativas-seguidor-linha
+GET  /api/v1/tentativas-seguidor-linha/por-inscricao?registrationId={id}
+GET  /api/v1/ranking/seguidor-linha?competitionId={id}&categoryId={id}
+```
+
+### Chaveamento
+
+```text
+POST /api/v1/chaveamentos/gerar?competitionId={id}&categoryId={id}
+GET  /api/v1/partidas/por-chaveamento?bracketId={id}
+```
+
+### Sumô
+
+```text
+POST /api/v1/inspecoes-sumo
+GET  /api/v1/inspecoes-sumo/por-inscricao?registrationId={id}
+GET  /api/v1/inspecoes-sumo/aptidao?registrationId={id}
+POST /api/v1/rounds-sumo
+GET  /api/v1/rounds-sumo/por-partida?matchId={id}
+GET  /api/v1/resultados-partida/por-partida?matchId={id}
+```
 
 ## 6. Prioridade até 30/08/2026
 
-1. **ETAPA G** — rounds do Sumô + consolidação do resultado.
-2. Revisar endpoints necessários pelos dois frontends.
-3. Validar MySQL + Flyway localmente.
-4. Executar bateria essencial de `docs/TESTES_POSTMAN.md`.
-5. Congelar contrato da API base.
-6. Iniciar imediatamente os dois frontends.
-7. JWT, testes automatizados adicionais e refinamentos que não bloqueiem o frontend ficam depois do contrato principal.
+As regras principais do domínio estão agora implementadas. Próxima ordem:
+
+1. revisar rapidamente o contrato dos endpoints necessários pelos dois frontends;
+2. subir e validar MySQL + Flyway localmente;
+3. executar a bateria essencial de `docs/TESTES_POSTMAN.md`;
+4. corrigir apenas erros que bloqueiem contrato/fluxo;
+5. congelar API base;
+6. iniciar imediatamente os dois frontends;
+7. Swagger, JWT, testes automatizados adicionais, Camunda e refinamentos não bloqueadores ficam em paralelo ou depois do primeiro fluxo fullstack funcional.
 
 ## 7. Histórico resumido
 
-- 2026-07-28 — planejamento inicial do backend.
-- 2026-08-03 a 2026-08-06 — CRUDs principais implementados.
-- 2026-08-10 — aplicação validada com H2, JPA, Camunda e DataInitializer.
-- 2026-08-17 — ETAPA A implementada: ConfigFollow aplicado às tentativas.
-- 2026-08-17 — ETAPA B implementada: ranking do Seguidor de Linha.
-- 2026-08-17 — persistência migrada para MySQL + Flyway.
-- 2026-08-17 — ETAPA C implementada: geração automática da primeira rodada.
-- 2026-08-17 — ETAPA D implementada: árvore completa do chaveamento.
-- 2026-08-17 — ETAPA E implementada: sorteio de BYEs e avanço automático de vencedores.
-- 2026-08-17 — ETAPA F implementada: inspeção do Sumô com limite de tentativas e desclassificação.
+- 2026-08-17 — ETAPA A: ConfigFollow aplicado às tentativas;
+- 2026-08-17 — ETAPA B: ranking do Seguidor de Linha;
+- 2026-08-17 — persistência migrada para MySQL + Flyway;
+- 2026-08-17 — ETAPA C: geração automática da primeira rodada;
+- 2026-08-17 — ETAPA D: árvore completa do chaveamento;
+- 2026-08-17 — ETAPA E: sorteio de BYEs e avanço automático;
+- 2026-08-17 — ETAPA F: inspeção do Sumô;
+- 2026-08-17 — ETAPA G: rounds do Sumô;
+- 2026-08-17 — ETAPA H: consolidação automática de MatchResult e avanço do vencedor.
