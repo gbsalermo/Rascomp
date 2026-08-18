@@ -29,6 +29,7 @@ public class RoundSumoService {
     private final RegistrationRepository registrationRepository;
     private final ConfigSumoRepository configSumoRepository;
     private final InspecaoSumoService inspecaoSumoService;
+    private final MatchResultService matchResultService;
 
     @Transactional
     public RoundSumoDTO registrar(RoundSumoDTO dto) {
@@ -56,7 +57,10 @@ public class RoundSumoService {
             matchRepository.save(match);
         }
 
-        return new RoundSumoDTO(roundRepository.save(round));
+        RoundSumo salvo = roundRepository.save(round);
+        apurarResultadoAutomatico(match, config);
+
+        return new RoundSumoDTO(salvo);
     }
 
     @Transactional(readOnly = true)
@@ -71,6 +75,28 @@ public class RoundSumoService {
                 .stream()
                 .map(RoundSumoDTO::new)
                 .toList();
+    }
+
+    private void apurarResultadoAutomatico(Match match, ConfigSumo config) {
+        int vitoriasA = Math.toIntExact(contarVitorias(match, match.getRegistrationA()));
+        int vitoriasB = Math.toIntExact(contarVitorias(match, match.getRegistrationB()));
+
+        if (vitoriasA >= config.getRoundsParaVencer()) {
+            matchResultService.criarAutomaticoSumo(
+                    match,
+                    match.getRegistrationA(),
+                    vitoriasA,
+                    vitoriasB);
+            return;
+        }
+
+        if (vitoriasB >= config.getRoundsParaVencer()) {
+            matchResultService.criarAutomaticoSumo(
+                    match,
+                    match.getRegistrationB(),
+                    vitoriasA,
+                    vitoriasB);
+        }
     }
 
     private void validarPartida(Match match) {
