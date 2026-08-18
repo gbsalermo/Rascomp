@@ -32,5 +32,8 @@ build/
 ### VS Code ###
 .vscode/
 
+# Configuração local do banco - nunca versionar credenciais
+.env.local
+
 # Arquivo local único de orientação para os CRUDs
 /docs/CODIGOS_REFERENCIA.md
