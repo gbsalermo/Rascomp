@@ -41,10 +41,10 @@ public class MatchResult implements Serializable {
     @JoinColumn(name = "winner_registration_id")
     private Registration winner;
 
-    @Column(nullable = false)
+    @Column(name = "pontos_a", nullable = false)
     private Integer pontosA;
 
-    @Column(nullable = false)
+    @Column(name = "pontos_b", nullable = false)
     private Integer pontosB;
 
     @Column(length = 500)
