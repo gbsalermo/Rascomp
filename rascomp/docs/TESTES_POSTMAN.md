@@ -4,7 +4,7 @@
 
 ## 1. Objetivo
 
-Este arquivo concentra os endpoints atuais do backend Rascomp, exemplos de JSON para criação/atualização e um roteiro de testes manuais para execução ao final da implementação das regras de negócio.
+Bateria manual final do backend Rascomp. Deve ser executada depois das regras avançadas, antes de congelar o contrato da API para os dois frontends.
 
 Base URL:
 
@@ -12,46 +12,42 @@ Base URL:
 http://localhost:8080
 ```
 
-Header para requisições com body:
+Header para requests com body:
 
 ```text
 Content-Type: application/json
 ```
 
-> Os IDs abaixo são exemplos. Sempre prefira os IDs impressos pelo `DataInitializer` ou retornados pelos POSTs executados durante o teste.
+Os IDs são exemplos. Use os IDs retornados pelo `DataInitializer` ou pelos POSTs executados durante a bateria.
 
 ---
 
-## 2. Ordem recomendada dos testes
+## 2. Pré-teste de persistência MySQL + Flyway
 
-1. Categorias
-2. Configuração Sumô
-3. Configuração Seguidor de Linha
-4. Instituições
-5. Equipes
-6. Competidores
-7. Robôs
-8. Competições
-9. Inscrições
-10. Tentativas do Seguidor de Linha
-11. Ranking do Seguidor de Linha
-12. Chaveamentos
-13. Partidas
-14. Resultados de partida
-15. Tratamento global de exceções
-16. Regras avançadas implementadas posteriormente
+Antes do Postman:
 
----
+1. garantir MySQL ativo;
+2. configurar `DB_USERNAME` e `DB_PASSWORD` quando diferentes dos defaults;
+3. iniciar a aplicação;
+4. confirmar execução da migration `V1__create_rascomp_schema.sql`;
+5. confirmar que Hibernate executa com `ddl-auto=validate`;
+6. reiniciar a aplicação e verificar que os dados continuam no banco.
 
-# 3. CompetitionCategory
-
-Base:
+Configuração padrão:
 
 ```text
-/api/v1/categorias
+DB_URL=jdbc:mysql://localhost:3306/rascomp?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bahia
+DB_USERNAME=root
+DB_PASSWORD=
 ```
 
-### Criar categoria
+---
+
+## 3. CompetitionCategory
+
+Base: `/api/v1/categorias`
+
+### Criar FOLLOW_LINE
 
 ```http
 POST /api/v1/categorias
@@ -60,44 +56,31 @@ POST /api/v1/categorias
 ```json
 {
   "nome": "Seguidor de Linha Teste",
-  "descricao": "Categoria criada para os testes finais.",
+  "descricao": "Categoria de teste",
   "modalidade": "FOLLOW_LINE",
   "ativo": true
 }
 ```
 
-Esperado: `201 Created`.
+Esperado: `201`.
 
-Modalidades atuais:
+### Criar SUMO
 
-```text
-SUMO
-FOLLOW_LINE
+```json
+{
+  "nome": "Sumô Teste",
+  "descricao": "Categoria de teste",
+  "modalidade": "SUMO",
+  "ativo": true
+}
 ```
 
-### Listar todas
+### Consultas
 
 ```http
 GET /api/v1/categorias
-```
-
-Esperado: `200 OK`.
-
-### Buscar por ID
-
-```http
 GET /api/v1/categorias/{id}
-```
-
-### Listar por modalidade
-
-```http
 GET /api/v1/categorias/por-modalidade?modalidade=FOLLOW_LINE
-```
-
-### Listar categorias ativas por modalidade
-
-```http
 GET /api/v1/categorias/por-modalidade/ativas?modalidade=FOLLOW_LINE
 ```
 
@@ -110,31 +93,25 @@ PUT /api/v1/categorias/{id}
 ```json
 {
   "nome": "Seguidor de Linha Atualizado",
-  "descricao": "Categoria atualizada no teste.",
+  "descricao": "Atualizada",
   "modalidade": "FOLLOW_LINE",
   "ativo": true
 }
 ```
 
-### Desativar
+### Excluir
 
 ```http
 DELETE /api/v1/categorias/{id}
 ```
 
-Esperado: `204 No Content`.
-
 ---
 
-# 4. ConfigSumo
+## 4. ConfigSumo
 
-Base:
+Base: `/api/v1/categorias/{categoryId}/config-sumo`
 
-```text
-/api/v1/categorias/{categoryId}/config-sumo
-```
-
-### Criar configuração
+### Criar
 
 ```http
 POST /api/v1/categorias/{categoryId}/config-sumo
@@ -151,46 +128,23 @@ POST /api/v1/categorias/{categoryId}/config-sumo
 }
 ```
 
-### Buscar configuração da categoria
+### Consultar / atualizar / excluir
 
 ```http
 GET /api/v1/categorias/{categoryId}/config-sumo
-```
-
-### Atualizar
-
-```http
 PUT /api/v1/categorias/{categoryId}/config-sumo
-```
-
-```json
-{
-  "pesoMax": 3.000,
-  "exigeInspecao": true,
-  "maxTentativasInspecao": 2,
-  "numeroRounds": 3,
-  "roundsParaVencer": 2,
-  "permiteRoundDesempate": true
-}
-```
-
-### Excluir configuração
-
-```http
 DELETE /api/v1/categorias/{categoryId}/config-sumo
 ```
 
+No PUT, use o mesmo formato JSON do POST.
+
 ---
 
-# 5. ConfigFollow
+## 5. ConfigFollow
 
-Base:
+Base: `/api/v1/categorias/{categoryId}/config-follow`
 
-```text
-/api/v1/categorias/{categoryId}/config-follow
-```
-
-### Criar configuração
+### Criar
 
 ```http
 POST /api/v1/categorias/{categoryId}/config-follow
@@ -205,42 +159,19 @@ POST /api/v1/categorias/{categoryId}/config-follow
 }
 ```
 
-### Buscar configuração
+### Consultar / atualizar / excluir
 
 ```http
 GET /api/v1/categorias/{categoryId}/config-follow
-```
-
-### Atualizar
-
-```http
 PUT /api/v1/categorias/{categoryId}/config-follow
-```
-
-```json
-{
-  "numeroTomadas": 3,
-  "tentativasPorTomada": 3,
-  "maxTempoSegundos": 150,
-  "numeroCheckpoints": 5
-}
-```
-
-### Excluir
-
-```http
 DELETE /api/v1/categorias/{categoryId}/config-follow
 ```
 
 ---
 
-# 6. Institution
+## 6. Institution
 
-Base:
-
-```text
-/api/v1/instituicoes
-```
+Base: `/api/v1/instituicoes`
 
 ### Criar
 
@@ -258,30 +189,13 @@ POST /api/v1/instituicoes
 }
 ```
 
-Esperado: `201 Created`.
-
-### Listar todas
+### Consultas
 
 ```http
 GET /api/v1/instituicoes
-```
-
-### Listar somente ativas
-
-```http
 GET /api/v1/instituicoes?apenasAtivas=true
-```
-
-### Buscar por ID
-
-```http
 GET /api/v1/instituicoes/{id}
-```
-
-### Buscar por sigla
-
-```http
-GET /api/v1/instituicoes/por-sigla?sigla=UFRB
+GET /api/v1/instituicoes/por-sigla?sigla=UT
 ```
 
 ### Atualizar
@@ -300,27 +214,18 @@ PUT /api/v1/instituicoes/{id}
 }
 ```
 
-### Desativar
+### Desativar / reativar
 
 ```http
 DELETE /api/v1/instituicoes/{id}
-```
-
-### Reativar
-
-```http
 PATCH /api/v1/instituicoes/{id}/reativar
 ```
 
 ---
 
-# 7. Team
+## 7. Team
 
-Base:
-
-```text
-/api/v1/equipes
-```
+Base: `/api/v1/equipes`
 
 ### Criar
 
@@ -336,29 +241,13 @@ POST /api/v1/equipes
 }
 ```
 
-### Listar
+### Consultas
 
 ```http
 GET /api/v1/equipes
-```
-
-```http
 GET /api/v1/equipes?apenasAtivas=true
-```
-
-### Buscar por ID
-
-```http
 GET /api/v1/equipes/{id}
-```
-
-### Por instituição
-
-```http
 GET /api/v1/equipes/por-instituicao?institutionId=1
-```
-
-```http
 GET /api/v1/equipes/por-instituicao?institutionId=1&apenasAtivas=true
 ```
 
@@ -385,13 +274,9 @@ PATCH /api/v1/equipes/{id}/reativar
 
 ---
 
-# 8. Competitor
+## 8. Competitor
 
-Base:
-
-```text
-/api/v1/competidores
-```
+Base: `/api/v1/competidores`
 
 ### Criar
 
@@ -409,28 +294,13 @@ POST /api/v1/competidores
 }
 ```
 
-### Listar
+### Consultas
 
 ```http
 GET /api/v1/competidores
 GET /api/v1/competidores?apenasAtivos=true
-```
-
-### Buscar por ID
-
-```http
 GET /api/v1/competidores/{id}
-```
-
-### Buscar por e-mail
-
-```http
 GET /api/v1/competidores/por-email?email=competidor.teste@rascomp.dev
-```
-
-### Listar por equipe
-
-```http
 GET /api/v1/competidores/por-equipe?teamId=1
 GET /api/v1/competidores/por-equipe?teamId=1&apenasAtivos=true
 ```
@@ -460,13 +330,9 @@ PATCH /api/v1/competidores/{id}/reativar
 
 ---
 
-# 9. Robot
+## 9. Robot
 
-Base:
-
-```text
-/api/v1/robos
-```
+Base: `/api/v1/robos`
 
 ### Criar
 
@@ -477,28 +343,18 @@ POST /api/v1/robos
 ```json
 {
   "nome": "Robot Teste",
-  "descricao": "Robô criado para validação final.",
+  "descricao": "Robô de teste",
   "teamId": 1,
   "ativo": true
 }
 ```
 
-### Listar
+### Consultas
 
 ```http
 GET /api/v1/robos
 GET /api/v1/robos?apenasAtivos=true
-```
-
-### Buscar por ID
-
-```http
 GET /api/v1/robos/{id}
-```
-
-### Por equipe
-
-```http
 GET /api/v1/robos/por-equipe?teamId=1
 GET /api/v1/robos/por-equipe?teamId=1&apenasAtivos=true
 ```
@@ -512,7 +368,7 @@ PUT /api/v1/robos/{id}
 ```json
 {
   "nome": "Robot Teste Atualizado",
-  "descricao": "Descrição atualizada.",
+  "descricao": "Robô atualizado",
   "teamId": 1,
   "ativo": true
 }
@@ -527,13 +383,9 @@ PATCH /api/v1/robos/{id}/reativar
 
 ---
 
-# 10. Competition
+## 10. Competition
 
-Base:
-
-```text
-/api/v1/competicoes
-```
+Base: `/api/v1/competicoes`
 
 ### Criar
 
@@ -544,7 +396,7 @@ POST /api/v1/competicoes
 ```json
 {
   "nome": "RRC Teste",
-  "descricao": "Competição para testes finais.",
+  "descricao": "Competição para bateria final",
   "inicioInscricoes": "2026-08-01",
   "fimInscricoes": "2026-08-31",
   "dataInicio": "2026-09-05",
@@ -554,7 +406,7 @@ POST /api/v1/competicoes
 }
 ```
 
-Status atuais:
+Status:
 
 ```text
 PLANEJADA
@@ -565,49 +417,28 @@ FINALIZADA
 CANCELADA
 ```
 
-### Listar
+### Consultas
 
 ```http
 GET /api/v1/competicoes
 GET /api/v1/competicoes?apenasAtivas=true
-```
-
-### Buscar por ID
-
-```http
 GET /api/v1/competicoes/{id}
-```
-
-### Por status
-
-```http
 GET /api/v1/competicoes/por-status?status=INSCRICOES_ABERTAS
 ```
 
-### Atualizar
+### Atualizar / desativar / reativar
 
 ```http
 PUT /api/v1/competicoes/{id}
-```
-
-Use o mesmo formato JSON do POST.
-
-### Desativar / reativar
-
-```http
 DELETE /api/v1/competicoes/{id}
 PATCH /api/v1/competicoes/{id}/reativar
 ```
 
 ---
 
-# 11. Registration
+## 11. Registration
 
-Base:
-
-```text
-/api/v1/inscricoes
-```
+Base: `/api/v1/inscricoes`
 
 ### Criar
 
@@ -621,8 +452,8 @@ POST /api/v1/inscricoes
   "categoryId": 3,
   "teamId": 1,
   "robotId": 1,
-  "status": "PENDENTE",
-  "observacao": "Inscrição criada durante os testes.",
+  "status": "APROVADA",
+  "observacao": "Inscrição de teste",
   "ativo": true
 }
 ```
@@ -636,63 +467,33 @@ REJEITADA
 CANCELADA
 ```
 
-### Listar
+### Consultas
 
 ```http
 GET /api/v1/inscricoes
 GET /api/v1/inscricoes?apenasAtivas=true
-```
-
-### Buscar por ID
-
-```http
 GET /api/v1/inscricoes/{id}
-```
-
-### Por competição
-
-```http
 GET /api/v1/inscricoes/por-competicao?competitionId=1
-```
-
-### Por status
-
-```http
 GET /api/v1/inscricoes/por-status?status=APROVADA
 ```
 
-### Atualizar
+### Atualizar / desativar / reativar
 
 ```http
 PUT /api/v1/inscricoes/{id}
-```
-
-Use o mesmo formato JSON do POST.
-
-### Desativar / reativar
-
-```http
 DELETE /api/v1/inscricoes/{id}
 PATCH /api/v1/inscricoes/{id}/reativar
 ```
 
-### Teste obrigatório de regra
-
-Tentar cadastrar novamente o mesmo `competitionId + categoryId + robotId`.
-
-Esperado: erro de regra de negócio.
+Teste negativo obrigatório: repetir o mesmo `competitionId + categoryId + robotId`. Esperado: `400`.
 
 ---
 
-# 12. TentativaSeguidorLinha
+## 12. TentativaSeguidorLinha + ConfigFollow
 
-Base:
+Base: `/api/v1/tentativas-seguidor-linha`
 
-```text
-/api/v1/tentativas-seguidor-linha
-```
-
-### Criar tentativa válida
+### Criar válida
 
 ```http
 POST /api/v1/tentativas-seguidor-linha
@@ -708,127 +509,60 @@ POST /api/v1/tentativas-seguidor-linha
   "penalidadeSegundos": 0,
   "concluida": true,
   "valida": true,
-  "observacao": "Tentativa válida de teste."
+  "observacao": "Tentativa válida"
 }
 ```
 
-### Buscar por ID
+### Consultas
 
 ```http
 GET /api/v1/tentativas-seguidor-linha/{id}
-```
-
-### Listar por inscrição
-
-```http
 GET /api/v1/tentativas-seguidor-linha/por-inscricao?registrationId=1
 ```
 
-> Atualmente não existe `GET` na rota base para listar todas as tentativas.
-
-### Atualizar
+### Atualizar / excluir
 
 ```http
 PUT /api/v1/tentativas-seguidor-linha/{id}
-```
-
-Use o mesmo formato JSON do POST.
-
-### Excluir fisicamente
-
-```http
 DELETE /api/v1/tentativas-seguidor-linha/{id}
 ```
 
-## Testes obrigatórios do ConfigFollow
+### Testes ConfigFollow
 
-Considerando a configuração padrão `3 tomadas`, `3 tentativas por tomada`, `180 segundos` e `5 checkpoints`:
+Com configuração 3 tomadas / 3 tentativas / 180 segundos / 5 checkpoints:
 
-### Tomada acima do limite
-
-```json
-{
-  "registrationId": 1,
-  "tomada": 4,
-  "numeroTentativa": 1,
-  "tempoSegundos": 40.500,
-  "checkpointsAlcancados": 5,
-  "penalidadeSegundos": 0,
-  "concluida": true,
-  "valida": true
-}
-```
-
-Esperado: `400`.
-
-### Tentativa acima do limite
-
-Use `numeroTentativa: 4`.
-
-Esperado: `400`.
-
-### Checkpoints acima do limite
-
-Use `checkpointsAlcancados: 6`.
-
-Esperado: `400`.
-
-### Tempo acima do limite
-
-```json
-{
-  "registrationId": 1,
-  "tomada": 2,
-  "numeroTentativa": 2,
-  "tempoSegundos": 181.500,
-  "checkpointsAlcancados": 5,
-  "penalidadeSegundos": 0,
-  "concluida": true,
-  "valida": true
-}
-```
-
-Esperado: `201 Created`, porém a resposta deve conter:
-
-```json
-{
-  "valida": false
-}
-```
+- `tomada=4` -> esperado `400`;
+- `numeroTentativa=4` -> esperado `400`;
+- `checkpointsAlcancados=6` -> esperado `400`;
+- `tempoSegundos=181.500` -> esperado `201`, mas `valida=false`.
 
 ---
 
-# 13. Ranking Seguidor de Linha
+## 13. Ranking Seguidor de Linha
 
 ```http
 GET /api/v1/ranking/seguidor-linha?competitionId=1&categoryId=3
 ```
 
-Esperado: `200 OK` e lista ordenada pelo menor tempo final.
+Esperado: `200` e lista ordenada.
 
-Critérios atuais:
+Regras a conferir:
 
-1. inscrição ativa e aprovada;
-2. tentativa válida e concluída;
-3. tempo registrado;
-4. tempo final = tempo bruto + penalidade;
-5. menor tempo final vence;
-6. empate: menor tempo bruto;
-7. novo empate: menor `registrationId`.
-
-Teste recomendado: cadastrar tentativas para pelo menos três inscrições, incluindo uma com penalidade, e conferir a ordenação.
+1. somente inscrições ativas e aprovadas;
+2. somente tentativas válidas e concluídas;
+3. tempo final = tempo bruto + penalidade;
+4. melhor tentativa por inscrição;
+5. menor tempo final primeiro;
+6. empate por menor tempo bruto;
+7. persistindo empate, menor `registrationId`.
 
 ---
 
-# 14. Bracket
+## 14. Bracket CRUD
 
-Base:
+Base: `/api/v1/chaveamentos`
 
-```text
-/api/v1/chaveamentos
-```
-
-### Criar
+### Criar manualmente
 
 ```http
 POST /api/v1/chaveamentos
@@ -838,69 +572,79 @@ POST /api/v1/chaveamentos
 {
   "competitionId": 1,
   "categoryId": 1,
-  "nome": "Chave Teste",
+  "nome": "Chave Manual Teste",
   "status": "RASCUNHO",
   "ativo": true
 }
 ```
 
-Status atuais:
-
-```text
-RASCUNHO
-GERADO
-EM_ANDAMENTO
-FINALIZADO
-CANCELADO
-```
-
-### Listar
+### Consultas
 
 ```http
 GET /api/v1/chaveamentos
 GET /api/v1/chaveamentos?apenasAtivos=true
-```
-
-### Buscar por ID
-
-```http
 GET /api/v1/chaveamentos/{id}
-```
-
-### Por competição
-
-```http
 GET /api/v1/chaveamentos/por-competicao?competitionId=1
 ```
 
-### Atualizar
+### Atualizar / desativar / reativar
 
 ```http
 PUT /api/v1/chaveamentos/{id}
-```
-
-Use o mesmo formato JSON do POST.
-
-### Desativar / reativar
-
-```http
 DELETE /api/v1/chaveamentos/{id}
 PATCH /api/v1/chaveamentos/{id}/reativar
 ```
 
-Teste de regra: tentar criar segundo chaveamento para a mesma competição/categoria.
+---
+
+## 15. ETAPAS C e D — geração automática da árvore do chaveamento
+
+Não crie manualmente um bracket para a mesma competição/categoria antes deste teste.
+
+### Gerar automaticamente
+
+```http
+POST /api/v1/chaveamentos/gerar?competitionId=1&categoryId=1
+```
+
+Esperado: `201 Created` e bracket com `status=GERADO`.
+
+Regras obrigatórias:
+
+- somente inscrições `APROVADA` e `ativo=true` participam;
+- mínimo de 2 inscrições;
+- segundo bracket para a mesma competição/categoria deve ser rejeitado;
+- tamanho da chave deve ser a próxima potência de 2;
+- BYEs devem completar os slots ausentes;
+- primeira rodada: partidas completas `AGENDADA`, partidas com um participante `BYE`;
+- rodadas seguintes: `AGUARDANDO_PARTICIPANTES`;
+- todas as rodadas até a final devem existir após uma única chamada.
+
+### Conferir árvore gerada
+
+```http
+GET /api/v1/partidas/por-chaveamento?bracketId={bracketId}
+```
+
+Casos esperados:
+
+```text
+2 participantes -> 1 partida total
+3 participantes -> chave 4 -> 2 partidas na rodada 1 + 1 final
+4 participantes -> 2 partidas na rodada 1 + 1 final
+5 a 8 participantes -> chave 8 -> 4 + 2 + 1 partidas
+9 a 16 participantes -> chave 16 -> 8 + 4 + 2 + 1 partidas
+```
+
+Teste com 3 ou 5 participantes para obrigar a existência de BYE.
 
 ---
 
-# 15. Match
+## 16. Match
 
-Base:
+Base: `/api/v1/partidas`
 
-```text
-/api/v1/partidas
-```
-
-### Criar
+### Criar manualmente
 
 ```http
 POST /api/v1/partidas
@@ -910,7 +654,7 @@ POST /api/v1/partidas
 {
   "bracketId": 1,
   "rodada": 1,
-  "ordem": 2,
+  "ordem": 1,
   "registrationAId": 1,
   "registrationBId": 2,
   "dataHora": "2026-09-05T11:00:00",
@@ -922,59 +666,36 @@ POST /api/v1/partidas
 Status atuais:
 
 ```text
+AGUARDANDO_PARTICIPANTES
 AGENDADA
-BYE
 EM_ANDAMENTO
 FINALIZADA
 CANCELADA
+BYE
 ```
 
-### Buscar por ID
+### Consultas
 
 ```http
 GET /api/v1/partidas/{id}
-```
-
-### Listar por chaveamento
-
-```http
 GET /api/v1/partidas/por-chaveamento?bracketId=1
 ```
 
-> Atualmente não existe `GET /api/v1/partidas` para listagem global.
-
-### Atualizar
+### Atualizar / desativar / reativar
 
 ```http
 PUT /api/v1/partidas/{id}
-```
-
-Use o mesmo formato JSON do POST.
-
-### Desativar / reativar
-
-```http
 DELETE /api/v1/partidas/{id}
 PATCH /api/v1/partidas/{id}/reativar
 ```
 
-Testes de regra:
-
-- inscrições A e B devem ser diferentes;
-- ambas devem pertencer à competição/categoria do chaveamento;
-- ambas devem estar aprovadas;
-- `registrationBId` nulo deve permitir cenário de `BYE` conforme regra atual;
-- combinação `bracket + rodada + ordem` não pode duplicar.
+Regras: participantes diferentes, inscrições aprovadas, mesma competição/categoria do bracket e `bracket + rodada + ordem` único.
 
 ---
 
-# 16. MatchResult
+## 17. MatchResult
 
-Base:
-
-```text
-/api/v1/resultados-partida
-```
+Base: `/api/v1/resultados-partida`
 
 ### Criar
 
@@ -988,66 +709,44 @@ POST /api/v1/resultados-partida
   "winnerRegistrationId": 1,
   "pontosA": 2,
   "pontosB": 1,
-  "observacao": "Resultado registrado durante os testes."
+  "observacao": "Resultado de teste"
 }
 ```
 
-### Buscar por ID
+### Consultas
 
 ```http
 GET /api/v1/resultados-partida/{id}
-```
-
-### Buscar por partida
-
-```http
 GET /api/v1/resultados-partida/por-partida?matchId=1
 ```
 
-> A versão atual deve ser conferida antes dos testes finais caso seja adicionada a listagem global de resultados discutida durante o desenvolvimento.
-
-### Atualizar
+### Atualizar / excluir
 
 ```http
 PUT /api/v1/resultados-partida/{id}
-```
-
-Use o mesmo formato JSON do POST.
-
-### Excluir
-
-```http
 DELETE /api/v1/resultados-partida/{id}
 ```
 
-Regras obrigatórias:
+Regras:
 
-- uma partida não pode possuir dois resultados;
-- vencedor deve ser participante da partida;
+- uma partida possui no máximo um resultado;
+- vencedor deve ser participante;
 - pontos diferentes exigem vencedor;
 - empate não aceita vencedor;
-- criação do resultado deve finalizar a partida;
-- exclusão do resultado deve restaurar o estado da partida conforme regra do service.
+- salvar resultado finaliza partida;
+- excluir resultado restaura o status inicial conforme regra atual.
 
 ---
 
-# 17. Tratamento global de exceções
+## 18. Tratamento global de exceções
 
-Executar estes testes depois que o `GlobalExceptionHandler` estiver confirmado no repositório/local.
-
-### Recurso inexistente
+### 404
 
 ```http
 GET /api/v1/inscricoes/999999
 ```
 
-Esperado: `404`, com mensagem própria da API.
-
-### Regra de negócio inválida
-
-Tentar inscrição duplicada.
-
-Esperado: `400`.
+Esperado: resposta padronizada com `404`.
 
 ### Bean Validation
 
@@ -1062,9 +761,9 @@ POST /api/v1/robos
 }
 ```
 
-Esperado: `400` com os campos inválidos detalhados.
+Esperado: `400` com erros dos campos.
 
-### Parâmetro obrigatório ausente
+### Parâmetro ausente
 
 ```http
 GET /api/v1/inscricoes/por-competicao
@@ -1075,73 +774,60 @@ Esperado: `400`.
 ### Enum inválido
 
 ```http
-GET /api/v1/competicoes/por-status?status=STATUS_INEXISTENTE
+GET /api/v1/competicoes/por-status?status=INVALIDO
 ```
 
 Esperado: `400`.
 
-### JSON inválido
+### JSON malformado
 
-Enviar body JSON malformado em qualquer POST.
-
-Esperado: `400`.
+Enviar body inválido em qualquer POST. Esperado: `400`.
 
 ---
 
-# 18. Testes das próximas regras de domínio
+## 19. ETAPA E — avanço de vencedor e BYE
 
-Adicionar nesta seção à medida que as implementações forem concluídas.
+Pendente de implementação.
 
-## Geração automática de chaveamento
+Quando concluída, validar:
 
-Pendente.
+- vencedor da partida ordem ímpar entra em `registrationA` da próxima partida;
+- vencedor da ordem par entra em `registrationB`;
+- próxima partida muda para `AGENDADA` quando receber os dois participantes;
+- BYE avança automaticamente sem `MatchResult` manual;
+- vencedor da final encerra o bracket.
 
-Validar posteriormente:
+---
 
-- somente inscrições ativas/aprovadas entram no chaveamento;
-- somente inscrições da competição/categoria informadas;
-- quantidade mínima de participantes;
-- criação das partidas da primeira rodada;
-- geração correta de `BYE`;
-- impedir segundo chaveamento da mesma competição/categoria.
+## 20. Sumô — inspeção e rounds
 
-## Avanço automático de vencedor
+Pendente de implementação.
 
-Pendente.
+Adicionar à bateria final:
 
-Validar posteriormente:
-
-- vencedor ocupa o slot correto da próxima partida;
-- ordem ímpar avança para participante A da próxima partida;
-- ordem par avança para participante B;
-- BYE avança automaticamente;
-- final encerra o chaveamento.
-
-## Inspeção e rounds do Sumô
-
-Pendente.
-
-Validar posteriormente:
-
+- inspeção obrigatória quando `exigeInspecao=true`;
 - peso máximo;
-- número máximo de tentativas de inspeção;
-- exigência de inspeção quando configurada;
-- rounds necessários para vencer;
-- round de desempate quando permitido;
-- consolidação automática em `MatchResult`.
+- máximo de tentativas de inspeção;
+- bloqueio/desclassificação quando necessário;
+- rounds regulares;
+- `roundsParaVencer`;
+- round adicional quando permitido;
+- rounds sem vencedor não contam;
+- consolidação automática do `MatchResult`.
 
 ---
 
-# 19. Critério para encerrar a fase de testes
+## 21. Critério de fechamento do backend base
 
-A etapa de backend só deve ser marcada como validada quando:
+Antes de iniciar os frontends:
 
-- aplicação sobe sem erro;
-- todos os endpoints deste arquivo foram conferidos;
-- casos positivos retornam os status esperados;
-- regras inválidas são rejeitadas;
-- soft delete/reativação funcionam;
-- relacionamentos permanecem íntegros;
-- ranking está correto;
-- regras avançadas futuras foram incorporadas a este roteiro e testadas;
-- persistência final foi validada no banco escolhido para execução real da competição.
+- MySQL persiste dados após reinício;
+- Flyway cria/valida o schema sem `ddl-auto=create-drop`;
+- CRUDs essenciais passam;
+- erros principais retornam resposta padronizada;
+- ConfigFollow passa;
+- ranking passa;
+- geração automática de bracket passa;
+- avanço de vencedor/BYE passa;
+- versão mínima das regras do Sumô passa;
+- endpoints consumidos pelos frontends ficam congelados.
