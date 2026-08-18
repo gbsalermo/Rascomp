@@ -1,6 +1,6 @@
 # Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-18T10:03:00-03:00
+Última atualização: 2026-08-18T10:31:00-03:00
 
 ## 1. Objetivo e prazo
 
@@ -38,33 +38,51 @@ Migrations atuais:
 
 ### Validação de infraestrutura em 18/08/2026
 
-Status: **MySQL + Flyway + Hibernate + Camunda validados em execução real**.
+Status: **MySQL + Flyway + Hibernate + Camunda + persistência validados em execução real**.
 
 Resultado observado:
 
 - conexão efetiva com `jdbc:mysql://localhost:3306/rascomp` usando MySQL 9.6;
-- Flyway validou e executou `V1`, `V2` e `V3`, deixando o schema na versão `v3`;
-- Hibernate com `ddl-auto=validate` passou após alinhar explicitamente `MatchResult.pontosA/pontosB` com as colunas `pontos_a/pontos_b`;
-- datasource Hikari configurado com `TRANSACTION_READ_COMMITTED`, necessário para o Camunda no MySQL;
-- Camunda criou seu schema interno e iniciou o `Process Engine default`;
+- Flyway validou e executou `V1`, `V2` e `V3`, todas com `success=1`;
+- Hibernate com `ddl-auto=validate` passou após alinhar explicitamente `MatchResult.pontosA/pontosB` com `pontos_a/pontos_b`;
+- datasource Hikari configurado com `TRANSACTION_READ_COMMITTED` para Camunda/MySQL;
+- Camunda criou 49 tabelas `ACT_*`, criou o `Process Engine default` e iniciou o JobExecutor;
 - Tomcat iniciou na porta `8080`;
-- `DataInitializer` persistiu os dados de teste no MySQL;
-- `JobExecutor` do Camunda iniciou normalmente.
+- `DataInitializer` persistiu os dados de teste;
+- aplicação foi reiniciada e reutilizou o mesmo banco com sucesso.
 
 Correções aplicadas durante a validação:
 
 - `MatchResult`: `@Column(name = "pontos_a")` e `@Column(name = "pontos_b")`;
 - `application.properties`: `spring.datasource.hikari.transaction-isolation=TRANSACTION_READ_COMMITTED`.
 
-Observação: Flyway emitiu warning informando que MySQL 9.6 é mais novo que a versão oficialmente testada pelo Flyway atual. O warning não impediu conexão, validação nem execução das migrations.
+Observação: Flyway emite warning porque MySQL 9.6 é mais novo que a versão oficialmente testada pelo Flyway atual. O warning não impediu conexão, migrations nem startup.
+
+### Ambiente local do MySQL
+
+Foi criado um fluxo local para evitar redefinir as credenciais a cada PowerShell:
+
+- `.env.local` está no `.gitignore` e nunca deve ser versionado;
+- `.env.example` documenta as variáveis esperadas sem segredo real;
+- `run-local.ps1` cria `.env.local` na primeira execução, carrega as credenciais e inicia o Spring Boot;
+- comando de uso: `.\run-local.ps1`.
 
 ## 3. Estratégia de desenvolvimento e testes
 
-Os testes completos serão executados depois do fechamento das regras avançadas para evitar retrabalho antes dos frontends.
-
-Arquivo de testes:
+Arquivo oficial da bateria manual:
 
 `docs/TESTES_POSTMAN.md`
+
+O roteiro foi atualizado em 18/08 para refletir o backend real, incluindo:
+
+- status `DESCLASSIFICADA`;
+- avanço automático de vencedor e BYE;
+- endpoints de inspeção do Sumô;
+- endpoints de rounds do Sumô;
+- consolidação automática de `MatchResult` no Sumô;
+- bloqueio de POST/PUT/DELETE manual de resultado Sumô;
+- tratamento global de exceções;
+- ordem essencial de testes para não atrasar os frontends.
 
 Arquivo local não versionado de referência:
 
@@ -74,7 +92,7 @@ Arquivo local não versionado de referência:
 
 ### CRUDs principais
 
-Status: **implementados**.
+Status: **implementados — bateria manual final pendente**.
 
 - `CompetitionCategory`
 - `ConfigSumo`
@@ -92,15 +110,15 @@ Status: **implementados**.
 
 ### ETAPA A — ConfigFollow validando TentativaSeguidorLinha
 
-Status: **implementado — testes finais pendentes**.
+Status: **implementado — teste final pendente**.
 
 ### ETAPA B — RankingFollowService
 
-Status: **implementado — testes finais pendentes**.
+Status: **implementado — teste final pendente**.
 
 ### ETAPA C — geração automática da primeira rodada
 
-Status: **implementado — testes finais pendentes**.
+Status: **implementado — teste final pendente**.
 
 - próxima potência de dois define o tamanho da chave;
 - BYEs completam a chave;
@@ -108,14 +126,14 @@ Status: **implementado — testes finais pendentes**.
 
 ### ETAPA D — árvore completa do chaveamento
 
-Status: **implementado — testes finais pendentes**.
+Status: **implementado — teste final pendente**.
 
 - todas as rodadas até a final são criadas;
 - rodadas futuras começam `AGUARDANDO_PARTICIPANTES`.
 
 ### ETAPA E — avanço automático de vencedor + BYE
 
-Status: **implementado — testes finais pendentes**.
+Status: **implementado — teste final pendente**.
 
 - `BracketProgressionService` preenche automaticamente a próxima partida;
 - ordem ímpar -> `registrationA`;
@@ -126,17 +144,9 @@ Status: **implementado — testes finais pendentes**.
 
 ### ETAPA F — inspeção do Sumô
 
-Status: **implementado — testes finais pendentes**.
+Status: **implementado — teste final pendente**.
 
-Arquivos:
-
-- `InspecaoSumo`;
-- `InspecaoSumoDTO`;
-- `InspecaoSumoRepository`;
-- `InspecaoSumoService`;
-- `InspecaoSumoController`.
-
-Regras:
+Regras principais:
 
 - inspeção por `Registration`;
 - peso comparado com `ConfigSumo.pesoMax`;
@@ -144,21 +154,21 @@ Regras:
 - última reprovação permitida -> `Registration.DESCLASSIFICADA`;
 - `exigeInspecao=true` exige inspeção aprovada para competir.
 
+Endpoints:
+
+```text
+POST /api/v1/inspecoes-sumo
+GET  /api/v1/inspecoes-sumo/{id}
+GET  /api/v1/inspecoes-sumo/por-inscricao?registrationId={id}
+GET  /api/v1/inspecoes-sumo/ultima?registrationId={id}
+GET  /api/v1/inspecoes-sumo/aptidao?registrationId={id}
+```
+
 ### ETAPA G — rounds do Sumô
 
-Status: **implementado — testes finais pendentes**.
+Status: **implementado — teste final pendente**.
 
-Arquivos adicionados:
-
-- `StatusRoundSumo`;
-- `RoundSumo`;
-- `RoundSumoDTO`;
-- `RoundSumoRepository`;
-- `RoundSumoService`;
-- `RoundSumoController`;
-- migration `V3__create_rounds_sumo.sql`.
-
-Status possíveis do round:
+Status possíveis:
 
 ```text
 FINALIZADO
@@ -166,20 +176,6 @@ EMPATADO
 ANULADO
 CANCELADO
 ```
-
-Regras:
-
-- round pertence a uma `Match`;
-- somente partidas da modalidade `SUMO` aceitam rounds;
-- partida deve possuir os dois participantes;
-- ambos os participantes devem estar aptos pela regra de inspeção;
-- número do round é calculado automaticamente pelo backend;
-- `FINALIZADO` exige vencedor;
-- vencedor deve ser um dos participantes da partida;
-- `EMPATADO`, `ANULADO` e `CANCELADO` não aceitam vencedor;
-- rounds regulares respeitam `ConfigSumo.numeroRounds`;
-- somente um round adicional é permitido quando `permiteRoundDesempate=true` e ainda não existe vencedor;
-- ao registrar o primeiro round, partida `AGENDADA` passa para `EM_ANDAMENTO`.
 
 Endpoints:
 
@@ -191,7 +187,7 @@ GET  /api/v1/rounds-sumo/por-partida?matchId={id}
 
 ### ETAPA H — resultado automático do Sumô
 
-Status: **implementado — testes finais pendentes**.
+Status: **implementado — teste final pendente**.
 
 Fluxo:
 
@@ -199,22 +195,20 @@ Fluxo:
 RoundSumo registrado
     -> conta vitórias de A e B
     -> compara com ConfigSumo.roundsParaVencer
-    -> ao atingir o limite cria MatchResult automaticamente
-    -> Match passa para FINALIZADA
+    -> cria MatchResult ao atingir o limite
+    -> Match FINALIZADA
     -> BracketProgressionService avança o vencedor
-    -> se for a final, Bracket passa para FINALIZADO
+    -> final encerra o Bracket
 ```
 
 Decisões:
 
 - `MatchResult` do Sumô não é criado manualmente pelo frontend;
-- POST manual de resultado para partida `SUMO` é rejeitado;
-- atualização e exclusão manual de resultado automático do Sumô também são bloqueadas;
-- `pontosA` e `pontosB` do `MatchResult` representam as vitórias em rounds de cada participante;
-- observação automática identifica que o resultado foi consolidado pelos rounds;
-- resultados de outras modalidades continuam usando o fluxo manual existente de `MatchResultService`.
+- POST, PUT e DELETE manuais para resultado SUMO são rejeitados;
+- `pontosA/pontosB` representam vitórias em rounds;
+- outras modalidades mantêm o fluxo manual de resultado.
 
-## 5. Contrato atual relevante para frontend
+## 5. Contrato relevante para frontend
 
 ### Seguidor de Linha
 
@@ -229,64 +223,52 @@ GET  /api/v1/ranking/seguidor-linha?competitionId={id}&categoryId={id}
 ```text
 POST /api/v1/chaveamentos/gerar?competitionId={id}&categoryId={id}
 GET  /api/v1/partidas/por-chaveamento?bracketId={id}
+GET  /api/v1/resultados-partida/por-partida?matchId={id}
 ```
 
 ### Sumô
 
 ```text
 POST /api/v1/inspecoes-sumo
-GET  /api/v1/inspecoes-sumo/por-inscricao?registrationId={id}
 GET  /api/v1/inspecoes-sumo/aptidao?registrationId={id}
 POST /api/v1/rounds-sumo
 GET  /api/v1/rounds-sumo/por-partida?matchId={id}
 GET  /api/v1/resultados-partida/por-partida?matchId={id}
 ```
 
-## 6. Plano imediato — 18/08/2026
+## 6. Plano imediato
 
-A infraestrutura persistente já subiu com sucesso. A próxima sequência é **confirmar persistência, revisar contrato e executar a bateria essencial de testes** antes de iniciar os frontends.
+### Noite de 18/08
 
-Ordem atual:
+Executar `docs/TESTES_POSTMAN.md`, priorizando:
 
-1. **Confirmar persistência e schema**
-   - verificar `flyway_schema_history` com versões `1`, `2` e `3`;
-   - verificar tabelas da aplicação e tabelas `ACT_*` do Camunda;
-   - reiniciar a aplicação e confirmar que os dados permanecem e o `DataInitializer` não duplica a carga.
+1. smoke test dos GETs;
+2. CRUDs essenciais;
+3. ConfigFollow + tentativa + ranking;
+4. tratamento global de exceções;
+5. bracket com 3 participantes para forçar BYE e progressão;
+6. inscrições + inspeções Sumô;
+7. chave Sumô + rounds até `MatchResult` automático;
+8. bloqueio de resultado manual Sumô;
+9. registrar e corrigir somente bugs bloqueadores.
 
-2. **Revisão rápida do backend e contrato da API**
-   - conferir controllers, DTOs e services usados pelos frontends;
-   - revisar inconsistências de rotas, retornos, status HTTP e nomes de campos;
-   - remover ou corrigir somente o que bloquear integração;
-   - evitar novas regras de domínio salvo bug crítico.
+### 19/08
 
-3. **Bateria de testes Postman**
-   - atualizar `docs/TESTES_POSTMAN.md` para refletir ETAPAS E, F, G e H;
-   - validar CRUDs essenciais;
-   - validar tratamento global de exceções;
-   - validar ConfigFollow e ranking;
-   - validar geração da chave com potências de 2 e BYEs;
-   - validar avanço automático de vencedores;
-   - validar inspeção do Sumô;
-   - validar rounds e resultado automático do Sumô;
-   - registrar no documento qualquer endpoint/body que precisar de correção.
+Se a bateria essencial passar:
 
-4. **Correções finais de bloqueio**
-   - corrigir apenas erros encontrados nos testes que impeçam o fluxo real;
-   - repetir somente os testes afetados pelas correções.
-
-5. **Congelar o backend base**
-   - marcar contrato principal da API como estável;
-   - deixar melhorias não bloqueadoras para depois;
-   - iniciar imediatamente os dois frontends.
+1. congelar contrato base do backend;
+2. iniciar os dois frontends;
+3. priorizar primeiro os fluxos completos de competição;
+4. deixar refinamentos visuais e funcionalidades não bloqueadoras para depois.
 
 ## 7. Prioridade até 30/08/2026
 
-1. 18/08 — persistência + revisão + bateria essencial de testes.
-2. Congelar contrato da API base.
-3. Iniciar os dois frontends imediatamente após a validação.
-4. Priorizar primeiro os fluxos completos de competição no frontend antes de refinamentos visuais.
-5. Swagger, JWT, testes automatizados adicionais e refinamentos não bloqueadores ficam em paralelo ou depois do primeiro fluxo fullstack funcional.
-6. Camunda está validado como infraestrutura embarcada; modelagem BPMN funcional pode ser adicionada depois sem bloquear o início dos frontends.
+1. concluir bateria manual final;
+2. corrigir apenas bugs que bloqueiem integração;
+3. congelar API base;
+4. iniciar imediatamente os dois frontends;
+5. Swagger, JWT, testes automatizados adicionais e refinamentos não bloqueadores ficam em paralelo ou depois do primeiro fluxo fullstack funcional;
+6. Camunda está validado como infraestrutura embarcada; BPMN funcional não deve bloquear o frontend.
 
 ## 8. Histórico resumido
 
@@ -299,6 +281,9 @@ Ordem atual:
 - 2026-08-17 — ETAPA F: inspeção do Sumô;
 - 2026-08-17 — ETAPA G: rounds do Sumô;
 - 2026-08-17 — ETAPA H: consolidação automática de MatchResult e avanço do vencedor;
-- 2026-08-18 — corrigido mapeamento `MatchResult.pontosA/pontosB` para `pontos_a/pontos_b`;
-- 2026-08-18 — datasource alterado para `TRANSACTION_READ_COMMITTED` para compatibilidade com Camunda/MySQL;
-- 2026-08-18 — MySQL 9.6, Flyway V1/V2/V3, Hibernate validate, Camunda Process Engine, Tomcat 8080 e carga inicial validados com sucesso.
+- 2026-08-18 — corrigido mapeamento `MatchResult.pontosA/pontosB`;
+- 2026-08-18 — datasource alterado para `TRANSACTION_READ_COMMITTED` para Camunda/MySQL;
+- 2026-08-18 — MySQL, Flyway, Hibernate, Camunda e persistência validados;
+- 2026-08-18 — criado fluxo local `.env.local` + `run-local.ps1` para credenciais MySQL;
+- 2026-08-18 — `TESTES_POSTMAN.md` atualizado com ETAPAS E/F/G/H e ordem final de validação;
+- 2026-08-18 — combinado: bateria manual à noite; início dos frontends em 19/08 se não houver bloqueador.
