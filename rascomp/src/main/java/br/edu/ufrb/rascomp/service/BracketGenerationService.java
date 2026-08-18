@@ -1,6 +1,7 @@
 package br.edu.ufrb.rascomp.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class BracketGenerationService {
     private final RegistrationRepository registrationRepository;
     private final CompetitionRepository competitionRepository;
     private final CompetitionCategoryRepository categoryRepository;
+    private final BracketProgressionService bracketProgressionService;
 
     @Transactional
     public BracketDTO gerar(Long competitionId, Long categoryId) {
@@ -46,11 +48,20 @@ public class BracketGenerationService {
             throw new IllegalArgumentException("São necessárias pelo menos duas inscrições ativas e aprovadas para gerar o chaveamento.");
         }
 
+        List<Registration> participantesSorteados = new ArrayList<>(participantes);
+        Collections.shuffle(participantesSorteados);
+
         Bracket bracket = criarBracket(competition, category);
-        gerarArvoreCompleta(bracket, participantes);
+        List<Match> primeiraRodada = gerarArvoreCompleta(bracket, participantesSorteados);
 
         bracket.setStatus(StatusBracket.GERADO);
-        return new BracketDTO(bracketRepository.save(bracket));
+        Bracket salvo = bracketRepository.save(bracket);
+
+        primeiraRodada.stream()
+                .filter(match -> match.getStatus() == StatusMatch.BYE)
+                .forEach(bracketProgressionService::avancarBye);
+
+        return new BracketDTO(salvo);
     }
 
     private List<Registration> buscarParticipantesElegiveis(Long competitionId, Long categoryId) {
@@ -71,12 +82,13 @@ public class BracketGenerationService {
         return bracketRepository.save(bracket);
     }
 
-    private void gerarArvoreCompleta(Bracket bracket, List<Registration> participantes) {
+    private List<Match> gerarArvoreCompleta(Bracket bracket, List<Registration> participantes) {
         int tamanhoChave = proximaPotenciaDeDois(participantes.size());
         int totalRodadas = calcularTotalRodadas(tamanhoChave);
 
         List<Match> partidas = new ArrayList<>();
-        partidas.addAll(criarPrimeiraRodada(bracket, participantes, tamanhoChave));
+        List<Match> primeiraRodada = criarPrimeiraRodada(bracket, participantes, tamanhoChave);
+        partidas.addAll(primeiraRodada);
 
         for (int rodada = 2; rodada <= totalRodadas; rodada++) {
             int quantidadePartidas = tamanhoChave / (int) Math.pow(2, rodada);
@@ -95,6 +107,7 @@ public class BracketGenerationService {
         }
 
         matchRepository.saveAll(partidas);
+        return primeiraRodada;
     }
 
     private List<Match> criarPrimeiraRodada(
