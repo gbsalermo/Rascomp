@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.edu.ufrb.rascomp.dto.BracketDTO;
+import br.edu.ufrb.rascomp.service.BracketGenerationService;
 import br.edu.ufrb.rascomp.service.BracketService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +26,19 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class BracketController {
     private final BracketService bracketService;
+    private final BracketGenerationService bracketGenerationService;
 
     @PostMapping
     public ResponseEntity<BracketDTO> criar(@Valid @RequestBody BracketDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(bracketService.criar(dto));
+    }
+
+    @PostMapping("/gerar")
+    public ResponseEntity<BracketDTO> gerar(
+            @RequestParam Long competitionId,
+            @RequestParam Long categoryId) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(bracketGenerationService.gerar(competitionId, categoryId));
     }
 
     @GetMapping
