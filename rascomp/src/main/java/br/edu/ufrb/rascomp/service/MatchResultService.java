@@ -9,6 +9,7 @@ import br.edu.ufrb.rascomp.dto.MatchResultDTO;
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.MatchResult;
 import br.edu.ufrb.rascomp.model.Registration;
+import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.MatchResultRepository;
@@ -27,24 +28,52 @@ public class MatchResultService {
     @Transactional
     public MatchResultDTO criar(MatchResultDTO dto) {
         Match match = buscarMatch(dto.getMatchId());
+
+        if (match.getBracket().getCategory().getModalidade() == Modalidade.SUMO) {
+            throw new IllegalArgumentException("O resultado de uma partida de Sumô é calculado automaticamente pelos rounds.");
+        }
+
         if (resultRepository.existsByMatchId(match.getId()))
             throw new IllegalArgumentException("A partida já possui resultado.");
 
         Registration winner = buscarWinnerOpcional(dto.getWinnerRegistrationId());
         validarResultado(match, winner, dto);
 
-        MatchResult result = new MatchResult();
-        preencher(result, dto, match, winner);
-        MatchResult salvo = resultRepository.save(result);
+        return salvarResultado(
+                match,
+                winner,
+                dto.getPontosA(),
+                dto.getPontosB(),
+                dto.getObservacao());
+    }
 
-        match.setStatus(StatusMatch.FINALIZADA);
-        matchRepository.save(match);
+    @Transactional
+    public MatchResultDTO criarAutomaticoSumo(
+            Match match,
+            Registration winner,
+            int vitoriasA,
+            int vitoriasB) {
 
-        if (winner != null) {
-            bracketProgressionService.avancarVencedor(match, winner);
+        if (match.getBracket().getCategory().getModalidade() != Modalidade.SUMO) {
+            throw new IllegalArgumentException("Resultado automático de Sumô só pode ser usado em categoria SUMO.");
         }
 
-        return new MatchResultDTO(salvo);
+        if (resultRepository.existsByMatchId(match.getId())) {
+            return new MatchResultDTO(resultRepository.findByMatchId(match.getId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Resultado não encontrado para a partida: " + match.getId())));
+        }
+
+        if (winner == null) {
+            throw new IllegalArgumentException("O resultado automático do Sumô exige vencedor.");
+        }
+
+        return salvarResultado(
+                match,
+                winner,
+                vitoriasA,
+                vitoriasB,
+                "Resultado consolidado automaticamente pelos rounds do Sumô.");
     }
 
     @Transactional(readOnly = true)
@@ -89,6 +118,11 @@ public class MatchResultService {
     public MatchResultDTO atualizar(Long id, MatchResultDTO dto) {
         MatchResult result = buscarResult(id);
         Match match = buscarMatch(dto.getMatchId());
+
+        if (match.getBracket().getCategory().getModalidade() == Modalidade.SUMO) {
+            throw new IllegalArgumentException("Resultados de Sumô são consolidados automaticamente e não devem ser editados manualmente.");
+        }
+
         if (resultRepository.existsByMatchIdAndIdNot(match.getId(), id))
             throw new IllegalArgumentException("A partida já possui outro resultado.");
 
@@ -111,10 +145,41 @@ public class MatchResultService {
     public void deletar(Long id) {
         MatchResult result = buscarResult(id);
         Match match = result.getMatch();
+
+        if (match.getBracket().getCategory().getModalidade() == Modalidade.SUMO) {
+            throw new IllegalArgumentException("Resultado automático de Sumô não deve ser excluído manualmente.");
+        }
+
         match.setStatus(match.getRegistrationA() == null || match.getRegistrationB() == null
                 ? StatusMatch.BYE : StatusMatch.AGENDADA);
         matchRepository.save(match);
         resultRepository.delete(result);
+    }
+
+    private MatchResultDTO salvarResultado(
+            Match match,
+            Registration winner,
+            Integer pontosA,
+            Integer pontosB,
+            String observacao) {
+
+        MatchResult result = new MatchResult();
+        result.setMatch(match);
+        result.setWinner(winner);
+        result.setPontosA(pontosA);
+        result.setPontosB(pontosB);
+        result.setObservacao(observacao == null || observacao.isBlank() ? null : observacao.trim());
+
+        MatchResult salvo = resultRepository.save(result);
+
+        match.setStatus(StatusMatch.FINALIZADA);
+        matchRepository.save(match);
+
+        if (winner != null) {
+            bracketProgressionService.avancarVencedor(match, winner);
+        }
+
+        return new MatchResultDTO(salvo);
     }
 
     private void validarResultado(Match match, Registration winner, MatchResultDTO dto) {
