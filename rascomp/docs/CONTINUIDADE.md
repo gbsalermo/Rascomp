@@ -1,6 +1,6 @@
 # Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-17T23:28:00-03:00
+Última atualização: 2026-08-17T23:36:00-03:00
 
 ## 1. Objetivo e prazo
 
@@ -220,19 +220,54 @@ GET  /api/v1/rounds-sumo/por-partida?matchId={id}
 GET  /api/v1/resultados-partida/por-partida?matchId={id}
 ```
 
-## 6. Prioridade até 30/08/2026
+## 6. Plano imediato — 18/08/2026
 
-As regras principais do domínio estão agora implementadas. Próxima ordem:
+A próxima sessão será focada exclusivamente em **testes, revisão e validação da persistência** antes de iniciar os frontends.
 
-1. revisar rapidamente o contrato dos endpoints necessários pelos dois frontends;
-2. subir e validar MySQL + Flyway localmente;
-3. executar a bateria essencial de `docs/TESTES_POSTMAN.md`;
-4. corrigir apenas erros que bloqueiem contrato/fluxo;
-5. congelar API base;
-6. iniciar imediatamente os dois frontends;
-7. Swagger, JWT, testes automatizados adicionais, Camunda e refinamentos não bloqueadores ficam em paralelo ou depois do primeiro fluxo fullstack funcional.
+Ordem definida:
 
-## 7. Histórico resumido
+1. **Subir MySQL e validar Flyway**
+   - confirmar conexão com o banco `rascomp`;
+   - validar execução sequencial de `V1`, `V2` e `V3`;
+   - confirmar `ddl-auto=validate` sem criação automática pelo Hibernate;
+   - confirmar persistência após reiniciar a aplicação;
+   - corrigir migrations apenas se houver incompatibilidade real com as entidades.
+
+2. **Revisão rápida do backend e contrato da API**
+   - conferir controllers, DTOs e services usados pelos frontends;
+   - revisar inconsistências de rotas, retornos, status HTTP e nomes de campos;
+   - remover ou corrigir somente o que bloquear integração;
+   - evitar novas regras de domínio salvo bug crítico.
+
+3. **Bateria de testes Postman**
+   - usar `docs/TESTES_POSTMAN.md` como roteiro oficial;
+   - validar CRUDs essenciais;
+   - validar tratamento global de exceções;
+   - validar ConfigFollow e ranking;
+   - validar geração da chave com potências de 2 e BYEs;
+   - validar avanço automático de vencedores;
+   - validar inspeção do Sumô;
+   - validar rounds e resultado automático do Sumô;
+   - registrar no documento qualquer endpoint/body que precisar de correção.
+
+4. **Correções finais de bloqueio**
+   - corrigir apenas erros encontrados nos testes que impeçam o fluxo real;
+   - repetir somente os testes afetados pelas correções.
+
+5. **Congelar o backend base**
+   - marcar contrato principal da API como estável;
+   - deixar melhorias não bloqueadoras para depois;
+   - iniciar imediatamente os dois frontends.
+
+## 7. Prioridade até 30/08/2026
+
+1. 18/08 — MySQL + Flyway + revisão + bateria essencial de testes.
+2. Congelar contrato da API base.
+3. Iniciar os dois frontends imediatamente após a validação.
+4. Priorizar primeiro os fluxos completos de competição no frontend antes de refinamentos visuais.
+5. Swagger, JWT, testes automatizados adicionais, Camunda e refinamentos não bloqueadores ficam em paralelo ou depois do primeiro fluxo fullstack funcional.
+
+## 8. Histórico resumido
 
 - 2026-08-17 — ETAPA A: ConfigFollow aplicado às tentativas;
 - 2026-08-17 — ETAPA B: ranking do Seguidor de Linha;
@@ -242,4 +277,5 @@ As regras principais do domínio estão agora implementadas. Próxima ordem:
 - 2026-08-17 — ETAPA E: sorteio de BYEs e avanço automático;
 - 2026-08-17 — ETAPA F: inspeção do Sumô;
 - 2026-08-17 — ETAPA G: rounds do Sumô;
-- 2026-08-17 — ETAPA H: consolidação automática de MatchResult e avanço do vencedor.
+- 2026-08-17 — ETAPA H: consolidação automática de MatchResult e avanço do vencedor;
+- 2026-08-17 — próxima sessão definida para 18/08: validação de MySQL/Flyway, revisão do contrato e bateria final de testes antes dos frontends.
