@@ -14,6 +14,10 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     List<Registration> findByAtivoTrueOrderByDataCadastroDesc();
     List<Registration> findByCompetitionIdOrderByDataCadastroDesc(Long competitionId);
     List<Registration> findByStatusOrderByDataCadastroDesc(StatusRegistration status);
+    List<Registration> findByCompetitionIdAndCategoryIdAndStatusAndAtivoTrueOrderByIdAsc(
+            Long competitionId,
+            Long categoryId,
+            StatusRegistration status);
     boolean existsByCompetitionIdAndCategoryIdAndRobotId(Long competitionId, Long categoryId, Long robotId);
     boolean existsByCompetitionIdAndCategoryIdAndRobotIdAndIdNot(Long competitionId, Long categoryId, Long robotId, Long id);
 }
