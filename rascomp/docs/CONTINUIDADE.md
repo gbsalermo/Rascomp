@@ -1,6 +1,6 @@
 # Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-17T23:36:00-03:00
+Última atualização: 2026-08-18T10:03:00-03:00
 
 ## 1. Objetivo e prazo
 
@@ -35,6 +35,28 @@ Migrations atuais:
 - `V1__create_rascomp_schema.sql` — schema base;
 - `V2__create_inspecoes_sumo.sql` — inspeção do Sumô;
 - `V3__create_rounds_sumo.sql` — rounds do Sumô.
+
+### Validação de infraestrutura em 18/08/2026
+
+Status: **MySQL + Flyway + Hibernate + Camunda validados em execução real**.
+
+Resultado observado:
+
+- conexão efetiva com `jdbc:mysql://localhost:3306/rascomp` usando MySQL 9.6;
+- Flyway validou e executou `V1`, `V2` e `V3`, deixando o schema na versão `v3`;
+- Hibernate com `ddl-auto=validate` passou após alinhar explicitamente `MatchResult.pontosA/pontosB` com as colunas `pontos_a/pontos_b`;
+- datasource Hikari configurado com `TRANSACTION_READ_COMMITTED`, necessário para o Camunda no MySQL;
+- Camunda criou seu schema interno e iniciou o `Process Engine default`;
+- Tomcat iniciou na porta `8080`;
+- `DataInitializer` persistiu os dados de teste no MySQL;
+- `JobExecutor` do Camunda iniciou normalmente.
+
+Correções aplicadas durante a validação:
+
+- `MatchResult`: `@Column(name = "pontos_a")` e `@Column(name = "pontos_b")`;
+- `application.properties`: `spring.datasource.hikari.transaction-isolation=TRANSACTION_READ_COMMITTED`.
+
+Observação: Flyway emitiu warning informando que MySQL 9.6 é mais novo que a versão oficialmente testada pelo Flyway atual. O warning não impediu conexão, validação nem execução das migrations.
 
 ## 3. Estratégia de desenvolvimento e testes
 
@@ -222,16 +244,14 @@ GET  /api/v1/resultados-partida/por-partida?matchId={id}
 
 ## 6. Plano imediato — 18/08/2026
 
-A próxima sessão será focada exclusivamente em **testes, revisão e validação da persistência** antes de iniciar os frontends.
+A infraestrutura persistente já subiu com sucesso. A próxima sequência é **confirmar persistência, revisar contrato e executar a bateria essencial de testes** antes de iniciar os frontends.
 
-Ordem definida:
+Ordem atual:
 
-1. **Subir MySQL e validar Flyway**
-   - confirmar conexão com o banco `rascomp`;
-   - validar execução sequencial de `V1`, `V2` e `V3`;
-   - confirmar `ddl-auto=validate` sem criação automática pelo Hibernate;
-   - confirmar persistência após reiniciar a aplicação;
-   - corrigir migrations apenas se houver incompatibilidade real com as entidades.
+1. **Confirmar persistência e schema**
+   - verificar `flyway_schema_history` com versões `1`, `2` e `3`;
+   - verificar tabelas da aplicação e tabelas `ACT_*` do Camunda;
+   - reiniciar a aplicação e confirmar que os dados permanecem e o `DataInitializer` não duplica a carga.
 
 2. **Revisão rápida do backend e contrato da API**
    - conferir controllers, DTOs e services usados pelos frontends;
@@ -240,7 +260,7 @@ Ordem definida:
    - evitar novas regras de domínio salvo bug crítico.
 
 3. **Bateria de testes Postman**
-   - usar `docs/TESTES_POSTMAN.md` como roteiro oficial;
+   - atualizar `docs/TESTES_POSTMAN.md` para refletir ETAPAS E, F, G e H;
    - validar CRUDs essenciais;
    - validar tratamento global de exceções;
    - validar ConfigFollow e ranking;
@@ -261,11 +281,12 @@ Ordem definida:
 
 ## 7. Prioridade até 30/08/2026
 
-1. 18/08 — MySQL + Flyway + revisão + bateria essencial de testes.
+1. 18/08 — persistência + revisão + bateria essencial de testes.
 2. Congelar contrato da API base.
 3. Iniciar os dois frontends imediatamente após a validação.
 4. Priorizar primeiro os fluxos completos de competição no frontend antes de refinamentos visuais.
-5. Swagger, JWT, testes automatizados adicionais, Camunda e refinamentos não bloqueadores ficam em paralelo ou depois do primeiro fluxo fullstack funcional.
+5. Swagger, JWT, testes automatizados adicionais e refinamentos não bloqueadores ficam em paralelo ou depois do primeiro fluxo fullstack funcional.
+6. Camunda está validado como infraestrutura embarcada; modelagem BPMN funcional pode ser adicionada depois sem bloquear o início dos frontends.
 
 ## 8. Histórico resumido
 
@@ -278,4 +299,6 @@ Ordem definida:
 - 2026-08-17 — ETAPA F: inspeção do Sumô;
 - 2026-08-17 — ETAPA G: rounds do Sumô;
 - 2026-08-17 — ETAPA H: consolidação automática de MatchResult e avanço do vencedor;
-- 2026-08-17 — próxima sessão definida para 18/08: validação de MySQL/Flyway, revisão do contrato e bateria final de testes antes dos frontends.
+- 2026-08-18 — corrigido mapeamento `MatchResult.pontosA/pontosB` para `pontos_a/pontos_b`;
+- 2026-08-18 — datasource alterado para `TRANSACTION_READ_COMMITTED` para compatibilidade com Camunda/MySQL;
+- 2026-08-18 — MySQL 9.6, Flyway V1/V2/V3, Hibernate validate, Camunda Process Engine, Tomcat 8080 e carga inicial validados com sucesso.
