@@ -22,6 +22,7 @@ public class MatchResultService {
     private final MatchResultRepository resultRepository;
     private final MatchRepository matchRepository;
     private final RegistrationRepository registrationRepository;
+    private final BracketProgressionService bracketProgressionService;
 
     @Transactional
     public MatchResultDTO criar(MatchResultDTO dto) {
@@ -34,9 +35,16 @@ public class MatchResultService {
 
         MatchResult result = new MatchResult();
         preencher(result, dto, match, winner);
+        MatchResult salvo = resultRepository.save(result);
+
         match.setStatus(StatusMatch.FINALIZADA);
         matchRepository.save(match);
-        return new MatchResultDTO(resultRepository.save(result));
+
+        if (winner != null) {
+            bracketProgressionService.avancarVencedor(match, winner);
+        }
+
+        return new MatchResultDTO(salvo);
     }
 
     @Transactional(readOnly = true)
@@ -87,9 +95,16 @@ public class MatchResultService {
         Registration winner = buscarWinnerOpcional(dto.getWinnerRegistrationId());
         validarResultado(match, winner, dto);
         preencher(result, dto, match, winner);
+        MatchResult salvo = resultRepository.save(result);
+
         match.setStatus(StatusMatch.FINALIZADA);
         matchRepository.save(match);
-        return new MatchResultDTO(resultRepository.save(result));
+
+        if (winner != null) {
+            bracketProgressionService.avancarVencedor(match, winner);
+        }
+
+        return new MatchResultDTO(salvo);
     }
 
     @Transactional
@@ -105,6 +120,12 @@ public class MatchResultService {
     private void validarResultado(Match match, Registration winner, MatchResultDTO dto) {
         if (!Boolean.TRUE.equals(match.getAtivo()))
             throw new IllegalArgumentException("Não é possível registrar resultado para partida inativa.");
+
+        if (match.getStatus() == StatusMatch.AGUARDANDO_PARTICIPANTES)
+            throw new IllegalArgumentException("A partida ainda aguarda participantes.");
+
+        if (match.getStatus() == StatusMatch.BYE)
+            throw new IllegalArgumentException("Partida BYE avança automaticamente e não recebe resultado manual.");
 
         if (winner != null) {
             boolean participanteA = match.getRegistrationA() != null
