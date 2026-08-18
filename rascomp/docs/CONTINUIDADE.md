@@ -1,20 +1,25 @@
 # Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-17T23:04:00-03:00
+Última atualização: 2026-08-17T23:10:00-03:00
 
 ## 1. Objetivo
 
 Plataforma para gestão de competições de robôs da RAS-UFRB, com backend Spring Boot, inscrições, equipes, robôs, categorias, resultados, chaveamentos e integração futura com Camunda.
 
+Meta imediata: concluir o projeto base com **backend + dois frontends até 30/08/2026**. Por isso, as próximas decisões devem priorizar fechamento do núcleo funcional, integração com frontend e redução de escopo não essencial.
+
 ## 2. Stack e convenções
 
 - Java 21
 - Spring Boot 3
-- Spring Data JPA
+- Spring Data JPA / Hibernate
 - Jakarta Validation
 - Lombok
-- H2 durante o desenvolvimento
-- banco persistente da execução real em reavaliação (`MySQL` ou `PostgreSQL`)
+- MySQL como banco persistente principal
+- Flyway como responsável pelas migrations do schema da aplicação
+- H2 mantido apenas como apoio para testes/perfis específicos
+- Camunda 7 embarcado
+- Swagger / OpenAPI
 - Package root: `br.edu.ufrb.rascomp`
 - Estrutura por camadas: `controller`, `dto`, `model`, `repository`, `service`, `exception`
 - relacionamentos carregados com `FetchType.LAZY` por padrão;
@@ -22,22 +27,43 @@ Plataforma para gestão de competições de robôs da RAS-UFRB, com backend Spri
 - exclusão física apenas para registros dependentes sem histórico próprio, quando adequado;
 - testes e validações só são marcados como concluídos após execução local.
 
-### Decisão de persistência em reavaliação
+### Persistência definitiva
 
-O uso de PostgreSQL deixou de ser tratado como requisito fechado.
+Decisão fechada: **MySQL + Spring Data JPA + Flyway**.
 
-O Rascomp é um sistema de escopo contido para operação durante competições, com volume de dados relativamente pequeno e sem necessidade atual de recursos específicos do PostgreSQL.
+A arquitetura de persistência fica:
 
-Direção recomendada para avaliação final:
+```text
+Spring Boot
+    -> Spring Data JPA / Hibernate
+    -> JDBC
+    -> MySQL
+```
 
-- manter `Spring Data JPA/Hibernate` como camada de persistência;
-- manter H2 para desenvolvimento/testes rápidos;
-- considerar `MySQL` como banco persistente da execução real por simplicidade operacional e familiaridade;
-- manter PostgreSQL como alternativa válida caso surja necessidade de infraestrutura já padronizada nele;
-- não substituir JPA por JDBC puro apenas para trocar o banco: JDBC é a API de acesso ao banco, não um banco de dados, e aumentaria código manual sem benefício claro para o domínio atual;
-- Flyway continua útil independentemente da escolha entre MySQL e PostgreSQL quando o schema deixar de ser recriado automaticamente.
+JDBC puro não será usado como substituto do JPA, pois aumentaria SQL e mapeamento manual sem benefício relevante para o escopo do Rascomp.
 
-A troca definitiva do driver/configuração será feita somente após as regras de domínio e os testes finais.
+Alterações já aplicadas:
+
+- removido driver PostgreSQL;
+- adicionado `mysql-connector-j`;
+- substituído módulo Flyway PostgreSQL por `flyway-mysql`;
+- `application.properties` passou a apontar para MySQL;
+- Hibernate agora usa `ddl-auto=validate`;
+- Flyway habilitado em `classpath:db/migration`;
+- criada migration inicial `V1__create_rascomp_schema.sql`;
+- tabela `Institution` normalizada para `institutions` para evitar diferença de case entre ambientes MySQL.
+
+Configuração padrão atual:
+
+```text
+DB_URL=jdbc:mysql://localhost:3306/rascomp?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bahia
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Os valores podem ser sobrescritos por variáveis de ambiente.
+
+O Camunda continua usando o mesmo datasource e mantém o gerenciamento de suas próprias tabelas.
 
 ## 3. Estratégia de desenvolvimento
 
@@ -51,35 +77,24 @@ O arquivo local de referência permanece:
 
 Esse arquivo deve permanecer no `.gitignore` e não deve ser versionado.
 
-Foi criado também o arquivo versionado:
+Arquivo versionado de testes:
 
 `docs/TESTES_POSTMAN.md`
 
-Ele concentra:
-
-- endpoints atuais;
-- exemplos de bodies JSON;
-- ordem recomendada de testes;
-- testes positivos e negativos;
-- validações do tratamento global de exceções;
-- testes das regras de domínio já implementadas;
-- seções reservadas para geração de chaveamento, avanço de vencedores e regras do Sumô.
-
-Decisão atual: os testes completos serão executados ao final das implementações avançadas, evitando repetir a bateria manual a cada pequena alteração.
+Ele concentra endpoints, bodies JSON, casos positivos/negativos e será usado na bateria final. A decisão atual é executar os testes completos depois de finalizar as regras avançadas restantes.
 
 ## 4. Status atual
 
 ### Projeto base
 
-Status: **concluído**
+Status: **backend estruturalmente avançado; fechamento funcional em andamento**
 
-- estrutura inicial criada;
-- H2 configurado como banco de desenvolvimento;
-- DataInitializer expandido com cenário integrado para testes;
-- aplicação já subiu corretamente com os relacionamentos JPA e dados de teste;
-- Swagger/OpenAPI disponível no projeto;
-- escolha do banco persistente definitivo ficou para depois das regras de domínio;
-- Docker, JWT e configuração final de migrations permanecem para etapas posteriores.
+- CRUDs principais implementados;
+- DataInitializer expandido;
+- aplicação já validada anteriormente com H2/JPA/Camunda;
+- persistência migrada para MySQL + Flyway, ainda aguardando validação local no novo banco;
+- Swagger/OpenAPI já presente;
+- autenticação/JWT permanece pós-fechamento do núcleo funcional caso o prazo exija priorização.
 
 ### CRUDs principais
 
@@ -109,27 +124,24 @@ Decisões principais mantidas:
 
 ### Tratamento global de exceções
 
-Status: **implementação prevista/conferência final pendente**
+Status: **implementação/conferência final pendente na bateria de testes**
 
 Objetivo:
 
 - substituir respostas genéricas do Spring por erros padronizados para recurso inexistente, regra de negócio, validação, parâmetros inválidos e conflitos de integridade.
 
-Os casos de teste correspondentes foram registrados em `docs/TESTES_POSTMAN.md` para execução na bateria final.
-
 ### ETAPA A — `TentativaSeguidorLinha` + `ConfigFollow`
 
 Status: **implementado — testes finais pendentes**
 
-Regras aplicadas no `TentativaSeguidorLinhaService`:
+Regras:
 
-- busca obrigatória do `ConfigFollow` da categoria da inscrição;
-- tomada deve estar entre 1 e `numeroTomadas`;
-- número da tentativa deve estar entre 1 e `tentativasPorTomada`;
-- checkpoints devem estar entre 0 e `numeroCheckpoints`;
-- tentativa acima de `maxTempoSegundos` continua registrada, mas é marcada automaticamente como inválida;
-- as mesmas regras são aplicadas na criação e atualização;
-- validade final deixa de depender somente do valor enviado pelo cliente.
+- busca obrigatória do `ConfigFollow` da categoria;
+- tomada limitada por `numeroTomadas`;
+- tentativa limitada por `tentativasPorTomada`;
+- checkpoints limitados por `numeroCheckpoints`;
+- tempo acima de `maxTempoSegundos` registra a tentativa, mas força `valida = false`;
+- regras aplicadas em criação e atualização.
 
 ### ETAPA B — Ranking do Seguidor de Linha
 
@@ -141,30 +153,76 @@ Arquivos:
 - `RankingFollowService`;
 - `RankingFollowController`.
 
-Regras da primeira versão:
+Regras:
 
-- ranking por competição e categoria;
-- categoria deve ser ativa e `FOLLOW_LINE`;
-- considera somente inscrições ativas e aprovadas;
-- considera somente tentativas válidas, concluídas e com tempo registrado;
+- ranking por competição/categoria;
+- categoria ativa `FOLLOW_LINE`;
+- inscrições ativas e aprovadas;
+- tentativas válidas, concluídas e com tempo;
 - tempo final = tempo bruto + penalidade;
-- seleciona a melhor tentativa de cada inscrição;
-- ordena por menor tempo final;
-- em empate, usa menor tempo bruto e depois `registrationId`;
-- atribui posição sequencial;
-- endpoint: `GET /api/v1/ranking/seguidor-linha?competitionId={id}&categoryId={id}`.
+- melhor tentativa de cada inscrição;
+- desempate por tempo final, tempo bruto e `registrationId`;
+- endpoint `GET /api/v1/ranking/seguidor-linha?competitionId={id}&categoryId={id}`.
 
-### `Bracket`, `Match` e `MatchResult`
+### ETAPA C — geração automática da primeira rodada
 
-Status: **CRUD implementado; automações pendentes**
+Status: **implementado — testes finais pendentes**
 
-Ainda faltam:
+Novo serviço:
 
-- geração automática do chaveamento;
-- geração das rodadas futuras;
-- avanço automático de vencedores;
-- tratamento automático de `BYE`;
-- regras específicas de Sumô.
+- `BracketGenerationService`.
+
+Novo endpoint:
+
+```text
+POST /api/v1/chaveamentos/gerar?competitionId={id}&categoryId={id}
+```
+
+Regras:
+
+- competição e categoria devem existir e estar ativas;
+- impede geração se já existir chaveamento para competição/categoria;
+- considera apenas inscrições `APROVADA` e ativas;
+- exige no mínimo duas inscrições elegíveis;
+- ordenação inicial determinística por `registrationId`;
+- calcula a próxima potência de dois para definir o tamanho da chave;
+- cria BYEs quando a quantidade de participantes não completa a potência de dois;
+- partidas com dois participantes começam `AGENDADA`;
+- partidas com um participante começam `BYE`;
+- chaveamento passa para `GERADO`.
+
+### ETAPA D — árvore completa do chaveamento
+
+Status: **implementado — testes finais pendentes**
+
+Evoluções:
+
+- a geração não cria apenas a primeira rodada;
+- todas as rodadas até a final são criadas de uma vez;
+- rodadas futuras nascem sem participantes;
+- adicionado `StatusMatch.AGUARDANDO_PARTICIPANTES` para esses slots;
+- a estrutura futura permite que a ETAPA E apenas preencha os slots conforme os vencedores avançarem.
+
+Exemplo para chave de 8:
+
+```text
+Rodada 1: 4 partidas
+Rodada 2: 2 partidas
+Rodada 3: 1 final
+```
+
+### ETAPA E — avanço automático de vencedor / BYE
+
+Status: **próxima implementação**
+
+Objetivo:
+
+- preencher automaticamente a próxima partida;
+- partida de ordem ímpar alimenta `registrationA` da próxima partida;
+- partida de ordem par alimenta `registrationB`;
+- BYE avança sem exigir resultado manual;
+- quando ambos os slots estiverem preenchidos, partida passa de `AGUARDANDO_PARTICIPANTES` para `AGENDADA`;
+- finalização da última partida encerra o chaveamento.
 
 ### Sumô
 
@@ -172,7 +230,7 @@ Status: **regras avançadas pendentes**
 
 Próxima modelagem esperada:
 
-- inspeção do robô por inscrição;
+- inspeção por inscrição;
 - limite de tentativas de inspeção;
 - peso máximo conforme `ConfigSumo`;
 - rounds por partida;
@@ -181,7 +239,7 @@ Próxima modelagem esperada:
 
 ## 5. Estratégia de testes
 
-Os testes completos foram deliberadamente movidos para o final das regras avançadas.
+Os testes completos serão executados ao final das regras avançadas para evitar retrabalho durante a corrida para o frontend.
 
 Arquivo principal:
 
@@ -192,36 +250,33 @@ A bateria final deverá validar:
 - CRUDs;
 - filtros e consultas por relacionamento;
 - soft delete e reativação;
-- validações de DTO;
 - tratamento global de exceções;
-- regras de `ConfigFollow`;
-- ranking do Seguidor de Linha;
-- geração de chaveamento;
-- avanço de vencedores e BYE;
-- inspeção e rounds do Sumô;
-- persistência no banco escolhido para uso real.
+- ConfigFollow;
+- ranking;
+- geração automática da árvore de chaveamento;
+- BYEs;
+- avanço de vencedores;
+- inspeção/rounds do Sumô;
+- persistência real após reiniciar a aplicação com MySQL.
 
-## 6. Próximas etapas
+## 6. Prioridade até 30/08/2026
 
-1. Implementar geração automática de chaveamento — primeira rodada.
-2. Evoluir geração para a árvore completa de rodadas.
-3. Implementar avanço automático de vencedores.
-4. Implementar tratamento automático de `BYE`.
-5. Modelar e implementar inspeção do Sumô.
-6. Modelar e implementar rounds do Sumô e consolidação automática do resultado.
-7. Revisar tratamento global de exceções no estado final da API.
-8. Executar a bateria completa de `docs/TESTES_POSTMAN.md`.
-9. Criar testes automatizados para as regras críticas.
-10. Definir banco persistente final (`MySQL` recomendado para avaliação ou PostgreSQL se houver motivo operacional).
-11. Configurar migrations do banco escolhido com Flyway.
-12. Integrar Camunda apenas aos fluxos que realmente precisarem de processo/orquestração.
-13. Implementar segurança JWT.
-14. Preparar estratégia final de execução/deploy da competição.
+Para chegar aos dois frontends sem deixar o backend aberto, a ordem passa a ser:
+
+1. **ETAPA E** — avanço automático de vencedores + BYE.
+2. Implementar inspeção do Sumô na versão mínima necessária.
+3. Implementar rounds do Sumô e resultado consolidado.
+4. Fazer uma revisão curta dos endpoints necessários pelos frontends.
+5. Subir e validar MySQL + Flyway localmente.
+6. Executar bateria final essencial de `TESTES_POSTMAN.md`.
+7. Congelar o contrato da API base.
+8. Ir imediatamente para os dois frontends.
+9. Testes automatizados, JWT e refinamentos que não bloqueiem o frontend podem ser feitos em paralelo/depois do contrato principal estar estável.
 
 ## 7. Histórico resumido
 
-- 2026-07-28 — Documento inicial e planejamento do backend.
-- 2026-07-29 — Projeto renomeado para Rascomp e package root ajustado.
+- 2026-07-28 — documento inicial e planejamento do backend.
+- 2026-07-29 — projeto renomeado para Rascomp e package root ajustado.
 - 2026-08-03 — CRUD `CompetitionCategory` implementado.
 - 2026-08-04 — `ConfigSumo`, `ConfigFollow` e `TentativaSeguidorLinha` planejados.
 - 2026-08-05 — CRUD `Institution` concluído.
@@ -230,5 +285,7 @@ A bateria final deverá validar:
 - 2026-08-10 — aplicação validada subindo com H2, JPA, Camunda e DataInitializer.
 - 2026-08-17 — `ConfigFollow` passou a validar `TentativaSeguidorLinha`.
 - 2026-08-17 — primeira versão do ranking do Seguidor de Linha implementada.
-- 2026-08-17 — bateria final de endpoints/testes consolidada em `docs/TESTES_POSTMAN.md`.
-- 2026-08-17 — banco persistente definitivo passou de PostgreSQL obrigatório para decisão em reavaliação, com MySQL como alternativa recomendada para o escopo atual.
+- 2026-08-17 — bateria final consolidada em `docs/TESTES_POSTMAN.md`.
+- 2026-08-17 — persistência definitiva alterada para MySQL + Flyway.
+- 2026-08-17 — ETAPA C implementada: geração automática da primeira rodada com BYE.
+- 2026-08-17 — ETAPA D implementada: geração da árvore completa do chaveamento.
