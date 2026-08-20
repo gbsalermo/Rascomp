@@ -9,6 +9,7 @@ import br.edu.ufrb.rascomp.dto.BracketDTO;
 import br.edu.ufrb.rascomp.model.Bracket;
 import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
+import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
@@ -28,6 +29,7 @@ public class BracketService {
         Competition competition = buscarCompetition(dto.getCompetitionId());
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         validarAtivos(competition, category);
+        validarCategoriaSumo(category);
         validarDuplicidade(dto, null);
 
         Bracket bracket = new Bracket();
@@ -62,6 +64,7 @@ public class BracketService {
         Competition competition = buscarCompetition(dto.getCompetitionId());
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         validarAtivos(competition, category);
+        validarCategoriaSumo(category);
         validarDuplicidade(dto, id);
         preencher(bracket, dto, competition, category);
         if (dto.getStatus() != null) bracket.setStatus(dto.getStatus());
@@ -81,6 +84,7 @@ public class BracketService {
     public BracketDTO reativar(Long id) {
         Bracket bracket = buscarBracket(id);
         validarAtivos(bracket.getCompetition(), bracket.getCategory());
+        validarCategoriaSumo(bracket.getCategory());
         bracket.setAtivo(true);
         bracket.setStatus(StatusBracket.RASCUNHO);
         return new BracketDTO(bracketRepository.save(bracket));
@@ -89,6 +93,13 @@ public class BracketService {
     private void validarAtivos(Competition competition, CompetitionCategory category) {
         if (!Boolean.TRUE.equals(competition.getAtivo())) throw new IllegalArgumentException("Competição inativa.");
         if (!Boolean.TRUE.equals(category.getAtivo())) throw new IllegalArgumentException("Categoria inativa.");
+    }
+
+    private void validarCategoriaSumo(CompetitionCategory category) {
+        if (category.getModalidade() != Modalidade.SUMO) {
+            throw new IllegalArgumentException(
+                    "Chaveamento é exclusivo da modalidade SUMO. FOLLOW_LINE é definido pelo ranking de tempos.");
+        }
     }
 
     private void validarDuplicidade(BracketDTO dto, Long id) {
