@@ -37,7 +37,7 @@ import lombok.RequiredArgsConstructor;
 @ConditionalOnProperty(name = "rascomp.seed.postman", havingValue = "true")
 public class PostmanScenarioInitializer implements CommandLineRunner {
 
-    private static final String FOLLOW_COMPETITION = "POSTMAN - Chaveamento Follow";
+    private static final String FOLLOW_COMPETITION = "POSTMAN - Ranking Follow";
     private static final String SUMO_COMPETITION = "POSTMAN - Sumô";
 
     private final CompetitionCategoryRepository categoryRepository;
@@ -68,7 +68,7 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
 
         Competition followCompetition = buscarOuCriarCompetition(
                 FOLLOW_COMPETITION,
-                "Cenário isolado com três inscrições aprovadas para validar chave de quatro posições e BYE.");
+                "Cenário isolado com três inscrições aprovadas para validar tentativas e ranking do Seguidor de Linha.");
 
         Registration followA = criarInscricaoSeNecessario(
                 followCompetition,
@@ -88,7 +88,7 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
 
         Competition sumoCompetition = buscarOuCriarCompetition(
                 SUMO_COMPETITION,
-                "Cenário isolado para inspeção, desclassificação, chaveamento e rounds de Sumô.");
+                "Cenário isolado para inspeção, desclassificação, chaveamento, BYE e rounds de Sumô.");
 
         Registration sumoA = criarInscricaoSeNecessario(
                 sumoCompetition,
@@ -111,10 +111,12 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
         System.out.println("FOLLOW - competição: " + followCompetition.getId()
                 + " | categoria: " + follow.getId()
                 + " | inscrições: " + followA.getId() + ", " + followB.getId() + ", " + followC.getId());
+        System.out.println("        Use TentativaSeguidorLinha + RankingFollow. Não gere chaveamento para FOLLOW_LINE.");
         System.out.println("SUMO   - competição: " + sumoCompetition.getId()
                 + " | categoria: " + sumo.getId()
                 + " | inscrições: " + sumoA.getId() + ", " + sumoB.getId() + ", " + sumoC.getId());
-        System.out.println("Nenhum bracket ou inspeção é criado: esses registros ficam para os testes manuais.");
+        System.out.println("        Faça inspeções antes do chaveamento; só inscrições aptas entram na chave.");
+        System.out.println("Nenhum bracket, inspeção ou round é criado: esses registros ficam para os testes manuais.");
         System.out.println("============================================================");
     }
 
