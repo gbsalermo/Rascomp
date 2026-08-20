@@ -38,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 public class PostmanScenarioInitializer implements CommandLineRunner {
 
     private static final String FOLLOW_COMPETITION = "POSTMAN - Ranking Follow";
+    private static final String LEGACY_FOLLOW_COMPETITION = "POSTMAN - Chaveamento Follow";
     private static final String SUMO_COMPETITION = "POSTMAN - Sumô";
 
     private final CompetitionCategoryRepository categoryRepository;
@@ -68,7 +69,8 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
 
         Competition followCompetition = buscarOuCriarCompetition(
                 FOLLOW_COMPETITION,
-                "Cenário isolado com três inscrições aprovadas para validar tentativas e ranking do Seguidor de Linha.");
+                "Cenário isolado com três inscrições aprovadas para validar tentativas e ranking do Seguidor de Linha.",
+                LEGACY_FOLLOW_COMPETITION);
 
         Registration followA = criarInscricaoSeNecessario(
                 followCompetition,
@@ -88,7 +90,8 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
 
         Competition sumoCompetition = buscarOuCriarCompetition(
                 SUMO_COMPETITION,
-                "Cenário isolado para inspeção, desclassificação, chaveamento, BYE e rounds de Sumô.");
+                "Cenário isolado para inspeção, desclassificação, chaveamento, BYE e rounds de Sumô.",
+                null);
 
         Registration sumoA = criarInscricaoSeNecessario(
                 sumoCompetition,
@@ -136,22 +139,34 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
                 .orElse(fallback);
     }
 
-    private Competition buscarOuCriarCompetition(String nome, String descricao) {
-        return competitionRepository.findAll().stream()
-                .filter(competition -> nome.equals(competition.getNome()))
+    private Competition buscarOuCriarCompetition(String nome, String descricao, String nomeLegado) {
+        List<Competition> competitions = competitionRepository.findAll();
+
+        Competition competition = competitions.stream()
+                .filter(item -> nome.equals(item.getNome()))
                 .findFirst()
-                .orElseGet(() -> {
-                    Competition competition = new Competition();
-                    competition.setNome(nome);
-                    competition.setDescricao(descricao);
-                    competition.setInicioInscricoes(LocalDate.of(2026, 8, 1));
-                    competition.setFimInscricoes(LocalDate.of(2026, 8, 31));
-                    competition.setDataInicio(LocalDate.of(2026, 9, 12));
-                    competition.setDataFim(LocalDate.of(2026, 9, 13));
-                    competition.setStatus(StatusCompetition.INSCRICOES_ABERTAS);
-                    competition.setAtivo(true);
-                    return competitionRepository.save(competition);
-                });
+                .orElse(null);
+
+        if (competition == null && nomeLegado != null) {
+            competition = competitions.stream()
+                    .filter(item -> nomeLegado.equals(item.getNome()))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        if (competition == null) {
+            competition = new Competition();
+        }
+
+        competition.setNome(nome);
+        competition.setDescricao(descricao);
+        competition.setInicioInscricoes(LocalDate.of(2026, 8, 1));
+        competition.setFimInscricoes(LocalDate.of(2026, 8, 31));
+        competition.setDataInicio(LocalDate.of(2026, 9, 12));
+        competition.setDataFim(LocalDate.of(2026, 9, 13));
+        competition.setStatus(StatusCompetition.INSCRICOES_ABERTAS);
+        competition.setAtivo(true);
+        return competitionRepository.save(competition);
     }
 
     private Robot buscarOuCriarRobot(String nome, Team team) {
