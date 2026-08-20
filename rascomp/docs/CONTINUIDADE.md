@@ -1,289 +1,236 @@
 # Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-18T10:31:00-03:00
+Última atualização: 2026-08-19T21:55:00-03:00
 
-## 1. Objetivo e prazo
+## 1. Estado atual
 
-Plataforma para gestão de competições de robôs da RAS-UFRB, com backend Spring Boot, inscrições, equipes, robôs, categorias, resultados, chaveamentos e integração futura com Camunda.
+O Rascomp está na fase de **validação final do backend antes do congelamento da API**.
 
-Meta imediata: concluir o projeto base com **backend + dois frontends até 30/08/2026**. A prioridade é congelar rapidamente o contrato funcional do backend e iniciar os frontends.
+Infraestrutura já validada:
 
-## 2. Stack consolidada
-
-- Java 21
-- Spring Boot 3
-- Spring Data JPA / Hibernate
-- Jakarta Validation
-- Lombok
-- MySQL como banco persistente principal
-- Flyway para migrations
-- Camunda 7 embarcado
-- Swagger / OpenAPI
-- Package root: `br.edu.ufrb.rascomp`
-
-Persistência definitiva:
-
-```text
-Spring Boot
-    -> Spring Data JPA / Hibernate
-    -> JDBC
-    -> MySQL
-```
+- Java 21 + Spring Boot 3.5.3;
+- MySQL persistente;
+- Flyway;
+- Hibernate com `ddl-auto=validate`;
+- Hikari em `TRANSACTION_READ_COMMITTED`;
+- Camunda 7.22 embarcado, Process Engine e tabelas `ACT_*` validados;
+- persistência após reinicialização.
 
 Migrations atuais:
 
-- `V1__create_rascomp_schema.sql` — schema base;
-- `V2__create_inspecoes_sumo.sql` — inspeção do Sumô;
-- `V3__create_rounds_sumo.sql` — rounds do Sumô.
-
-### Validação de infraestrutura em 18/08/2026
-
-Status: **MySQL + Flyway + Hibernate + Camunda + persistência validados em execução real**.
-
-Resultado observado:
-
-- conexão efetiva com `jdbc:mysql://localhost:3306/rascomp` usando MySQL 9.6;
-- Flyway validou e executou `V1`, `V2` e `V3`, todas com `success=1`;
-- Hibernate com `ddl-auto=validate` passou após alinhar explicitamente `MatchResult.pontosA/pontosB` com `pontos_a/pontos_b`;
-- datasource Hikari configurado com `TRANSACTION_READ_COMMITTED` para Camunda/MySQL;
-- Camunda criou 49 tabelas `ACT_*`, criou o `Process Engine default` e iniciou o JobExecutor;
-- Tomcat iniciou na porta `8080`;
-- `DataInitializer` persistiu os dados de teste;
-- aplicação foi reiniciada e reutilizou o mesmo banco com sucesso.
-
-Correções aplicadas durante a validação:
-
-- `MatchResult`: `@Column(name = "pontos_a")` e `@Column(name = "pontos_b")`;
-- `application.properties`: `spring.datasource.hikari.transaction-isolation=TRANSACTION_READ_COMMITTED`.
-
-Observação: Flyway emite warning porque MySQL 9.6 é mais novo que a versão oficialmente testada pelo Flyway atual. O warning não impediu conexão, migrations nem startup.
-
-### Ambiente local do MySQL
-
-Foi criado um fluxo local para evitar redefinir as credenciais a cada PowerShell:
-
-- `.env.local` está no `.gitignore` e nunca deve ser versionado;
-- `.env.example` documenta as variáveis esperadas sem segredo real;
-- `run-local.ps1` cria `.env.local` na primeira execução, carrega as credenciais e inicia o Spring Boot;
-- comando de uso: `.\run-local.ps1`.
-
-## 3. Estratégia de desenvolvimento e testes
-
-Arquivo oficial da bateria manual:
-
-`docs/TESTES_POSTMAN.md`
-
-O roteiro foi atualizado em 18/08 para refletir o backend real, incluindo:
-
-- status `DESCLASSIFICADA`;
-- avanço automático de vencedor e BYE;
-- endpoints de inspeção do Sumô;
-- endpoints de rounds do Sumô;
-- consolidação automática de `MatchResult` no Sumô;
-- bloqueio de POST/PUT/DELETE manual de resultado Sumô;
-- tratamento global de exceções;
-- ordem essencial de testes para não atrasar os frontends.
-
-Arquivo local não versionado de referência:
-
-`docs/CODIGOS_REFERENCIA.md`
-
-## 4. Status funcional
-
-### CRUDs principais
-
-Status: **implementados — bateria manual final pendente**.
-
-- `CompetitionCategory`
-- `ConfigSumo`
-- `ConfigFollow`
-- `Institution`
-- `Team`
-- `Competitor`
-- `Robot`
-- `Competition`
-- `Registration`
-- `TentativaSeguidorLinha`
-- `Bracket`
-- `Match`
-- `MatchResult`
-
-### ETAPA A — ConfigFollow validando TentativaSeguidorLinha
-
-Status: **implementado — teste final pendente**.
-
-### ETAPA B — RankingFollowService
-
-Status: **implementado — teste final pendente**.
-
-### ETAPA C — geração automática da primeira rodada
-
-Status: **implementado — teste final pendente**.
-
-- próxima potência de dois define o tamanho da chave;
-- BYEs completam a chave;
-- participantes são sorteados antes da montagem.
-
-### ETAPA D — árvore completa do chaveamento
-
-Status: **implementado — teste final pendente**.
-
-- todas as rodadas até a final são criadas;
-- rodadas futuras começam `AGUARDANDO_PARTICIPANTES`.
-
-### ETAPA E — avanço automático de vencedor + BYE
-
-Status: **implementado — teste final pendente**.
-
-- `BracketProgressionService` preenche automaticamente a próxima partida;
-- ordem ímpar -> `registrationA`;
-- ordem par -> `registrationB`;
-- próxima ordem = `(ordem + 1) / 2`;
-- BYE avança automaticamente sem resultado manual;
-- final encerra o `Bracket`.
-
-### ETAPA F — inspeção do Sumô
-
-Status: **implementado — teste final pendente**.
-
-Regras principais:
-
-- inspeção por `Registration`;
-- peso comparado com `ConfigSumo.pesoMax`;
-- limite por `maxTentativasInspecao`;
-- última reprovação permitida -> `Registration.DESCLASSIFICADA`;
-- `exigeInspecao=true` exige inspeção aprovada para competir.
-
-Endpoints:
-
 ```text
-POST /api/v1/inspecoes-sumo
-GET  /api/v1/inspecoes-sumo/{id}
-GET  /api/v1/inspecoes-sumo/por-inscricao?registrationId={id}
-GET  /api/v1/inspecoes-sumo/ultima?registrationId={id}
-GET  /api/v1/inspecoes-sumo/aptidao?registrationId={id}
+V1__create_rascomp_schema.sql
+V2__create_inspecoes_sumo.sql
+V3__create_rounds_sumo.sql
+V4__remove_follow_line_brackets.sql
 ```
 
-### ETAPA G — rounds do Sumô
+A V4 remove chaveamentos legados de FOLLOW_LINE criados antes da correção de domínio.
 
-Status: **implementado — teste final pendente**.
+---
 
-Status possíveis:
+## 2. Regra de domínio consolidada por modalidade
 
-```text
-FINALIZADO
-EMPATADO
-ANULADO
-CANCELADO
-```
+### FOLLOW_LINE
 
-Endpoints:
+Fluxo oficial:
 
 ```text
-POST /api/v1/rounds-sumo
-GET  /api/v1/rounds-sumo/{id}
-GET  /api/v1/rounds-sumo/por-partida?matchId={id}
+Registration APROVADA
+    -> ConfigFollow
+    -> 3 tomadas
+    -> até 3 tentativas por tomada
+    -> TentativaSeguidorLinha
+    -> RankingFollowService
+    -> menor tempo final vence
 ```
 
-### ETAPA H — resultado automático do Sumô
-
-Status: **implementado — teste final pendente**.
-
-Fluxo:
+Tempo final:
 
 ```text
-RoundSumo registrado
-    -> conta vitórias de A e B
-    -> compara com ConfigSumo.roundsParaVencer
-    -> cria MatchResult ao atingir o limite
-    -> Match FINALIZADA
-    -> BracketProgressionService avança o vencedor
-    -> final encerra o Bracket
+tempoSegundos + penalidadeSegundos
 ```
 
-Decisões:
-
-- `MatchResult` do Sumô não é criado manualmente pelo frontend;
-- POST, PUT e DELETE manuais para resultado SUMO são rejeitados;
-- `pontosA/pontosB` representam vitórias em rounds;
-- outras modalidades mantêm o fluxo manual de resultado.
-
-## 5. Contrato relevante para frontend
-
-### Seguidor de Linha
+FOLLOW_LINE **não utiliza**:
 
 ```text
-POST /api/v1/tentativas-seguidor-linha
-GET  /api/v1/tentativas-seguidor-linha/por-inscricao?registrationId={id}
-GET  /api/v1/ranking/seguidor-linha?competitionId={id}&categoryId={id}
+Bracket
+Match
+MatchResult
 ```
 
-### Chaveamento
+O backend agora rejeita tentativa de criar ou gerar chaveamento para FOLLOW_LINE.
+
+### SUMO
+
+Fluxo oficial:
 
 ```text
-POST /api/v1/chaveamentos/gerar?competitionId={id}&categoryId={id}
-GET  /api/v1/partidas/por-chaveamento?bracketId={id}
-GET  /api/v1/resultados-partida/por-partida?matchId={id}
+Registration APROVADA
+    -> InspecaoSumo
+    -> aptidão
+    -> Bracket
+    -> Match
+    -> RoundSumo
+    -> MatchResult automático
+    -> BracketProgressionService
 ```
 
-### Sumô
+Regras consolidadas:
+
+- Bracket é exclusivo de SUMO;
+- geração de bracket considera apenas inscrições ativas, `APROVADA` e aptas;
+- Match pertence apenas a bracket SUMO;
+- participantes de Match também precisam estar aptos;
+- MatchResult de SUMO nasce automaticamente dos rounds;
+- MatchResult é somente leitura na API externa atual.
+
+---
+
+## 3. Correção de domínio aplicada em 19/08
+
+Durante a bateria manual foi identificado que o backend permitia chaveamento para FOLLOW_LINE, apesar de a modalidade ser disputada por ranking.
+
+Correções aplicadas:
+
+- `BracketGenerationService` restrito a `Modalidade.SUMO`;
+- `BracketService` restrito a SUMO;
+- `MatchService` restrito a SUMO e com validação de aptidão;
+- `BracketGenerationService` passou a filtrar inscrições pela aptidão do Sumô;
+- `MatchResultController` passou a ser somente leitura;
+- `MatchResultService` documenta/bloqueia operações manuais nas modalidades atuais;
+- `DataInitializer` não cria mais bracket/match/result para Follow;
+- `PostmanScenarioInitializer` separa cenário de ranking Follow e cenário de chaveamento Sumô;
+- criada migration V4 para limpar registros legados Follow em `brackets`, `matches`, `match_results` e `rounds_sumo`;
+- `TESTES_POSTMAN.md` refeito por modalidade.
+
+O teste de ranking da Vespa já confirmou:
 
 ```text
-POST /api/v1/inspecoes-sumo
-GET  /api/v1/inspecoes-sumo/aptidao?registrationId={id}
-POST /api/v1/rounds-sumo
-GET  /api/v1/rounds-sumo/por-partida?matchId={id}
-GET  /api/v1/resultados-partida/por-partida?matchId={id}
+42.315 + 0 = 42.315
+40.870 + 2 = 42.870
 ```
 
-## 6. Plano imediato
+Logo a marca válida `42.315` é a melhor da inscrição.
 
-### Noite de 18/08
+---
 
-Executar `docs/TESTES_POSTMAN.md`, priorizando:
+## 4. Testes manuais — ponto atual
 
-1. smoke test dos GETs;
-2. CRUDs essenciais;
-3. ConfigFollow + tentativa + ranking;
-4. tratamento global de exceções;
-5. bracket com 3 participantes para forçar BYE e progressão;
-6. inscrições + inspeções Sumô;
-7. chave Sumô + rounds até `MatchResult` automático;
-8. bloqueio de resultado manual Sumô;
-9. registrar e corrigir somente bugs bloqueadores.
+Já observado na bateria:
 
-### 19/08
+- validação de duplicidade de `Registration` funcionando;
+- ranking FOLLOW_LINE funcionando para o cenário seed;
+- mecanismo de BYE/progressão chegou a funcionar em um bracket Follow, mas esse cenário foi classificado como **inválido do ponto de vista do domínio** e foi removido pela correção.
 
-Se a bateria essencial passar:
+Próximo passo correto:
 
-1. congelar contrato base do backend;
-2. iniciar os dois frontends;
-3. priorizar primeiro os fluxos completos de competição;
-4. deixar refinamentos visuais e funcionalidades não bloqueadoras para depois.
+1. reiniciar a aplicação para aplicar Flyway V4;
+2. ativar `RASCOMP_SEED_POSTMAN=true`;
+3. confirmar que gerar bracket para FOLLOW_LINE retorna `400`;
+4. usar o cenário SUMO;
+5. aprovar inspeções;
+6. gerar bracket SUMO;
+7. validar BYE/progressão com três participantes aptos;
+8. registrar rounds;
+9. confirmar `MatchResult` automático;
+10. terminar tratamento de erros e congelar API.
 
-## 7. Prioridade até 30/08/2026
+Arquivo oficial:
 
-1. concluir bateria manual final;
-2. corrigir apenas bugs que bloqueiem integração;
-3. congelar API base;
-4. iniciar imediatamente os dois frontends;
-5. Swagger, JWT, testes automatizados adicionais e refinamentos não bloqueadores ficam em paralelo ou depois do primeiro fluxo fullstack funcional;
-6. Camunda está validado como infraestrutura embarcada; BPMN funcional não deve bloquear o frontend.
+```text
+docs/TESTES_POSTMAN.md
+```
 
-## 8. Histórico resumido
+---
 
-- 2026-08-17 — ETAPA A: ConfigFollow aplicado às tentativas;
-- 2026-08-17 — ETAPA B: ranking do Seguidor de Linha;
-- 2026-08-17 — persistência migrada para MySQL + Flyway;
-- 2026-08-17 — ETAPA C: geração automática da primeira rodada;
-- 2026-08-17 — ETAPA D: árvore completa do chaveamento;
-- 2026-08-17 — ETAPA E: sorteio de BYEs e avanço automático;
-- 2026-08-17 — ETAPA F: inspeção do Sumô;
-- 2026-08-17 — ETAPA G: rounds do Sumô;
-- 2026-08-17 — ETAPA H: consolidação automática de MatchResult e avanço do vencedor;
-- 2026-08-18 — corrigido mapeamento `MatchResult.pontosA/pontosB`;
-- 2026-08-18 — datasource alterado para `TRANSACTION_READ_COMMITTED` para Camunda/MySQL;
-- 2026-08-18 — MySQL, Flyway, Hibernate, Camunda e persistência validados;
-- 2026-08-18 — criado fluxo local `.env.local` + `run-local.ps1` para credenciais MySQL;
-- 2026-08-18 — `TESTES_POSTMAN.md` atualizado com ETAPAS E/F/G/H e ordem final de validação;
-- 2026-08-18 — combinado: bateria manual à noite; início dos frontends em 19/08 se não houver bloqueador.
+## 5. Testes automatizados
+
+Branch dedicada:
+
+```text
+testes-automatizados
+```
+
+Ela contém JUnit 5 + Mockito e deve acompanhar a regra consolidada:
+
+- ranking e tentativa para FOLLOW_LINE;
+- rejeição de bracket FOLLOW_LINE;
+- bracket/BYE apenas para SUMO;
+- aptidão/inspeção no Sumô;
+- consolidação automática de resultado.
+
+A branch deve ser validada com:
+
+```powershell
+cd rascomp
+.\mvnw.cmd test
+```
+
+antes do merge.
+
+---
+
+## 6. Planejamento oficial
+
+Ordem atual:
+
+```text
+1. terminar Postman
+2. corrigir bugs bloqueadores
+3. validar testes automatizados
+4. congelar contrato da API
+5. implementar/configurar Swagger/OpenAPI sobre o contrato congelado
+6. iniciar Frontend de Gestão
+7. concluir um fluxo administrativo real
+8. implementar Camunda BPMN funcional
+9. integrar Camunda ao Frontend de Gestão
+10. completar Frontend de Gestão
+11. desenvolver Frontend Público
+12. JWT/autenticação e refinamentos finais
+```
+
+### Camunda
+
+Estado atual:
+
+```text
+Engine embarcado     OK
+Banco ACT_*          OK
+JobExecutor          OK
+REST do Camunda      OK
+BPMN do Rascomp      pendente
+```
+
+O primeiro BPMN planejado continua sendo o fluxo administrativo de inscrição:
+
+```text
+PENDENTE
+  -> análise administrativa
+  -> APROVADA ou REJEITADA
+```
+
+Camunda funcional entra **depois do primeiro fluxo do Frontend de Gestão**, para evitar modelar BPMN em cima de um contrato ainda instável.
+
+### Swagger
+
+Springdoc já está presente como dependência, mas a implementação/documentação formal deve ocorrer **após a bateria final e o congelamento da API**.
+
+---
+
+## 7. Critério de saída do backend
+
+O backend pode ser considerado pronto para congelamento quando passarem:
+
+```text
+CRUDs essenciais
+FOLLOW_LINE: ConfigFollow + Tentativa + Ranking
+proteção contra Bracket/Match em FOLLOW_LINE
+SUMO: inspeção + aptidão
+SUMO: bracket + BYE + progressão
+SUMO: rounds + MatchResult automático
+tratamento global 400/404/409/405
+persistência/migrations
+```
+
+A partir daí, mudanças de contrato devem ser excepcionais e motivadas por bloqueios reais do frontend.
