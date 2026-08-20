@@ -1,0 +1,303 @@
+@startuml
+title Rascomp — Modelo de Domínio Atual
+skinparam classAttributeIconSize 0
+hide methods
+
+class Institution {
+  +Long id
+  +String nome
+  +String sigla
+  +String cidade
+  +String estado
+  +Boolean ativo
+}
+
+class Team {
+  +Long id
+  +String nome
+  +Boolean ativo
+}
+
+class Competitor {
+  +Long id
+  +String nome
+  +String email
+  +String telefone
+  +Boolean ativo
+}
+
+class Robot {
+  +Long id
+  +String nome
+  +String descricao
+  +Boolean ativo
+}
+
+class Competition {
+  +Long id
+  +String nome
+  +String descricao
+  +LocalDate inicioInscricoes
+  +LocalDate fimInscricoes
+  +LocalDate dataInicio
+  +LocalDate dataFim
+  +StatusCompetition status
+  +Boolean ativo
+}
+
+class CompetitionCategory {
+  +Long id
+  +String nome
+  +String descricao
+  +Modalidade modalidade
+  +Boolean ativo
+}
+
+class ConfigFollow {
+  +Long id
+  +Integer numeroTomadas
+  +Integer tentativasPorTomada
+  +Integer maxTempoSegundos
+  +Integer numeroCheckpoints
+}
+
+class ConfigSumo {
+  +Long id
+  +BigDecimal pesoMax
+  +Boolean exigeInspecao
+  +Integer maxTentativasInspecao
+  +Integer numeroRounds
+  +Integer roundsParaVencer
+  +Boolean permiteRoundDesempate
+}
+
+class Registration {
+  +Long id
+  +StatusRegistration status
+  +String observacao
+  +Boolean ativo
+}
+
+package "FOLLOW_LINE" {
+  class TentativaSeguidorLinha {
+    +Long id
+    +Integer tomada
+    +Integer numeroTentativa
+    +BigDecimal tempoSegundos
+    +Integer checkpointsAlcancados
+    +Integer penalidadeSegundos
+    +Boolean concluida
+    +Boolean valida
+    +String observacao
+  }
+
+  class RankingFollowService <<service>> {
+    +gerarRanking(competitionId, categoryId)
+  }
+}
+
+package "SUMO" {
+  class InspecaoSumo {
+    +Long id
+    +Integer numeroTentativa
+    +BigDecimal pesoMedido
+    +Boolean aprovada
+    +String observacao
+  }
+
+  class Bracket {
+    +Long id
+    +String nome
+    +StatusBracket status
+    +Boolean ativo
+  }
+
+  class Match {
+    +Long id
+    +Integer rodada
+    +Integer ordem
+    +LocalDateTime dataHora
+    +StatusMatch status
+    +Boolean ativo
+  }
+
+  class RoundSumo {
+    +Long id
+    +Integer numeroRound
+    +StatusRoundSumo status
+    +String observacao
+  }
+
+  class MatchResult {
+    +Long id
+    +Integer pontosA
+    +Integer pontosB
+    +String observacao
+  }
+}
+
+enum Modalidade {
+  SUMO
+  FOLLOW_LINE
+}
+
+enum StatusCompetition {
+  PLANEJADA
+  INSCRICOES_ABERTAS
+  INSCRICOES_ENCERRADAS
+  EM_ANDAMENTO
+  FINALIZADA
+  CANCELADA
+}
+
+enum StatusRegistration {
+  PENDENTE
+  APROVADA
+  REJEITADA
+  CANCELADA
+  DESCLASSIFICADA
+}
+
+enum StatusBracket {
+  RASCUNHO
+  GERADO
+  EM_ANDAMENTO
+  FINALIZADO
+  CANCELADO
+}
+
+enum StatusMatch {
+  AGUARDANDO_PARTICIPANTES
+  AGENDADA
+  EM_ANDAMENTO
+  FINALIZADA
+  CANCELADA
+  BYE
+}
+
+enum StatusRoundSumo {
+  FINALIZADO
+  EMPATADO
+  ANULADO
+  CANCELADO
+}
+
+Institution "1" -- "0..*" Team
+Team "1" -- "0..*" Competitor
+Team "1" -- "0..*" Robot
+
+CompetitionCategory "1" *-- "0..1" ConfigFollow
+CompetitionCategory "1" *-- "0..1" ConfigSumo
+CompetitionCategory --> Modalidade
+
+Competition "1" -- "0..*" Registration
+CompetitionCategory "1" -- "0..*" Registration
+Team "1" -- "0..*" Registration
+Robot "1" -- "0..*" Registration
+
+Registration "1" -- "0..*" TentativaSeguidorLinha : FOLLOW_LINE
+TentativaSeguidorLinha ..> RankingFollowService : fonte do ranking
+
+Registration "1" -- "0..*" InspecaoSumo : SUMO
+Competition "1" -- "0..*" Bracket : somente SUMO
+CompetitionCategory "1" -- "0..*" Bracket : somente SUMO
+Bracket "1" *-- "0..*" Match
+
+Registration "0..1" -- "0..*" Match : participante A/B
+Match "1" *-- "0..*" RoundSumo
+Registration "0..1" -- "0..*" RoundSumo : vencedor do round
+Match "1" *-- "0..1" MatchResult
+Registration "0..1" -- "0..*" MatchResult : vencedor
+
+Competition --> StatusCompetition
+Registration --> StatusRegistration
+Bracket --> StatusBracket
+Match --> StatusMatch
+RoundSumo --> StatusRoundSumo
+
+note right of Registration
+  UNIQUE(
+    competition_id,
+    category_id,
+    robot_id
+  )
+
+  Status padrão: PENDENTE
+end note
+
+note right of TentativaSeguidorLinha
+  FOLLOW_LINE
+
+  UNIQUE(
+    registration_id,
+    tomada,
+    numero_tentativa
+  )
+
+  tempoFinal = tempo + penalidade
+  Menor tempo final vence.
+end note
+
+note bottom of RankingFollowService
+  Seleciona a melhor tentativa
+  válida e concluída por inscrição.
+
+  FOLLOW_LINE não usa
+  Bracket, Match ou MatchResult.
+end note
+
+note bottom of InspecaoSumo
+  SUMO
+
+  Peso <= ConfigSumo.pesoMax.
+  Última reprovação permitida
+  pode desclassificar a inscrição.
+end note
+
+note right of Bracket
+  SOMENTE SUMO
+
+  Só entram inscrições:
+  - ativas
+  - APROVADA
+  - aptas
+
+  UNIQUE(
+    competition_id,
+    category_id
+  )
+end note
+
+note right of Match
+  SOMENTE SUMO
+
+  UNIQUE(
+    bracket_id,
+    rodada,
+    ordem
+  )
+
+  BYE avança automaticamente.
+end note
+
+note bottom of RoundSumo
+  Quando uma inscrição atinge
+  ConfigSumo.roundsParaVencer,
+  o resultado é consolidado.
+end note
+
+note right of MatchResult
+  SOMENTE RESULTADO CONSOLIDADO
+  DE PARTIDA SUMO NO DOMÍNIO ATUAL.
+
+  Criado automaticamente pelos rounds.
+  API externa: somente leitura.
+end note
+
+note bottom of Competition
+  Camunda 7 está embarcado como engine.
+  BPMN funcional entra após o primeiro
+  fluxo do Frontend de Gestão.
+end note
+
+@enduml
