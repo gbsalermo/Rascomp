@@ -13,6 +13,7 @@ import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.Registration;
+import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
@@ -34,6 +35,7 @@ public class BracketGenerationService {
     private final CompetitionRepository competitionRepository;
     private final CompetitionCategoryRepository categoryRepository;
     private final BracketProgressionService bracketProgressionService;
+    private final InspecaoSumoService inspecaoSumoService;
 
     @Transactional
     public BracketDTO gerar(Long competitionId, Long categoryId) {
@@ -41,11 +43,13 @@ public class BracketGenerationService {
         CompetitionCategory category = buscarCategory(categoryId);
 
         validarAtivos(competition, category);
+        validarCategoriaSumo(category);
         validarChaveamentoInexistente(competitionId, categoryId);
 
         List<Registration> participantes = buscarParticipantesElegiveis(competitionId, categoryId);
         if (participantes.size() < 2) {
-            throw new IllegalArgumentException("São necessárias pelo menos duas inscrições ativas e aprovadas para gerar o chaveamento.");
+            throw new IllegalArgumentException(
+                    "São necessárias pelo menos duas inscrições de Sumô ativas, aprovadas e aptas para gerar o chaveamento.");
         }
 
         List<Registration> participantesSorteados = new ArrayList<>(participantes);
@@ -69,7 +73,10 @@ public class BracketGenerationService {
                 .findByCompetitionIdAndCategoryIdAndStatusAndAtivoTrueOrderByIdAsc(
                         competitionId,
                         categoryId,
-                        StatusRegistration.APROVADA);
+                        StatusRegistration.APROVADA)
+                .stream()
+                .filter(registration -> inspecaoSumoService.estaAptaParaCompetir(registration.getId()))
+                .toList();
     }
 
     private Bracket criarBracket(Competition competition, CompetitionCategory category) {
@@ -171,6 +178,13 @@ public class BracketGenerationService {
         }
         if (!Boolean.TRUE.equals(category.getAtivo())) {
             throw new IllegalArgumentException("Categoria inativa.");
+        }
+    }
+
+    private void validarCategoriaSumo(CompetitionCategory category) {
+        if (category.getModalidade() != Modalidade.SUMO) {
+            throw new IllegalArgumentException(
+                    "Chaveamento é exclusivo da modalidade SUMO. FOLLOW_LINE é definido pelo ranking de tempos.");
         }
     }
 
