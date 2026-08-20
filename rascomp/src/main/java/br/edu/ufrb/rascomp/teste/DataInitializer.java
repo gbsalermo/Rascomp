@@ -2,39 +2,30 @@ package br.edu.ufrb.rascomp.teste;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.edu.ufrb.rascomp.model.Bracket;
 import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Competitor;
 import br.edu.ufrb.rascomp.model.ConfigFollow;
 import br.edu.ufrb.rascomp.model.ConfigSumo;
 import br.edu.ufrb.rascomp.model.Institution;
-import br.edu.ufrb.rascomp.model.Match;
-import br.edu.ufrb.rascomp.model.MatchResult;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.TentativaSeguidorLinha;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
-import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
-import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
-import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
 import br.edu.ufrb.rascomp.repository.ConfigSumoRepository;
 import br.edu.ufrb.rascomp.repository.InstitutionRepository;
-import br.edu.ufrb.rascomp.repository.MatchRepository;
-import br.edu.ufrb.rascomp.repository.MatchResultRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
@@ -55,9 +46,6 @@ public class DataInitializer implements CommandLineRunner {
     private final CompetitionRepository competitionRepository;
     private final RegistrationRepository registrationRepository;
     private final TentativaSeguidorLinhaRepository tentativaSeguidorLinhaRepository;
-    private final BracketRepository bracketRepository;
-    private final MatchRepository matchRepository;
-    private final MatchResultRepository matchResultRepository;
 
     @Override
     @Transactional
@@ -89,7 +77,7 @@ public class DataInitializer implements CommandLineRunner {
                 true
         );
 
-        CompetitionCategory categoriaInativa = criarCategoria(
+        criarCategoria(
                 "Sumô Experimental",
                 "Categoria inativa criada para testar validações.",
                 Modalidade.SUMO,
@@ -147,7 +135,7 @@ public class DataInitializer implements CommandLineRunner {
         ana.setAtivo(true);
         ana = competitorRepository.save(ana);
 
-        // Robôs
+        // Robôs de Seguidor de Linha
         Robot vespa = new Robot();
         vespa.setNome("Vespa");
         vespa.setDescricao("Robô seguidor de linha da RAS UFRB.");
@@ -165,7 +153,7 @@ public class DataInitializer implements CommandLineRunner {
         // Competição com inscrições abertas na data atual de desenvolvimento
         Competition rrc2026 = new Competition();
         rrc2026.setNome("RRC 2026");
-        rrc2026.setDescricao("Cenário completo para testes integrados do Rascomp.");
+        rrc2026.setDescricao("Cenário de referência para testes integrados do Rascomp.");
         rrc2026.setInicioInscricoes(LocalDate.of(2026, 8, 1));
         rrc2026.setFimInscricoes(LocalDate.of(2026, 8, 31));
         rrc2026.setDataInicio(LocalDate.of(2026, 9, 5));
@@ -174,7 +162,7 @@ public class DataInitializer implements CommandLineRunner {
         rrc2026.setAtivo(true);
         rrc2026 = competitionRepository.save(rrc2026);
 
-        // Inscrições aprovadas para permitir testes de tentativa, chaveamento e partidas
+        // Inscrições Follow: a modalidade é definida por ranking, sem Bracket/Match.
         Registration inscricaoVespa = new Registration();
         inscricaoVespa.setCompetition(rrc2026);
         inscricaoVespa.setCategory(seguidorLinha);
@@ -195,7 +183,7 @@ public class DataInitializer implements CommandLineRunner {
         inscricaoTrilho.setAtivo(true);
         inscricaoTrilho = registrationRepository.save(inscricaoTrilho);
 
-        // Tentativas de seguidor de linha
+        // Tentativas de Seguidor de Linha usadas no ranking.
         TentativaSeguidorLinha tentativa1 = new TentativaSeguidorLinha();
         tentativa1.setRegistration(inscricaoVespa);
         tentativa1.setTomada(1);
@@ -220,34 +208,6 @@ public class DataInitializer implements CommandLineRunner {
         tentativa2.setObservacao("Segunda tentativa válida de referência.");
         tentativaSeguidorLinhaRepository.save(tentativa2);
 
-        // Chaveamento e partida de referência
-        Bracket bracket = new Bracket();
-        bracket.setCompetition(rrc2026);
-        bracket.setCategory(seguidorLinha);
-        bracket.setNome("Chave Seguidor de Linha - RRC 2026");
-        bracket.setStatus(StatusBracket.GERADO);
-        bracket.setAtivo(true);
-        bracket = bracketRepository.save(bracket);
-
-        Match match = new Match();
-        match.setBracket(bracket);
-        match.setRodada(1);
-        match.setOrdem(1);
-        match.setRegistrationA(inscricaoVespa);
-        match.setRegistrationB(inscricaoTrilho);
-        match.setDataHora(LocalDateTime.of(2026, 9, 5, 10, 0));
-        match.setStatus(StatusMatch.FINALIZADA);
-        match.setAtivo(true);
-        match = matchRepository.save(match);
-
-        MatchResult result = new MatchResult();
-        result.setMatch(match);
-        result.setWinner(inscricaoVespa);
-        result.setPontosA(2);
-        result.setPontosB(1);
-        result.setObservacao("Resultado de referência para teste de leitura.");
-        matchResultRepository.save(result);
-
         System.out.println("Dados de teste criados com sucesso.");
         System.out.println("IDs principais para testes no Postman:");
         System.out.println("- Categoria Seguidor de Linha: " + seguidorLinha.getId());
@@ -262,9 +222,7 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("- Competição RRC 2026: " + rrc2026.getId());
         System.out.println("- Inscrição Vespa: " + inscricaoVespa.getId());
         System.out.println("- Inscrição Trilho: " + inscricaoTrilho.getId());
-        System.out.println("- Bracket: " + bracket.getId());
-        System.out.println("- Match: " + match.getId());
-        System.out.println("- MatchResult: " + result.getId());
+        System.out.println("- Follow usa TentativaSeguidorLinha + ranking; não cria Bracket/Match/MatchResult.");
     }
 
     private CompetitionCategory criarCategoria(
