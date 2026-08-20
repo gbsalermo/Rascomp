@@ -1,0 +1,36 @@
+name: Backend Tests
+
+on:
+  push:
+    branches:
+      - main
+      - testes-automatizados
+    paths:
+      - 'rascomp/src/**'
+      - 'rascomp/pom.xml'
+      - '.github/workflows/backend-tests.yml'
+  pull_request:
+    paths:
+      - 'rascomp/src/**'
+      - 'rascomp/pom.xml'
+      - '.github/workflows/backend-tests.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: rascomp/pom.xml
+
+      - name: Run unit tests
+        working-directory: rascomp
+        run: mvn -B test
