@@ -28,10 +28,7 @@ public class MatchResultService {
     @Transactional
     public MatchResultDTO criar(MatchResultDTO dto) {
         Match match = buscarMatch(dto.getMatchId());
-
-        if (match.getBracket().getCategory().getModalidade() == Modalidade.SUMO) {
-            throw new IllegalArgumentException("O resultado de uma partida de Sumô é calculado automaticamente pelos rounds.");
-        }
+        validarOperacaoManualPermitida(match);
 
         if (resultRepository.existsByMatchId(match.getId()))
             throw new IllegalArgumentException("A partida já possui resultado.");
@@ -83,7 +80,7 @@ public class MatchResultService {
                 .map(MatchResultDTO::new)
                 .toList();
     }
-    
+
     @Transactional(readOnly = true)
     public List<MatchResultDTO> listarPorChaveamento(Long bracketId) {
         return resultRepository.findByMatchBracketIdOrderByIdAsc(bracketId)
@@ -91,7 +88,7 @@ public class MatchResultService {
                 .map(MatchResultDTO::new)
                 .toList();
     }
-    
+
     @Transactional(readOnly = true)
     public List<MatchResultDTO> listarPorCompeticao(Long competitionId) {
         return resultRepository
@@ -100,7 +97,7 @@ public class MatchResultService {
                 .map(MatchResultDTO::new)
                 .toList();
     }
-    
+
     @Transactional(readOnly = true)
     public MatchResultDTO buscarPorId(Long id) {
         return new MatchResultDTO(buscarResult(id));
@@ -118,10 +115,7 @@ public class MatchResultService {
     public MatchResultDTO atualizar(Long id, MatchResultDTO dto) {
         MatchResult result = buscarResult(id);
         Match match = buscarMatch(dto.getMatchId());
-
-        if (match.getBracket().getCategory().getModalidade() == Modalidade.SUMO) {
-            throw new IllegalArgumentException("Resultados de Sumô são consolidados automaticamente e não devem ser editados manualmente.");
-        }
+        validarOperacaoManualPermitida(match);
 
         if (resultRepository.existsByMatchIdAndIdNot(match.getId(), id))
             throw new IllegalArgumentException("A partida já possui outro resultado.");
@@ -145,15 +139,26 @@ public class MatchResultService {
     public void deletar(Long id) {
         MatchResult result = buscarResult(id);
         Match match = result.getMatch();
-
-        if (match.getBracket().getCategory().getModalidade() == Modalidade.SUMO) {
-            throw new IllegalArgumentException("Resultado automático de Sumô não deve ser excluído manualmente.");
-        }
+        validarOperacaoManualPermitida(match);
 
         match.setStatus(match.getRegistrationA() == null || match.getRegistrationB() == null
                 ? StatusMatch.BYE : StatusMatch.AGENDADA);
         matchRepository.save(match);
         resultRepository.delete(result);
+    }
+
+    private void validarOperacaoManualPermitida(Match match) {
+        Modalidade modalidade = match.getBracket().getCategory().getModalidade();
+
+        if (modalidade == Modalidade.FOLLOW_LINE) {
+            throw new IllegalArgumentException(
+                    "FOLLOW_LINE é definido pelo ranking de tempos e não utiliza partidas nem MatchResult.");
+        }
+
+        if (modalidade == Modalidade.SUMO) {
+            throw new IllegalArgumentException(
+                    "O resultado de uma partida de Sumô é calculado automaticamente pelos rounds.");
+        }
     }
 
     private MatchResultDTO salvarResultado(
