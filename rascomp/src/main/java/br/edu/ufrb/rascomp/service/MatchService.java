@@ -5,11 +5,11 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.edu.ufrb.rascomp.dto.CompetitorDTO;
 import br.edu.ufrb.rascomp.dto.MatchDTO;
 import br.edu.ufrb.rascomp.model.Bracket;
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.Registration;
+import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
@@ -24,6 +24,7 @@ public class MatchService {
     private final MatchRepository matchRepository;
     private final BracketRepository bracketRepository;
     private final RegistrationRepository registrationRepository;
+    private final InspecaoSumoService inspecaoSumoService;
 
     @Transactional
     public MatchDTO criar(MatchDTO dto) {
@@ -39,7 +40,7 @@ public class MatchService {
         match.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
         return new MatchDTO(matchRepository.save(match));
     }
-    
+
     @Transactional(readOnly = true)
     public List<MatchDTO> listarTodos() {
         return matchRepository
@@ -78,6 +79,7 @@ public class MatchService {
     @Transactional
     public void deletar(Long id) {
         Match match = buscarMatch(id);
+        validarBracketSumo(match.getBracket());
         match.setAtivo(false);
         match.setStatus(StatusMatch.CANCELADA);
         matchRepository.save(match);
@@ -86,12 +88,14 @@ public class MatchService {
     @Transactional
     public MatchDTO reativar(Long id) {
         Match match = buscarMatch(id);
+        validarParticipantes(match.getBracket(), match.getRegistrationA(), match.getRegistrationB());
         match.setAtivo(true);
         match.setStatus(definirStatusInicial(match.getRegistrationA(), match.getRegistrationB()));
         return new MatchDTO(matchRepository.save(match));
     }
 
     private void validarParticipantes(Bracket bracket, Registration a, Registration b) {
+        validarBracketSumo(bracket);
         if (!Boolean.TRUE.equals(bracket.getAtivo())) throw new IllegalArgumentException("Chaveamento inativo.");
         if (a == null && b == null) throw new IllegalArgumentException("A partida deve possuir pelo menos um participante.");
         if (a != null) validarRegistrationDoBracket(bracket, a);
@@ -100,12 +104,21 @@ public class MatchService {
             throw new IllegalArgumentException("Os participantes da partida devem ser diferentes.");
     }
 
+    private void validarBracketSumo(Bracket bracket) {
+        if (bracket.getCategory().getModalidade() != Modalidade.SUMO) {
+            throw new IllegalArgumentException(
+                    "Partidas são exclusivas da modalidade SUMO. FOLLOW_LINE é disputado por ranking de tempos.");
+        }
+    }
+
     private void validarRegistrationDoBracket(Bracket bracket, Registration registration) {
         if (!Boolean.TRUE.equals(registration.getAtivo()) || registration.getStatus() != StatusRegistration.APROVADA)
             throw new IllegalArgumentException("Participante deve possuir inscrição ativa e aprovada.");
         if (!registration.getCompetition().getId().equals(bracket.getCompetition().getId())
                 || !registration.getCategory().getId().equals(bracket.getCategory().getId()))
             throw new IllegalArgumentException("A inscrição não pertence à competição e categoria do chaveamento.");
+        if (!inspecaoSumoService.estaAptaParaCompetir(registration.getId()))
+            throw new IllegalArgumentException("Participante de Sumô não está apto para competir.");
     }
 
     private StatusMatch definirStatusInicial(Registration a, Registration b) {
