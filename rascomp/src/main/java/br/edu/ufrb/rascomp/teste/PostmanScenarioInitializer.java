@@ -1,5 +1,6 @@
 package br.edu.ufrb.rascomp.teste;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -10,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
+import br.edu.ufrb.rascomp.model.ConfigFollow;
+import br.edu.ufrb.rascomp.model.ConfigSumo;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
@@ -18,6 +21,8 @@ import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
+import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
+import br.edu.ufrb.rascomp.repository.ConfigSumoRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
@@ -42,6 +47,8 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
     private static final String SUMO_COMPETITION = "POSTMAN - Sumô";
 
     private final CompetitionCategoryRepository categoryRepository;
+    private final ConfigFollowRepository configFollowRepository;
+    private final ConfigSumoRepository configSumoRepository;
     private final TeamRepository teamRepository;
     private final RobotRepository robotRepository;
     private final CompetitionRepository competitionRepository;
@@ -52,6 +59,9 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
     public void run(String... args) {
         CompetitionCategory follow = buscarCategoriaPreferencial("Seguidor de Linha", Modalidade.FOLLOW_LINE);
         CompetitionCategory sumo = buscarCategoriaPreferencial("Mini Sumô", Modalidade.SUMO);
+
+        ConfigFollow followConfig = garantirConfigFollow(follow);
+        ConfigSumo sumoConfig = garantirConfigSumo(sumo);
 
         List<Team> equipesAtivas = teamRepository.findAll().stream()
                 .filter(team -> Boolean.TRUE.equals(team.getAtivo()))
@@ -114,10 +124,17 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
         System.out.println("FOLLOW - competição: " + followCompetition.getId()
                 + " | categoria: " + follow.getId()
                 + " | inscrições: " + followA.getId() + ", " + followB.getId() + ", " + followC.getId());
+        System.out.println("        ConfigFollow: " + followConfig.getNumeroTomadas() + " tomadas x "
+                + followConfig.getTentativasPorTomada() + " tentativas | maxTempo="
+                + followConfig.getMaxTempoSegundos() + "s | checkpoints=" + followConfig.getNumeroCheckpoints());
         System.out.println("        Use TentativaSeguidorLinha + RankingFollow. Não gere chaveamento para FOLLOW_LINE.");
         System.out.println("SUMO   - competição: " + sumoCompetition.getId()
                 + " | categoria: " + sumo.getId()
                 + " | inscrições: " + sumoA.getId() + ", " + sumoB.getId() + ", " + sumoC.getId());
+        System.out.println("        ConfigSumo: pesoMax=" + sumoConfig.getPesoMax()
+                + " | maxTentativasInspecao=" + sumoConfig.getMaxTentativasInspecao()
+                + " | rounds=" + sumoConfig.getNumeroRounds()
+                + " | roundsParaVencer=" + sumoConfig.getRoundsParaVencer());
         System.out.println("        Faça inspeções antes do chaveamento; só inscrições aptas entram na chave.");
         System.out.println("Nenhum bracket, inspeção ou round é criado: esses registros ficam para os testes manuais.");
         System.out.println("============================================================");
@@ -130,6 +147,35 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
                 .or(() -> categoryRepository.findByModalidadeAndAtivoTrue(modalidade).stream().findFirst())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Nenhuma categoria ativa encontrada para a modalidade " + modalidade + "."));
+    }
+
+    private ConfigFollow garantirConfigFollow(CompetitionCategory category) {
+        return configFollowRepository.findByCompetitionCategoryId(category.getId())
+                .orElseGet(() -> configFollowRepository.save(ConfigFollow.builder()
+                        .competitionCategory(category)
+                        .numeroTomadas(3)
+                        .tentativasPorTomada(3)
+                        .maxTempoSegundos(180)
+                        .numeroCheckpoints(5)
+                        .build()));
+    }
+
+    private ConfigSumo garantirConfigSumo(CompetitionCategory category) {
+        return configSumoRepository.findByCompetitionCategoryId(category.getId())
+                .orElseGet(() -> configSumoRepository.save(ConfigSumo.builder()
+                        .competitionCategory(category)
+                        .pesoMax(pesoPadraoSumo(category))
+                        .exigeInspecao(true)
+                        .maxTentativasInspecao(3)
+                        .numeroRounds(3)
+                        .roundsParaVencer(2)
+                        .permiteRoundDesempate(true)
+                        .build()));
+    }
+
+    private BigDecimal pesoPadraoSumo(CompetitionCategory category) {
+        String nome = category.getNome() == null ? "" : category.getNome().toLowerCase();
+        return nome.contains("mini") ? new BigDecimal("0.500") : new BigDecimal("3.000");
     }
 
     private Team buscarEquipePreferencial(List<Team> equipes, String nome, Team fallback) {
