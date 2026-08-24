@@ -1,20 +1,47 @@
 # Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-19T21:55:00-03:00
+Última atualização: 2026-08-23T22:50:00-03:00
 
-## 1. Estado atual
+## 1. Marco atual
 
-O Rascomp está na fase de **validação final do backend antes do congelamento da API**.
+O backend do Rascomp concluiu a fase de validação e o **contrato da API está congelado para a etapa Swagger/OpenAPI**.
 
-Infraestrutura já validada:
+Situação consolidada:
 
-- Java 21 + Spring Boot 3.5.3;
+```text
+Infraestrutura                    ✅
+MySQL persistente                 ✅
+Flyway V1–V4                      ✅
+Camunda 7 embarcado               ✅
+CRUDs essenciais                  ✅
+FOLLOW_LINE manual                ✅
+SUMO manual                       ✅
+Erros HTTP essenciais             ✅
+JUnit/Mockito                     ✅
+GitHub Actions                    ✅
+Branch testes-automatizados       ✅ mergeada na main
+Contrato da API                   🔒 congelado
+Swagger/OpenAPI                   ▶ próxima etapa
+```
+
+Merge da branch de testes realizado em 23/08/2026 pelo PR #2.
+
+---
+
+## 2. Stack consolidada
+
+- Java 21;
+- Spring Boot 3.5.3;
+- Spring Web;
+- Spring Data JPA / Hibernate;
+- Jakarta Validation;
 - MySQL persistente;
+- HikariCP com `TRANSACTION_READ_COMMITTED`;
 - Flyway;
-- Hibernate com `ddl-auto=validate`;
-- Hikari em `TRANSACTION_READ_COMMITTED`;
-- Camunda 7.22 embarcado, Process Engine e tabelas `ACT_*` validados;
-- persistência após reinicialização.
+- Camunda 7.22 embarcado;
+- Springdoc OpenAPI 2.8.9;
+- JUnit 5 + Mockito;
+- GitHub Actions.
 
 Migrations atuais:
 
@@ -25,11 +52,11 @@ V3__create_rounds_sumo.sql
 V4__remove_follow_line_brackets.sql
 ```
 
-A V4 remove chaveamentos legados de FOLLOW_LINE criados antes da correção de domínio.
+A V4 remove dados legados de chaveamento associados a `FOLLOW_LINE` criados antes da correção definitiva do domínio.
 
 ---
 
-## 2. Regra de domínio consolidada por modalidade
+## 3. Domínio congelado por modalidade
 
 ### FOLLOW_LINE
 
@@ -41,25 +68,42 @@ Registration APROVADA
     -> 3 tomadas
     -> até 3 tentativas por tomada
     -> TentativaSeguidorLinha
+    -> melhor tentativa válida e concluída
     -> RankingFollowService
-    -> menor tempo final vence
+    -> classificação por menor tempo final
 ```
 
-Tempo final:
+Cálculo:
 
 ```text
-tempoSegundos + penalidadeSegundos
+tempoFinal = tempoSegundos + penalidadeSegundos
 ```
 
-FOLLOW_LINE **não utiliza**:
+Regras validadas manualmente:
+
+- 3 tomadas × 3 tentativas;
+- limite de tomada;
+- limite de tentativa;
+- limite de checkpoints;
+- duplicidade de `tomada + numeroTentativa` por inscrição;
+- tempo acima do máximo persiste como tentativa inválida;
+- tentativa inválida não entra no ranking;
+- tentativa não concluída não entra no ranking;
+- penalidade entra no tempo final;
+- melhor tentativa válida representa o robô;
+- ranking ordena corretamente os robôs;
+- inscrição SUMO não aceita tentativa Follow;
+- ranking Follow rejeita categoria SUMO;
+- geração de bracket para Follow retorna erro de regra de negócio.
+
+`FOLLOW_LINE` **não utiliza**:
 
 ```text
 Bracket
 Match
 MatchResult
+RoundSumo
 ```
-
-O backend agora rejeita tentativa de criar ou gerar chaveamento para FOLLOW_LINE.
 
 ### SUMO
 
@@ -73,164 +117,227 @@ Registration APROVADA
     -> Match
     -> RoundSumo
     -> MatchResult automático
-    -> BracketProgressionService
+    -> avanço do vencedor
+    -> encerramento do Bracket
 ```
 
-Regras consolidadas:
+Regras validadas manualmente:
 
-- Bracket é exclusivo de SUMO;
-- geração de bracket considera apenas inscrições ativas, `APROVADA` e aptas;
-- Match pertence apenas a bracket SUMO;
-- participantes de Match também precisam estar aptos;
-- MatchResult de SUMO nasce automaticamente dos rounds;
-- MatchResult é somente leitura na API externa atual.
+- `ConfigSumo` presente para a categoria utilizada;
+- aprovação por peso dentro do limite;
+- reprovações de inspeção;
+- desclassificação ao atingir limite de tentativas reprovadas;
+- consulta de aptidão;
+- apenas inscrições ativas, aprovadas e aptas entram no bracket;
+- bracket exclusivo de SUMO;
+- participante desclassificado/não apto fica fora da chave;
+- rounds finalizados e empatados;
+- vitória contabilizada conforme `roundsParaVencer`;
+- `MatchResult` criado automaticamente;
+- `Match` encerrado automaticamente;
+- `Bracket` encerrado automaticamente na final;
+- API de `MatchResult` é somente leitura;
+- `POST`, `PUT` e `DELETE` externos em `resultados-partida` resultam em `405`.
 
 ---
 
-## 3. Correção de domínio aplicada em 19/08
+## 4. Qualidade e testes
 
-Durante a bateria manual foi identificado que o backend permitia chaveamento para FOLLOW_LINE, apesar de a modalidade ser disputada por ranking.
+### Bateria manual
 
-Correções aplicadas:
+A bateria manual final foi concluída em 23/08/2026.
 
-- `BracketGenerationService` restrito a `Modalidade.SUMO`;
-- `BracketService` restrito a SUMO;
-- `MatchService` restrito a SUMO e com validação de aptidão;
-- `BracketGenerationService` passou a filtrar inscrições pela aptidão do Sumô;
-- `MatchResultController` passou a ser somente leitura;
-- `MatchResultService` documenta/bloqueia operações manuais nas modalidades atuais;
-- `DataInitializer` não cria mais bracket/match/result para Follow;
-- `PostmanScenarioInitializer` separa cenário de ranking Follow e cenário de chaveamento Sumô;
-- criada migration V4 para limpar registros legados Follow em `brackets`, `matches`, `match_results` e `rounds_sumo`;
-- `TESTES_POSTMAN.md` refeito por modalidade.
-
-O teste de ranking da Vespa já confirmou:
+Cobertura funcional confirmada:
 
 ```text
-42.315 + 0 = 42.315
-40.870 + 2 = 42.870
+CRUD/contrato básico             ✅
+FOLLOW_LINE completo             ✅
+SUMO completo                    ✅
+400                              ✅
+404                              ✅
+405                              ✅
+persistência                     ✅
+regras de modalidade             ✅
 ```
 
-Logo a marca válida `42.315` é a melhor da inscrição.
-
----
-
-## 4. Testes manuais — ponto atual
-
-Já observado na bateria:
-
-- validação de duplicidade de `Registration` funcionando;
-- ranking FOLLOW_LINE funcionando para o cenário seed;
-- mecanismo de BYE/progressão chegou a funcionar em um bracket Follow, mas esse cenário foi classificado como **inválido do ponto de vista do domínio** e foi removido pela correção.
-
-Próximo passo correto:
-
-1. reiniciar a aplicação para aplicar Flyway V4;
-2. ativar `RASCOMP_SEED_POSTMAN=true`;
-3. confirmar que gerar bracket para FOLLOW_LINE retorna `400`;
-4. usar o cenário SUMO;
-5. aprovar inspeções;
-6. gerar bracket SUMO;
-7. validar BYE/progressão com três participantes aptos;
-8. registrar rounds;
-9. confirmar `MatchResult` automático;
-10. terminar tratamento de erros e congelar API.
-
-Arquivo oficial:
+Arquivo de referência:
 
 ```text
 docs/TESTES_POSTMAN.md
 ```
 
----
+### Testes automatizados
 
-## 5. Testes automatizados
+A branch `testes-automatizados` foi validada e mergeada na `main`.
 
-Branch dedicada:
+A suíte contém testes de serviço para, entre outros:
 
-```text
-testes-automatizados
+- `CompetitionCategoryService`;
+- `TentativaSeguidorLinhaService`;
+- `RankingFollowService`;
+- `InspecaoSumoService`;
+- `BracketService`;
+- `BracketGenerationService`;
+- `MatchService`;
+- `MatchResultService`.
+
+O GitHub Actions `Backend Tests` executa:
+
+```bash
+mvn -B test
 ```
 
-Ela contém JUnit 5 + Mockito e deve acompanhar a regra consolidada:
+com Java 21.
 
-- ranking e tentativa para FOLLOW_LINE;
-- rejeição de bracket FOLLOW_LINE;
-- bracket/BYE apenas para SUMO;
-- aptidão/inspeção no Sumô;
-- consolidação automática de resultado.
-
-A branch deve ser validada com:
-
-```powershell
-cd rascomp
-.\mvnw.cmd test
-```
-
-antes do merge.
-
----
-
-## 6. Planejamento oficial
-
-Ordem atual:
-
-```text
-1. terminar Postman
-2. corrigir bugs bloqueadores
-3. validar testes automatizados
-4. congelar contrato da API
-5. implementar/configurar Swagger/OpenAPI sobre o contrato congelado
-6. iniciar Frontend de Gestão
-7. concluir um fluxo administrativo real
-8. implementar Camunda BPMN funcional
-9. integrar Camunda ao Frontend de Gestão
-10. completar Frontend de Gestão
-11. desenvolver Frontend Público
-12. JWT/autenticação e refinamentos finais
-```
-
-### Camunda
-
-Estado atual:
-
-```text
-Engine embarcado     OK
-Banco ACT_*          OK
-JobExecutor          OK
-REST do Camunda      OK
-BPMN do Rascomp      pendente
-```
-
-O primeiro BPMN planejado continua sendo o fluxo administrativo de inscrição:
-
-```text
-PENDENTE
-  -> análise administrativa
-  -> APROVADA ou REJEITADA
-```
-
-Camunda funcional entra **depois do primeiro fluxo do Frontend de Gestão**, para evitar modelar BPMN em cima de um contrato ainda instável.
-
-### Swagger
-
-Springdoc já está presente como dependência, mas a implementação/documentação formal deve ocorrer **após a bateria final e o congelamento da API**.
+A execução validada antes do merge terminou com `success`.
 
 ---
 
-## 7. Critério de saída do backend
+## 5. Congelamento da API
 
-O backend pode ser considerado pronto para congelamento quando passarem:
+A partir deste marco, controllers, rotas, DTOs, enums e regras principais passam a ser tratados como contrato estável para Swagger e frontends.
+
+Mudanças de contrato só devem ocorrer por:
+
+1. bug comprovado;
+2. incompatibilidade encontrada durante documentação Swagger;
+3. bloqueio real de integração do frontend;
+4. requisito funcional indispensável ainda não representado.
+
+Evitar durante o congelamento:
+
+- renomear endpoints sem necessidade;
+- remover campos de DTO;
+- alterar significado de enums;
+- mover regra de negócio validada para controllers;
+- reabrir a separação de domínio entre Follow e Sumô;
+- alterar migrations antigas já aplicadas.
+
+Migrations futuras devem ser novas e incrementais.
+
+Documento específico:
 
 ```text
-CRUDs essenciais
-FOLLOW_LINE: ConfigFollow + Tentativa + Ranking
-proteção contra Bracket/Match em FOLLOW_LINE
-SUMO: inspeção + aptidão
-SUMO: bracket + BYE + progressão
-SUMO: rounds + MatchResult automático
-tratamento global 400/404/409/405
-persistência/migrations
+docs/CONGELAMENTO_API.md
 ```
 
-A partir daí, mudanças de contrato devem ser excepcionais e motivadas por bloqueios reais do frontend.
+---
+
+## 6. Camunda — estado e decisão atual
+
+Infraestrutura validada:
+
+```text
+Camunda 7.22         ✅
+Process Engine       ✅
+JobExecutor          ✅
+tabelas ACT_*        ✅
+REST starter         ✅
+BPMN Rascomp         ⏳ não implementado
+```
+
+Decisão atual: **não implementar BPMN antes de concluir Swagger**.
+
+As regras de competição continuam em Java. Camunda, se adotado no fluxo final, deverá **orquestrar processo humano/administrativo**, e não substituir `RankingFollowService`, `BracketGenerationService`, `RoundSumoService` ou demais regras já validadas.
+
+Primeiro candidato continua sendo aprovação de inscrição:
+
+```text
+Inscrição criada
+    -> PENDENTE
+    -> análise administrativa
+    -> APROVADA ou REJEITADA
+```
+
+Após Swagger haverá um checkpoint para escolher entre:
+
+- integrar um BPMN mínimo de aprovação antes do frontend completo;
+- integrar Camunda junto do primeiro fluxo do Frontend de Gestão;
+- adiar BPMN funcional para depois do MVP visual, mantendo apenas a infraestrutura já pronta.
+
+Nenhuma dessas opções é escolhida antes da revisão pós-Swagger.
+
+---
+
+## 7. Nova forma de execução do projeto
+
+A partir deste marco, o desenvolvimento deve ser conduzido em modo de **orquestração**:
+
+- a documentação define contratos, ordem e critérios de aceite;
+- implementação pode ser delegada a IA/ferramentas/agentes;
+- cada etapa deve terminar com revisão objetiva e teste verificável;
+- não avançar por quantidade de código, e sim por critério de saída atendido;
+- `CONTINUIDADE.md` permanece a fonte principal do estado do projeto.
+
+Isso reduz trabalho manual de implementação e mantém controle arquitetural mesmo com execução delegada.
+
+---
+
+## 8. Próxima etapa — Swagger/OpenAPI
+
+A dependência já está presente no `pom.xml`:
+
+```text
+org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9
+```
+
+A etapa Swagger deve documentar o contrato congelado, sem alterar o comportamento da API.
+
+Critério de conclusão planejado:
+
+```text
+OpenAPI carregando
+Swagger UI acessível
+informações gerais da API
+controllers organizados por tags
+operações descritas
+path/query params documentados
+requests documentados
+responses 200/201/204/400/404/405/409 documentadas
+DTOs/schemas legíveis
+exemplos úteis de JSON
+erro padrão documentado
+FOLLOW_LINE e SUMO claramente separados
+MatchResult identificado como somente leitura
+conferência visual endpoint por endpoint
+```
+
+URLs esperadas do Springdoc, sujeitas à validação na implementação:
+
+```text
+/v3/api-docs
+/swagger-ui/index.html
+```
+
+---
+
+## 9. Roadmap a partir daqui
+
+```text
+BACKEND VALIDADO E CONGELADO ✅
+            ↓
+SWAGGER / OPENAPI           ▶
+            ↓
+CHECKPOINT ARQUITETURAL
+   ├─ Camunda agora?
+   ├─ Frontend de Gestão primeiro?
+   └─ BPMN pós-MVP?
+            ↓
+CAMINHO ESCOLHIDO
+            ↓
+Frontend de Gestão
+            ↓
+Frontend Público
+            ↓
+Autenticação/JWT e refinamentos
+```
+
+O roadmap deixa de fixar prematuramente a posição do Camunda. A decisão será tomada com a API documentada e a dimensão real da integração visível.
+
+---
+
+## 10. Próximo comando de trabalho
+
+**Iniciar Swagger/OpenAPI sobre a API congelada.**
+
+Antes de qualquer alteração de regra de negócio, consultar este arquivo e `docs/CONGELAMENTO_API.md`.
