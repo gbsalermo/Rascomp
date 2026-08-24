@@ -9,16 +9,14 @@ import br.edu.ufrb.rascomp.model.Team;
 
 @Repository
 public interface TeamRepository extends JpaRepository<Team, Long> {
-	
-	List<Team> findAllByOrderByNomeAsc();
-	
-	List<Team> findByAtivoTrueOrderByNomeAsc();
-	
-	List<Team> findByInstitutionIdOrderByNomeAsc(Long institutionId);
 
-	List<Team> findByInstitutionIdAndAtivoTrueOrderByNomeAsc(Long institutionId);
+    List<Team> findAllByOrderByNomeAsc();
+    List<Team> findByAtivoTrueOrderByNomeAsc();
+    List<Team> findByInstitutionIdOrderByNomeAsc(Long institutionId);
+    List<Team> findByInstitutionIdAndAtivoTrueOrderByNomeAsc(Long institutionId);
+    List<Team> findByResponsibleUserIdOrderByNomeAsc(Long responsibleUserId);
+    List<Team> findByResponsibleUserIdAndAtivoTrueOrderByNomeAsc(Long responsibleUserId);
 
     boolean existsByNomeIgnoreCaseAndInstitutionId(String nome, Long institutionId);
-
-    boolean existsByNomeIgnoreCaseAndInstitutionIdAndIdNot(String nome, Long institutionId,Long id);
+    boolean existsByNomeIgnoreCaseAndInstitutionIdAndIdNot(String nome, Long institutionId, Long id);
 }
