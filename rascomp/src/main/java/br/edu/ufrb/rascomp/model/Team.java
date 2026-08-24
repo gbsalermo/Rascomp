@@ -25,30 +25,29 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Team  implements Serializable{
+public class Team implements Serializable {
 
-	private static final long serialVersionUID = 1L;
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	
-	@Column(nullable = false, length = 120)
-	private String nome;
-	
-	
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "institution_id", nullable = false)
-	private Institution institution;
+    private static final long serialVersionUID = 1L;
 
-	
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@Column(nullable = false)
-	private Boolean ativo = true;
-	
-	
-	@CreationTimestamp
-	@Column(nullable = false, updatable = false)
-	private LocalDateTime dataCadastro;
+    @Column(nullable = false, length = 120)
+    private String nome;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "institution_id", nullable = false)
+    private Institution institution;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "responsible_user_id")
+    private UserAccount responsibleUser;
+
+    @Column(nullable = false)
+    private Boolean ativo = true;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime dataCadastro;
 }
