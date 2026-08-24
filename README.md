@@ -2,9 +2,9 @@
 
 **Da inscrição ao pódio: operação, regras e resultados de competições de robôs em uma única plataforma.**
 
-O Rascomp é uma solução fullstack em desenvolvimento para organizar competições de robótica, com foco inicial em **Sumô** e **Seguidor de Linha**. O sistema centraliza cadastros, inscrições, regras por categoria, inspeções, tentativas, rankings, chaveamentos, partidas e resultados em uma API preparada para alimentar um painel de gestão e uma vitrine pública.
+O Rascomp é uma solução fullstack para organizar competições de robótica, com foco inicial em **Sumô** e **Seguidor de Linha**. O sistema centraliza cadastros, inscrições, regras por categoria, inspeções, tentativas, rankings, chaveamentos, partidas e resultados em uma API preparada para alimentar um painel de gestão e uma vitrine pública.
 
-> Projeto desenvolvido no contexto da RAS-UFRB, com backend Java/Spring Boot, persistência MySQL, migrations Flyway e Camunda 7 preparado para orquestração BPMN.
+> Projeto desenvolvido no contexto da RAS-UFRB, com backend Java/Spring Boot, persistência MySQL, migrations Flyway, suíte automatizada e Camunda 7 preparado para orquestração BPMN.
 
 ---
 
@@ -28,15 +28,11 @@ Execução da prova
 Classificação e resultados
 ```
 
-O objetivo é reduzir retrabalho operacional e oferecer uma fonte única de verdade para organização, competidores e público.
-
 ---
 
-## Duas modalidades, dois fluxos de competição
+## Duas modalidades, dois fluxos
 
 ### Seguidor de Linha
-
-O Seguidor de Linha é decidido por **ranking de tempo**, não por confronto direto.
 
 ```text
 Inscrição aprovada
@@ -47,9 +43,9 @@ ConfigFollow
    ↓
 até 3 tentativas por tomada
    ↓
-registro de tempo + penalidade + checkpoints
+tempo + penalidade + checkpoints
    ↓
-melhor tentativa válida do robô
+melhor tentativa válida e concluída
    ↓
 RankingFollowService
    ↓
@@ -60,16 +56,14 @@ menor tempo final vence
 tempo final = tempo bruto + penalidade
 ```
 
-`FOLLOW_LINE` não utiliza `Bracket`, `Match` nem `MatchResult`.
+`FOLLOW_LINE` não utiliza `Bracket`, `Match`, `MatchResult` ou `RoundSumo`.
 
 ### Sumô
-
-O Sumô usa confronto eliminatório com inspeção e rounds:
 
 ```text
 Inscrição aprovada
    ↓
-Inspeção de peso / aptidão
+Inspeção / aptidão
    ↓
 Chaveamento
    ↓
@@ -84,7 +78,7 @@ avanço do vencedor
 campeão
 ```
 
-A geração da chave considera apenas inscrições ativas, aprovadas e aptas para competir.
+A geração da chave considera apenas inscrições ativas, aprovadas e aptas.
 
 ---
 
@@ -99,34 +93,38 @@ A geração da chave considera apenas inscrições ativas, aprovadas e aptas par
 - competições;
 - categorias;
 - inscrições;
-- ativação/inativação de registros.
+- ativação/inativação.
 
 ### Regras por categoria
 
-- `ConfigFollow` para número de tomadas, tentativas, tempo máximo e checkpoints;
-- `ConfigSumo` para peso máximo, inspeção e configuração de rounds.
+- `ConfigFollow`;
+- `ConfigSumo`.
 
 ### Seguidor de Linha
 
-- registro de tentativas;
+- registro e consulta de tentativas;
+- 3 tomadas × 3 tentativas no cenário padrão;
 - validação de tomada/tentativa/checkpoints;
-- invalidação automática de tempo acima do limite;
+- invalidação automática por tempo máximo;
 - penalidades;
-- ranking sob demanda;
-- seleção da melhor tentativa válida por inscrição.
+- ranking;
+- seleção da melhor tentativa válida e concluída;
+- proteção contra uso indevido de chaveamento.
 
 ### Sumô
 
 - inspeção de peso;
 - limite de tentativas de inspeção;
-- desclassificação automática após limite de reprovações;
+- desclassificação automática;
 - consulta de aptidão;
-- geração automática de chave eliminatória;
+- chave eliminatória;
 - suporte a BYE;
-- árvore completa de partidas;
-- avanço automático de vencedor;
-- rounds finalizados, empatados, anulados ou cancelados;
-- criação automática de `MatchResult` ao atingir o número de vitórias necessário.
+- árvore de partidas;
+- avanço automático;
+- rounds;
+- consolidação automática de `MatchResult`;
+- encerramento automático de partida e bracket;
+- `MatchResult` somente leitura na API externa.
 
 ---
 
@@ -147,7 +145,7 @@ Frontend de Gestão        Frontend Público
              Flyway
 ```
 
-O Camunda já está operacional como infraestrutura embarcada. Os processos BPMN específicos do Rascomp entram depois do primeiro fluxo funcional do Frontend de Gestão.
+O Camunda está operacional como infraestrutura embarcada. A decisão sobre o momento de ativar BPMN funcional será tomada após a etapa Swagger/OpenAPI.
 
 ---
 
@@ -184,20 +182,24 @@ V4 — limpeza de chaveamentos legados de FOLLOW_LINE
 - Camunda 7.22 embarcado
 - Process Engine validado
 - JobExecutor validado
-- tabelas `ACT_*` persistidas no mesmo MySQL
+- tabelas `ACT_*` persistidas no MySQL
+- REST starter presente
+- BPMN Rascomp ainda não implementado
 
 ### Qualidade
 
 - JUnit 5
 - Mockito
-- GitHub Actions para suíte de testes da branch `testes-automatizados`
-- bateria manual no Postman antes do congelamento da API
+- GitHub Actions
+- bateria manual de regressão
+- branch de testes automatizados mergeada na `main`
 
 ### API
 
 - REST
-- Springdoc/OpenAPI presente como dependência
-- documentação Swagger planejada para **depois do congelamento do contrato**
+- Springdoc OpenAPI 2.8.9
+- contrato funcional congelado em 23/08/2026
+- Swagger/OpenAPI é a etapa atual
 
 ---
 
@@ -206,17 +208,16 @@ V4 — limpeza de chaveamentos legados de FOLLOW_LINE
 ```text
 Infraestrutura                  ✅ validada
 CRUDs principais                ✅ implementados
-Follow: tentativas              ✅ implementado
-Follow: ranking                 ✅ implementado
-Sumô: inspeção                  ✅ implementado
-Sumô: chaveamento/BYE           ✅ implementado
-Sumô: rounds                    ✅ implementado
-Sumô: MatchResult automático    ✅ implementado
-Bateria manual                  🧪 em andamento
-Testes automatizados            🧪 branch dedicada
-Frontend de Gestão              ⏳ próximo grande bloco
-Camunda BPMN funcional          ⏳ após 1º fluxo de gestão
-Frontend Público                ⏳ posterior
+FOLLOW_LINE                     ✅ validado manualmente
+SUMO                            ✅ validado manualmente
+Testes automatizados            ✅ validados
+GitHub Actions                  ✅ validado
+Branch testes-automatizados     ✅ mergeada
+Contrato da API                 🔒 congelado
+Swagger / OpenAPI               ▶ etapa atual
+Camunda BPMN funcional          ⏳ decisão pós-Swagger
+Frontend de Gestão              ⏳
+Frontend Público                ⏳
 ```
 
 ---
@@ -224,38 +225,35 @@ Frontend Público                ⏳ posterior
 ## Roadmap imediato
 
 ```text
-Postman
-   ↓
-Testes automatizados
-   ↓
-Correção de bloqueadores
-   ↓
-Congelamento da API
-   ↓
-Swagger / OpenAPI
-   ↓
+BACKEND VALIDADO E CONGELADO ✅
+            ↓
+SWAGGER / OPENAPI           ▶
+            ↓
+CHECKPOINT ARQUITETURAL
+   ├─ Camunda agora?
+   ├─ Frontend de Gestão primeiro?
+   └─ BPMN pós-MVP?
+            ↓
+CAMINHO ESCOLHIDO
+            ↓
 Frontend de Gestão
-   ↓
-1º fluxo administrativo completo
-   ↓
-Camunda BPMN funcional
-   ↓
-Completar Gestão
-   ↓
+            ↓
 Frontend Público
-   ↓
+            ↓
 Autenticação/JWT e refinamentos
 ```
 
-O primeiro processo BPMN planejado é a análise de inscrição:
+O primeiro processo BPMN candidato continua sendo:
 
 ```text
 PENDENTE
   ↓
-Análise administrativa
+análise administrativa
  ↙                     ↘
 APROVADA             REJEITADA
 ```
+
+As regras competitivas permanecem nos services Java; Camunda deverá orquestrar processos, não substituir o domínio validado.
 
 ---
 
@@ -267,7 +265,7 @@ Entre no módulo:
 cd rascomp
 ```
 
-Configure no Eclipse ou no ambiente de execução:
+Configure no Eclipse ou ambiente de execução:
 
 ```text
 DB_USERNAME
@@ -276,13 +274,13 @@ DB_PASSWORD
 
 `DB_URL` é opcional porque existe fallback local para o banco `rascomp`.
 
-Também existe o fluxo local:
+Também existe:
 
 ```powershell
 .\run-local.ps1
 ```
 
-Para preparar dados extras da bateria manual, habilite:
+Para cenários extras de regressão manual:
 
 ```text
 RASCOMP_SEED_POSTMAN=true
@@ -294,6 +292,7 @@ RASCOMP_SEED_POSTMAN=true
 
 ```text
 rascomp/docs/CONTINUIDADE.md
+rascomp/docs/CONGELAMENTO_API.md
 rascomp/docs/TESTES_POSTMAN.md
 rascomp/docs/ENDPOINTS_INTERNOS.md
 rascomp/docs/JSON_EXEMPLOS.md
@@ -302,10 +301,27 @@ rascomp/docs/ENTIDADES_E_CRUDS.md
 rascomp/docs/diagrama-uml-completo.puml
 ```
 
+`CONTINUIDADE.md` é a fonte principal do estado do projeto. `CONGELAMENTO_API.md` define o que pode e não pode mudar durante Swagger.
+
 ---
 
-## Visão de produto
+## Forma de execução
 
-O Rascomp não pretende ser apenas um CRUD de campeonato. A arquitetura separa cadastro, regras de modalidade, execução da prova e classificação para permitir que a plataforma evolua para operação completa do evento, automação de processos, painel administrativo e acompanhamento público em tempo real.
+A partir do congelamento do backend, o projeto é conduzido por orquestração:
 
-O foco atual é transformar o backend já implementado em um **contrato estável e testado**, para então construir os frontends sem carregar inconsistências de domínio para a interface.
+```text
+planejar
+ -> delegar implementação
+ -> revisar contrato/diff
+ -> validar por teste
+ -> atualizar documentação
+ -> avançar
+```
+
+A documentação deve permitir que uma IA, agente ou colaborador execute uma etapa sem depender de contexto informal anterior.
+
+---
+
+## Marco atual
+
+O backend deixou de estar em fase de construção de regras e entrou em fase de **documentação formal do contrato via Swagger/OpenAPI**.
