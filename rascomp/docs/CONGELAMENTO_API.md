@@ -1,51 +1,134 @@
 # Congelamento da API — Rascomp
 
-Data do marco: 23/08/2026
+## Histórico do marco
 
-## Objetivo
-
-Este documento registra o ponto em que o backend foi considerado funcionalmente validado e passou a ser tratado como **contrato estável** para Swagger/OpenAPI e para os futuros clientes da API.
-
-Não significa que o projeto nunca mais muda. Significa que qualquer mudança de contrato daqui em diante precisa ter motivo objetivo e impacto conhecido.
-
----
-
-## Estado validado
+Em 23/08/2026 o núcleo competitivo do backend foi validado e congelado:
 
 ```text
-MySQL/Flyway                     ✅
-JPA/Hibernate                    ✅
-Camunda infraestrutura           ✅
-CRUDs essenciais                 ✅
-FOLLOW_LINE                      ✅
-SUMO                             ✅
-tratamento HTTP                  ✅
-testes automatizados             ✅
-GitHub Actions                   ✅
-testes manuais                   ✅
+FOLLOW_LINE                 ✅
+SUMO                        ✅
+MySQL/Flyway                ✅
+testes manuais              ✅
+testes automatizados        ✅
+CI                          ✅
 ```
 
-A branch `testes-automatizados` foi mergeada na `main` pelo PR #2 após a suíte automatizada ficar verde e após as baterias manuais de Sumô e Seguidor de Linha passarem.
+Logo antes do Swagger foi identificada uma lacuna arquitetural indispensável: o sistema possuía competidores, equipes e inscrições, mas não possuía identidade/autenticação dos atores que realmente utilizariam o Frontend de Gestão.
+
+Por isso o congelamento foi **reaberto de forma excepcional** antes do Swagger.
 
 ---
 
-## Contratos que ficam congelados
+## Correção arquitetural autorizada
 
-### Rotas
+Branch:
 
-Preservar os caminhos atuais dos controllers e seus métodos HTTP.
+```text
+arquitetura-usuarios-acesso
+```
 
-### DTOs
+PR:
 
-Evitar remoção/renomeação de campos já utilizados pela API. Campos novos só quando forem necessários e preferencialmente de forma compatível.
+```text
+#4 — Arquitetura de usuários, ownership e acesso
+```
 
-### Enums
+A correção inclui:
 
-Não alterar significado de valores existentes sem uma decisão explícita de migração.
+- `UserAccount` separado de `Competitor`;
+- dois perfis globais: `PARTICIPANTE` e `ORGANIZACAO`;
+- senha persistida somente como hash BCrypt;
+- JWT stateless para autenticação;
+- responsável da equipe ligado a uma conta `PARTICIPANTE`;
+- vínculo opcional `Competitor -> UserAccount`;
+- competidores efetivamente associados à `Registration`;
+- autoria e revisão da inscrição;
+- upload e metadados de fotos de robôs;
+- ownership centralizado para impedir participante de alterar equipe alheia;
+- API autenticada do participante;
+- API de organização protegida;
+- API pública separada e sanitizada;
+- migration incremental `V5`.
 
-### Regras de modalidade
+Não foram adicionados public IDs. Os IDs numéricos atuais continuam suficientes para o escopo e prazo do projeto.
 
-#### FOLLOW_LINE
+---
+
+## Modelo de acesso consolidado
+
+```text
+PARTICIPANTE
+  -> cria/login em conta própria
+  -> pode ser responsável por uma ou mais equipes
+  -> gerencia apenas equipes sob sua responsabilidade
+  -> cadastra competidores da equipe
+  -> pode vincular a própria conta a um Competitor
+  -> cadastra robôs e fotos
+  -> envia/cancela inscrições da própria equipe
+
+ORGANIZACAO
+  -> gerencia a operação completa do evento
+  -> equipes, competidores, robôs e inscrições
+  -> aprova/rejeita inscrições
+  -> inspeção de Sumô
+  -> chaveamentos, partidas e rounds
+  -> tentativas/ranking Follow
+  -> administra contas da organização
+
+PUBLICO
+  -> somente leitura
+  -> sem dados privados de usuário/competidor
+```
+
+---
+
+## Senhas e autenticação
+
+O banco nunca recebe a senha em texto puro.
+
+```text
+senha recebida no cadastro
+    -> BCryptPasswordEncoder(12)
+    -> password_hash
+    -> senha original descartada
+```
+
+`UserAccountDTO` nunca expõe `passwordHash`.
+
+JWT usa segredo externo ao Git:
+
+```text
+JWT_SECRET
+```
+
+Produção deve utilizar HTTPS; JWT não substitui criptografia de transporte.
+
+---
+
+## Persistência
+
+Migrations aplicadas anteriormente não devem ser alteradas:
+
+```text
+V1
+V2
+V3
+V4
+```
+
+A nova arquitetura entra exclusivamente por:
+
+```text
+V5__add_users_team_ownership_and_robot_images.sql
+```
+
+Qualquer nova mudança estrutural posterior deve usar `V6`, `V7`, etc.
+
+---
+
+## Regra de domínio competitivo continua congelada
+
+### FOLLOW_LINE
 
 ```text
 ConfigFollow
@@ -54,9 +137,9 @@ ConfigFollow
  -> RankingFollowService
 ```
 
-Não criar `Bracket`, `Match`, `RoundSumo` ou `MatchResult` para Follow.
+FOLLOW_LINE não utiliza `Bracket`, `Match`, `RoundSumo` ou `MatchResult`.
 
-#### SUMO
+### SUMO
 
 ```text
 InspecaoSumo
@@ -67,80 +150,41 @@ InspecaoSumo
  -> MatchResult automático
 ```
 
-`MatchResult` continua somente leitura na API externa.
+`MatchResult` continua somente leitura externamente.
+
+A correção de usuários não autoriza redesenhar essas regras.
 
 ---
 
-## Mudanças permitidas durante Swagger
+## Novo critério para congelar novamente
 
-A etapa Swagger pode adicionar:
-
-- configuração OpenAPI;
-- `@Tag`;
-- `@Operation`;
-- `@ApiResponse`;
-- `@Parameter`;
-- `@Schema`;
-- exemplos de payload;
-- descrições de enums;
-- descrições de erros;
-- configuração de Swagger UI;
-- testes/documentação relacionados à exposição OpenAPI.
-
-A etapa Swagger **não deve**, por padrão:
-
-- mudar regra de negócio;
-- alterar persistência;
-- criar migration;
-- renomear endpoint;
-- mudar status HTTP já validado;
-- alterar comportamento de Follow/Sumô;
-- introduzir autenticação JWT;
-- implementar BPMN Rascomp.
-
-Se a documentação revelar inconsistência real do contrato, a alteração deve ser registrada como exceção ao congelamento e acompanhada de teste de regressão.
-
----
-
-## Política de migrations após congelamento
-
-Nunca editar migrations já aplicadas:
+Antes de Swagger, a branch de arquitetura precisa concluir:
 
 ```text
-V1
-V2
-V3
-V4
+compilação/CI                         ✅ obrigatório
+BCrypt/JWT                            ✅ testes
+ownership de equipe                   ✅ testes
+Registration + competidores/autoria  ✅ testes
+regressão Follow/Sumô                 ✅
+smoke de autenticação                 ⏳ manual antes do merge
+migration V5/startup                  ⏳ manual antes do merge
 ```
 
-Qualquer mudança estrutural futura deve entrar como nova migration incremental (`V5`, `V6`, ...).
+Depois do merge do PR #4, o contrato será congelado novamente e Swagger poderá documentar corretamente:
+
+- endpoints públicos;
+- endpoints do participante;
+- endpoints da organização;
+- Bearer JWT;
+- respostas 401 e 403;
+- uploads multipart;
+- DTOs sanitizados do frontend público.
 
 ---
 
-## Critério de aceite do Swagger
+## Camunda
 
-Swagger só é considerado concluído quando:
-
-1. `/v3/api-docs` responder corretamente;
-2. `/swagger-ui/index.html` abrir;
-3. todos os controllers de negócio estiverem organizados por tags;
-4. operações possuírem resumo e descrição úteis;
-5. parâmetros de path/query estiverem claros;
-6. request bodies estiverem documentados;
-7. respostas de sucesso estiverem documentadas;
-8. erros relevantes `400`, `404`, `405` e `409` estiverem documentados onde aplicável;
-9. DTOs estiverem legíveis na seção de schemas;
-10. exemplos JSON úteis estiverem presentes nos fluxos principais;
-11. FOLLOW_LINE e SUMO aparecerem como fluxos diferentes;
-12. `MatchResult` estiver explícito como somente leitura;
-13. uma conferência visual endpoint a endpoint não revelar rota faltante ou descrição enganosa;
-14. nenhuma alteração de comportamento tiver sido introduzida sem justificativa e regressão.
-
----
-
-## Camunda no ponto de congelamento
-
-Camunda está validado como infraestrutura:
+Camunda continua como infraestrutura validada:
 
 ```text
 Engine          ✅
@@ -150,55 +194,23 @@ REST starter    ✅
 BPMN Rascomp    ⏳
 ```
 
-Nenhuma regra central de competição será migrada para BPMN durante Swagger.
-
-Após concluir Swagger haverá um checkpoint arquitetural para escolher o momento de implementar Camunda funcional.
-
-Opções que deverão ser avaliadas depois:
+A nova rastreabilidade da inscrição (`requestedByUser`, `reviewedByUser`, `reviewedAt`) prepara o primeiro fluxo BPMN:
 
 ```text
-A. BPMN mínimo de aprovação de inscrição antes do frontend completo
-B. primeiro fluxo do Frontend de Gestão e Camunda integrado logo depois
-C. Camunda funcional adiado para depois do MVP visual
+PARTICIPANTE envia inscrição
+        -> PENDENTE
+        -> tarefa da ORGANIZACAO
+        -> APROVADA ou REJEITADA
 ```
 
-O critério principal será prazo x valor entregue x risco de integração.
+As regras de Follow/Sumô permanecem nos services Java.
 
 ---
 
-## Forma de execução a partir daqui
-
-O projeto passa a ser conduzido por orquestração:
-
-```text
-planejar
- -> delegar implementação
- -> revisar diff/contrato
- -> executar teste objetivo
- -> atualizar continuidade
- -> avançar
-```
-
-A documentação deve ser suficiente para que outra IA/agente implemente uma etapa sem depender de memória informal da conversa.
-
-Arquivos principais:
-
-```text
-docs/CONTINUIDADE.md
-docs/CONGELAMENTO_API.md
-docs/ENDPOINTS_INTERNOS.md
-docs/JSON_EXEMPLOS.md
-docs/FLUXO_DO_SISTEMA.md
-docs/ENTIDADES_E_CRUDS.md
-docs/TESTES_POSTMAN.md
-```
-
----
-
-## Próxima etapa autorizada
+## Próxima etapa após o novo congelamento
 
 ```text
 Swagger / OpenAPI
 ```
 
-O contrato funcional permanece congelado durante essa etapa.
+O Swagger não deve começar enquanto o PR #4 não estiver validado e mergeado.
