@@ -7,6 +7,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import br.edu.ufrb.rascomp.dto.CompetitorDTO;
+import br.edu.ufrb.rascomp.dto.ParticipantCompetitorRequest;
+import br.edu.ufrb.rascomp.dto.ParticipantRegistrationRequest;
+import br.edu.ufrb.rascomp.dto.ParticipantRobotRequest;
+import br.edu.ufrb.rascomp.dto.ParticipantTeamRequest;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RobotDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
@@ -35,13 +39,15 @@ public class ParticipantPortalService {
     }
 
     @Transactional
-    public TeamDTO criarEquipe(TeamDTO dto) {
+    public TeamDTO criarEquipe(ParticipantTeamRequest request) {
+        TeamDTO dto = teamDto(request);
         return teamService.criarParaResponsavel(dto, accessPolicyService.usuarioAtual());
     }
 
     @Transactional
-    public TeamDTO atualizarEquipe(Long teamId, TeamDTO dto) {
+    public TeamDTO atualizarEquipe(Long teamId, ParticipantTeamRequest request) {
         accessPolicyService.exigirEquipeDoResponsavel(teamId);
+        TeamDTO dto = teamDto(request);
         return teamService.atualizarComoResponsavel(teamId, dto, accessPolicyService.usuarioAtual());
     }
 
@@ -52,11 +58,9 @@ public class ParticipantPortalService {
     }
 
     @Transactional
-    public CompetitorDTO criarCompetidor(Long teamId, CompetitorDTO dto) {
+    public CompetitorDTO criarCompetidor(Long teamId, ParticipantCompetitorRequest request) {
         accessPolicyService.exigirEquipeDoResponsavel(teamId);
-        dto.setTeamId(teamId);
-        dto.setUserAccountId(null);
-        dto.setAtivo(true);
+        CompetitorDTO dto = competitorDto(request, teamId);
         return competitorService.criar(dto);
     }
 
@@ -76,9 +80,9 @@ public class ParticipantPortalService {
     }
 
     @Transactional
-    public CompetitorDTO atualizarCompetidor(Long competitorId, CompetitorDTO dto) {
+    public CompetitorDTO atualizarCompetidor(Long competitorId, ParticipantCompetitorRequest request) {
         Competitor atual = accessPolicyService.exigirCompetidorDaEquipe(competitorId);
-        dto.setTeamId(atual.getTeam().getId());
+        CompetitorDTO dto = competitorDto(request, atual.getTeam().getId());
         dto.setUserAccountId(atual.getUserAccount() == null ? null : atual.getUserAccount().getId());
         dto.setAtivo(atual.getAtivo());
         return competitorService.atualizar(competitorId, dto);
@@ -97,17 +101,16 @@ public class ParticipantPortalService {
     }
 
     @Transactional
-    public RobotDTO criarRobo(Long teamId, RobotDTO dto) {
+    public RobotDTO criarRobo(Long teamId, ParticipantRobotRequest request) {
         accessPolicyService.exigirEquipeDoResponsavel(teamId);
-        dto.setTeamId(teamId);
-        dto.setAtivo(true);
+        RobotDTO dto = robotDto(request, teamId);
         return robotService.criar(dto);
     }
 
     @Transactional
-    public RobotDTO atualizarRobo(Long robotId, RobotDTO dto) {
+    public RobotDTO atualizarRobo(Long robotId, ParticipantRobotRequest request) {
         Robot atual = accessPolicyService.exigirRoboDaEquipe(robotId);
-        dto.setTeamId(atual.getTeam().getId());
+        RobotDTO dto = robotDto(request, atual.getTeam().getId());
         dto.setAtivo(atual.getAtivo());
         return robotService.atualizar(robotId, dto);
     }
@@ -145,12 +148,20 @@ public class ParticipantPortalService {
     }
 
     @Transactional
-    public RegistrationDTO inscrever(Long teamId, RegistrationDTO dto) {
+    public RegistrationDTO inscrever(Long teamId, ParticipantRegistrationRequest request) {
         accessPolicyService.exigirEquipeDoResponsavel(teamId);
-        accessPolicyService.exigirRoboDaEquipe(dto.getRobotId());
+        Robot robot = accessPolicyService.exigirRoboDaEquipe(request.getRobotId());
+        if (!robot.getTeam().getId().equals(teamId)) {
+            throw new IllegalArgumentException("O robô deve pertencer à equipe informada.");
+        }
+
+        RegistrationDTO dto = new RegistrationDTO();
+        dto.setCompetitionId(request.getCompetitionId());
+        dto.setCategoryId(request.getCategoryId());
         dto.setTeamId(teamId);
-        dto.setStatus(null);
-        dto.setAtivo(true);
+        dto.setRobotId(request.getRobotId());
+        dto.setCompetitorIds(request.getCompetitorIds());
+        dto.setObservacao(request.getObservacao());
         return registrationService.criarPorParticipante(dto, accessPolicyService.usuarioAtual());
     }
 
@@ -158,5 +169,31 @@ public class ParticipantPortalService {
     public void cancelarInscricao(Long registrationId) {
         accessPolicyService.exigirInscricaoDaEquipe(registrationId);
         registrationService.deletar(registrationId);
+    }
+
+    private TeamDTO teamDto(ParticipantTeamRequest request) {
+        TeamDTO dto = new TeamDTO();
+        dto.setNome(request.getNome());
+        dto.setInstitutionId(request.getInstitutionId());
+        return dto;
+    }
+
+    private CompetitorDTO competitorDto(ParticipantCompetitorRequest request, Long teamId) {
+        CompetitorDTO dto = new CompetitorDTO();
+        dto.setNome(request.getNome());
+        dto.setEmail(request.getEmail());
+        dto.setTelefone(request.getTelefone());
+        dto.setTeamId(teamId);
+        dto.setAtivo(true);
+        return dto;
+    }
+
+    private RobotDTO robotDto(ParticipantRobotRequest request, Long teamId) {
+        RobotDTO dto = new RobotDTO();
+        dto.setNome(request.getNome());
+        dto.setDescricao(request.getDescricao());
+        dto.setTeamId(teamId);
+        dto.setAtivo(true);
+        return dto;
     }
 }
