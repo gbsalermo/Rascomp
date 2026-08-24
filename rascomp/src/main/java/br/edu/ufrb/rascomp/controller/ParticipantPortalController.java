@@ -17,6 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import br.edu.ufrb.rascomp.dto.CompetitorDTO;
+import br.edu.ufrb.rascomp.dto.ParticipantCompetitorRequest;
+import br.edu.ufrb.rascomp.dto.ParticipantRegistrationRequest;
+import br.edu.ufrb.rascomp.dto.ParticipantRobotRequest;
+import br.edu.ufrb.rascomp.dto.ParticipantTeamRequest;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RobotDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
@@ -38,15 +42,15 @@ public class ParticipantPortalController {
     }
 
     @PostMapping("/equipes")
-    public ResponseEntity<TeamDTO> criarEquipe(@Valid @RequestBody TeamDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.criarEquipe(dto));
+    public ResponseEntity<TeamDTO> criarEquipe(@Valid @RequestBody ParticipantTeamRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.criarEquipe(request));
     }
 
     @PutMapping("/equipes/{teamId}")
     public ResponseEntity<TeamDTO> atualizarEquipe(
             @PathVariable Long teamId,
-            @Valid @RequestBody TeamDTO dto) {
-        return ResponseEntity.ok(portalService.atualizarEquipe(teamId, dto));
+            @Valid @RequestBody ParticipantTeamRequest request) {
+        return ResponseEntity.ok(portalService.atualizarEquipe(teamId, request));
     }
 
     @GetMapping("/equipes/{teamId}/competidores")
@@ -57,8 +61,9 @@ public class ParticipantPortalController {
     @PostMapping("/equipes/{teamId}/competidores")
     public ResponseEntity<CompetitorDTO> criarCompetidor(
             @PathVariable Long teamId,
-            @Valid @RequestBody CompetitorDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.criarCompetidor(teamId, dto));
+            @Valid @RequestBody ParticipantCompetitorRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(portalService.criarCompetidor(teamId, request));
     }
 
     @PostMapping("/equipes/{teamId}/competidores/eu")
@@ -69,8 +74,8 @@ public class ParticipantPortalController {
     @PutMapping("/competidores/{competitorId}")
     public ResponseEntity<CompetitorDTO> atualizarCompetidor(
             @PathVariable Long competitorId,
-            @Valid @RequestBody CompetitorDTO dto) {
-        return ResponseEntity.ok(portalService.atualizarCompetidor(competitorId, dto));
+            @Valid @RequestBody ParticipantCompetitorRequest request) {
+        return ResponseEntity.ok(portalService.atualizarCompetidor(competitorId, request));
     }
 
     @DeleteMapping("/competidores/{competitorId}")
@@ -87,15 +92,15 @@ public class ParticipantPortalController {
     @PostMapping("/equipes/{teamId}/robos")
     public ResponseEntity<RobotDTO> criarRobo(
             @PathVariable Long teamId,
-            @Valid @RequestBody RobotDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.criarRobo(teamId, dto));
+            @Valid @RequestBody ParticipantRobotRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.criarRobo(teamId, request));
     }
 
     @PutMapping("/robos/{robotId}")
     public ResponseEntity<RobotDTO> atualizarRobo(
             @PathVariable Long robotId,
-            @Valid @RequestBody RobotDTO dto) {
-        return ResponseEntity.ok(portalService.atualizarRobo(robotId, dto));
+            @Valid @RequestBody ParticipantRobotRequest request) {
+        return ResponseEntity.ok(portalService.atualizarRobo(robotId, request));
     }
 
     @DeleteMapping("/robos/{robotId}")
@@ -139,8 +144,8 @@ public class ParticipantPortalController {
     @PostMapping("/equipes/{teamId}/inscricoes")
     public ResponseEntity<RegistrationDTO> inscrever(
             @PathVariable Long teamId,
-            @Valid @RequestBody RegistrationDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.inscrever(teamId, dto));
+            @Valid @RequestBody ParticipantRegistrationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.inscrever(teamId, request));
     }
 
     @DeleteMapping("/inscricoes/{registrationId}")
