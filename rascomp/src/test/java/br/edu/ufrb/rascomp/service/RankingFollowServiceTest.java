@@ -115,13 +115,13 @@ class RankingFollowServiceTest {
             Integer tomada,
             Integer numeroTentativa) {
 
-        TentativaSeguidorLinha tentativa = mock(TentativaSeguidorLinha.class);
-        when(tentativa.getValida()).thenReturn(true);
-        when(tentativa.getConcluida()).thenReturn(true);
-        when(tentativa.getTempoSegundos()).thenReturn(tempo);
-        when(tentativa.getPenalidadeSegundos()).thenReturn(penalidade);
-        when(tentativa.getTomada()).thenReturn(tomada);
-        when(tentativa.getNumeroTentativa()).thenReturn(numeroTentativa);
+        TentativaSeguidorLinha tentativa = new TentativaSeguidorLinha();
+        tentativa.setValida(true);
+        tentativa.setConcluida(true);
+        tentativa.setTempoSegundos(tempo);
+        tentativa.setPenalidadeSegundos(penalidade);
+        tentativa.setTomada(tomada);
+        tentativa.setNumeroTentativa(numeroTentativa);
         return tentativa;
     }
 }
