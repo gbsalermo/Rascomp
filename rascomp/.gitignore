@@ -32,8 +32,11 @@ build/
 ### VS Code ###
 .vscode/
 
-# Configuração local do banco - nunca versionar credenciais
+# Configuração local - nunca versionar credenciais
 .env.local
+
+# Uploads locais de imagens
+/uploads/
 
 # Arquivo local único de orientação para os CRUDs
 /docs/CODIGOS_REFERENCIA.md
