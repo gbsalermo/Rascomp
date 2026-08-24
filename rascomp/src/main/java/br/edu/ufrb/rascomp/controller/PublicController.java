@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.edu.ufrb.rascomp.dto.BracketDTO;
+import br.edu.ufrb.rascomp.dto.CompetitionCategoryDTO;
 import br.edu.ufrb.rascomp.dto.CompetitionDTO;
+import br.edu.ufrb.rascomp.dto.InstitutionDTO;
 import br.edu.ufrb.rascomp.dto.MatchDTO;
 import br.edu.ufrb.rascomp.dto.MatchResultDTO;
 import br.edu.ufrb.rascomp.dto.PublicCompetitorDTO;
@@ -24,6 +26,7 @@ import br.edu.ufrb.rascomp.dto.PublicRobotDTO;
 import br.edu.ufrb.rascomp.dto.PublicTeamDTO;
 import br.edu.ufrb.rascomp.dto.RankingFollowDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
+import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.service.PublicQueryService;
 import br.edu.ufrb.rascomp.service.RobotImageService;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +41,17 @@ public class PublicController {
     @GetMapping("/competicoes")
     public ResponseEntity<List<CompetitionDTO>> competicoes() {
         return ResponseEntity.ok(publicQueryService.competicoes());
+    }
+
+    @GetMapping("/categorias")
+    public ResponseEntity<List<CompetitionCategoryDTO>> categorias(
+            @RequestParam(required = false) Modalidade modalidade) {
+        return ResponseEntity.ok(publicQueryService.categorias(modalidade));
+    }
+
+    @GetMapping("/instituicoes")
+    public ResponseEntity<List<InstitutionDTO>> instituicoes() {
+        return ResponseEntity.ok(publicQueryService.instituicoes());
     }
 
     @GetMapping("/equipes")
