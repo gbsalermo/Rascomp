@@ -29,13 +29,14 @@ public class RobotImageService {
         List<RobotImage> atuais = robotImageRepository
                 .findByRobotIdAndAtivoTrueOrderByPrincipalDescOrdemAscIdAsc(robotId);
 
+        String contentType = storageService.detectarContentType(arquivo);
         String storageKey = storageService.armazenar(robotId, arquivo);
 
         RobotImage image = new RobotImage();
         image.setRobot(robot);
         image.setStorageKey(storageKey);
         image.setOriginalFilename(nomeSeguro(arquivo.getOriginalFilename()));
-        image.setContentType(arquivo.getContentType());
+        image.setContentType(contentType);
         image.setPrincipal(atuais.isEmpty());
         image.setOrdem(atuais.size());
         image.setAtivo(true);
