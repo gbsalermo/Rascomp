@@ -90,7 +90,7 @@ class RegistrationOwnershipServiceTest {
                 IllegalArgumentException.class,
                 () -> service.criarPorParticipante(dto, c.user));
 
-        assertTrue(ex.getMessage().contains("mesma equipe"));
+        assertTrue(ex.getMessage().contains("equipe informada"));
     }
 
     private void prepararRepositorios(Cenário c) {
