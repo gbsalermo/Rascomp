@@ -6,7 +6,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.ufrb.rascomp.dto.BracketDTO;
+import br.edu.ufrb.rascomp.dto.CompetitionCategoryDTO;
 import br.edu.ufrb.rascomp.dto.CompetitionDTO;
+import br.edu.ufrb.rascomp.dto.InstitutionDTO;
 import br.edu.ufrb.rascomp.dto.MatchDTO;
 import br.edu.ufrb.rascomp.dto.MatchResultDTO;
 import br.edu.ufrb.rascomp.dto.PublicCompetitorDTO;
@@ -16,6 +18,7 @@ import br.edu.ufrb.rascomp.dto.PublicTeamDTO;
 import br.edu.ufrb.rascomp.dto.RankingFollowDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
 import br.edu.ufrb.rascomp.model.Robot;
+import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
@@ -29,6 +32,8 @@ import lombok.RequiredArgsConstructor;
 public class PublicQueryService {
 
     private final CompetitionService competitionService;
+    private final CompetitionCategoryService categoryService;
+    private final InstitutionService institutionService;
     private final TeamRepository teamRepository;
     private final CompetitorRepository competitorRepository;
     private final RobotRepository robotRepository;
@@ -42,6 +47,19 @@ public class PublicQueryService {
 
     public List<CompetitionDTO> competicoes() {
         return competitionService.listar(true);
+    }
+
+    public List<InstitutionDTO> instituicoes() {
+        return institutionService.listarAtivas();
+    }
+
+    public List<CompetitionCategoryDTO> categorias(Modalidade modalidade) {
+        if (modalidade == null) {
+            return categoryService.listarTodos().stream()
+                    .filter(dto -> Boolean.TRUE.equals(dto.getAtivo()))
+                    .toList();
+        }
+        return categoryService.listarPorModalidadeAtiva(modalidade);
     }
 
     @Transactional(readOnly = true)
