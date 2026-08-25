@@ -22,9 +22,17 @@ public class JwtService {
     @Value("${app.security.jwt.expiration-ms:28800000}")
     private long expirationMs;
 
+    @Value("${app.security.jwt.remember-expiration-ms:2592000000}")
+    private long rememberExpirationMs;
+
     public String gerarToken(UserAccount usuario) {
+        return gerarToken(usuario, false);
+    }
+
+    public String gerarToken(UserAccount usuario, boolean lembrarDeMim) {
         Date agora = new Date();
-        Date expiracao = new Date(agora.getTime() + expirationMs);
+        long validade = lembrarDeMim ? rememberExpirationMs : expirationMs;
+        Date expiracao = new Date(agora.getTime() + validade);
 
         return Jwts.builder()
                 .subject(usuario.getEmail())
