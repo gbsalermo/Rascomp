@@ -25,6 +25,7 @@ public class BracketDTO {
     @NotBlank @Size(max = 150) private String nome;
     private StatusBracket status;
     private Boolean ativo;
+    private Boolean atual;
     private LocalDateTime dataCadastro;
 
     public BracketDTO(Bracket entity) {
@@ -36,6 +37,7 @@ public class BracketDTO {
         this.nome = entity.getNome();
         this.status = entity.getStatus();
         this.ativo = entity.getAtivo();
+        this.atual = entity.getAtual();
         this.dataCadastro = entity.getDataCadastro();
     }
 }
