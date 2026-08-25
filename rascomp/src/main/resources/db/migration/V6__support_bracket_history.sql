@@ -33,10 +33,6 @@ PREPARE rascomp_stmt FROM @add_current_column;
 EXECUTE rascomp_stmt;
 DEALLOCATE PREPARE rascomp_stmt;
 
-UPDATE brackets
-SET atual = TRUE
-WHERE atual IS NULL OR atual = FALSE;
-
 SET @add_history_index = IF(
     EXISTS (
         SELECT 1
