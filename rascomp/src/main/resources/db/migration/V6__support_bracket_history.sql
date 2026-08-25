@@ -3,6 +3,39 @@
 
 SET @rascomp_schema = DATABASE();
 
+-- The legacy unique index (competition_id, category_id) may also be the index
+-- MySQL chose to support fk_bracket_competition. Create dedicated non-unique
+-- FK indexes before dropping that uniqueness.
+SET @add_competition_fk_index = IF(
+    EXISTS (
+        SELECT 1
+        FROM information_schema.statistics
+        WHERE table_schema = @rascomp_schema
+          AND table_name = 'brackets'
+          AND index_name = 'idx_brackets_competition_fk'
+    ),
+    'SELECT 1',
+    'CREATE INDEX idx_brackets_competition_fk ON brackets (competition_id)'
+);
+PREPARE rascomp_stmt FROM @add_competition_fk_index;
+EXECUTE rascomp_stmt;
+DEALLOCATE PREPARE rascomp_stmt;
+
+SET @add_category_fk_index = IF(
+    EXISTS (
+        SELECT 1
+        FROM information_schema.statistics
+        WHERE table_schema = @rascomp_schema
+          AND table_name = 'brackets'
+          AND index_name = 'idx_brackets_category_fk'
+    ),
+    'SELECT 1',
+    'CREATE INDEX idx_brackets_category_fk ON brackets (category_id)'
+);
+PREPARE rascomp_stmt FROM @add_category_fk_index;
+EXECUTE rascomp_stmt;
+DEALLOCATE PREPARE rascomp_stmt;
+
 SET @drop_legacy_unique = IF(
     EXISTS (
         SELECT 1
