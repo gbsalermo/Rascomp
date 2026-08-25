@@ -100,6 +100,12 @@ public class RoundSumoService {
     }
 
     private void validarPartida(Match match) {
+        if (!Boolean.TRUE.equals(match.getBracket().getAtivo())) {
+            throw new IllegalArgumentException("O chaveamento da partida deve estar ativo.");
+        }
+        if (!Boolean.TRUE.equals(match.getBracket().getAtual())) {
+            throw new IllegalArgumentException("Não é possível registrar rounds em uma chave histórica.");
+        }
         if (!Boolean.TRUE.equals(match.getAtivo())) {
             throw new IllegalArgumentException("A partida deve estar ativa.");
         }
