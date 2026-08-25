@@ -39,18 +39,19 @@ public class BracketGenerationService {
 
     @Transactional
     public BracketDTO gerar(Long competitionId, Long categoryId) {
-        Competition competition = buscarCompetition(competitionId);
+        Competition competition = buscarCompetitionParaAtualizacao(competitionId);
         CompetitionCategory category = buscarCategory(categoryId);
 
         validarAtivos(competition, category);
         validarCategoriaSumo(category);
-        validarChaveamentoInexistente(competitionId, categoryId);
 
         List<Registration> participantes = buscarParticipantesElegiveis(competitionId, categoryId);
         if (participantes.size() < 2) {
             throw new IllegalArgumentException(
                     "São necessárias pelo menos duas inscrições de Sumô ativas, aprovadas e aptas para gerar o chaveamento.");
         }
+
+        marcarChavesAtuaisComoHistoricas(competitionId, categoryId);
 
         List<Registration> participantesSorteados = new ArrayList<>(participantes);
         Collections.shuffle(participantesSorteados);
@@ -79,6 +80,13 @@ public class BracketGenerationService {
                 .toList();
     }
 
+    private void marcarChavesAtuaisComoHistoricas(Long competitionId, Long categoryId) {
+        List<Bracket> atuais = bracketRepository
+                .findByCompetitionIdAndCategoryIdAndAtualTrue(competitionId, categoryId);
+        atuais.forEach(item -> item.setAtual(false));
+        if (!atuais.isEmpty()) bracketRepository.saveAll(atuais);
+    }
+
     private Bracket criarBracket(Competition competition, CompetitionCategory category) {
         Bracket bracket = new Bracket();
         bracket.setCompetition(competition);
@@ -86,6 +94,7 @@ public class BracketGenerationService {
         bracket.setNome("Chaveamento - " + competition.getNome() + " - " + category.getNome());
         bracket.setStatus(StatusBracket.RASCUNHO);
         bracket.setAtivo(true);
+        bracket.setAtual(true);
         return bracketRepository.save(bracket);
     }
 
@@ -188,14 +197,8 @@ public class BracketGenerationService {
         }
     }
 
-    private void validarChaveamentoInexistente(Long competitionId, Long categoryId) {
-        if (bracketRepository.existsByCompetitionIdAndCategoryId(competitionId, categoryId)) {
-            throw new IllegalArgumentException("Já existe um chaveamento para esta competição e categoria.");
-        }
-    }
-
-    private Competition buscarCompetition(Long id) {
-        return competitionRepository.findById(id)
+    private Competition buscarCompetitionParaAtualizacao(Long id) {
+        return competitionRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new EntityNotFoundException("Competição não encontrada: " + id));
     }
 
