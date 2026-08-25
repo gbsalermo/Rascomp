@@ -24,7 +24,7 @@ public class AuthService {
     @Transactional
     public AuthResponse cadastrarParticipante(RegisterRequest request) {
         UserAccount usuario = userAccountService.cadastrarParticipante(request);
-        return new AuthResponse(jwtService.gerarToken(usuario), usuario);
+        return new AuthResponse(jwtService.gerarToken(usuario, request.isLembrarDeMim()), usuario);
     }
 
     @Transactional
@@ -36,7 +36,7 @@ public class AuthService {
 
         UserAccount usuario = userAccountService.buscarPorEmail(email);
         userAccountService.registrarLogin(usuario);
-        return new AuthResponse(jwtService.gerarToken(usuario), usuario);
+        return new AuthResponse(jwtService.gerarToken(usuario, request.isLembrarDeMim()), usuario);
     }
 
     @Transactional(readOnly = true)
