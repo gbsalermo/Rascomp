@@ -25,4 +25,6 @@ public class RegisterRequest {
 
     @Size(max = 20)
     private String telefone;
+
+    private boolean lembrarDeMim;
 }
