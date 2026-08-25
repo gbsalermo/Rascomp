@@ -2,6 +2,7 @@ package br.edu.ufrb.rascomp.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -69,9 +70,9 @@ class BracketGenerationServiceTest {
 
     @Test
     void tresParticipantesAptosDevemGerarChaveDeQuatroComUmBye() {
-        when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
+        when(competitionRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(competition));
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(categorySumo));
-        when(bracketRepository.existsByCompetitionIdAndCategoryId(1L, 1L)).thenReturn(false);
+        when(bracketRepository.findByCompetitionIdAndCategoryIdAndAtualTrue(1L, 1L)).thenReturn(List.of());
 
         List<Registration> participantes = List.of(
                 registration(1L), registration(2L), registration(3L));
@@ -99,6 +100,7 @@ class BracketGenerationServiceTest {
         BracketDTO resultado = service.gerar(1L, 1L);
 
         assertEquals(StatusBracket.GERADO, resultado.getStatus());
+        assertTrue(resultado.getAtual());
         assertEquals(3, partidasSalvas.size());
         assertEquals(2, partidasSalvas.stream().filter(m -> m.getRodada() == 1).count());
         assertEquals(1, partidasSalvas.stream().filter(m -> m.getStatus() == StatusMatch.BYE).count());
@@ -110,9 +112,8 @@ class BracketGenerationServiceTest {
 
     @Test
     void inscricaoNaoAptaNaoDeveEntrarNaChave() {
-        when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
+        when(competitionRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(competition));
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(categorySumo));
-        when(bracketRepository.existsByCompetitionIdAndCategoryId(1L, 1L)).thenReturn(false);
 
         Registration apta = registration(1L);
         Registration naoApta = registration(2L);
@@ -136,7 +137,7 @@ class BracketGenerationServiceTest {
                 .ativo(true)
                 .build();
 
-        when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
+        when(competitionRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(competition));
         when(categoryRepository.findById(3L)).thenReturn(Optional.of(follow));
 
         assertThrows(IllegalArgumentException.class, () -> service.gerar(1L, 3L));
