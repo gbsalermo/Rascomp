@@ -7,8 +7,6 @@ import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import br.edu.ufrb.rascomp.exception.ApiErrorResponse;
-import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -16,6 +14,7 @@ import io.swagger.v3.oas.models.PathItem.HttpMethod;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.media.MapSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -37,15 +36,9 @@ public class OpenApiConfig {
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
                         .bearerFormat("JWT")
-                        .description("JWT retornado por POST /api/v1/auth/login ou POST /api/v1/auth/register."));
-
-        ModelConverters.getInstance().read(ApiErrorResponse.class)
-                .forEach(components::addSchemas);
-
-        Schema<?> securityError = new ObjectSchema()
-                .addProperty("status", new IntegerSchema().example(401))
-                .addProperty("error", new StringSchema().example("Não autenticado"));
-        components.addSchemas("SecurityErrorResponse", securityError);
+                        .description("JWT retornado por POST /api/v1/auth/login ou POST /api/v1/auth/register."))
+                .addSchemas("ApiErrorResponse", apiErrorSchema())
+                .addSchemas("SecurityErrorResponse", securityErrorSchema());
 
         components
                 .addResponses("BadRequest", respostaErro("Requisição inválida ou regra de negócio não atendida."))
@@ -77,28 +70,56 @@ public class OpenApiConfig {
                                 Respostas 401/403 emitidas diretamente pelo Spring Security possuem o formato compacto
                                 {status, error}; os demais erros tratados pela aplicação utilizam ApiErrorResponse.
                                 """))
-                .tags(List.of(
-                        new Tag().name("Autenticação").description("Cadastro de participante, login JWT e usuário autenticado."),
-                        new Tag().name("Portal do Participante").description("Operações do PARTICIPANTE com validação de ownership."),
-                        new Tag().name("API Pública").description("Consultas sanitizadas para landing page e acompanhamento público."),
-                        new Tag().name("Usuários").description("Administração de contas pela ORGANIZACAO."),
-                        new Tag().name("Instituições").description("Cadastro e manutenção de instituições."),
-                        new Tag().name("Equipes").description("Cadastro e manutenção de equipes."),
-                        new Tag().name("Competidores").description("Cadastro e manutenção de competidores."),
-                        new Tag().name("Robôs").description("Cadastro e manutenção de robôs."),
-                        new Tag().name("Fotos de Robôs").description("Upload e gestão das fotos dos robôs. JPEG, PNG ou WEBP, até 5 MB."),
-                        new Tag().name("Competições").description("Cadastro e ciclo de vida das competições."),
-                        new Tag().name("Categorias").description("Categorias vinculadas às competições e suas modalidades."),
-                        new Tag().name("Inscrições").description("Gestão administrativa das inscrições, incluindo aprovação e rejeição."),
-                        new Tag().name("Configuração Follow").description("Parâmetros de execução da modalidade FOLLOW_LINE."),
-                        new Tag().name("Tentativas Follow").description("Registro das tentativas do Seguidor de Linha."),
-                        new Tag().name("Ranking Follow").description("Classificação calculada a partir da melhor tentativa válida e concluída."),
-                        new Tag().name("Configuração Sumô").description("Parâmetros de execução da modalidade SUMO."),
-                        new Tag().name("Inspeção Sumô").description("Inspeção técnica e aptidão das inscrições de SUMO."),
-                        new Tag().name("Chaveamentos Sumô").description("Geração e consulta de brackets somente para SUMO."),
-                        new Tag().name("Partidas Sumô").description("Partidas pertencentes aos chaveamentos de SUMO."),
-                        new Tag().name("Rounds Sumô").description("Rounds que determinam automaticamente o resultado das partidas."),
-                        new Tag().name("Resultados de Partida").description("Somente leitura. MatchResult é gerado automaticamente a partir dos rounds do SUMO.")));
+                .tags(tags());
+    }
+
+    private List<Tag> tags() {
+        return List.of(
+                new Tag().name("Autenticação").description("Cadastro de participante, login JWT e usuário autenticado."),
+                new Tag().name("Portal do Participante").description("Operações do PARTICIPANTE com validação de ownership."),
+                new Tag().name("API Pública").description("Consultas sanitizadas para landing page e acompanhamento público."),
+                new Tag().name("Usuários").description("Administração de contas pela ORGANIZACAO."),
+                new Tag().name("Instituições").description("Cadastro e manutenção de instituições."),
+                new Tag().name("Equipes").description("Cadastro e manutenção de equipes."),
+                new Tag().name("Competidores").description("Cadastro e manutenção de competidores."),
+                new Tag().name("Robôs").description("Cadastro e manutenção de robôs."),
+                new Tag().name("Fotos de Robôs").description("Upload e gestão das fotos dos robôs. JPEG, PNG ou WEBP, até 5 MB."),
+                new Tag().name("Competições").description("Cadastro e ciclo de vida das competições."),
+                new Tag().name("Categorias").description("Categorias vinculadas às competições e suas modalidades."),
+                new Tag().name("Inscrições").description("Gestão administrativa das inscrições, incluindo aprovação e rejeição."),
+                new Tag().name("Configuração Follow").description("Parâmetros de execução da modalidade FOLLOW_LINE."),
+                new Tag().name("Tentativas Follow").description("Registro das tentativas do Seguidor de Linha."),
+                new Tag().name("Ranking Follow").description("Classificação calculada a partir da melhor tentativa válida e concluída."),
+                new Tag().name("Configuração Sumô").description("Parâmetros de execução da modalidade SUMO."),
+                new Tag().name("Inspeção Sumô").description("Inspeção técnica e aptidão das inscrições de SUMO."),
+                new Tag().name("Chaveamentos Sumô").description("Geração e consulta de brackets somente para SUMO."),
+                new Tag().name("Partidas Sumô").description("Partidas pertencentes aos chaveamentos de SUMO."),
+                new Tag().name("Rounds Sumô").description("Rounds que determinam automaticamente o resultado das partidas."),
+                new Tag().name("Resultados de Partida").description("Somente leitura. MatchResult é gerado automaticamente a partir dos rounds do SUMO."));
+    }
+
+    private Schema<?> apiErrorSchema() {
+        MapSchema validationErrors = new MapSchema();
+        validationErrors.setDescription("Erros de validação por campo quando aplicável.");
+        validationErrors.setAdditionalProperties(new StringSchema());
+
+        return new ObjectSchema()
+                .description("Formato padrão de erro retornado pelos handlers da aplicação.")
+                .addProperty("timestamp", new StringSchema()
+                        .format("date-time")
+                        .example("2026-08-24T21:30:00"))
+                .addProperty("status", new IntegerSchema().example(400))
+                .addProperty("error", new StringSchema().example("Regra de negócio inválida"))
+                .addProperty("message", new StringSchema().example("O robô não pertence à equipe informada."))
+                .addProperty("path", new StringSchema().example("/api/v1/participante/equipes/4/inscricoes"))
+                .addProperty("validationErrors", validationErrors);
+    }
+
+    private Schema<?> securityErrorSchema() {
+        return new ObjectSchema()
+                .description("Formato compacto dos erros emitidos diretamente pelo Spring Security.")
+                .addProperty("status", new IntegerSchema().example(401))
+                .addProperty("error", new StringSchema().example("Não autenticado"));
     }
 
     @Bean
@@ -197,14 +218,14 @@ public class OpenApiConfig {
             if (!operation.getResponses().containsKey("201")) {
                 ApiResponse resposta = operation.getResponses().remove("200");
                 operation.getResponses().addApiResponse("201",
-                        resposta != null ? resposta.description("Criado com sucesso.")
+                        resposta != null
+                                ? resposta.description("Criado com sucesso.")
                                 : new ApiResponse().description("Criado com sucesso."));
             }
-        } else if (method == HttpMethod.DELETE) {
-            if (!operation.getResponses().containsKey("204")) {
-                operation.getResponses().remove("200");
-                operation.getResponses().addApiResponse("204", new ApiResponse().description("Operação concluída sem conteúdo."));
-            }
+        } else if (method == HttpMethod.DELETE && !operation.getResponses().containsKey("204")) {
+            operation.getResponses().remove("200");
+            operation.getResponses().addApiResponse(
+                    "204", new ApiResponse().description("Operação concluída sem conteúdo."));
         }
     }
 
@@ -290,11 +311,13 @@ public class OpenApiConfig {
 
     private String humanizar(String operationId) {
         if (operationId == null || operationId.isBlank()) return "Operação";
+
         String texto = operationId
                 .replaceAll("_\\d+$", "")
                 .replaceAll("([a-z0-9])([A-Z])", "$1 $2")
                 .replace('_', ' ')
                 .trim();
+
         if (texto.isBlank()) return "Operação";
         return Character.toUpperCase(texto.charAt(0)) + texto.substring(1);
     }
