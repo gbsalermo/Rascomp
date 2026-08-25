@@ -79,7 +79,7 @@ public class MatchService {
     @Transactional
     public void deletar(Long id) {
         Match match = buscarMatch(id);
-        validarBracketSumo(match.getBracket());
+        validarBracketOperavel(match.getBracket());
         match.setAtivo(false);
         match.setStatus(StatusMatch.CANCELADA);
         matchRepository.save(match);
@@ -95,13 +95,22 @@ public class MatchService {
     }
 
     private void validarParticipantes(Bracket bracket, Registration a, Registration b) {
-        validarBracketSumo(bracket);
-        if (!Boolean.TRUE.equals(bracket.getAtivo())) throw new IllegalArgumentException("Chaveamento inativo.");
+        validarBracketOperavel(bracket);
         if (a == null && b == null) throw new IllegalArgumentException("A partida deve possuir pelo menos um participante.");
         if (a != null) validarRegistrationDoBracket(bracket, a);
         if (b != null) validarRegistrationDoBracket(bracket, b);
         if (a != null && b != null && a.getId().equals(b.getId()))
             throw new IllegalArgumentException("Os participantes da partida devem ser diferentes.");
+    }
+
+    private void validarBracketOperavel(Bracket bracket) {
+        validarBracketSumo(bracket);
+        if (!Boolean.TRUE.equals(bracket.getAtivo())) {
+            throw new IllegalArgumentException("Chaveamento inativo.");
+        }
+        if (!Boolean.TRUE.equals(bracket.getAtual())) {
+            throw new IllegalArgumentException("Chaveamentos históricos são somente leitura.");
+        }
     }
 
     private void validarBracketSumo(Bracket bracket) {
