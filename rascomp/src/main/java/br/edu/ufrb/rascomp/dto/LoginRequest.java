@@ -14,4 +14,6 @@ public class LoginRequest {
 
     @NotBlank
     private String senha;
+
+    private boolean lembrarDeMim;
 }
