@@ -15,7 +15,10 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem.HttpMethod;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -39,11 +42,17 @@ public class OpenApiConfig {
         ModelConverters.getInstance().read(ApiErrorResponse.class)
                 .forEach(components::addSchemas);
 
+        Schema<?> securityError = new ObjectSchema()
+                .addProperty("status", new IntegerSchema().example(401))
+                .addProperty("error", new StringSchema().example("Não autenticado"));
+        components.addSchemas("SecurityErrorResponse", securityError);
+
         components
                 .addResponses("BadRequest", respostaErro("Requisição inválida ou regra de negócio não atendida."))
-                .addResponses("Unauthorized", respostaErro("Token ausente, inválido ou credenciais incorretas."))
-                .addResponses("Forbidden", respostaErro("Usuário autenticado sem permissão para o recurso."))
+                .addResponses("Unauthorized", respostaSeguranca("Token ausente, inválido ou credenciais incorretas."))
+                .addResponses("Forbidden", respostaSeguranca("Usuário autenticado sem permissão para o recurso."))
                 .addResponses("NotFound", respostaErro("Recurso não encontrado."))
+                .addResponses("MethodNotAllowed", respostaErro("Método HTTP não permitido para o endpoint."))
                 .addResponses("Conflict", respostaErro("Conflito com restrição de integridade."))
                 .addResponses("PayloadTooLarge", respostaErro("Arquivo excede o tamanho máximo permitido."))
                 .addResponses("UnsupportedMediaType", respostaErro("Content-Type não suportado."))
@@ -64,6 +73,9 @@ public class OpenApiConfig {
 
                                 FOLLOW_LINE não utiliza chaveamento. SUMO utiliza inspeção, chaveamento, partidas e rounds.
                                 Resultados de partida são somente leitura e são consolidados automaticamente pelos rounds do Sumô.
+
+                                Respostas 401/403 emitidas diretamente pelo Spring Security possuem o formato compacto
+                                {status, error}; os demais erros tratados pela aplicação utilizam ApiErrorResponse.
                                 """))
                 .tags(List.of(
                         new Tag().name("Autenticação").description("Cadastro de participante, login JWT e usuário autenticado."),
@@ -102,6 +114,7 @@ public class OpenApiConfig {
                             operation.setSummary(humanizar(operation.getOperationId()));
                         }
 
+                        normalizarRespostaSucesso(path, method, operation);
                         aplicarDescricaoEspecial(path, method, operation);
                         aplicarSeguranca(path, operation);
                         aplicarRespostasPadrao(path, method, operation);
@@ -151,12 +164,20 @@ public class OpenApiConfig {
     }
 
     private ApiResponse respostaErro(String descricao) {
+        return respostaComSchema(descricao, "ApiErrorResponse");
+    }
+
+    private ApiResponse respostaSeguranca(String descricao) {
+        return respostaComSchema(descricao, "SecurityErrorResponse");
+    }
+
+    private ApiResponse respostaComSchema(String descricao, String schema) {
         return new ApiResponse()
                 .description(descricao)
                 .content(new Content().addMediaType(
                         "application/json",
                         new io.swagger.v3.oas.models.media.MediaType()
-                                .schema(new Schema<>().$ref("#/components/schemas/ApiErrorResponse"))));
+                                .schema(new Schema<>().$ref("#/components/schemas/" + schema))));
     }
 
     private void aplicarSeguranca(String path, Operation operation) {
@@ -169,6 +190,24 @@ public class OpenApiConfig {
         }
     }
 
+    private void normalizarRespostaSucesso(String path, HttpMethod method, Operation operation) {
+        if (operation.getResponses() == null) return;
+
+        if (method == HttpMethod.POST && !path.equals("/api/v1/auth/login")) {
+            if (!operation.getResponses().containsKey("201")) {
+                ApiResponse resposta = operation.getResponses().remove("200");
+                operation.getResponses().addApiResponse("201",
+                        resposta != null ? resposta.description("Criado com sucesso.")
+                                : new ApiResponse().description("Criado com sucesso."));
+            }
+        } else if (method == HttpMethod.DELETE) {
+            if (!operation.getResponses().containsKey("204")) {
+                operation.getResponses().remove("200");
+                operation.getResponses().addApiResponse("204", new ApiResponse().description("Operação concluída sem conteúdo."));
+            }
+        }
+    }
+
     private void aplicarRespostasPadrao(String path, HttpMethod method, Operation operation) {
         boolean publico = path.startsWith("/api/v1/public/")
                 || path.equals("/api/v1/auth/register")
@@ -176,6 +215,7 @@ public class OpenApiConfig {
 
         operation.getResponses().addApiResponse("400", refResposta("BadRequest"));
         operation.getResponses().addApiResponse("404", refResposta("NotFound"));
+        operation.getResponses().addApiResponse("405", refResposta("MethodNotAllowed"));
         operation.getResponses().addApiResponse("500", refResposta("InternalServerError"));
 
         if (!publico) {
@@ -188,9 +228,12 @@ public class OpenApiConfig {
             operation.getResponses().addApiResponse("409", refResposta("Conflict"));
         }
 
+        if (method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH) {
+            operation.getResponses().addApiResponse("415", refResposta("UnsupportedMediaType"));
+        }
+
         if (path.contains("/fotos")) {
             operation.getResponses().addApiResponse("413", refResposta("PayloadTooLarge"));
-            operation.getResponses().addApiResponse("415", refResposta("UnsupportedMediaType"));
         }
     }
 
