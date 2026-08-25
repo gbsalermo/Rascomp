@@ -105,7 +105,7 @@ public class PublicQueryService {
     }
 
     public List<BracketDTO> chaveamentos(Long competitionId) {
-        return bracketService.listarPorCompeticao(competitionId);
+        return bracketService.listarAtuaisPorCompeticao(competitionId);
     }
 
     public List<MatchDTO> partidas(Long bracketId) {
