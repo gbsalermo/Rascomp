@@ -1,6 +1,6 @@
 # Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-24T21:28:00-03:00
+Última atualização: 2026-08-24T21:34:00-03:00
 
 ## 1. Marco atual
 
@@ -10,6 +10,14 @@ O PR #4 — **Arquitetura de usuários, ownership e acesso** — foi mergeado co
 
 ```text
 fac45cffc07bdfaab8ba07a12a49836b0c4a90d0
+```
+
+O workflow pós-merge também passou:
+
+```text
+Backend Tests #43
+status: completed
+conclusion: success
 ```
 
 Estado atual:
@@ -23,7 +31,7 @@ testes automatizados                 ✅
 
 ARQUITETURA DE ACESSO
 UserAccount                           ✅
-PARTICIPANTE / ORGANIZACAO           ✅
+PARTICIPANTE / ORGANIZACAO            ✅
 JWT + BCrypt                          ✅
 responsável da equipe                 ✅
 UserAccount ↔ Competitor opcional     ✅
@@ -48,6 +56,8 @@ API pública sanitizada                ✅
 fluxo manual aprovação ORGANIZACAO    ⚠️ repetir no fechamento final
 
 PR #4                                 ✅ mergeado
+CI pós-merge                          ✅ Backend Tests #43
+novo congelamento da API              ✅
 Swagger/OpenAPI                       ⏳ próxima etapa
 Camunda BPMN funcional                ⏳ checkpoint pós-Swagger
 Frontend de Gestão                    🔄 trabalho paralelo
@@ -265,17 +275,9 @@ Storage atual:
 ./uploads/robots
 ```
 
-Configurável por:
+Configurável por `ROBOT_IMAGES_DIR`.
 
-```text
-ROBOT_IMAGES_DIR
-```
-
-Limite atual:
-
-```text
-5 MB
-```
+Limite atual: **5 MB**.
 
 Formatos:
 
@@ -297,15 +299,7 @@ Durante o smoke foi encontrada e corrigida uma fragilidade: o upload não depend
 /api/v1/public/**
 ```
 
-Sem login e somente leitura.
-
-Usa DTOs sanitizados e não deve expor:
-
-- senha/hash;
-- telefone/e-mail privado de competidores;
-- dados internos de autenticação;
-- autoria/revisão administrativa da inscrição;
-- observações administrativas sensíveis.
+Sem login e somente leitura. Usa DTOs sanitizados.
 
 Principais consultas públicas:
 
@@ -330,7 +324,7 @@ resultados
 /api/v1/participante/**
 ```
 
-Requer `ROLE_PARTICIPANTE` e ownership do recurso.
+Requer `ROLE_PARTICIPANTE` e ownership.
 
 ### Organização
 
@@ -344,8 +338,6 @@ Fora das exceções de auth/public, exige `ROLE_ORGANIZACAO`.
 ---
 
 ## 8. FOLLOW_LINE — contrato congelado
-
-Fluxo:
 
 ```text
 Competition
@@ -371,8 +363,6 @@ Regras principais:
 
 ## 9. SUMO — contrato congelado
 
-Fluxo:
-
 ```text
 Competition
  -> Category SUMO + ConfigSumo
@@ -397,14 +387,6 @@ Regras principais:
 
 ## 10. Persistência
 
-Banco principal:
-
-```text
-MySQL
-```
-
-Flyway:
-
 ```text
 V1 — schema competitivo principal
 V2 — inspeções Sumô
@@ -413,39 +395,38 @@ V4 — remoção de artefatos legados de Follow em bracket
 V5 — usuários, ownership, participantes da inscrição e fotos
 ```
 
-Migrations já aplicadas são imutáveis. Novas alterações estruturais devem usar `V6+`.
+Migrations já aplicadas são imutáveis. Novas alterações estruturais usam `V6+`.
 
 ---
 
 ## 11. Testes e qualidade
 
-Antes da arquitetura de usuários:
+Validações consolidadas:
 
 ```text
 FOLLOW_LINE bateria manual completa ✅
 SUMO bateria manual completa        ✅
 JUnit/Mockito                       ✅
 GitHub Actions                      ✅
+Smoke arquitetura de acesso         ✅ com ressalva ORGANIZACAO
 ```
 
-A arquitetura de acesso adicionou cobertura para:
+A arquitetura de acesso adicionou cobertura para BCrypt, usuários/roles, ownership, recursos de outra equipe, inscrição pelo participante, competidores da equipe e regressão Follow/Sumô.
 
-- BCrypt;
-- usuários e roles;
-- ownership;
-- acesso a recursos de outra equipe;
-- criação de inscrição pelo participante;
-- competidores pertencentes à equipe;
-- regressão das regras Follow/Sumô.
-
-Última suíte automatizada conhecida antes do merge:
+Suíte automatizada:
 
 ```text
 28 testes
 0 falhas
 ```
 
-Após o merge, o GitHub Actions da `main` foi disparado novamente; confirmar o resultado antes de iniciar alterações funcionais adicionais.
+CI pós-merge:
+
+```text
+Backend Tests #43
+commit fac45cff...
+completed / success
+```
 
 ### Pendência manual conhecida
 
@@ -463,8 +444,6 @@ login ORGANIZACAO
 
 ## 12. Camunda
 
-Estado:
-
 ```text
 Camunda 7.22 embedded     ✅
 Process Engine            ✅
@@ -474,7 +453,7 @@ REST starter              ✅
 BPMN Rascomp              ⏳
 ```
 
-Primeiro processo candidato continua:
+Primeiro processo candidato:
 
 ```text
 PARTICIPANTE envia inscrição
@@ -486,13 +465,11 @@ tarefa da ORGANIZACAO
 APROVADA   REJEITADA
 ```
 
-Camunda deve orquestrar processo/human task. Regras de ranking, inspeção, rounds e chaveamentos permanecem nos services Java.
+Camunda deve orquestrar processos/human tasks. Regras competitivas permanecem nos services Java.
 
 ---
 
 ## 13. Próxima etapa — Swagger/OpenAPI
-
-A API será documentada sem alterar o contrato de negócio.
 
 Critério de aceite:
 
@@ -521,15 +498,15 @@ O Swagger não deve mudar regras de domínio, nomes de endpoints ou semântica H
 ## 14. Sequência daqui para frente
 
 ```text
-Arquitetura de usuários/acesso       ✅ mergeada
+Arquitetura usuários/acesso          ✅ mergeada
           ↓
-CI pós-merge                         🔄 confirmar
+CI pós-merge                         ✅
           ↓
 novo congelamento da API             ✅
           ↓
 Swagger / OpenAPI                    ◀ PRÓXIMA ETAPA
           ↓
-revalidação ORGANIZACAO              ⏳ durante fechamento
+revalidação ORGANIZACAO              ⏳ no fechamento
           ↓
 revisão final do backend
           ↓
@@ -538,7 +515,7 @@ checkpoint Camunda
 Frontend de Gestão + Landing
 ```
 
-O frontend pode avançar em paralelo usando a divisão:
+O frontend pode avançar em paralelo usando:
 
 ```text
 Gestão:
