@@ -20,7 +20,6 @@ public record ApiErrorResponse(
         String message,
         @Schema(example = "/api/v1/participante/equipes/4/inscricoes", description = "Caminho solicitado.")
         String path,
-        @Schema(description = "Erros de validação por campo quando aplicável.", example = "{\"email\":\"deve ser um endereço de e-mail bem formado\"}")
         Map<String, String> validationErrors
 ) {
 
