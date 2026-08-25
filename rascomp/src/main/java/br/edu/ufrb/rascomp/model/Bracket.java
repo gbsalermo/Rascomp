@@ -17,20 +17,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(
-    name = "brackets",
-    uniqueConstraints = @UniqueConstraint(
-        name = "uk_bracket_competition_category",
-        columnNames = {"competition_id", "category_id"}
-    )
-)
+@Table(name = "brackets")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -59,6 +52,9 @@ public class Bracket implements Serializable {
 
     @Column(nullable = false)
     private Boolean ativo = true;
+
+    @Column(nullable = false)
+    private Boolean atual = true;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
