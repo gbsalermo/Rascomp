@@ -1,21 +1,15 @@
 # Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-24T00:08:00-03:00
+Última atualização: 2026-08-24T21:28:00-03:00
 
 ## 1. Marco atual
 
-O núcleo competitivo do backend já foi validado. Antes do Swagger, o congelamento da API foi reaberto de forma excepcional para corrigir uma lacuna arquitetural indispensável: **usuários reais, autenticação, ownership, participantes das inscrições e separação entre operação administrativa e portal do participante**.
+O backend competitivo e a nova arquitetura de usuários/acesso estão integrados na `main`.
 
-A implementação dessa correção está concentrada na branch:
-
-```text
-arquitetura-usuarios-acesso
-```
-
-PR:
+O PR #4 — **Arquitetura de usuários, ownership e acesso** — foi mergeado com sucesso no commit:
 
 ```text
-#4 — Arquitetura de usuários, ownership e acesso
+fac45cffc07bdfaab8ba07a12a49836b0c4a90d0
 ```
 
 Estado atual:
@@ -25,38 +19,42 @@ NÚCLEO COMPETITIVO
 MySQL/Flyway V1–V4                    ✅
 FOLLOW_LINE                           ✅ validado manualmente
 SUMO                                  ✅ validado manualmente
-testes anteriores                     ✅
-branch testes-automatizados           ✅ mergeada na main
+testes automatizados                 ✅
 
 ARQUITETURA DE ACESSO
-UserAccount                           ✅ implementado
-PARTICIPANTE / ORGANIZACAO            ✅ implementado
-JWT + BCrypt                          ✅ implementado
-responsável da equipe                 ✅ implementado
-UserAccount ↔ Competitor opcional     ✅ implementado
-Registration + competidores           ✅ implementado
-auditoria solicitante/revisor         ✅ implementado
-fotos dos robôs                       ✅ implementado
-API participante + ownership          ✅ implementado
-API pública sanitizada                ✅ implementado
-Migration V5                          ✅ criada
+UserAccount                           ✅
+PARTICIPANTE / ORGANIZACAO           ✅
+JWT + BCrypt                          ✅
+responsável da equipe                 ✅
+UserAccount ↔ Competitor opcional     ✅
+Registration + competidores           ✅
+auditoria solicitante/revisor         ✅
+fotos dos robôs                       ✅
+API participante + ownership          ✅
+API pública sanitizada                ✅
+Migration V5                          ✅
 
-QUALIDADE
-novos testes                          ✅
-GitHub Actions                        ✅ 28 testes / 0 falhas
-smoke local MySQL + V5 + JWT          ⏳ próximo checkpoint
-upload de foto local                  ⏳ próximo checkpoint
-PR #4                                 🔄 draft até smoke
+VALIDAÇÃO LOCAL DA NOVA ARQUITETURA
+startup MySQL + Flyway V5             ✅
+cadastro/login PARTICIPANTE           ✅
+/auth/me                              ✅
+401 sem autenticação                  ✅
+403/ownership                         ✅
+equipe / competidor / robô            ✅
+upload de imagem                      ✅
+inscrição do participante             ✅
+competidor de outra equipe rejeitado  ✅
+API pública sanitizada                ✅
+fluxo manual aprovação ORGANIZACAO    ⚠️ repetir no fechamento final
 
-PRÓXIMA FASE
-novo congelamento da API              ⏳ após merge
-Swagger/OpenAPI                       ⏳ depois do congelamento
+PR #4                                 ✅ mergeado
+Swagger/OpenAPI                       ⏳ próxima etapa
 Camunda BPMN funcional                ⏳ checkpoint pós-Swagger
-Frontend de Gestão                    ⏳ trabalho paralelo
-Landing / Frontend Público            ⏳ trabalho paralelo
+Frontend de Gestão                    🔄 trabalho paralelo
+Landing / Frontend Público            🔄 trabalho paralelo
 ```
 
-O README foi atualizado no mesmo marco com a identidade visual oficial do projeto e o estado arquitetural atual.
+> A validação manual específica de aprovação/rejeição usando um token `ORGANIZACAO` ficou pendente de repetição. Isso não bloqueou o merge porque a regra administrativa já existia no núcleo e será revalidada durante a revisão final do Swagger/backend.
 
 ---
 
@@ -79,7 +77,7 @@ O backend é a fonte de verdade para autenticação, ownership, regras competiti
 
 ---
 
-## 3. Dois tipos de usuário
+## 3. Usuários e papéis
 
 O projeto utiliza somente dois papéis globais:
 
@@ -95,14 +93,14 @@ Conta criada pelo próprio usuário.
 Pode:
 
 - registrar conta e fazer login;
-- consultar seu próprio usuário em `/auth/me`;
-- criar e gerenciar apenas as equipes pelas quais é responsável;
+- consultar o próprio usuário em `/api/v1/auth/me`;
+- criar e gerenciar apenas equipes pelas quais é responsável;
 - cadastrar competidores da equipe;
-- opcionalmente se vincular como `Competitor`;
+- opcionalmente vincular a própria conta a um `Competitor`;
 - cadastrar robôs;
 - enviar fotos dos robôs;
 - criar e cancelar inscrições da própria equipe;
-- escolher os competidores que participarão daquela inscrição;
+- escolher os competidores que participarão de cada inscrição;
 - acompanhar status das inscrições.
 
 ### ORGANIZACAO
@@ -111,7 +109,7 @@ Conta administrativa do evento.
 
 Pode operar:
 
-- usuários da organização;
+- usuários;
 - instituições;
 - equipes;
 - competidores;
@@ -161,8 +159,9 @@ Regras:
 
 - senha original nunca é persistida;
 - nenhum DTO de resposta expõe `passwordHash`;
-- BCrypt é irreversível para o uso normal da aplicação;
-- autenticação é stateless com JWT.
+- autenticação é stateless com JWT;
+- o segredo JWT vem da variável `JWT_SECRET`;
+- produção deve usar HTTPS.
 
 Endpoints:
 
@@ -172,23 +171,15 @@ POST /api/v1/auth/login
 GET  /api/v1/auth/me
 ```
 
-JWT:
+Header:
 
 ```text
 Authorization: Bearer <token>
 ```
 
-Segredo externo:
-
-```text
-JWT_SECRET
-```
-
-Nunca versionar segredos.
-
 Primeiro usuário `ORGANIZACAO` pode ser criado por bootstrap opcional quando ainda não existir conta administrativa.
 
-Não foi implementado public ID/UUID. IDs numéricos permanecem adequados ao escopo atual; segurança depende de autenticação e autorização, não da ocultação do ID.
+Não foi implementado public ID/UUID. IDs numéricos permanecem adequados ao escopo atual; a segurança depende de autenticação/autorização e ownership, não da ocultação do ID.
 
 ---
 
@@ -196,7 +187,7 @@ Não foi implementado public ID/UUID. IDs numéricos permanecem adequados ao esc
 
 ### Team
 
-`Team` possui `responsibleUser` opcional para compatibilidade com dados legados.
+`Team` possui `responsibleUser`.
 
 Nova equipe criada pelo portal participante recebe automaticamente o usuário autenticado como responsável.
 
@@ -211,22 +202,22 @@ Team
 
 ### Competitor
 
-`Competitor` continua representando a pessoa que compete, não a conta de login.
+`Competitor` representa a pessoa que compete, não necessariamente uma conta de login.
 
-Pode existir sem conta.
+Pode existir sem `UserAccount`.
 
 Opcionalmente:
 
 ```text
-Competitor.userAccount -> UserAccount(PARTICIPANTE)
+Competitor.userAccount -> UserAccount
 ```
 
-Cenários suportados:
+Isso permite:
 
 ```text
-professor responsável: UserAccount ✅ / Competitor ❌
-competidor líder:       UserAccount ✅ / Competitor ✅
-competidor cadastrado:  UserAccount opcional / Competitor ✅
+Professor responsável  -> UserAccount ✅ / Competitor ❌
+Competidor líder        -> UserAccount ✅ / Competitor ✅
+Competidor da equipe    -> UserAccount opcional / Competitor ✅
 ```
 
 ### Registration
@@ -238,7 +229,7 @@ competition
 category
 team
 robot
-competitors participantes
+competitors[]
 requestedByUser
 reviewedByUser
 reviewedAt
@@ -247,423 +238,316 @@ observacao
 ativo
 ```
 
-Toda inscrição criada pelo portal participante nasce:
+O participante não escolhe `teamId`, responsável, status ou revisor livremente pelo payload do portal; o backend deriva/valida esses dados.
 
-```text
-PENDENTE
-```
-
-Aprovação/rejeição é responsabilidade de `ORGANIZACAO`.
-
-O backend valida que os competidores informados pertencem à mesma equipe da inscrição.
+A organização pode aprovar/rejeitar e fica registrada como revisora.
 
 ---
 
 ## 6. Fotos dos robôs
 
-Nova entidade `RobotImage` armazena metadados:
+Metadados ficam no MySQL e o arquivo fica fora do banco.
 
 ```text
-robotId
-storageKey
-originalFilename
-contentType
-principal
-ordem
-ativo
-dataCadastro
+Robot
+  └─ RobotImage
+       ├─ storageKey
+       ├─ originalFilename
+       ├─ contentType
+       ├─ principal
+       ├─ ordem
+       └─ ativo
 ```
 
-Os bytes ficam fora do MySQL.
-
-MVP:
+Storage atual:
 
 ```text
-armazenamento local
-JPEG / PNG / WEBP
-máximo 5 MB
+./uploads/robots
 ```
 
-Diretório configurável:
+Configurável por:
 
 ```text
 ROBOT_IMAGES_DIR
 ```
 
-`/uploads/` está ignorado pelo Git.
+Limite atual:
 
-A arquitetura do storage permite substituição futura por S3/cloud sem mudar o domínio de `Robot`.
+```text
+5 MB
+```
+
+Formatos:
+
+```text
+JPEG
+PNG
+WEBP
+```
+
+Durante o smoke foi encontrada e corrigida uma fragilidade: o upload não depende mais apenas do `Content-Type` enviado pelo cliente. O backend detecta a assinatura real PNG/JPEG/WEBP e persiste o MIME detectado.
 
 ---
 
 ## 7. Separação das APIs
 
-### Público — sem login
+### Público
 
 ```text
 /api/v1/public/**
 ```
 
-Somente leitura e DTOs sanitizados.
+Sem login e somente leitura.
 
-Pode alimentar a landing page com:
-
-- competições;
-- equipes;
-- competidores com dados públicos;
-- robôs;
-- fotos;
-- inscrições aprovadas;
-- ranking Follow;
-- chaveamentos Sumô;
-- partidas/resultados.
-
-Não expõe:
+Usa DTOs sanitizados e não deve expor:
 
 - senha/hash;
-- e-mail/telefone de competidores;
-- responsável da equipe;
-- observações administrativas;
-- usuário solicitante/revisor.
+- telefone/e-mail privado de competidores;
+- dados internos de autenticação;
+- autoria/revisão administrativa da inscrição;
+- observações administrativas sensíveis.
 
-### Participante — JWT `PARTICIPANTE`
+Principais consultas públicas:
+
+```text
+competicoes
+categorias
+instituicoes
+equipes
+competidores
+robos
+fotos
+inscricoes
+ranking Follow
+chaveamentos
+partidas
+resultados
+```
+
+### Participante
 
 ```text
 /api/v1/participante/**
 ```
 
-Ownership validado pelo backend.
+Requer `ROLE_PARTICIPANTE` e ownership do recurso.
 
-O frontend não escolhe livremente:
-
-- `teamId` de outra equipe;
-- responsável;
-- role;
-- status administrativo;
-- usuário solicitante;
-- `ativo` administrativo.
-
-Esses valores são determinados ou validados pelo backend.
-
-### Organização — JWT `ORGANIZACAO`
+### Organização
 
 ```text
 /api/v1/**
+/engine-rest/**
 ```
 
-Endpoints internos de operação administrativa.
-
-Camunda REST:
-
-```text
-/engine-rest/** -> ORGANIZACAO
-```
-
-Swagger/OpenAPI permanece liberado durante desenvolvimento.
+Fora das exceções de auth/public, exige `ROLE_ORGANIZACAO`.
 
 ---
 
-## 8. Persistência
+## 8. FOLLOW_LINE — contrato congelado
 
-Migrations atuais:
-
-```text
-V1__create_rascomp_schema.sql
-V2__create_inspecoes_sumo.sql
-V3__create_rounds_sumo.sql
-V4__remove_follow_line_brackets.sql
-V5__add_users_team_ownership_and_robot_images.sql
-```
-
-Nunca editar V1–V5 depois de aplicadas.
-
-Próxima alteração estrutural:
+Fluxo:
 
 ```text
-V6+
+Competition
+ -> Category FOLLOW_LINE + ConfigFollow
+ -> Registration APROVADA
+ -> TentativaSeguidorLinha
+ -> RankingFollowService
+ -> classificação/campeão
 ```
+
+Regras principais:
+
+- 3 tomadas no cenário atual;
+- até 3 tentativas por tomada;
+- tempo máximo configurável;
+- checkpoints configuráveis;
+- `tempoFinal = tempoSegundos + penalidadeSegundos`;
+- ranking usa a melhor tentativa válida e concluída por inscrição;
+- inválidas/não concluídas não entram no ranking;
+- FOLLOW_LINE não usa `Bracket`, `Match`, `RoundSumo` ou `MatchResult`.
 
 ---
 
-## 9. Domínio competitivo — contrato já validado
+## 9. SUMO — contrato congelado
 
-### FOLLOW_LINE
-
-Fluxo oficial:
+Fluxo:
 
 ```text
-Registration APROVADA
-    -> ConfigFollow
-    -> 3 tomadas
-    -> até 3 tentativas por tomada
-    -> TentativaSeguidorLinha
-    -> melhor tentativa válida e concluída
-    -> RankingFollowService
-    -> classificação por menor tempo final
+Competition
+ -> Category SUMO + ConfigSumo
+ -> Registration APROVADA
+ -> InspecaoSumo / aptidão
+ -> Bracket
+ -> Match
+ -> RoundSumo(s)
+ -> MatchResult automático
+ -> progressão/campeão
 ```
 
-Cálculo:
+Regras principais:
 
-```text
-tempoFinal = tempoSegundos + penalidadeSegundos
-```
-
-Regras manualmente validadas:
-
-- 3 tomadas × 3 tentativas;
-- limites de tomada e tentativa;
-- checkpoints;
-- duplicidade;
-- tempo máximo;
-- tentativa inválida ignorada;
-- tentativa não concluída ignorada;
-- penalidade aplicada;
-- ranking correto;
-- inscrição SUMO rejeitada no Follow;
-- categoria SUMO rejeitada no ranking Follow;
-- bracket bloqueado para Follow.
-
-`FOLLOW_LINE` não usa:
-
-```text
-Bracket
-Match
-MatchResult
-RoundSumo
-```
-
-### SUMO
-
-Fluxo oficial:
-
-```text
-Registration APROVADA
-    -> InspecaoSumo
-    -> aptidão
-    -> Bracket
-    -> Match
-    -> RoundSumo
-    -> MatchResult automático
-    -> avanço do vencedor
-    -> encerramento do Bracket
-```
-
-Regras manualmente validadas:
-
-- ConfigSumo;
-- inspeções;
-- reprovação/desclassificação;
-- aptidão;
-- filtro de participantes aptos;
-- bracket exclusivo Sumô;
-- BYE;
-- rounds;
-- empate;
-- `roundsParaVencer`;
-- MatchResult automático;
-- Match FINALIZADA;
-- Bracket FINALIZADO;
-- MatchResult somente leitura;
-- POST/PUT/DELETE externos retornando 405.
-
-A introdução de usuários e ownership não altera essas regras.
+- apenas inscrições ativas, aprovadas e aptas entram no bracket;
+- `MatchResult` é criado automaticamente a partir dos rounds;
+- `MatchResult` continua read-only externamente;
+- vencedor progride automaticamente;
+- bracket pode finalizar automaticamente.
 
 ---
 
-## 10. Testes automatizados
+## 10. Persistência
 
-A regressão anterior permanece ativa e foram adicionados testes para a nova arquitetura.
-
-Última execução validada no GitHub Actions após a correção do teste de ownership:
+Banco principal:
 
 ```text
-Backend Tests
+MySQL
+```
+
+Flyway:
+
+```text
+V1 — schema competitivo principal
+V2 — inspeções Sumô
+V3 — rounds Sumô
+V4 — remoção de artefatos legados de Follow em bracket
+V5 — usuários, ownership, participantes da inscrição e fotos
+```
+
+Migrations já aplicadas são imutáveis. Novas alterações estruturais devem usar `V6+`.
+
+---
+
+## 11. Testes e qualidade
+
+Antes da arquitetura de usuários:
+
+```text
+FOLLOW_LINE bateria manual completa ✅
+SUMO bateria manual completa        ✅
+JUnit/Mockito                       ✅
+GitHub Actions                      ✅
+```
+
+A arquitetura de acesso adicionou cobertura para:
+
+- BCrypt;
+- usuários e roles;
+- ownership;
+- acesso a recursos de outra equipe;
+- criação de inscrição pelo participante;
+- competidores pertencentes à equipe;
+- regressão das regras Follow/Sumô.
+
+Última suíte automatizada conhecida antes do merge:
+
+```text
 28 testes
 0 falhas
-0 erros
-SUCCESS
 ```
 
-Cobertura relevante:
+Após o merge, o GitHub Actions da `main` foi disparado novamente; confirmar o resultado antes de iniciar alterações funcionais adicionais.
 
-- `CompetitionCategoryService`;
-- `TentativaSeguidorLinhaService`;
-- `RankingFollowService`;
-- `InspecaoSumoService`;
-- `BracketService`;
-- `BracketGenerationService`;
-- `MatchService`;
-- `MatchResultService`;
-- `UserAccountService`;
-- `AccessPolicyService`;
-- ownership de equipe;
-- inscrição com competidores/ownership.
+### Pendência manual conhecida
 
-CI sozinho não encerra a etapa: ainda é necessário smoke com MySQL real, V5, JWT e arquivo.
+Repetir no fechamento final:
+
+```text
+login ORGANIZACAO
+ -> /auth/me role ORGANIZACAO
+ -> endpoint administrativo 200
+ -> aprovação/rejeição de Registration
+ -> reviewedByUser/reviewedAt preenchidos
+```
 
 ---
 
-## 11. Camunda
+## 12. Camunda
 
-Infraestrutura:
-
-```text
-Camunda 7.22         ✅
-Process Engine       ✅
-JobExecutor          ✅
-tabelas ACT_*        ✅
-REST starter         ✅
-BPMN Rascomp         ⏳
-```
-
-A arquitetura de usuários tornou o primeiro BPMN mais concreto:
+Estado:
 
 ```text
-PARTICIPANTE
-    ↓
-envia Registration
-    ↓
-PENDENTE
-    ↓
-tarefa humana da ORGANIZACAO
-   ↙                       ↘
-APROVADA                 REJEITADA
+Camunda 7.22 embedded     ✅
+Process Engine            ✅
+JobExecutor               ✅
+ACT_* MySQL               ✅
+REST starter              ✅
+BPMN Rascomp              ⏳
 ```
 
-Camunda deverá orquestrar processo humano/auditoria.
-
-As regras de competição permanecem em Java:
+Primeiro processo candidato continua:
 
 ```text
-RankingFollowService
-InspecaoSumoService
-BracketGenerationService
-RoundSumoService
-BracketProgressionService
-...
+PARTICIPANTE envia inscrição
+        ↓
+      PENDENTE
+        ↓
+tarefa da ORGANIZACAO
+     ↙       ↘
+APROVADA   REJEITADA
 ```
 
-Decisão sobre BPMN funcional permanece para o checkpoint depois do Swagger.
+Camunda deve orquestrar processo/human task. Regras de ranking, inspeção, rounds e chaveamentos permanecem nos services Java.
 
 ---
 
-## 12. Próximo checkpoint — sessão seguinte
+## 13. Próxima etapa — Swagger/OpenAPI
 
-Antes de qualquer trabalho de Swagger:
+A API será documentada sem alterar o contrato de negócio.
 
-```text
-1. checkout/pull da branch arquitetura-usuarios-acesso
-2. subir aplicação com MySQL
-3. confirmar Flyway V5
-4. registrar PARTICIPANTE
-5. confirmar password_hash BCrypt no banco, nunca senha pura
-6. login -> JWT
-7. GET /api/v1/auth/me
-8. criar equipe pelo participante
-9. confirmar responsibleUser automático
-10. cadastrar competidor e robô
-11. testar vínculo "eu como competidor"
-12. subir uma foto do robô
-13. criar inscrição com competidores
-14. confirmar inscrição PENDENTE + requestedByUser
-15. testar ownership negativo com outro participante
-16. testar 401 sem token
-17. testar 403 com perfil incorreto
-18. acessar fluxo administrativo como ORGANIZACAO
-19. confirmar endpoint público sem dados sensíveis
-20. smoke rápido Follow/Sumô para regressão
-```
-
-Se todos passarem:
+Critério de aceite:
 
 ```text
-PR #4 -> ready
-      ↓
-merge em main
-      ↓
-novo congelamento definitivo da API
-      ↓
-SWAGGER / OPENAPI
+/v3/api-docs                         ✅
+/swagger-ui/index.html               ✅
+metadata da API                      ✅
+tags por domínio                     ✅
+endpoints descritos                  ✅
+path/query params                    ✅
+request bodies                       ✅
+200/201/204                          ✅
+400/401/403/404/405/409/415          ✅
+DTO schemas                          ✅
+JSON examples                        ✅
+Bearer JWT                           ✅
+upload multipart                    ✅
+API pública/participante/admin       ✅ separadas visualmente
+MatchResult read-only                ✅ explícito
 ```
 
-Se algum teste falhar, parar no primeiro problema, registrar request/response/log e corrigir antes do merge.
+O Swagger não deve mudar regras de domínio, nomes de endpoints ou semântica HTTP apenas para melhorar a apresentação.
 
 ---
 
-## 13. Frontends em paralelo
-
-O Frontend de Gestão e o esqueleto da Landing Page podem avançar em paralelo em outro fluxo de trabalho.
-
-Orientação para esses trabalhos:
+## 14. Sequência daqui para frente
 
 ```text
-Frontend de Gestão
- -> consumir /api/v1/auth/**
- -> PARTICIPANTE usa /api/v1/participante/**
- -> ORGANIZACAO usa endpoints administrativos
- -> preparar integração futura com Swagger/OpenAPI
-
-Landing / Frontend Público
- -> consumir exclusivamente /api/v1/public/**
- -> nenhuma dependência de dados administrativos/sensíveis
-```
-
-Até o merge do PR #4, considerar a API ainda em validação arquitetural. Evitar fixar contratos frontend irreversíveis antes do novo congelamento.
-
----
-
-## 14. Roadmap atualizado
-
-```text
-NÚCLEO COMPETITIVO                    ✅
-Follow + Sumô                         ✅
-Testes manuais                        ✅
-Testes automatizados                  ✅
-
-ARQUITETURA DE USUÁRIOS               ✅ implementação
-JWT + BCrypt                          ✅
-Ownership                             ✅
-API participante/pública              ✅
-V5                                    ✅
-CI 28/28                              ✅
-            ↓
-SMOKE LOCAL                           ◀ PRÓXIMO
-            ↓
-MERGE PR #4
-            ↓
-NOVO CONGELAMENTO DA API
-            ↓
-SWAGGER / OPENAPI
-            ↓
-REVISÃO FINAL DO BACKEND
-            ↓
-CHECKPOINT CAMUNDA
-   ├─ BPMN mínimo agora?
-   ├─ integração com gestão?
-   └─ adiar até MVP visual?
-            ↓
+Arquitetura de usuários/acesso       ✅ mergeada
+          ↓
+CI pós-merge                         🔄 confirmar
+          ↓
+novo congelamento da API             ✅
+          ↓
+Swagger / OpenAPI                    ◀ PRÓXIMA ETAPA
+          ↓
+revalidação ORGANIZACAO              ⏳ durante fechamento
+          ↓
+revisão final do backend
+          ↓
+checkpoint Camunda
+          ↓
 Frontend de Gestão + Landing
-            ↓
-MVP
 ```
 
-Objetivo imediato: **fechar a nova arquitetura, documentar no Swagger e considerar o backend definitivamente pronto para integração dos frontends**.
-
----
-
-## 15. Forma de trabalho
-
-O projeto é conduzido por orquestração:
+O frontend pode avançar em paralelo usando a divisão:
 
 ```text
-objetivo
- -> implementação delegada
- -> revisão de arquitetura/diff
- -> CI
- -> smoke objetivo
- -> documentação
- -> merge
- -> próxima etapa
+Gestão:
+/api/v1/auth/**
+/api/v1/participante/**
+/api/v1/** -> ORGANIZACAO
+
+Landing:
+/api/v1/public/**
 ```
 
-`CONTINUIDADE.md` continua sendo a fonte principal do estado do projeto para novas sessões, IAs ou colaboradores.
+`CONTINUIDADE.md` permanece a fonte principal para qualquer nova sessão/agente que assuma o projeto.
