@@ -71,8 +71,9 @@ public class RegistrationDTO {
     @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private LocalDateTime reviewedAt;
 
-    @Schema(example = "PENDENTE", allowableValues = {"PENDENTE", "APROVADA", "REJEITADA", "CANCELADA"},
-            description = "No fluxo do PARTICIPANTE o status nasce PENDENTE; aprovação/rejeição é responsabilidade da ORGANIZACAO.")
+    @Schema(example = "PENDENTE",
+            allowableValues = {"PENDENTE", "APROVADA", "REJEITADA", "CANCELADA", "DESCLASSIFICADA"},
+            description = "No fluxo do PARTICIPANTE o status nasce PENDENTE; aprovação/rejeição é responsabilidade da ORGANIZACAO. DESCLASSIFICADA pode ser aplicada pelas regras competitivas.")
     private StatusRegistration status;
 
     @Size(max = 500)
