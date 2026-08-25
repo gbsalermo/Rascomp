@@ -46,7 +46,8 @@ class OpenApiEndpointTest {
     void deveExporGrupoPublicoSemAutenticacao() throws Exception {
         mockMvc.perform(get("/v3/api-docs/publica"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.paths['/api/v1/public/competicoes']").exists());
+                .andExpect(jsonPath("$.paths['/api/v1/public/competicoes']").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/public/competicoes'].get.security").doesNotExist());
     }
 
     @Test
@@ -54,7 +55,28 @@ class OpenApiEndpointTest {
         mockMvc.perform(get("/v3/api-docs/participante"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/v1/auth/login']").exists())
-                .andExpect(jsonPath("$.paths['/api/v1/participante/equipes']").exists());
+                .andExpect(jsonPath("$.paths['/api/v1/participante/equipes']").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/participante/equipes'].get.security[0].bearerAuth").exists());
+    }
+
+    @Test
+    void deveSepararGrupoOrganizacaoDoPortalPublicoEParticipante() throws Exception {
+        mockMvc.perform(get("/v3/api-docs/organizacao"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/v1/competicoes']").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/competicoes'].get.security[0].bearerAuth").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/public/competicoes']").doesNotExist())
+                .andExpect(jsonPath("$.paths['/api/v1/participante/equipes']").doesNotExist())
+                .andExpect(jsonPath("$.paths['/api/v1/auth/register']").doesNotExist());
+    }
+
+    @Test
+    void deveDocumentarUploadComoArquivoMultipart() throws Exception {
+        mockMvc.perform(get("/v3/api-docs/participante"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/v1/participante/robos/{robotId}/fotos'].post.requestBody.content['multipart/form-data']").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/participante/robos/{robotId}/fotos'].post.requestBody.content['multipart/form-data'].schema.properties.arquivo.type").value("string"))
+                .andExpect(jsonPath("$.paths['/api/v1/participante/robos/{robotId}/fotos'].post.requestBody.content['multipart/form-data'].schema.properties.arquivo.format").value("binary"));
     }
 
     @Test
