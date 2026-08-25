@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.models.GroupedOpenApi;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -140,23 +141,27 @@ public class OpenApiConfig {
     }
 
     @Bean
-    GroupedOpenApi apiCompleta(OpenApiCustomizer customizer) {
+    GroupedOpenApi apiCompleta(
+            @Qualifier("rascompOpenApiCustomizer") OpenApiCustomizer customizer) {
         return grupo("completa", "API completa", customizer, new String[]{"/api/v1/**"}, new String[]{});
     }
 
     @Bean
-    GroupedOpenApi apiPublica(OpenApiCustomizer customizer) {
+    GroupedOpenApi apiPublica(
+            @Qualifier("rascompOpenApiCustomizer") OpenApiCustomizer customizer) {
         return grupo("publica", "Público / Landing", customizer, new String[]{"/api/v1/public/**"}, new String[]{});
     }
 
     @Bean
-    GroupedOpenApi apiParticipante(OpenApiCustomizer customizer) {
+    GroupedOpenApi apiParticipante(
+            @Qualifier("rascompOpenApiCustomizer") OpenApiCustomizer customizer) {
         return grupo("participante", "Participante", customizer,
                 new String[]{"/api/v1/participante/**", "/api/v1/auth/**"}, new String[]{});
     }
 
     @Bean
-    GroupedOpenApi apiOrganizacao(OpenApiCustomizer customizer) {
+    GroupedOpenApi apiOrganizacao(
+            @Qualifier("rascompOpenApiCustomizer") OpenApiCustomizer customizer) {
         return grupo("organizacao", "Organização", customizer,
                 new String[]{"/api/v1/**"},
                 new String[]{"/api/v1/public/**", "/api/v1/participante/**", "/api/v1/auth/register"});
