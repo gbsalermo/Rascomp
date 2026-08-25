@@ -18,52 +18,63 @@ import org.springframework.web.bind.annotation.RestController;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.service.RegistrationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/inscricoes")
 @RequiredArgsConstructor
+@Tag(name = "Inscrições")
 public class RegistrationController {
     private final RegistrationService registrationService;
 
     @PostMapping
+    @Operation(summary = "Criar inscrição administrativamente")
     public ResponseEntity<RegistrationDTO> criar(@Valid @RequestBody RegistrationDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(registrationService.criar(dto));
     }
 
     @GetMapping
+    @Operation(summary = "Listar inscrições")
     public ResponseEntity<List<RegistrationDTO>> listar(@RequestParam(defaultValue = "false") boolean apenasAtivas) {
         return ResponseEntity.ok(registrationService.listar(apenasAtivas));
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Buscar inscrição por ID")
     public ResponseEntity<RegistrationDTO> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(registrationService.buscarPorId(id));
     }
 
     @GetMapping("/por-competicao")
+    @Operation(summary = "Listar inscrições por competição")
     public ResponseEntity<List<RegistrationDTO>> listarPorCompeticao(@RequestParam Long competitionId) {
         return ResponseEntity.ok(registrationService.listarPorCompeticao(competitionId));
     }
 
     @GetMapping("/por-status")
+    @Operation(summary = "Listar inscrições por status")
     public ResponseEntity<List<RegistrationDTO>> listarPorStatus(@RequestParam StatusRegistration status) {
         return ResponseEntity.ok(registrationService.listarPorStatus(status));
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Atualizar, aprovar ou rejeitar inscrição")
     public ResponseEntity<RegistrationDTO> atualizar(@PathVariable Long id, @Valid @RequestBody RegistrationDTO dto) {
         return ResponseEntity.ok(registrationService.atualizar(id, dto));
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Cancelar inscrição administrativamente")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         registrationService.deletar(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/reativar")
+    @Operation(summary = "Reativar inscrição")
     public ResponseEntity<RegistrationDTO> reativar(@PathVariable Long id) {
         return ResponseEntity.ok(registrationService.reativar(id));
     }
