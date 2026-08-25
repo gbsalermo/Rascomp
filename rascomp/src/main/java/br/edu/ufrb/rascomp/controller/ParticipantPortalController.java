@@ -26,27 +26,33 @@ import br.edu.ufrb.rascomp.dto.RobotDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
 import br.edu.ufrb.rascomp.dto.TeamDTO;
 import br.edu.ufrb.rascomp.service.ParticipantPortalService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/participante")
 @RequiredArgsConstructor
+@Tag(name = "Portal do Participante")
 public class ParticipantPortalController {
 
     private final ParticipantPortalService portalService;
 
     @GetMapping("/equipes")
+    @Operation(summary = "Listar minhas equipes")
     public ResponseEntity<List<TeamDTO>> equipes() {
         return ResponseEntity.ok(portalService.minhasEquipes());
     }
 
     @PostMapping("/equipes")
+    @Operation(summary = "Criar equipe sob minha responsabilidade")
     public ResponseEntity<TeamDTO> criarEquipe(@Valid @RequestBody ParticipantTeamRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(portalService.criarEquipe(request));
     }
 
     @PutMapping("/equipes/{teamId}")
+    @Operation(summary = "Atualizar minha equipe")
     public ResponseEntity<TeamDTO> atualizarEquipe(
             @PathVariable Long teamId,
             @Valid @RequestBody ParticipantTeamRequest request) {
@@ -54,11 +60,13 @@ public class ParticipantPortalController {
     }
 
     @GetMapping("/equipes/{teamId}/competidores")
+    @Operation(summary = "Listar competidores da minha equipe")
     public ResponseEntity<List<CompetitorDTO>> competidores(@PathVariable Long teamId) {
         return ResponseEntity.ok(portalService.competidores(teamId));
     }
 
     @PostMapping("/equipes/{teamId}/competidores")
+    @Operation(summary = "Cadastrar competidor na minha equipe")
     public ResponseEntity<CompetitorDTO> criarCompetidor(
             @PathVariable Long teamId,
             @Valid @RequestBody ParticipantCompetitorRequest request) {
@@ -67,11 +75,13 @@ public class ParticipantPortalController {
     }
 
     @PostMapping("/equipes/{teamId}/competidores/eu")
+    @Operation(summary = "Vincular minha conta como competidor da equipe")
     public ResponseEntity<CompetitorDTO> tornarMeCompetidor(@PathVariable Long teamId) {
         return ResponseEntity.status(HttpStatus.CREATED).body(portalService.tornarMeCompetidor(teamId));
     }
 
     @PutMapping("/competidores/{competitorId}")
+    @Operation(summary = "Atualizar competidor da minha equipe")
     public ResponseEntity<CompetitorDTO> atualizarCompetidor(
             @PathVariable Long competitorId,
             @Valid @RequestBody ParticipantCompetitorRequest request) {
@@ -79,17 +89,20 @@ public class ParticipantPortalController {
     }
 
     @DeleteMapping("/competidores/{competitorId}")
+    @Operation(summary = "Remover competidor da minha equipe")
     public ResponseEntity<Void> removerCompetidor(@PathVariable Long competitorId) {
         portalService.removerCompetidor(competitorId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/equipes/{teamId}/robos")
+    @Operation(summary = "Listar robôs da minha equipe")
     public ResponseEntity<List<RobotDTO>> robos(@PathVariable Long teamId) {
         return ResponseEntity.ok(portalService.robos(teamId));
     }
 
     @PostMapping("/equipes/{teamId}/robos")
+    @Operation(summary = "Cadastrar robô na minha equipe")
     public ResponseEntity<RobotDTO> criarRobo(
             @PathVariable Long teamId,
             @Valid @RequestBody ParticipantRobotRequest request) {
@@ -97,6 +110,7 @@ public class ParticipantPortalController {
     }
 
     @PutMapping("/robos/{robotId}")
+    @Operation(summary = "Atualizar robô da minha equipe")
     public ResponseEntity<RobotDTO> atualizarRobo(
             @PathVariable Long robotId,
             @Valid @RequestBody ParticipantRobotRequest request) {
@@ -104,17 +118,20 @@ public class ParticipantPortalController {
     }
 
     @DeleteMapping("/robos/{robotId}")
+    @Operation(summary = "Remover robô da minha equipe")
     public ResponseEntity<Void> removerRobo(@PathVariable Long robotId) {
         portalService.removerRobo(robotId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/robos/{robotId}/fotos")
+    @Operation(summary = "Listar fotos do meu robô")
     public ResponseEntity<List<RobotImageDTO>> fotos(@PathVariable Long robotId) {
         return ResponseEntity.ok(portalService.fotos(robotId));
     }
 
     @PostMapping(value = "/robos/{robotId}/fotos", consumes = "multipart/form-data")
+    @Operation(summary = "Enviar foto do meu robô")
     public ResponseEntity<RobotImageDTO> adicionarFoto(
             @PathVariable Long robotId,
             @RequestParam("arquivo") MultipartFile arquivo) {
@@ -122,6 +139,7 @@ public class ParticipantPortalController {
     }
 
     @PatchMapping("/robos/{robotId}/fotos/{imageId}/principal")
+    @Operation(summary = "Definir foto principal do meu robô")
     public ResponseEntity<RobotImageDTO> definirPrincipal(
             @PathVariable Long robotId,
             @PathVariable Long imageId) {
@@ -129,6 +147,7 @@ public class ParticipantPortalController {
     }
 
     @DeleteMapping("/robos/{robotId}/fotos/{imageId}")
+    @Operation(summary = "Remover foto do meu robô")
     public ResponseEntity<Void> removerFoto(
             @PathVariable Long robotId,
             @PathVariable Long imageId) {
@@ -137,11 +156,13 @@ public class ParticipantPortalController {
     }
 
     @GetMapping("/equipes/{teamId}/inscricoes")
+    @Operation(summary = "Listar inscrições da minha equipe")
     public ResponseEntity<List<RegistrationDTO>> inscricoes(@PathVariable Long teamId) {
         return ResponseEntity.ok(portalService.inscricoes(teamId));
     }
 
     @PostMapping("/equipes/{teamId}/inscricoes")
+    @Operation(summary = "Enviar inscrição da minha equipe")
     public ResponseEntity<RegistrationDTO> inscrever(
             @PathVariable Long teamId,
             @Valid @RequestBody ParticipantRegistrationRequest request) {
@@ -149,6 +170,7 @@ public class ParticipantPortalController {
     }
 
     @DeleteMapping("/inscricoes/{registrationId}")
+    @Operation(summary = "Cancelar inscrição da minha equipe")
     public ResponseEntity<Void> cancelarInscricao(@PathVariable Long registrationId) {
         portalService.cancelarInscricao(registrationId);
         return ResponseEntity.noContent().build();
