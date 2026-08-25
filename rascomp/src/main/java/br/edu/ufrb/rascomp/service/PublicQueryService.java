@@ -25,6 +25,7 @@ import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotImageRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -109,15 +110,24 @@ public class PublicQueryService {
     }
 
     public List<MatchDTO> partidas(Long bracketId) {
+        validarBracketPublico(bracketId);
         return matchService.listarPorChaveamento(bracketId);
     }
 
     public List<MatchResultDTO> resultados(Long bracketId) {
+        validarBracketPublico(bracketId);
         return matchResultService.listarPorChaveamento(bracketId);
     }
 
     public RobotImageService.RobotImageFile arquivoFoto(Long robotId, Long imageId) {
         return robotImageService.carregarPublico(robotId, imageId);
+    }
+
+    private void validarBracketPublico(Long bracketId) {
+        BracketDTO bracket = bracketService.buscarPorId(bracketId);
+        if (!Boolean.TRUE.equals(bracket.getAtivo()) || !Boolean.TRUE.equals(bracket.getAtual())) {
+            throw new EntityNotFoundException("Chaveamento público não encontrado: " + bracketId);
+        }
     }
 
     private String fotoPrincipal(Long robotId) {
