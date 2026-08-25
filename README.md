@@ -3,7 +3,7 @@
 <!-- HERO SECTION -->
 <div align="center">
   <a href="https://github.com/gbsalermo/Rascomp">
-    <img src="docs/LOGO-RASCOMP.webp" alt="Rascomp Logo" width="720" height="auto">
+    <img src="rascomp/docs/LogoRAS.png" alt="Rascomp Logo" width="430" height="auto">
   </a>
 
   <h1 align="center">Rascomp — Gestão de Competições de Robótica</h1>
