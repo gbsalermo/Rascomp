@@ -2,6 +2,8 @@ package br.edu.ufrb.rascomp.model;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -15,6 +17,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -57,6 +61,29 @@ public class Registration implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "robot_id", nullable = false)
     private Robot robot;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "registration_competitors",
+        joinColumns = @JoinColumn(name = "registration_id"),
+        inverseJoinColumns = @JoinColumn(name = "competitor_id"),
+        uniqueConstraints = @UniqueConstraint(
+            name = "uk_registration_competitor",
+            columnNames = {"registration_id", "competitor_id"}
+        )
+    )
+    private Set<Competitor> competitors = new LinkedHashSet<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "requested_by_user_id")
+    private UserAccount requestedByUser;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reviewed_by_user_id")
+    private UserAccount reviewedByUser;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

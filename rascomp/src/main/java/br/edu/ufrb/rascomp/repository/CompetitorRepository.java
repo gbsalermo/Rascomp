@@ -9,21 +9,18 @@ import org.springframework.stereotype.Repository;
 import br.edu.ufrb.rascomp.model.Competitor;
 
 @Repository
-public interface CompetitorRepository extends JpaRepository<Competitor, Long>{
+public interface CompetitorRepository extends JpaRepository<Competitor, Long> {
 
-	
-	List<Competitor> findAllByOrderByNomeAsc();
-	
-	List<Competitor> findByAtivoTrueOrderByNomeAsc();
-
+    List<Competitor> findAllByOrderByNomeAsc();
+    List<Competitor> findByAtivoTrueOrderByNomeAsc();
     List<Competitor> findByTeamIdOrderByNomeAsc(Long teamId);
-
     List<Competitor> findByTeamIdAndAtivoTrueOrderByNomeAsc(Long teamId);
 
     Optional<Competitor> findByEmailIgnoreCase(String email);
+    Optional<Competitor> findByUserAccountId(Long userAccountId);
 
     boolean existsByEmailIgnoreCase(String email);
-
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
-
+    boolean existsByUserAccountId(Long userAccountId);
+    boolean existsByUserAccountIdAndIdNot(Long userAccountId, Long id);
 }

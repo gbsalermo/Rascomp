@@ -1,47 +1,369 @@
 # Continuidade do Projeto — Rascomp
 
-Última atualização: 2026-08-23T22:50:00-03:00
+Última atualização: 2026-08-24T00:08:00-03:00
 
 ## 1. Marco atual
 
-O backend do Rascomp concluiu a fase de validação e o **contrato da API está congelado para a etapa Swagger/OpenAPI**.
+O núcleo competitivo do backend já foi validado. Antes do Swagger, o congelamento da API foi reaberto de forma excepcional para corrigir uma lacuna arquitetural indispensável: **usuários reais, autenticação, ownership, participantes das inscrições e separação entre operação administrativa e portal do participante**.
 
-Situação consolidada:
+A implementação dessa correção está concentrada na branch:
 
 ```text
-Infraestrutura                    ✅
-MySQL persistente                 ✅
-Flyway V1–V4                      ✅
-Camunda 7 embarcado               ✅
-CRUDs essenciais                  ✅
-FOLLOW_LINE manual                ✅
-SUMO manual                       ✅
-Erros HTTP essenciais             ✅
-JUnit/Mockito                     ✅
-GitHub Actions                    ✅
-Branch testes-automatizados       ✅ mergeada na main
-Contrato da API                   🔒 congelado
-Swagger/OpenAPI                   ▶ próxima etapa
+arquitetura-usuarios-acesso
 ```
 
-Merge da branch de testes realizado em 23/08/2026 pelo PR #2.
+PR:
+
+```text
+#4 — Arquitetura de usuários, ownership e acesso
+```
+
+Estado atual:
+
+```text
+NÚCLEO COMPETITIVO
+MySQL/Flyway V1–V4                    ✅
+FOLLOW_LINE                           ✅ validado manualmente
+SUMO                                  ✅ validado manualmente
+testes anteriores                     ✅
+branch testes-automatizados           ✅ mergeada na main
+
+ARQUITETURA DE ACESSO
+UserAccount                           ✅ implementado
+PARTICIPANTE / ORGANIZACAO            ✅ implementado
+JWT + BCrypt                          ✅ implementado
+responsável da equipe                 ✅ implementado
+UserAccount ↔ Competitor opcional     ✅ implementado
+Registration + competidores           ✅ implementado
+auditoria solicitante/revisor         ✅ implementado
+fotos dos robôs                       ✅ implementado
+API participante + ownership          ✅ implementado
+API pública sanitizada                ✅ implementado
+Migration V5                          ✅ criada
+
+QUALIDADE
+novos testes                          ✅
+GitHub Actions                        ✅ 28 testes / 0 falhas
+smoke local MySQL + V5 + JWT          ⏳ próximo checkpoint
+upload de foto local                  ⏳ próximo checkpoint
+PR #4                                 🔄 draft até smoke
+
+PRÓXIMA FASE
+novo congelamento da API              ⏳ após merge
+Swagger/OpenAPI                       ⏳ depois do congelamento
+Camunda BPMN funcional                ⏳ checkpoint pós-Swagger
+Frontend de Gestão                    ⏳ trabalho paralelo
+Landing / Frontend Público            ⏳ trabalho paralelo
+```
+
+O README foi atualizado no mesmo marco com a identidade visual oficial do projeto e o estado arquitetural atual.
 
 ---
 
-## 2. Stack consolidada
+## 2. Objetivo do Rascomp
 
-- Java 21;
-- Spring Boot 3.5.3;
-- Spring Web;
-- Spring Data JPA / Hibernate;
-- Jakarta Validation;
-- MySQL persistente;
-- HikariCP com `TRANSACTION_READ_COMMITTED`;
-- Flyway;
-- Camunda 7.22 embarcado;
-- Springdoc OpenAPI 2.8.9;
-- JUnit 5 + Mockito;
-- GitHub Actions.
+O Rascomp é uma plataforma de gestão de competições de robótica no contexto da IEEE Robotics & Automation Society — UFRB.
+
+Há dois clientes principais:
+
+```text
+Frontend de Gestão
+  ├─ PARTICIPANTE
+  └─ ORGANIZACAO
+
+Frontend Público / Landing
+  └─ consulta pública sanitizada
+```
+
+O backend é a fonte de verdade para autenticação, ownership, regras competitivas, inscrições, resultados e permissões.
+
+---
+
+## 3. Dois tipos de usuário
+
+O projeto utiliza somente dois papéis globais:
+
+```text
+PARTICIPANTE
+ORGANIZACAO
+```
+
+### PARTICIPANTE
+
+Conta criada pelo próprio usuário.
+
+Pode:
+
+- registrar conta e fazer login;
+- consultar seu próprio usuário em `/auth/me`;
+- criar e gerenciar apenas as equipes pelas quais é responsável;
+- cadastrar competidores da equipe;
+- opcionalmente se vincular como `Competitor`;
+- cadastrar robôs;
+- enviar fotos dos robôs;
+- criar e cancelar inscrições da própria equipe;
+- escolher os competidores que participarão daquela inscrição;
+- acompanhar status das inscrições.
+
+### ORGANIZACAO
+
+Conta administrativa do evento.
+
+Pode operar:
+
+- usuários da organização;
+- instituições;
+- equipes;
+- competidores;
+- robôs e fotos;
+- competições e categorias;
+- inscrições e análise;
+- inspeção Sumô;
+- chaveamentos, partidas e rounds;
+- tentativas e ranking Follow;
+- Camunda REST;
+- demais endpoints internos de gestão.
+
+Responsabilidade de equipe **não é role global**. É ownership:
+
+```text
+Team.responsibleUser -> UserAccount(PARTICIPANTE)
+```
+
+---
+
+## 4. Identidade e segurança
+
+Entidade:
+
+```text
+UserAccount
+- id
+- nome
+- email unique
+- passwordHash
+- telefone
+- role
+- ativo
+- ultimoLogin
+- dataCadastro
+```
+
+Senha:
+
+```text
+senha recebida
+ -> BCryptPasswordEncoder(12)
+ -> password_hash
+```
+
+Regras:
+
+- senha original nunca é persistida;
+- nenhum DTO de resposta expõe `passwordHash`;
+- BCrypt é irreversível para o uso normal da aplicação;
+- autenticação é stateless com JWT.
+
+Endpoints:
+
+```text
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+GET  /api/v1/auth/me
+```
+
+JWT:
+
+```text
+Authorization: Bearer <token>
+```
+
+Segredo externo:
+
+```text
+JWT_SECRET
+```
+
+Nunca versionar segredos.
+
+Primeiro usuário `ORGANIZACAO` pode ser criado por bootstrap opcional quando ainda não existir conta administrativa.
+
+Não foi implementado public ID/UUID. IDs numéricos permanecem adequados ao escopo atual; segurança depende de autenticação e autorização, não da ocultação do ID.
+
+---
+
+## 5. Ownership e modelo operacional
+
+### Team
+
+`Team` possui `responsibleUser` opcional para compatibilidade com dados legados.
+
+Nova equipe criada pelo portal participante recebe automaticamente o usuário autenticado como responsável.
+
+```text
+UserAccount
+    ↓ responsibleUser
+Team
+ ├─ Competitors
+ ├─ Robots
+ └─ Registrations
+```
+
+### Competitor
+
+`Competitor` continua representando a pessoa que compete, não a conta de login.
+
+Pode existir sem conta.
+
+Opcionalmente:
+
+```text
+Competitor.userAccount -> UserAccount(PARTICIPANTE)
+```
+
+Cenários suportados:
+
+```text
+professor responsável: UserAccount ✅ / Competitor ❌
+competidor líder:       UserAccount ✅ / Competitor ✅
+competidor cadastrado:  UserAccount opcional / Competitor ✅
+```
+
+### Registration
+
+A inscrição agora registra:
+
+```text
+competition
+category
+team
+robot
+competitors participantes
+requestedByUser
+reviewedByUser
+reviewedAt
+status
+observacao
+ativo
+```
+
+Toda inscrição criada pelo portal participante nasce:
+
+```text
+PENDENTE
+```
+
+Aprovação/rejeição é responsabilidade de `ORGANIZACAO`.
+
+O backend valida que os competidores informados pertencem à mesma equipe da inscrição.
+
+---
+
+## 6. Fotos dos robôs
+
+Nova entidade `RobotImage` armazena metadados:
+
+```text
+robotId
+storageKey
+originalFilename
+contentType
+principal
+ordem
+ativo
+dataCadastro
+```
+
+Os bytes ficam fora do MySQL.
+
+MVP:
+
+```text
+armazenamento local
+JPEG / PNG / WEBP
+máximo 5 MB
+```
+
+Diretório configurável:
+
+```text
+ROBOT_IMAGES_DIR
+```
+
+`/uploads/` está ignorado pelo Git.
+
+A arquitetura do storage permite substituição futura por S3/cloud sem mudar o domínio de `Robot`.
+
+---
+
+## 7. Separação das APIs
+
+### Público — sem login
+
+```text
+/api/v1/public/**
+```
+
+Somente leitura e DTOs sanitizados.
+
+Pode alimentar a landing page com:
+
+- competições;
+- equipes;
+- competidores com dados públicos;
+- robôs;
+- fotos;
+- inscrições aprovadas;
+- ranking Follow;
+- chaveamentos Sumô;
+- partidas/resultados.
+
+Não expõe:
+
+- senha/hash;
+- e-mail/telefone de competidores;
+- responsável da equipe;
+- observações administrativas;
+- usuário solicitante/revisor.
+
+### Participante — JWT `PARTICIPANTE`
+
+```text
+/api/v1/participante/**
+```
+
+Ownership validado pelo backend.
+
+O frontend não escolhe livremente:
+
+- `teamId` de outra equipe;
+- responsável;
+- role;
+- status administrativo;
+- usuário solicitante;
+- `ativo` administrativo.
+
+Esses valores são determinados ou validados pelo backend.
+
+### Organização — JWT `ORGANIZACAO`
+
+```text
+/api/v1/**
+```
+
+Endpoints internos de operação administrativa.
+
+Camunda REST:
+
+```text
+/engine-rest/** -> ORGANIZACAO
+```
+
+Swagger/OpenAPI permanece liberado durante desenvolvimento.
+
+---
+
+## 8. Persistência
 
 Migrations atuais:
 
@@ -50,13 +372,20 @@ V1__create_rascomp_schema.sql
 V2__create_inspecoes_sumo.sql
 V3__create_rounds_sumo.sql
 V4__remove_follow_line_brackets.sql
+V5__add_users_team_ownership_and_robot_images.sql
 ```
 
-A V4 remove dados legados de chaveamento associados a `FOLLOW_LINE` criados antes da correção definitiva do domínio.
+Nunca editar V1–V5 depois de aplicadas.
+
+Próxima alteração estrutural:
+
+```text
+V6+
+```
 
 ---
 
-## 3. Domínio congelado por modalidade
+## 9. Domínio competitivo — contrato já validado
 
 ### FOLLOW_LINE
 
@@ -79,24 +408,22 @@ Cálculo:
 tempoFinal = tempoSegundos + penalidadeSegundos
 ```
 
-Regras validadas manualmente:
+Regras manualmente validadas:
 
 - 3 tomadas × 3 tentativas;
-- limite de tomada;
-- limite de tentativa;
-- limite de checkpoints;
-- duplicidade de `tomada + numeroTentativa` por inscrição;
-- tempo acima do máximo persiste como tentativa inválida;
-- tentativa inválida não entra no ranking;
-- tentativa não concluída não entra no ranking;
-- penalidade entra no tempo final;
-- melhor tentativa válida representa o robô;
-- ranking ordena corretamente os robôs;
-- inscrição SUMO não aceita tentativa Follow;
-- ranking Follow rejeita categoria SUMO;
-- geração de bracket para Follow retorna erro de regra de negócio.
+- limites de tomada e tentativa;
+- checkpoints;
+- duplicidade;
+- tempo máximo;
+- tentativa inválida ignorada;
+- tentativa não concluída ignorada;
+- penalidade aplicada;
+- ranking correto;
+- inscrição SUMO rejeitada no Follow;
+- categoria SUMO rejeitada no ranking Follow;
+- bracket bloqueado para Follow.
 
-`FOLLOW_LINE` **não utiliza**:
+`FOLLOW_LINE` não usa:
 
 ```text
 Bracket
@@ -121,56 +448,43 @@ Registration APROVADA
     -> encerramento do Bracket
 ```
 
-Regras validadas manualmente:
+Regras manualmente validadas:
 
-- `ConfigSumo` presente para a categoria utilizada;
-- aprovação por peso dentro do limite;
-- reprovações de inspeção;
-- desclassificação ao atingir limite de tentativas reprovadas;
-- consulta de aptidão;
-- apenas inscrições ativas, aprovadas e aptas entram no bracket;
-- bracket exclusivo de SUMO;
-- participante desclassificado/não apto fica fora da chave;
-- rounds finalizados e empatados;
-- vitória contabilizada conforme `roundsParaVencer`;
-- `MatchResult` criado automaticamente;
-- `Match` encerrado automaticamente;
-- `Bracket` encerrado automaticamente na final;
-- API de `MatchResult` é somente leitura;
-- `POST`, `PUT` e `DELETE` externos em `resultados-partida` resultam em `405`.
+- ConfigSumo;
+- inspeções;
+- reprovação/desclassificação;
+- aptidão;
+- filtro de participantes aptos;
+- bracket exclusivo Sumô;
+- BYE;
+- rounds;
+- empate;
+- `roundsParaVencer`;
+- MatchResult automático;
+- Match FINALIZADA;
+- Bracket FINALIZADO;
+- MatchResult somente leitura;
+- POST/PUT/DELETE externos retornando 405.
+
+A introdução de usuários e ownership não altera essas regras.
 
 ---
 
-## 4. Qualidade e testes
+## 10. Testes automatizados
 
-### Bateria manual
+A regressão anterior permanece ativa e foram adicionados testes para a nova arquitetura.
 
-A bateria manual final foi concluída em 23/08/2026.
-
-Cobertura funcional confirmada:
+Última execução validada no GitHub Actions após a correção do teste de ownership:
 
 ```text
-CRUD/contrato básico             ✅
-FOLLOW_LINE completo             ✅
-SUMO completo                    ✅
-400                              ✅
-404                              ✅
-405                              ✅
-persistência                     ✅
-regras de modalidade             ✅
+Backend Tests
+28 testes
+0 falhas
+0 erros
+SUCCESS
 ```
 
-Arquivo de referência:
-
-```text
-docs/TESTES_POSTMAN.md
-```
-
-### Testes automatizados
-
-A branch `testes-automatizados` foi validada e mergeada na `main`.
-
-A suíte contém testes de serviço para, entre outros:
+Cobertura relevante:
 
 - `CompetitionCategoryService`;
 - `TentativaSeguidorLinhaService`;
@@ -179,53 +493,19 @@ A suíte contém testes de serviço para, entre outros:
 - `BracketService`;
 - `BracketGenerationService`;
 - `MatchService`;
-- `MatchResultService`.
+- `MatchResultService`;
+- `UserAccountService`;
+- `AccessPolicyService`;
+- ownership de equipe;
+- inscrição com competidores/ownership.
 
-O GitHub Actions `Backend Tests` executa:
-
-```bash
-mvn -B test
-```
-
-com Java 21.
-
-A execução validada antes do merge terminou com `success`.
+CI sozinho não encerra a etapa: ainda é necessário smoke com MySQL real, V5, JWT e arquivo.
 
 ---
 
-## 5. Congelamento da API
+## 11. Camunda
 
-A partir deste marco, controllers, rotas, DTOs, enums e regras principais passam a ser tratados como contrato estável para Swagger e frontends.
-
-Mudanças de contrato só devem ocorrer por:
-
-1. bug comprovado;
-2. incompatibilidade encontrada durante documentação Swagger;
-3. bloqueio real de integração do frontend;
-4. requisito funcional indispensável ainda não representado.
-
-Evitar durante o congelamento:
-
-- renomear endpoints sem necessidade;
-- remover campos de DTO;
-- alterar significado de enums;
-- mover regra de negócio validada para controllers;
-- reabrir a separação de domínio entre Follow e Sumô;
-- alterar migrations antigas já aplicadas.
-
-Migrations futuras devem ser novas e incrementais.
-
-Documento específico:
-
-```text
-docs/CONGELAMENTO_API.md
-```
-
----
-
-## 6. Camunda — estado e decisão atual
-
-Infraestrutura validada:
+Infraestrutura:
 
 ```text
 Camunda 7.22         ✅
@@ -233,111 +513,157 @@ Process Engine       ✅
 JobExecutor          ✅
 tabelas ACT_*        ✅
 REST starter         ✅
-BPMN Rascomp         ⏳ não implementado
+BPMN Rascomp         ⏳
 ```
 
-Decisão atual: **não implementar BPMN antes de concluir Swagger**.
-
-As regras de competição continuam em Java. Camunda, se adotado no fluxo final, deverá **orquestrar processo humano/administrativo**, e não substituir `RankingFollowService`, `BracketGenerationService`, `RoundSumoService` ou demais regras já validadas.
-
-Primeiro candidato continua sendo aprovação de inscrição:
+A arquitetura de usuários tornou o primeiro BPMN mais concreto:
 
 ```text
-Inscrição criada
-    -> PENDENTE
-    -> análise administrativa
-    -> APROVADA ou REJEITADA
+PARTICIPANTE
+    ↓
+envia Registration
+    ↓
+PENDENTE
+    ↓
+tarefa humana da ORGANIZACAO
+   ↙                       ↘
+APROVADA                 REJEITADA
 ```
 
-Após Swagger haverá um checkpoint para escolher entre:
+Camunda deverá orquestrar processo humano/auditoria.
 
-- integrar um BPMN mínimo de aprovação antes do frontend completo;
-- integrar Camunda junto do primeiro fluxo do Frontend de Gestão;
-- adiar BPMN funcional para depois do MVP visual, mantendo apenas a infraestrutura já pronta.
+As regras de competição permanecem em Java:
 
-Nenhuma dessas opções é escolhida antes da revisão pós-Swagger.
+```text
+RankingFollowService
+InspecaoSumoService
+BracketGenerationService
+RoundSumoService
+BracketProgressionService
+...
+```
+
+Decisão sobre BPMN funcional permanece para o checkpoint depois do Swagger.
 
 ---
 
-## 7. Nova forma de execução do projeto
+## 12. Próximo checkpoint — sessão seguinte
 
-A partir deste marco, o desenvolvimento deve ser conduzido em modo de **orquestração**:
+Antes de qualquer trabalho de Swagger:
 
-- a documentação define contratos, ordem e critérios de aceite;
-- implementação pode ser delegada a IA/ferramentas/agentes;
-- cada etapa deve terminar com revisão objetiva e teste verificável;
-- não avançar por quantidade de código, e sim por critério de saída atendido;
-- `CONTINUIDADE.md` permanece a fonte principal do estado do projeto.
+```text
+1. checkout/pull da branch arquitetura-usuarios-acesso
+2. subir aplicação com MySQL
+3. confirmar Flyway V5
+4. registrar PARTICIPANTE
+5. confirmar password_hash BCrypt no banco, nunca senha pura
+6. login -> JWT
+7. GET /api/v1/auth/me
+8. criar equipe pelo participante
+9. confirmar responsibleUser automático
+10. cadastrar competidor e robô
+11. testar vínculo "eu como competidor"
+12. subir uma foto do robô
+13. criar inscrição com competidores
+14. confirmar inscrição PENDENTE + requestedByUser
+15. testar ownership negativo com outro participante
+16. testar 401 sem token
+17. testar 403 com perfil incorreto
+18. acessar fluxo administrativo como ORGANIZACAO
+19. confirmar endpoint público sem dados sensíveis
+20. smoke rápido Follow/Sumô para regressão
+```
 
-Isso reduz trabalho manual de implementação e mantém controle arquitetural mesmo com execução delegada.
+Se todos passarem:
+
+```text
+PR #4 -> ready
+      ↓
+merge em main
+      ↓
+novo congelamento definitivo da API
+      ↓
+SWAGGER / OPENAPI
+```
+
+Se algum teste falhar, parar no primeiro problema, registrar request/response/log e corrigir antes do merge.
 
 ---
 
-## 8. Próxima etapa — Swagger/OpenAPI
+## 13. Frontends em paralelo
 
-A dependência já está presente no `pom.xml`:
+O Frontend de Gestão e o esqueleto da Landing Page podem avançar em paralelo em outro fluxo de trabalho.
 
-```text
-org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9
-```
-
-A etapa Swagger deve documentar o contrato congelado, sem alterar o comportamento da API.
-
-Critério de conclusão planejado:
+Orientação para esses trabalhos:
 
 ```text
-OpenAPI carregando
-Swagger UI acessível
-informações gerais da API
-controllers organizados por tags
-operações descritas
-path/query params documentados
-requests documentados
-responses 200/201/204/400/404/405/409 documentadas
-DTOs/schemas legíveis
-exemplos úteis de JSON
-erro padrão documentado
-FOLLOW_LINE e SUMO claramente separados
-MatchResult identificado como somente leitura
-conferência visual endpoint por endpoint
-```
-
-URLs esperadas do Springdoc, sujeitas à validação na implementação:
-
-```text
-/v3/api-docs
-/swagger-ui/index.html
-```
-
----
-
-## 9. Roadmap a partir daqui
-
-```text
-BACKEND VALIDADO E CONGELADO ✅
-            ↓
-SWAGGER / OPENAPI           ▶
-            ↓
-CHECKPOINT ARQUITETURAL
-   ├─ Camunda agora?
-   ├─ Frontend de Gestão primeiro?
-   └─ BPMN pós-MVP?
-            ↓
-CAMINHO ESCOLHIDO
-            ↓
 Frontend de Gestão
-            ↓
-Frontend Público
-            ↓
-Autenticação/JWT e refinamentos
+ -> consumir /api/v1/auth/**
+ -> PARTICIPANTE usa /api/v1/participante/**
+ -> ORGANIZACAO usa endpoints administrativos
+ -> preparar integração futura com Swagger/OpenAPI
+
+Landing / Frontend Público
+ -> consumir exclusivamente /api/v1/public/**
+ -> nenhuma dependência de dados administrativos/sensíveis
 ```
 
-O roadmap deixa de fixar prematuramente a posição do Camunda. A decisão será tomada com a API documentada e a dimensão real da integração visível.
+Até o merge do PR #4, considerar a API ainda em validação arquitetural. Evitar fixar contratos frontend irreversíveis antes do novo congelamento.
 
 ---
 
-## 10. Próximo comando de trabalho
+## 14. Roadmap atualizado
 
-**Iniciar Swagger/OpenAPI sobre a API congelada.**
+```text
+NÚCLEO COMPETITIVO                    ✅
+Follow + Sumô                         ✅
+Testes manuais                        ✅
+Testes automatizados                  ✅
 
-Antes de qualquer alteração de regra de negócio, consultar este arquivo e `docs/CONGELAMENTO_API.md`.
+ARQUITETURA DE USUÁRIOS               ✅ implementação
+JWT + BCrypt                          ✅
+Ownership                             ✅
+API participante/pública              ✅
+V5                                    ✅
+CI 28/28                              ✅
+            ↓
+SMOKE LOCAL                           ◀ PRÓXIMO
+            ↓
+MERGE PR #4
+            ↓
+NOVO CONGELAMENTO DA API
+            ↓
+SWAGGER / OPENAPI
+            ↓
+REVISÃO FINAL DO BACKEND
+            ↓
+CHECKPOINT CAMUNDA
+   ├─ BPMN mínimo agora?
+   ├─ integração com gestão?
+   └─ adiar até MVP visual?
+            ↓
+Frontend de Gestão + Landing
+            ↓
+MVP
+```
+
+Objetivo imediato: **fechar a nova arquitetura, documentar no Swagger e considerar o backend definitivamente pronto para integração dos frontends**.
+
+---
+
+## 15. Forma de trabalho
+
+O projeto é conduzido por orquestração:
+
+```text
+objetivo
+ -> implementação delegada
+ -> revisão de arquitetura/diff
+ -> CI
+ -> smoke objetivo
+ -> documentação
+ -> merge
+ -> próxima etapa
+```
+
+`CONTINUIDADE.md` continua sendo a fonte principal do estado do projeto para novas sessões, IAs ou colaboradores.
