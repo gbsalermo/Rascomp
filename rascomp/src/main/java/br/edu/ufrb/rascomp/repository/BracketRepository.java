@@ -12,6 +12,6 @@ public interface BracketRepository extends JpaRepository<Bracket, Long> {
     List<Bracket> findAllByOrderByDataCadastroDesc();
     List<Bracket> findByAtivoTrueOrderByDataCadastroDesc();
     List<Bracket> findByCompetitionIdOrderByDataCadastroDesc(Long competitionId);
-    boolean existsByCompetitionIdAndCategoryId(Long competitionId, Long categoryId);
-    boolean existsByCompetitionIdAndCategoryIdAndIdNot(Long competitionId, Long categoryId, Long id);
+    List<Bracket> findByCompetitionIdAndAtualTrueAndAtivoTrueOrderByDataCadastroDesc(Long competitionId);
+    List<Bracket> findByCompetitionIdAndCategoryIdAndAtualTrue(Long competitionId, Long categoryId);
 }
