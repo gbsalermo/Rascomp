@@ -14,7 +14,6 @@ import io.swagger.v3.oas.models.PathItem.HttpMethod;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.IntegerSchema;
-import io.swagger.v3.oas.models.media.MapSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -99,9 +98,8 @@ public class OpenApiConfig {
     }
 
     private Schema<?> apiErrorSchema() {
-        MapSchema validationErrors = new MapSchema();
-        validationErrors.setDescription("Erros de validação por campo quando aplicável.");
-        validationErrors.setAdditionalProperties(new StringSchema());
+        ObjectSchema validationErrors = new ObjectSchema();
+        validationErrors.setDescription("Erros de validação por campo quando aplicável. Cada propriedade representa o nome do campo e sua mensagem de validação.");
 
         return new ObjectSchema()
                 .description("Formato padrão de erro retornado pelos handlers da aplicação.")
@@ -130,11 +128,9 @@ public class OpenApiConfig {
             openApi.getPaths().forEach((path, pathItem) ->
                     pathItem.readOperationsMap().forEach((method, operation) -> {
                         operation.setTags(List.of(tagPara(path)));
-
                         if (operation.getSummary() == null || operation.getSummary().isBlank()) {
                             operation.setSummary(humanizar(operation.getOperationId()));
                         }
-
                         normalizarRespostaSucesso(path, method, operation);
                         aplicarDescricaoEspecial(path, method, operation);
                         aplicarSeguranca(path, operation);
@@ -144,44 +140,41 @@ public class OpenApiConfig {
     }
 
     @Bean
-    GroupedOpenApi apiCompleta(OpenApiCustomizer rascompOpenApiCustomizer) {
-        return GroupedOpenApi.builder()
-                .group("completa")
-                .displayName("API completa")
-                .pathsToMatch("/api/v1/**")
-                .addOpenApiCustomizer(rascompOpenApiCustomizer)
-                .build();
+    GroupedOpenApi apiCompleta(OpenApiCustomizer customizer) {
+        return grupo("completa", "API completa", customizer, new String[]{"/api/v1/**"}, new String[]{});
     }
 
     @Bean
-    GroupedOpenApi apiPublica(OpenApiCustomizer rascompOpenApiCustomizer) {
-        return GroupedOpenApi.builder()
-                .group("publica")
-                .displayName("Público / Landing")
-                .pathsToMatch("/api/v1/public/**")
-                .addOpenApiCustomizer(rascompOpenApiCustomizer)
-                .build();
+    GroupedOpenApi apiPublica(OpenApiCustomizer customizer) {
+        return grupo("publica", "Público / Landing", customizer, new String[]{"/api/v1/public/**"}, new String[]{});
     }
 
     @Bean
-    GroupedOpenApi apiParticipante(OpenApiCustomizer rascompOpenApiCustomizer) {
-        return GroupedOpenApi.builder()
-                .group("participante")
-                .displayName("Participante")
-                .pathsToMatch("/api/v1/participante/**", "/api/v1/auth/**")
-                .addOpenApiCustomizer(rascompOpenApiCustomizer)
-                .build();
+    GroupedOpenApi apiParticipante(OpenApiCustomizer customizer) {
+        return grupo("participante", "Participante", customizer,
+                new String[]{"/api/v1/participante/**", "/api/v1/auth/**"}, new String[]{});
     }
 
     @Bean
-    GroupedOpenApi apiOrganizacao(OpenApiCustomizer rascompOpenApiCustomizer) {
-        return GroupedOpenApi.builder()
-                .group("organizacao")
-                .displayName("Organização")
-                .pathsToMatch("/api/v1/**")
-                .pathsToExclude("/api/v1/public/**", "/api/v1/participante/**", "/api/v1/auth/register")
-                .addOpenApiCustomizer(rascompOpenApiCustomizer)
-                .build();
+    GroupedOpenApi apiOrganizacao(OpenApiCustomizer customizer) {
+        return grupo("organizacao", "Organização", customizer,
+                new String[]{"/api/v1/**"},
+                new String[]{"/api/v1/public/**", "/api/v1/participante/**", "/api/v1/auth/register"});
+    }
+
+    private GroupedOpenApi grupo(
+            String nome,
+            String displayName,
+            OpenApiCustomizer customizer,
+            String[] incluir,
+            String[] excluir) {
+        GroupedOpenApi.Builder builder = GroupedOpenApi.builder()
+                .group(nome)
+                .displayName(displayName)
+                .pathsToMatch(incluir)
+                .addOpenApiCustomizer(customizer);
+        if (excluir.length > 0) builder.pathsToExclude(excluir);
+        return builder.build();
     }
 
     private ApiResponse respostaErro(String descricao) {
@@ -205,27 +198,23 @@ public class OpenApiConfig {
         boolean publico = path.startsWith("/api/v1/public/")
                 || path.equals("/api/v1/auth/register")
                 || path.equals("/api/v1/auth/login");
-
-        if (!publico) {
-            operation.addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH));
-        }
+        if (!publico) operation.addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH));
     }
 
     private void normalizarRespostaSucesso(String path, HttpMethod method, Operation operation) {
         if (operation.getResponses() == null) return;
 
-        if (method == HttpMethod.POST && !path.equals("/api/v1/auth/login")) {
-            if (!operation.getResponses().containsKey("201")) {
-                ApiResponse resposta = operation.getResponses().remove("200");
-                operation.getResponses().addApiResponse("201",
-                        resposta != null
-                                ? resposta.description("Criado com sucesso.")
-                                : new ApiResponse().description("Criado com sucesso."));
-            }
+        if (method == HttpMethod.POST && !path.equals("/api/v1/auth/login")
+                && !operation.getResponses().containsKey("201")) {
+            ApiResponse resposta = operation.getResponses().remove("200");
+            operation.getResponses().addApiResponse("201",
+                    resposta != null
+                            ? resposta.description("Criado com sucesso.")
+                            : new ApiResponse().description("Criado com sucesso."));
         } else if (method == HttpMethod.DELETE && !operation.getResponses().containsKey("204")) {
             operation.getResponses().remove("200");
-            operation.getResponses().addApiResponse(
-                    "204", new ApiResponse().description("Operação concluída sem conteúdo."));
+            operation.getResponses().addApiResponse("204",
+                    new ApiResponse().description("Operação concluída sem conteúdo."));
         }
     }
 
@@ -243,16 +232,13 @@ public class OpenApiConfig {
             operation.getResponses().addApiResponse("401", refResposta("Unauthorized"));
             operation.getResponses().addApiResponse("403", refResposta("Forbidden"));
         }
-
         if (method == HttpMethod.POST || method == HttpMethod.PUT
                 || method == HttpMethod.PATCH || method == HttpMethod.DELETE) {
             operation.getResponses().addApiResponse("409", refResposta("Conflict"));
         }
-
         if (method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH) {
             operation.getResponses().addApiResponse("415", refResposta("UnsupportedMediaType"));
         }
-
         if (path.contains("/fotos")) {
             operation.getResponses().addApiResponse("413", refResposta("PayloadTooLarge"));
         }
@@ -311,13 +297,11 @@ public class OpenApiConfig {
 
     private String humanizar(String operationId) {
         if (operationId == null || operationId.isBlank()) return "Operação";
-
         String texto = operationId
                 .replaceAll("_\\d+$", "")
                 .replaceAll("([a-z0-9])([A-Z])", "$1 $2")
                 .replace('_', ' ')
                 .trim();
-
         if (texto.isBlank()) return "Operação";
         return Character.toUpperCase(texto.charAt(0)) + texto.substring(1);
     }
