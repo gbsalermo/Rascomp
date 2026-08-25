@@ -2,7 +2,7 @@
 
 Status: **PLANEJADO / REVISAR APÓS O SWAGGER E ANTES DO CONGELAMENTO FINAL DA API**
 
-Este documento registra a evolução desejada para o primeiro acesso e para o vínculo entre usuários, equipes, robôs e inscrições.
+Este documento registra a evolução desejada para o primeiro acesso e para o vínculo entre usuários, equipes, robôs, inscrições e acompanhamento competitivo do participante.
 
 ---
 
@@ -39,7 +39,10 @@ O backend atual já possui:
 - criação de equipe pelo usuário autenticado, tornando-o responsável;
 - `Robot` pertencente à equipe;
 - `Registration` com um `robot` obrigatório;
-- `Registration.competitors` permitindo múltiplos competidores na mesma inscrição/robô.
+- `Registration.competitors` permitindo múltiplos competidores na mesma inscrição/robô;
+- `MatchDTO` com inscrições A/B, rodada, ordem, horário e status;
+- ranking Follow Line calculado pelo backend com `registrationId` e `posicao`;
+- projeções públicas de chaveamentos, partidas, resultados e ranking.
 
 Fluxo atual relevante:
 
@@ -366,7 +369,94 @@ Revisar antes da decisão:
 
 ---
 
-## 10. Primeiro acesso alvo
+## 10. Experiência competitiva do participante
+
+O perfil `PARTICIPANTE` precisa acompanhar sua própria competição, e não apenas gerenciar equipe/robôs.
+
+O backend deve permitir que o frontend responda com segurança:
+
+- próxima partida ou atividade;
+- horário quando houver agendamento;
+- adversário no Sumô;
+- situação atual na chave;
+- resultado anterior;
+- se avançou, foi eliminado ou é campeão;
+- posição oficial no Follow Line;
+- melhor resultado oficial;
+- inscrições ativas e status.
+
+### O que já existe
+
+Com os contratos atuais, o frontend já consegue combinar:
+
+```text
+/api/v1/participante/equipes
+/api/v1/participante/equipes/{teamId}/robos
+/api/v1/participante/equipes/{teamId}/inscricoes
+/api/v1/public/chaveamentos
+/api/v1/public/partidas
+/api/v1/public/resultados
+/api/v1/public/ranking/seguidor-linha
+```
+
+`MatchDTO` já carrega `registrationAId`, `registrationBId`, `rodada`, `ordem`, `dataHora` e `status`.
+
+`RankingFollowDTO` já carrega `registrationId` e `posicao` calculada oficialmente.
+
+Isso permite uma primeira versão do dashboard participante filtrando projeções oficiais por IDs das inscrições próprias.
+
+### O que não deve ser inferido como regra oficial no cliente
+
+Evitar que o Vue determine por conta própria:
+
+```text
+ELIMINADO
+CLASSIFICADO
+CAMPEAO
+PROXIMA_PARTIDA_OFICIAL
+```
+
+quando essa semântica exigir interpretar a árvore competitiva.
+
+Esses estados devem preferencialmente chegar prontos do backend.
+
+### Projeções autenticadas a avaliar
+
+Após o Swagger, avaliar endpoints dedicados como:
+
+```text
+GET /api/v1/participante/competicao-atual
+GET /api/v1/participante/minhas-partidas
+GET /api/v1/participante/minha-situacao-sumo
+GET /api/v1/participante/minhas-colocacoes-follow
+```
+
+Os nomes não são contratos congelados.
+
+Uma projeção de acompanhamento pode conter, conforme modalidade:
+
+```text
+registrationId
+competitionId
+competitionNome
+categoryId
+categoryNome
+modalidade
+robotId
+robotNome
+statusInscricao
+proximaPartida
+ultimoResultado
+situacaoCompetitiva
+posicaoRanking
+melhorResultado
+```
+
+Objetivo: reduzir junções desnecessárias no frontend e manter interpretação competitiva oficial no domínio Spring.
+
+---
+
+## 11. Primeiro acesso alvo
 
 ```text
 Tela de Login
@@ -404,13 +494,21 @@ Nova inscrição
     ├── robô
     ├── 1 responsável
     └── 0..N suportes
+    ↓
+Dashboard competitivo
+    ├── próximas partidas/atividades
+    ├── situação Sumô
+    ├── ranking Follow Line
+    └── histórico/resultados
 ```
 
 ---
 
-## 11. Endpoints conceituais a avaliar
+## 12. Endpoints conceituais a avaliar
 
 Não são contratos congelados; servem para orientar a etapa pós-Swagger.
+
+### Adesão à equipe
 
 ```text
 GET  /api/v1/participante/equipes/busca?nome=
@@ -423,11 +521,20 @@ PATCH /api/v1/participante/equipes/{teamId}/solicitacoes/{id}/aprovar
 PATCH /api/v1/participante/equipes/{teamId}/solicitacoes/{id}/rejeitar
 ```
 
-A busca pode reutilizar/projetar a API pública sanitizada, mas a criação e decisão da solicitação exigem autenticação e ownership.
+### Acompanhamento competitivo
+
+```text
+GET /api/v1/participante/competicao-atual
+GET /api/v1/participante/minhas-partidas
+GET /api/v1/participante/minha-situacao-sumo
+GET /api/v1/participante/minhas-colocacoes-follow
+```
+
+A busca de equipe pode reutilizar/projetar a API pública sanitizada, mas criação/decisão de solicitação e projeções pessoais exigem autenticação e ownership.
 
 ---
 
-## 12. Ordem de implementação
+## 13. Ordem de implementação
 
 Após Swagger/OpenAPI:
 
@@ -436,17 +543,18 @@ Após Swagger/OpenAPI:
 3. implementar solicitação de adesão à equipe;
 4. definir cardinalidade usuário ↔ equipe;
 5. modelar papel `RESPONSAVEL/SUPORTE` por inscrição;
-6. criar migration `V6+` ou posterior;
-7. adaptar services, ownership e auditoria;
-8. adaptar DTOs/endpoints;
-9. testes automatizados;
-10. revalidar Follow Line e Sumô;
-11. atualizar Swagger;
-12. somente então considerar API final congelada.
+6. definir projeções autenticadas para acompanhamento competitivo;
+7. criar migration `V6+` ou posterior, se necessária;
+8. adaptar services, ownership e auditoria;
+9. adaptar DTOs/endpoints;
+10. testes automatizados;
+11. revalidar Follow Line e Sumô;
+12. atualizar Swagger;
+13. somente então considerar API final congelada.
 
 ---
 
-## 13. Fora de escopo antes dessa revisão
+## 14. Fora de escopo antes dessa revisão
 
 Não implementar no backend antes do pós-Swagger:
 
@@ -454,6 +562,7 @@ Não implementar no backend antes do pós-Swagger:
 - recuperação de senha completa;
 - remoção imediata de `Competitor`;
 - vínculo permanente `Robot ↔ UserAccount` fora da inscrição;
-- subclasses separadas `CompetidorResponsavel` / `CompetidorSuporte`.
+- subclasses separadas `CompetidorResponsavel` / `CompetidorSuporte`;
+- lógica de eliminação/classificação calculada pelo frontend como fonte de verdade.
 
 A prioridade atual continua sendo concluir Swagger e manter o núcleo competitivo estável.
