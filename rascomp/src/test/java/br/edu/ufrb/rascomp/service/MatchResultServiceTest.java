@@ -69,6 +69,8 @@ class MatchResultServiceTest {
 
         Bracket bracket = new Bracket();
         bracket.setCategory(category);
+        bracket.setAtivo(true);
+        bracket.setAtual(true);
 
         Robot robot = new Robot();
         robot.setNome("Postman Sumo A");
@@ -107,6 +109,8 @@ class MatchResultServiceTest {
         Bracket bracket = mock(Bracket.class);
         Match match = mock(Match.class);
 
+        when(bracket.getAtivo()).thenReturn(true);
+        when(bracket.getAtual()).thenReturn(true);
         when(category.getModalidade()).thenReturn(modalidade);
         when(bracket.getCategory()).thenReturn(category);
         when(match.getBracket()).thenReturn(bracket);
