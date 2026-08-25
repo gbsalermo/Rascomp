@@ -51,6 +51,8 @@ public class MatchResultService {
             int vitoriasA,
             int vitoriasB) {
 
+        validarBracketOperavel(match);
+
         if (match.getBracket().getCategory().getModalidade() != Modalidade.SUMO) {
             throw new IllegalArgumentException("Resultado automático de Sumô só pode ser usado em categoria SUMO.");
         }
@@ -148,6 +150,7 @@ public class MatchResultService {
     }
 
     private void validarOperacaoManualPermitida(Match match) {
+        validarBracketOperavel(match);
         Modalidade modalidade = match.getBracket().getCategory().getModalidade();
 
         if (modalidade == Modalidade.FOLLOW_LINE) {
@@ -158,6 +161,15 @@ public class MatchResultService {
         if (modalidade == Modalidade.SUMO) {
             throw new IllegalArgumentException(
                     "O resultado de uma partida de Sumô é calculado automaticamente pelos rounds.");
+        }
+    }
+
+    private void validarBracketOperavel(Match match) {
+        if (!Boolean.TRUE.equals(match.getBracket().getAtivo())) {
+            throw new IllegalArgumentException("O chaveamento da partida está inativo.");
+        }
+        if (!Boolean.TRUE.equals(match.getBracket().getAtual())) {
+            throw new IllegalArgumentException("Chaveamentos históricos são somente leitura.");
         }
     }
 
