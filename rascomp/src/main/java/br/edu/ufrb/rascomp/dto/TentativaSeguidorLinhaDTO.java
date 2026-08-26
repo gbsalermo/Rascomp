@@ -66,10 +66,10 @@ public class TentativaSeguidorLinhaDTO {
 
         this.id = entity.getId();
         this.registrationId = registration.getId();
-        this.competitionId = registration.getCompetition().getId();
-        this.categoryId = registration.getCategory().getId();
-        this.teamNome = registration.getTeam().getNome();
-        this.robotNome = registration.getRobot().getNome();
+        this.competitionId = registration.getCompetition() != null ? registration.getCompetition().getId() : null;
+        this.categoryId = registration.getCategory() != null ? registration.getCategory().getId() : null;
+        this.teamNome = registration.getTeam() != null ? registration.getTeam().getNome() : null;
+        this.robotNome = registration.getRobot() != null ? registration.getRobot().getNome() : null;
         this.tomada = entity.getTomada();
         this.numeroTentativa = entity.getNumeroTentativa();
         this.tempoSegundos = entity.getTempoSegundos();
