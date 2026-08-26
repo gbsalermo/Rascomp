@@ -14,6 +14,7 @@ import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.RoundSumo;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.MotivoResultadoRoundSumo;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRoundSumo;
 import br.edu.ufrb.rascomp.repository.ConfigSumoRepository;
@@ -26,6 +27,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class RoundSumoService {
+
+    private static final int MAX_PENALIDADES_POR_ROBO = 2;
 
     private final RoundSumoRepository roundRepository;
     private final MatchRepository matchRepository;
@@ -46,13 +49,19 @@ public class RoundSumoService {
         validarLimiteDeRounds(match, config, numeroRound);
 
         Registration winner = buscarWinnerOpcional(dto.getWinnerRegistrationId());
-        validarResultadoRound(match, winner, dto.getStatus());
+        MotivoResultadoRoundSumo motivo = normalizarMotivo(dto.getMotivoResultado());
+        int penalidadesA = normalizarPenalidades(dto.getPenalidadesA(), "A");
+        int penalidadesB = normalizarPenalidades(dto.getPenalidadesB(), "B");
+        validarResultadoRound(match, winner, dto.getStatus(), motivo);
 
         RoundSumo round = new RoundSumo();
         round.setMatch(match);
         round.setNumeroRound(numeroRound);
         round.setWinner(winner);
         round.setStatus(dto.getStatus());
+        round.setMotivoResultado(motivo);
+        round.setPenalidadesA(penalidadesA);
+        round.setPenalidadesB(penalidadesB);
         round.setObservacao(normalizar(dto.getObservacao()));
 
         if (match.getStatus() == StatusMatch.AGENDADA) {
@@ -77,6 +86,9 @@ public class RoundSumoService {
             round.setMatchId(dto.getMatchId());
             round.setWinnerRegistrationId(item.getWinnerRegistrationId());
             round.setStatus(item.getStatus());
+            round.setMotivoResultado(item.getMotivoResultado());
+            round.setPenalidadesA(item.getPenalidadesA());
+            round.setPenalidadesB(item.getPenalidadesB());
             round.setObservacao(item.getObservacao());
             registrados.add(registrar(round));
         }
@@ -172,7 +184,12 @@ public class RoundSumoService {
         }
     }
 
-    private void validarResultadoRound(Match match, Registration winner, StatusRoundSumo status) {
+    private void validarResultadoRound(
+            Match match,
+            Registration winner,
+            StatusRoundSumo status,
+            MotivoResultadoRoundSumo motivo) {
+
         if (status == StatusRoundSumo.FINALIZADO) {
             if (winner == null) {
                 throw new IllegalArgumentException("Round finalizado deve possuir vencedor.");
@@ -183,6 +200,10 @@ public class RoundSumoService {
                 throw new IllegalArgumentException("O vencedor do round deve ser participante da partida.");
             }
             return;
+        }
+
+        if (motivo == MotivoResultadoRoundSumo.SUICIDIO_WO) {
+            throw new IllegalArgumentException("Suicídio/WO deve encerrar o round com vitória do adversário.");
         }
 
         if (winner != null) {
@@ -219,6 +240,19 @@ public class RoundSumoService {
         if (id == null) return null;
         return registrationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Inscrição vencedora não encontrada: " + id));
+    }
+
+    private MotivoResultadoRoundSumo normalizarMotivo(MotivoResultadoRoundSumo motivo) {
+        return motivo == null ? MotivoResultadoRoundSumo.DISPUTA : motivo;
+    }
+
+    private int normalizarPenalidades(Integer quantidade, String lado) {
+        int valor = quantidade == null ? 0 : quantidade;
+        if (valor < 0 || valor > MAX_PENALIDADES_POR_ROBO) {
+            throw new IllegalArgumentException(
+                    "Penalidades do robô " + lado + " devem estar entre 0 e " + MAX_PENALIDADES_POR_ROBO + ".");
+        }
+        return valor;
     }
 
     private String normalizar(String valor) {
