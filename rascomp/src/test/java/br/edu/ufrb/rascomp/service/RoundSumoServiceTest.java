@@ -11,7 +11,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +18,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import br.edu.ufrb.rascomp.dto.RoundSumoDTO;
 import br.edu.ufrb.rascomp.model.Bracket;
@@ -26,6 +27,7 @@ import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.ConfigSumo;
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.Registration;
+import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.RoundSumo;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.MotivoResultadoRoundSumo;
@@ -37,6 +39,7 @@ import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RoundSumoRepository;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class RoundSumoServiceTest {
 
     @Mock private RoundSumoRepository roundRepository;
@@ -64,8 +67,8 @@ class RoundSumoServiceTest {
         bracket.setAtual(true);
         bracket.setAtivo(true);
 
-        a = registration(101L);
-        b = registration(102L);
+        a = registration(101L, "Atlas Teste");
+        b = registration(102L, "Boreal Teste");
 
         match = new Match();
         match.setId(200L);
@@ -104,9 +107,7 @@ class RoundSumoServiceTest {
 
     @Test
     void deveRegistrarVitoriaNormalComPenalidadesPermitidas() {
-        RoundSumoDTO dto = round(101L, MotivoResultadoRoundSumo.DISPUTA, 2, 1);
-
-        RoundSumoDTO result = service.registrar(dto);
+        RoundSumoDTO result = service.registrar(round(101L, MotivoResultadoRoundSumo.DISPUTA, 2, 1));
 
         assertEquals(1, result.getNumeroRound());
         assertEquals(2, result.getPenalidadesA());
@@ -117,10 +118,8 @@ class RoundSumoServiceTest {
     }
 
     @Test
-    void suicidioWoDeveExigirVencedorEContarComoVitoriaDoAdversario() {
-        RoundSumoDTO dto = round(102L, MotivoResultadoRoundSumo.SUICIDIO_WO, 0, 0);
-
-        RoundSumoDTO result = service.registrar(dto);
+    void suicidioWoDeveRegistrarVitoriaDoAdversario() {
+        RoundSumoDTO result = service.registrar(round(102L, MotivoResultadoRoundSumo.SUICIDIO_WO, 0, 0));
 
         assertEquals(MotivoResultadoRoundSumo.SUICIDIO_WO, result.getMotivoResultado());
         assertEquals(102L, result.getWinnerRegistrationId());
@@ -128,9 +127,8 @@ class RoundSumoServiceTest {
 
     @Test
     void penalidadeAcimaDeDoisDeveSerRejeitada() {
-        RoundSumoDTO dto = round(101L, MotivoResultadoRoundSumo.DISPUTA, 3, 0);
-
-        assertThrows(IllegalArgumentException.class, () -> service.registrar(dto));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.registrar(round(101L, MotivoResultadoRoundSumo.DISPUTA, 3, 0)));
     }
 
     @Test
@@ -160,9 +158,15 @@ class RoundSumoServiceTest {
         return dto;
     }
 
-    private Registration registration(Long id) {
+    private Registration registration(Long id, String robotName) {
+        Robot robot = new Robot();
+        robot.setId(id + 1000);
+        robot.setNome(robotName);
+        robot.setAtivo(true);
+
         Registration registration = new Registration();
         registration.setId(id);
+        registration.setRobot(robot);
         registration.setAtivo(true);
         return registration;
     }
