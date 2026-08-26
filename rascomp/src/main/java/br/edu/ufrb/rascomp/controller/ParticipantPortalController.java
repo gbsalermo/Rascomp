@@ -25,6 +25,7 @@ import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RobotDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
 import br.edu.ufrb.rascomp.dto.TeamDTO;
+import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.service.ParticipantPortalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -139,6 +140,11 @@ public class ParticipantPortalController {
     @GetMapping("/equipes/{teamId}/inscricoes")
     public ResponseEntity<List<RegistrationDTO>> inscricoes(@PathVariable Long teamId) {
         return ResponseEntity.ok(portalService.inscricoes(teamId));
+    }
+
+    @GetMapping("/inscricoes/{registrationId}/tentativas-follow")
+    public ResponseEntity<List<TentativaSeguidorLinhaDTO>> tentativasFollow(@PathVariable Long registrationId) {
+        return ResponseEntity.ok(portalService.tentativasFollow(registrationId));
     }
 
     @PostMapping("/equipes/{teamId}/inscricoes")
