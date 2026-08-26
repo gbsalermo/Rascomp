@@ -16,20 +16,24 @@ HISTÓRICO DE CHAVES                      ✅
 FOTOS DOS ROBÔS                          ✅ backend completo
 API PARTICIPANTE                         ✅ base + consultas de desempenho
 API PÚBLICA                              ✅ projeções read-only
-TESTES AUTOMATIZADOS                     ✅ 45 / 45
-PROFILE DE DEMONSTRAÇÃO                  ✅ implementado
-VALIDAÇÃO LOCAL DO PROFILE TESTDATA      ⏳ executar na máquina de demo
+TESTES AUTOMATIZADOS                     ✅ 48 / 48
+PROFILE DE DEMONSTRAÇÃO                  ✅ validado em MySQL real na CI
 ```
 
 CI validada em 26/08/2026:
 
 ```text
-Tests run: 45
+Tests run: 48
 Failures: 0
 Errors: 0
 Skipped: 0
 BUILD SUCCESS
+
+Demo profile:
+MySQL + Flyway + SPRING_PROFILES_ACTIVE=testdata ✅
 ```
+
+Antes da apresentação ainda é recomendado fazer um smoke test local na máquina usada na demonstração.
 
 ## 2. Regra oficial atual — Follow Line
 
@@ -86,7 +90,7 @@ SUMÔ
 └─ Sumô 3 kg Autônomo
 ```
 
-O isolamento já ocorre por:
+O isolamento ocorre por:
 
 ```text
 competitionId + categoryId
@@ -104,8 +108,24 @@ Motor comum:
 - cancelamento;
 - `SUICIDIO_WO`: derrota do robô que sofreu a ocorrência;
 - penalidades A/B por round;
-- máximo provisório de 2 penalidades por robô/round;
-- consequência automática de 2 penalidades ainda pendente da regra oficial.
+- máximo de 2 penalidades por robô/round;
+- **2 penalidades = derrota automática naquele round**.
+
+Regra de penalidade consolidada:
+
+```text
+0 penalidades → disputa normal
+1 penalidade  → disputa normal
+2 penalidades → derrota automática do robô penalizado
+```
+
+Ao atingir 2 penalidades:
+
+- o status do round é consolidado como `FINALIZADO`;
+- o adversário se torna o vencedor independentemente do vencedor recebido no payload;
+- `motivoResultado = PENALIDADES`;
+- a regra é aplicada no backend e não depende do frontend;
+- um mesmo round não pode terminar com os dois robôs em 2 penalidades, pois a disputa deve encerrar quando um deles recebe a segunda.
 
 O backend continua responsável por:
 
@@ -127,7 +147,36 @@ rounds
 - chave histórica não aceita alterações;
 - API pública mostra apenas a chave vigente/ativa.
 
-## 4. Fotos dos robôs
+## 4. Ativo / inativo
+
+A desativação é lógica e deve preservar histórico.
+
+### Usuários
+
+Já existe suporte administrativo:
+
+```text
+GET   /api/v1/usuarios?role=PARTICIPANTE|ORGANIZACAO
+PATCH /api/v1/usuarios/{id}/ativo?ativo=true|false
+```
+
+### Equipes
+
+```text
+DELETE /api/v1/equipes/{id}          → desativa
+PATCH  /api/v1/equipes/{id}/reativar → reativa
+```
+
+### Robôs
+
+```text
+DELETE /api/v1/robos/{id}          → desativa
+PATCH  /api/v1/robos/{id}/reativar → reativa
+```
+
+A interface ADMIN expõe esses controles sem apagar inscrições, partidas ou resultados históricos.
+
+## 5. Fotos dos robôs
 
 Fluxo consolidado:
 
@@ -163,7 +212,7 @@ Uso esperado nos clientes:
 - arena Sumô: fotos dos dois adversários;
 - landing futura: cards e resultados públicos.
 
-## 5. Profile de demonstração
+## 6. Profile de demonstração
 
 Ativar:
 
@@ -226,7 +275,7 @@ Estado preparado:
 - resultados consolidados;
 - exemplo de WO e penalidade.
 
-## 6. Bateria de testes
+## 7. Bateria de testes
 
 Cobertura atual relevante:
 
@@ -246,6 +295,9 @@ Match                                      ✅
 MatchResult                                ✅
 Round Sumô                                 ✅
 Penalidade 0..2                            ✅
+2 penalidades → derrota automática         ✅
+Payload com vencedor incorreto é corrigido ✅
+2 penalidades para os dois lados rejeitado ✅
 Suicídio/WO                                ✅
 Fechamento por vitórias                    ✅
 Bloqueio de round histórico                ✅
@@ -257,7 +309,7 @@ Penalidade no tempo final                  ✅
 Ranking melhor tomada                      ✅
 ```
 
-## 7. API participante — extensão atual
+## 8. API participante — extensão atual
 
 Além da gestão de equipe/competidores/robôs/inscrições/fotos, o participante pode consultar o próprio histórico competitivo de Follow com ownership:
 
@@ -268,24 +320,23 @@ GET /api/v1/participante/inscricoes/{registrationId}/config-follow
 
 A visualização de Sumô pode usar as projeções públicas de chave/resultados, sem expor endpoints administrativos.
 
-## 8. Próximos passos após a demonstração
+## 9. Próximos passos após a demonstração
 
 Ordem recomendada:
 
 ```text
-1. validar localmente o profile testdata
+1. fazer smoke test local na máquina da apresentação
 2. consolidar visual/técnico do ADMIN
-3. confirmar regra oficial das penalidades do Sumô
-4. confirmar impacto oficial de checkpoints Follow
-5. concluir funcionalidades de participante
-6. implementar fluxo real de convite/entrada em equipe
-7. revisar upload/gestão de múltiplas fotos no participante
-8. iniciar Landing Page RAS UFRB + RRC
+3. confirmar impacto oficial de checkpoints Follow
+4. concluir funcionalidades de participante
+5. implementar fluxo real de convite/entrada em equipe
+6. revisar upload/gestão de múltiplas fotos no participante
+7. iniciar Landing Page RAS UFRB + RRC
 ```
 
-## 9. Cuidados
+## 10. Cuidados
 
-- não criar regra competitiva no frontend;
+- não criar regra competitiva somente no frontend;
 - não misturar categorias de Sumô;
 - não apagar chaves históricas ao regenerar;
 - não permitir PARTICIPANTE alterar resultado oficial;
