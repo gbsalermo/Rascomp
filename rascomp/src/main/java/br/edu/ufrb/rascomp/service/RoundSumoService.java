@@ -52,13 +52,26 @@ public class RoundSumoService {
         MotivoResultadoRoundSumo motivo = normalizarMotivo(dto.getMotivoResultado());
         int penalidadesA = normalizarPenalidades(dto.getPenalidadesA(), "A");
         int penalidadesB = normalizarPenalidades(dto.getPenalidadesB(), "B");
-        validarResultadoRound(match, winner, dto.getStatus(), motivo);
+
+        ResultadoRound resolvido = aplicarRegraDePenalidades(
+                match,
+                winner,
+                dto.getStatus(),
+                motivo,
+                penalidadesA,
+                penalidadesB);
+
+        winner = resolvido.winner();
+        StatusRoundSumo status = resolvido.status();
+        motivo = resolvido.motivo();
+
+        validarResultadoRound(match, winner, status, motivo);
 
         RoundSumo round = new RoundSumo();
         round.setMatch(match);
         round.setNumeroRound(numeroRound);
         round.setWinner(winner);
-        round.setStatus(dto.getStatus());
+        round.setStatus(status);
         round.setMotivoResultado(motivo);
         round.setPenalidadesA(penalidadesA);
         round.setPenalidadesB(penalidadesB);
@@ -129,6 +142,40 @@ public class RoundSumoService {
                     vitoriasA,
                     vitoriasB);
         }
+    }
+
+    private ResultadoRound aplicarRegraDePenalidades(
+            Match match,
+            Registration winner,
+            StatusRoundSumo status,
+            MotivoResultadoRoundSumo motivo,
+            int penalidadesA,
+            int penalidadesB) {
+
+        if (status == StatusRoundSumo.ANULADO || status == StatusRoundSumo.CANCELADO) {
+            return new ResultadoRound(winner, status, motivo);
+        }
+
+        boolean aPerdeuPorPenalidade = penalidadesA == MAX_PENALIDADES_POR_ROBO;
+        boolean bPerdeuPorPenalidade = penalidadesB == MAX_PENALIDADES_POR_ROBO;
+
+        if (!aPerdeuPorPenalidade && !bPerdeuPorPenalidade) {
+            return new ResultadoRound(winner, status, motivo);
+        }
+
+        if (aPerdeuPorPenalidade && bPerdeuPorPenalidade) {
+            throw new IllegalArgumentException(
+                    "O round é encerrado quando um robô atinge 2 penalidades; os dois lados não podem terminar o mesmo round com 2 penalidades.");
+        }
+
+        Registration vencedorAutomatico = aPerdeuPorPenalidade
+                ? match.getRegistrationB()
+                : match.getRegistrationA();
+
+        return new ResultadoRound(
+                vencedorAutomatico,
+                StatusRoundSumo.FINALIZADO,
+                MotivoResultadoRoundSumo.PENALIDADES);
     }
 
     private void validarPartida(Match match) {
@@ -202,8 +249,10 @@ public class RoundSumoService {
             return;
         }
 
-        if (motivo == MotivoResultadoRoundSumo.SUICIDIO_WO) {
-            throw new IllegalArgumentException("Suicídio/WO deve encerrar o round com vitória do adversário.");
+        if (motivo == MotivoResultadoRoundSumo.SUICIDIO_WO
+                || motivo == MotivoResultadoRoundSumo.PENALIDADES) {
+            throw new IllegalArgumentException(
+                    "Suicídio/WO ou derrota por penalidades deve encerrar o round com vitória do adversário.");
         }
 
         if (winner != null) {
@@ -257,5 +306,11 @@ public class RoundSumoService {
 
     private String normalizar(String valor) {
         return valor == null || valor.isBlank() ? null : valor.trim();
+    }
+
+    private record ResultadoRound(
+            Registration winner,
+            StatusRoundSumo status,
+            MotivoResultadoRoundSumo motivo) {
     }
 }
