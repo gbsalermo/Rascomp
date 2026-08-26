@@ -1,11 +1,14 @@
 package br.edu.ufrb.rascomp.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.edu.ufrb.rascomp.dto.BatalhaSumoDTO;
 import br.edu.ufrb.rascomp.dto.RoundSumoDTO;
+import br.edu.ufrb.rascomp.dto.RoundSumoItemDTO;
 import br.edu.ufrb.rascomp.model.ConfigSumo;
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.Registration;
@@ -61,6 +64,23 @@ public class RoundSumoService {
         apurarResultadoAutomatico(match, config);
 
         return new RoundSumoDTO(salvo);
+    }
+
+    @Transactional
+    public List<RoundSumoDTO> registrarBatalha(BatalhaSumoDTO dto) {
+        Match match = buscarMatch(dto.getMatchId());
+        validarPartida(match);
+
+        List<RoundSumoDTO> registrados = new ArrayList<>();
+        for (RoundSumoItemDTO item : dto.getRounds()) {
+            RoundSumoDTO round = new RoundSumoDTO();
+            round.setMatchId(dto.getMatchId());
+            round.setWinnerRegistrationId(item.getWinnerRegistrationId());
+            round.setStatus(item.getStatus());
+            round.setObservacao(item.getObservacao());
+            registrados.add(registrar(round));
+        }
+        return registrados;
     }
 
     @Transactional(readOnly = true)
