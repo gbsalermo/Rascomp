@@ -2,5 +2,6 @@ package br.edu.ufrb.rascomp.model.Enum;
 
 public enum MotivoResultadoRoundSumo {
     DISPUTA,
-    SUICIDIO_WO
+    SUICIDIO_WO,
+    PENALIDADES
 }
