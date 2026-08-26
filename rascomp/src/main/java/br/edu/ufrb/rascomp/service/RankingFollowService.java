@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,8 +51,8 @@ public class RankingFollowService {
         List<RankingFollowDTO> ranking = new ArrayList<>();
 
         for (Registration registration : inscricoes) {
-            melhorTentativa(registration).ifPresent(tentativa -> {
-                BigDecimal tempoFinal = calcularTempoFinal(tentativa);
+            melhorTomada(registration).ifPresent(tentativaRepresentante -> {
+                BigDecimal tempoFinal = calcularTempoFinal(tentativaRepresentante);
 
                 ranking.add(new RankingFollowDTO(
                         null,
@@ -57,11 +60,11 @@ public class RankingFollowService {
                         registration.getRobot().getId(),
                         registration.getRobot().getNome(),
                         registration.getTeam().getNome(),
-                        tentativa.getTempoSegundos(),
-                        tentativa.getPenalidadeSegundos(),
+                        tentativaRepresentante.getTempoSegundos(),
+                        tentativaRepresentante.getPenalidadeSegundos(),
                         tempoFinal,
-                        tentativa.getTomada(),
-                        tentativa.getNumeroTentativa()
+                        tentativaRepresentante.getTomada(),
+                        tentativaRepresentante.getNumeroTentativa()
                 ));
             });
         }
@@ -79,19 +82,41 @@ public class RankingFollowService {
         return ranking;
     }
 
-    private java.util.Optional<TentativaSeguidorLinha> melhorTentativa(Registration registration) {
-        return tentativaRepository
+    /**
+     * Regra de classificacao do Follow Line:
+     * 1) cada tomada e representada pela sua melhor tentativa valida e concluida;
+     * 2) entre as tomadas do robo, entra no ranking a melhor tomada;
+     * 3) o DTO preserva numeroTomada e numeroTentativa para auditoria da passagem
+     *    que representou aquela tomada.
+     */
+    private Optional<TentativaSeguidorLinha> melhorTomada(Registration registration) {
+        Map<Integer, List<TentativaSeguidorLinha>> porTomada = tentativaRepository
                 .findByRegistrationIdOrderByTomadaAscNumeroTentativaAsc(registration.getId())
                 .stream()
-                .filter(tentativa -> Boolean.TRUE.equals(tentativa.getValida()))
-                .filter(tentativa -> Boolean.TRUE.equals(tentativa.getConcluida()))
-                .filter(tentativa -> tentativa.getTempoSegundos() != null)
-                .min(
-                        Comparator.comparing(this::calcularTempoFinal)
-                                .thenComparing(TentativaSeguidorLinha::getTempoSegundos)
-                                .thenComparing(TentativaSeguidorLinha::getTomada)
-                                .thenComparing(TentativaSeguidorLinha::getNumeroTentativa)
-                );
+                .filter(this::tentativaClassificavel)
+                .collect(Collectors.groupingBy(TentativaSeguidorLinha::getTomada));
+
+        return porTomada.values().stream()
+                .map(this::melhorTentativaDaTomada)
+                .flatMap(Optional::stream)
+                .min(comparadorTentativas());
+    }
+
+    private Optional<TentativaSeguidorLinha> melhorTentativaDaTomada(List<TentativaSeguidorLinha> tentativas) {
+        return tentativas.stream().min(comparadorTentativas());
+    }
+
+    private boolean tentativaClassificavel(TentativaSeguidorLinha tentativa) {
+        return Boolean.TRUE.equals(tentativa.getValida())
+                && Boolean.TRUE.equals(tentativa.getConcluida())
+                && tentativa.getTempoSegundos() != null;
+    }
+
+    private Comparator<TentativaSeguidorLinha> comparadorTentativas() {
+        return Comparator.comparing(this::calcularTempoFinal)
+                .thenComparing(TentativaSeguidorLinha::getTempoSegundos)
+                .thenComparing(TentativaSeguidorLinha::getTomada)
+                .thenComparing(TentativaSeguidorLinha::getNumeroTentativa);
     }
 
     private BigDecimal calcularTempoFinal(TentativaSeguidorLinha tentativa) {
