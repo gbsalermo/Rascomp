@@ -34,3 +34,71 @@ jobs:
       - name: Run unit tests
         working-directory: rascomp
         run: mvn -B test
+
+  demo-profile:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: rascomp
+          MYSQL_ROOT_PASSWORD: rascomp_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot --silent || mysqladmin ping -h 127.0.0.1 -prascomp_ci --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: rascomp/pom.xml
+
+      - name: Compile application
+        working-directory: rascomp
+        run: mvn -B -DskipTests package
+
+      - name: Boot full testdata profile against MySQL
+        working-directory: rascomp
+        env:
+          DB_URL: jdbc:mysql://127.0.0.1:3306/rascomp?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+          DB_USERNAME: root
+          DB_PASSWORD: rascomp_ci
+          JWT_SECRET: rascomp-demo-ci-secret-key-with-more-than-thirty-two-characters
+          SPRING_PROFILES_ACTIVE: testdata
+        run: |
+          set -o pipefail
+          timeout 120s mvn -B spring-boot:run > demo-profile.log 2>&1 &
+          APP_PID=$!
+
+          for attempt in $(seq 1 60); do
+            if grep -q "CENARIO COMPLETO DE DEMONSTRACAO PRONTO" demo-profile.log; then
+              echo "Demo profile initialized successfully."
+              tail -n 120 demo-profile.log
+              kill "$APP_PID" || true
+              exit 0
+            fi
+
+            if ! kill -0 "$APP_PID" 2>/dev/null; then
+              echo "Application stopped before the demo scenario was ready."
+              cat demo-profile.log
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          echo "Timed out waiting for the demo profile."
+          cat demo-profile.log
+          kill "$APP_PID" || true
+          exit 1
