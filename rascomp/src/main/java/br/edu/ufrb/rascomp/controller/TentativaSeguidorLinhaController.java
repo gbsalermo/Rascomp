@@ -30,14 +30,21 @@ public class TentativaSeguidorLinhaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(tentativaService.criar(dto));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<TentativaSeguidorLinhaDTO> buscarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(tentativaService.buscarPorId(id));
+    @GetMapping("/por-contexto")
+    public ResponseEntity<List<TentativaSeguidorLinhaDTO>> listarPorContexto(
+            @RequestParam Long competitionId,
+            @RequestParam Long categoryId) {
+        return ResponseEntity.ok(tentativaService.listarPorContexto(competitionId, categoryId));
     }
 
     @GetMapping("/por-inscricao")
     public ResponseEntity<List<TentativaSeguidorLinhaDTO>> listarPorInscricao(@RequestParam Long registrationId) {
         return ResponseEntity.ok(tentativaService.listarPorInscricao(registrationId));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<TentativaSeguidorLinhaDTO> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(tentativaService.buscarPorId(id));
     }
 
     @PutMapping("/{id}")
