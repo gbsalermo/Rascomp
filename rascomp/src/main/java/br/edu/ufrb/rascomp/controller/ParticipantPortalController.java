@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import br.edu.ufrb.rascomp.dto.CompetitorDTO;
+import br.edu.ufrb.rascomp.dto.ConfigFollowDTO;
 import br.edu.ufrb.rascomp.dto.ParticipantCompetitorRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantRegistrationRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantRobotRequest;
@@ -48,9 +49,7 @@ public class ParticipantPortalController {
     }
 
     @PutMapping("/equipes/{teamId}")
-    public ResponseEntity<TeamDTO> atualizarEquipe(
-            @PathVariable Long teamId,
-            @Valid @RequestBody ParticipantTeamRequest request) {
+    public ResponseEntity<TeamDTO> atualizarEquipe(@PathVariable Long teamId, @Valid @RequestBody ParticipantTeamRequest request) {
         return ResponseEntity.ok(portalService.atualizarEquipe(teamId, request));
     }
 
@@ -60,11 +59,8 @@ public class ParticipantPortalController {
     }
 
     @PostMapping("/equipes/{teamId}/competidores")
-    public ResponseEntity<CompetitorDTO> criarCompetidor(
-            @PathVariable Long teamId,
-            @Valid @RequestBody ParticipantCompetitorRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(portalService.criarCompetidor(teamId, request));
+    public ResponseEntity<CompetitorDTO> criarCompetidor(@PathVariable Long teamId, @Valid @RequestBody ParticipantCompetitorRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.criarCompetidor(teamId, request));
     }
 
     @PostMapping("/equipes/{teamId}/competidores/eu")
@@ -73,9 +69,7 @@ public class ParticipantPortalController {
     }
 
     @PutMapping("/competidores/{competitorId}")
-    public ResponseEntity<CompetitorDTO> atualizarCompetidor(
-            @PathVariable Long competitorId,
-            @Valid @RequestBody ParticipantCompetitorRequest request) {
+    public ResponseEntity<CompetitorDTO> atualizarCompetidor(@PathVariable Long competitorId, @Valid @RequestBody ParticipantCompetitorRequest request) {
         return ResponseEntity.ok(portalService.atualizarCompetidor(competitorId, request));
     }
 
@@ -91,16 +85,12 @@ public class ParticipantPortalController {
     }
 
     @PostMapping("/equipes/{teamId}/robos")
-    public ResponseEntity<RobotDTO> criarRobo(
-            @PathVariable Long teamId,
-            @Valid @RequestBody ParticipantRobotRequest request) {
+    public ResponseEntity<RobotDTO> criarRobo(@PathVariable Long teamId, @Valid @RequestBody ParticipantRobotRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(portalService.criarRobo(teamId, request));
     }
 
     @PutMapping("/robos/{robotId}")
-    public ResponseEntity<RobotDTO> atualizarRobo(
-            @PathVariable Long robotId,
-            @Valid @RequestBody ParticipantRobotRequest request) {
+    public ResponseEntity<RobotDTO> atualizarRobo(@PathVariable Long robotId, @Valid @RequestBody ParticipantRobotRequest request) {
         return ResponseEntity.ok(portalService.atualizarRobo(robotId, request));
     }
 
@@ -116,23 +106,17 @@ public class ParticipantPortalController {
     }
 
     @PostMapping(value = "/robos/{robotId}/fotos", consumes = "multipart/form-data")
-    public ResponseEntity<RobotImageDTO> adicionarFoto(
-            @PathVariable Long robotId,
-            @RequestParam("arquivo") MultipartFile arquivo) {
+    public ResponseEntity<RobotImageDTO> adicionarFoto(@PathVariable Long robotId, @RequestParam("arquivo") MultipartFile arquivo) {
         return ResponseEntity.status(HttpStatus.CREATED).body(portalService.adicionarFoto(robotId, arquivo));
     }
 
     @PatchMapping("/robos/{robotId}/fotos/{imageId}/principal")
-    public ResponseEntity<RobotImageDTO> definirPrincipal(
-            @PathVariable Long robotId,
-            @PathVariable Long imageId) {
+    public ResponseEntity<RobotImageDTO> definirPrincipal(@PathVariable Long robotId, @PathVariable Long imageId) {
         return ResponseEntity.ok(portalService.definirFotoPrincipal(robotId, imageId));
     }
 
     @DeleteMapping("/robos/{robotId}/fotos/{imageId}")
-    public ResponseEntity<Void> removerFoto(
-            @PathVariable Long robotId,
-            @PathVariable Long imageId) {
+    public ResponseEntity<Void> removerFoto(@PathVariable Long robotId, @PathVariable Long imageId) {
         portalService.removerFoto(robotId, imageId);
         return ResponseEntity.noContent().build();
     }
@@ -147,10 +131,13 @@ public class ParticipantPortalController {
         return ResponseEntity.ok(portalService.tentativasFollow(registrationId));
     }
 
+    @GetMapping("/inscricoes/{registrationId}/config-follow")
+    public ResponseEntity<ConfigFollowDTO> configFollow(@PathVariable Long registrationId) {
+        return ResponseEntity.ok(portalService.configFollow(registrationId));
+    }
+
     @PostMapping("/equipes/{teamId}/inscricoes")
-    public ResponseEntity<RegistrationDTO> inscrever(
-            @PathVariable Long teamId,
-            @Valid @RequestBody ParticipantRegistrationRequest request) {
+    public ResponseEntity<RegistrationDTO> inscrever(@PathVariable Long teamId, @Valid @RequestBody ParticipantRegistrationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(portalService.inscrever(teamId, request));
     }
 
