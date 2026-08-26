@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import br.edu.ufrb.rascomp.model.Enum.MotivoResultadoRoundSumo;
 import br.edu.ufrb.rascomp.model.Enum.StatusRoundSumo;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -57,6 +58,16 @@ public class RoundSumo implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private StatusRoundSumo status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "motivo_resultado", nullable = false, length = 30)
+    private MotivoResultadoRoundSumo motivoResultado = MotivoResultadoRoundSumo.DISPUTA;
+
+    @Column(name = "penalidades_a", nullable = false)
+    private Integer penalidadesA = 0;
+
+    @Column(name = "penalidades_b", nullable = false)
+    private Integer penalidadesB = 0;
 
     @Column(length = 500)
     private String observacao;
