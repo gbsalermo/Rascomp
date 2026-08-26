@@ -106,15 +106,38 @@ class RoundSumoServiceTest {
     }
 
     @Test
-    void deveRegistrarVitoriaNormalComPenalidadesPermitidas() {
-        RoundSumoDTO result = service.registrar(round(101L, MotivoResultadoRoundSumo.DISPUTA, 2, 1));
+    void deveRegistrarVitoriaNormalComUmaPenalidade() {
+        RoundSumoDTO result = service.registrar(round(101L, MotivoResultadoRoundSumo.DISPUTA, 1, 1));
 
         assertEquals(1, result.getNumeroRound());
-        assertEquals(2, result.getPenalidadesA());
+        assertEquals(1, result.getPenalidadesA());
         assertEquals(1, result.getPenalidadesB());
         assertEquals(101L, result.getWinnerRegistrationId());
         assertEquals(StatusMatch.EM_ANDAMENTO, match.getStatus());
         verify(matchResultService, never()).criarAutomaticoSumo(any(), any(), any(Integer.class), any(Integer.class));
+    }
+
+    @Test
+    void duasPenalidadesDeADevemDarVitoriaAutomaticaParaB() {
+        RoundSumoDTO result = service.registrar(round(101L, MotivoResultadoRoundSumo.DISPUTA, 2, 0));
+
+        assertEquals(102L, result.getWinnerRegistrationId());
+        assertEquals(MotivoResultadoRoundSumo.PENALIDADES, result.getMotivoResultado());
+        assertEquals(StatusRoundSumo.FINALIZADO, result.getStatus());
+    }
+
+    @Test
+    void duasPenalidadesDeBDevemDarVitoriaAutomaticaParaA() {
+        RoundSumoDTO result = service.registrar(round(102L, MotivoResultadoRoundSumo.DISPUTA, 0, 2));
+
+        assertEquals(101L, result.getWinnerRegistrationId());
+        assertEquals(MotivoResultadoRoundSumo.PENALIDADES, result.getMotivoResultado());
+    }
+
+    @Test
+    void doisLadosNaoPodemTerminarRoundComDuasPenalidades() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.registrar(round(101L, MotivoResultadoRoundSumo.DISPUTA, 2, 2)));
     }
 
     @Test
