@@ -1,533 +1,268 @@
-<a id="readme-top"></a>
+# RasComp — Gestão de Competições de Robótica
 
-<div align="center">
-  <a href="https://github.com/gbsalermo/Rascomp">
-    <img src="rascomp/docs/LogoRAS.png" alt="Rascomp Logo" width="430" height="auto">
-  </a>
+Backend da plataforma **RasComp**, desenvolvida para apoiar a organização e a divulgação das competições de robótica da **RAS UFRB**. O evento é o **RRC**; RasComp é o sistema.
 
-  <h1 align="center">Rascomp — Gestão de Competições de Robótica</h1>
+A API cobre o ciclo competitivo completo: contas, equipes, competidores, robôs, fotos, inscrições, análise da organização, Follow Line, Sumô, chaveamentos, resultados, histórico e projeções públicas.
 
-  <p align="center">
-    <strong>Da inscrição ao pódio: usuários, equipes, robôs, competidores, inspeções, tentativas, rankings, chaveamentos e resultados em uma única plataforma.</strong>
-  </p>
+## Estado atual
 
-  <p align="center">
-    <a href="rascomp/docs/FLUXO_DO_SISTEMA.md"><strong>Ver Fluxo do Sistema »</strong></a>
-    ·
-    <a href="rascomp/docs/CONTINUIDADE.md">Acompanhar Continuidade</a>
-    ·
-    <a href="rascomp/docs/CONGELAMENTO_API.md">Contrato da API</a>
-    ·
-    <a href="rascomp/docs/TESTES_POSTMAN.md">Roteiro de Testes</a>
-  </p>
+- Java 21 + Spring Boot 3.5.3
+- MySQL persistente
+- Flyway **V1–V7**
+- Spring Security + JWT + BCrypt
+- ownership real para participantes
+- API administrativa, API de participante e API pública separadas
+- fotos de robôs com armazenamento local configurável
+- Follow Line com tomadas, tentativas e ranking backend-first
+- Sumô com inspeção, BYE, chaveamento, rounds, penalidades e progressão automática
+- histórico versionado de chaves
+- **45 testes automatizados, 0 falhas, 0 erros** na CI da `main`
 
-  <p align="center">
-    <img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 21">
-    <img src="https://img.shields.io/badge/Spring_Boot-3.5.3-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white" alt="Spring Boot">
-    <img src="https://img.shields.io/badge/MySQL-Persistente-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
-    <img src="https://img.shields.io/badge/Flyway-V1--V5-CC0200?style=for-the-badge&logo=flyway&logoColor=white" alt="Flyway">
-    <img src="https://img.shields.io/badge/Security-JWT%20%2B%20BCrypt-6DB33F?style=for-the-badge&logo=spring-security&logoColor=white" alt="JWT e BCrypt">
-    <img src="https://img.shields.io/badge/Tests-28%20passed-brightgreen?style=for-the-badge&logo=junit5&logoColor=white" alt="Testes">
-    <img src="https://img.shields.io/badge/CI-main%20passing-brightgreen?style=for-the-badge&logo=github-actions&logoColor=white" alt="CI passing">
-    <img src="https://img.shields.io/badge/Camunda-7.22-FC5D0D?style=for-the-badge" alt="Camunda 7">
-    <img src="https://img.shields.io/badge/Next-Swagger%20%2F%20OpenAPI-blueviolet?style=for-the-badge" alt="Próxima etapa Swagger">
-  </p>
-</div>
-
-<br />
-
-<div align="center">
-  <a href="#-sobre-o-projeto">Sobre</a> •
-  <a href="#-arquitetura">Arquitetura</a> •
-  <a href="#-usuários-e-segurança">Usuários</a> •
-  <a href="#-modalidades">Modalidades</a> •
-  <a href="#-funcionalidades">Funcionalidades</a> •
-  <a href="#-tecnologias">Tecnologias</a> •
-  <a href="#-como-executar">Execução</a> •
-  <a href="#-testes-e-qualidade">Testes</a> •
-  <a href="#-estado-do-projeto">Status</a> •
-  <a href="#-roadmap">Roadmap</a>
-</div>
-
-<br />
-
----
-
-## 📌 Sobre o Projeto
-
-O **Rascomp** é uma plataforma para gestão de competições de robótica desenvolvida no contexto da **IEEE Robotics & Automation Society — UFRB**.
-
-O projeto centraliza o ciclo completo de uma competição:
+## Arquitetura de acesso
 
 ```text
-conta / login
-     ↓
-equipe responsável
- ┌───┼──────────────┐
- ↓   ↓              ↓
-competidores      robôs
-                    ↓
-                  fotos
-     │               │
-     └──────┬────────┘
-            ↓
-        inscrição
-            ↓
-      análise da organização
-            ↓
-      modalidade da prova
-        ↙           ↘
- FOLLOW_LINE        SUMO
-      ↓              ↓
-   ranking      chaveamento
-        \           /
-         resultados
-```
+/api/v1/public/**
+└─ leitura pública sanitizada
 
-O sistema atende dois clientes diferentes:
+/api/v1/participante/**
+└─ PARTICIPANTE + ownership da equipe
 
-```text
-Frontend de Gestão
-├─ PARTICIPANTE
+/api/v1/**
 └─ ORGANIZACAO
-
-Frontend Público / Landing
-└─ resultados e informações sanitizadas
 ```
 
-O backend é a fonte de verdade para autenticação, ownership, inscrições, execução competitiva e resultados.
+O backend é a fonte de verdade para elegibilidade, ranking, progressão, vencedores e resultados oficiais.
 
-<p align="right">(<a href="#readme-top">voltar ao topo ⬆</a>)</p>
-
----
-
-## 🏛️ Arquitetura
+## Follow Line
 
 ```text
-┌──────────────────────┐       ┌──────────────────────┐
-│  Frontend de Gestão  │       │   Landing Pública    │
-│ login + participante │       │ resultados / equipes │
-│ + organização        │       │ robôs / chaveamentos │
-└──────────┬───────────┘       └──────────┬───────────┘
-           │ JWT                          │ sem login
-           ▼                              ▼
-/api/v1/participante/**            /api/v1/public/**
-/api/v1/** ORGANIZACAO                     │
-           └──────────────┬────────────────┘
-                          ▼
-                 Spring Boot REST API
-                          │
-       ┌──────────────────┼──────────────────┐
-       ▼                  ▼                  ▼
-    Services       Spring Security       Camunda 7
-       │              JWT + BCrypt         Engine
-       ▼
-Spring Data JPA / Hibernate
-       │
-       ▼
-      MySQL
-       │
-       └── Flyway V1 ... V5
+Robô / inscrição
+├─ Tomada 1
+│  ├─ Tentativa 1
+│  ├─ Tentativa 2
+│  └─ Tentativa 3
+├─ Tomada 2
+└─ ...
 ```
 
-Responsabilidades principais:
-
-- **controllers**: contratos REST e status HTTP;
-- **DTOs**: entrada/saída e exposição controlada;
-- **services**: regras de domínio, ownership e transações;
-- **repositories**: persistência Spring Data JPA;
-- **security/config**: JWT, BCrypt e autorização;
-- **Flyway**: evolução incremental do banco;
-- **Camunda**: infraestrutura de orquestração, sem substituir regras competitivas Java.
-
-<p align="right">(<a href="#readme-top">voltar ao topo ⬆</a>)</p>
-
----
-
-## 🔐 Usuários e Segurança
-
-O Rascomp possui dois papéis globais:
-
-| Perfil | Responsabilidade |
-|---|---|
-| `PARTICIPANTE` | Gerenciar as próprias equipes, competidores, robôs, fotos e inscrições |
-| `ORGANIZACAO` | Administrar a competição, inscrições, inspeções, provas, chaveamentos e resultados |
-
-Responsabilidade por equipe é ownership:
-
-```text
-UserAccount(PARTICIPANTE)
-        │
-        └── Team.responsibleUser
-```
-
-Isso permite:
-
-```text
-Professor responsável  → UserAccount ✅ / Competitor ❌
-Competidor líder        → UserAccount ✅ / Competitor ✅
-Outro competidor        → UserAccount opcional / Competitor ✅
-```
-
-### Senhas
-
-A aplicação não persiste a senha original:
-
-```text
-senha recebida
-    ↓
-BCryptPasswordEncoder(12)
-    ↓
-password_hash
-```
-
-`passwordHash` não é exposto por DTOs externos.
-
-### Autenticação
-
-```http
-POST /api/v1/auth/register
-POST /api/v1/auth/login
-GET  /api/v1/auth/me
-```
-
-Após login:
-
-```http
-Authorization: Bearer <JWT>
-```
-
-O segredo JWT é fornecido por `JWT_SECRET` e não deve ser versionado.
-
-### Separação das APIs
-
-```text
-/api/v1/public/**       → público / read-only
-/api/v1/participante/** → PARTICIPANTE + ownership
-/api/v1/**              → ORGANIZACAO
-/engine-rest/**         → ORGANIZACAO
-```
-
-A API pública usa DTOs próprios e não expõe dados sensíveis de competidores/usuários.
-
-<p align="right">(<a href="#readme-top">voltar ao topo ⬆</a>)</p>
-
----
-
-## 🤖 Modalidades
-
-### Seguidor de Linha — `FOLLOW_LINE`
-
-```text
-Registration APROVADA
-       ↓
-ConfigFollow
-       ↓
-tomadas / tentativas
-       ↓
-tempo + penalidade + checkpoints
-       ↓
-melhor tentativa válida e concluída
-       ↓
-RankingFollowService
-       ↓
-classificação / campeão
-```
+Cada tentativa pode registrar tempo bruto, penalidade, checkpoints, conclusão, validade e observação.
 
 ```text
 tempoFinal = tempoSegundos + penalidadeSegundos
 ```
 
-`FOLLOW_LINE` não utiliza `Bracket`, `Match`, `RoundSumo` ou `MatchResult`.
+A classificação segue explicitamente:
 
-### Sumô — `SUMO`
+```text
+tentativas válidas + concluídas
+        ↓
+melhor tentativa de cada tomada
+        ↓
+melhor tomada do robô
+        ↓
+ranking
+```
+
+`checkpointsAlcancados` permanece como dado operacional. Até confirmação da regra oficial, checkpoints não alteram o ranking.
+
+## Sumô
+
+As categorias competitivas permanecem independentes por `categoryId`. Mini/3 kg e RC/Autônomo podem existir como categorias diferentes sem criar motores de regra diferentes.
 
 ```text
 Registration APROVADA
-       ↓
-InspecaoSumo
-       ↓
-aptidão
-       ↓
+        ↓
+Inspeção apta
+        ↓
 Bracket
-       ↓
+        ↓
 Match
-       ↓
+        ↓
 RoundSumo
-       ↓
+        ↓
 MatchResult automático
-       ↓
-progressão / campeão
+        ↓
+progressão
 ```
 
-A chave considera somente inscrições ativas, aprovadas e aptas. `MatchResult` é read-only externamente e nasce da consolidação dos rounds.
+### Regras suportadas
 
-<p align="right">(<a href="#readme-top">voltar ao topo ⬆</a>)</p>
+- quantidade configurável de rounds;
+- vitórias necessárias para fechar a batalha;
+- round extra quando permitido;
+- BYE automático;
+- `SUICIDIO_WO`: perda do round pelo robô que sofreu a ocorrência;
+- penalidades separadas para robô A e B;
+- limite provisório: **2 penalidades por robô/round**;
+- atingir 2 penalidades ainda não produz consequência automática;
+- partidas históricas são read-only.
 
----
+### Histórico de chaves
 
-## ✨ Funcionalidades
+```text
+nova geração
+   ↓
+nova chave      atual=true
+chave anterior  atual=false
+```
 
-- [x] contas `PARTICIPANTE` e `ORGANIZACAO`;
-- [x] autenticação JWT;
-- [x] senha protegida por BCrypt;
-- [x] ownership de equipe;
-- [x] vínculo opcional `UserAccount ↔ Competitor`;
-- [x] instituições, equipes, competidores e robôs;
-- [x] upload de fotos de robôs;
-- [x] validação real de JPEG/PNG/WEBP por assinatura do arquivo;
-- [x] inscrições com competidores participantes;
-- [x] autoria e revisão de inscrição;
-- [x] API autenticada do participante;
-- [x] API administrativa da organização;
-- [x] API pública sanitizada;
-- [x] ConfigFollow / ConfigSumo;
-- [x] Follow Line com tentativas, checkpoints, penalidade e ranking;
-- [x] Sumô com inspeção, bracket, BYE, partidas, rounds e progressão;
-- [x] tratamento global de erros HTTP;
-- [x] MySQL + Flyway;
-- [x] Camunda 7 operacional como infraestrutura;
-- [x] JUnit 5 + Mockito + GitHub Actions;
-- [ ] Swagger/OpenAPI completo — **próxima etapa**;
-- [ ] BPMN Rascomp funcional;
-- [ ] Frontend de Gestão concluído;
-- [ ] Landing Page concluída.
+Partidas, rounds e resultados anteriores permanecem preservados.
 
----
+## Fotos dos robôs
 
-## 🛠️ Tecnologias
+O backend possui fluxo completo de imagens:
 
-| Categoria | Tecnologia | Finalidade |
-|---|---|---|
-| Linguagem | Java 21 | Backend |
-| Framework | Spring Boot 3.5.3 | API REST |
-| Persistência | Spring Data JPA / Hibernate | ORM e transações |
-| Banco | MySQL | Persistência principal |
-| Migrations | Flyway | Versionamento do schema |
-| Segurança | Spring Security | Autorização |
-| Autenticação | JWT | Sessão stateless |
-| Senhas | BCrypt | Hash irreversível |
-| Validação | Jakarta Validation | Validação de payloads |
-| Processos | Camunda 7.22 | Engine BPMN |
-| Documentação | Springdoc OpenAPI 2.8.9 | Swagger/OpenAPI |
-| Testes | JUnit 5 + Mockito | Testes automatizados |
-| CI | GitHub Actions | `mvn -B test` |
-| Build | Maven | Build e dependências |
+- JPEG / PNG / WEBP;
+- validação da assinatura real do arquivo;
+- até 5 MB;
+- múltiplas fotos;
+- uma principal;
+- ownership no portal participante;
+- leitura pública;
+- armazenamento configurável por `ROBOT_IMAGES_DIR`.
 
-### Migrations
+Padrão local:
+
+```text
+./uploads/robots
+```
+
+## Migrations
 
 ```text
 V1 — schema competitivo principal
 V2 — inspeções de Sumô
 V3 — rounds de Sumô
-V4 — limpeza de artefatos legados de Follow em bracket
-V5 — usuários, ownership, participantes da inscrição e fotos
+V4 — limpeza de artefatos legados
+V5 — usuários, ownership, participantes e fotos
+V6 — histórico/versionamento de chaveamentos
+V7 — motivo do round e penalidades de Sumô
 ```
 
-Migrations aplicadas não são reescritas; novas mudanças estruturais usam `V6+`.
+Migrations aplicadas não devem ser reescritas; mudanças futuras entram em `V8+`.
 
----
-
-## 🚀 Como Executar
-
-Entre no módulo:
+## Executar localmente
 
 ```powershell
 cd rascomp
+.\mvnw spring-boot:run
 ```
 
 Variáveis principais:
 
 ```text
+DB_URL
 DB_USERNAME
 DB_PASSWORD
 JWT_SECRET
-```
-
-Opcionais:
-
-```text
-DB_URL
 ROBOT_IMAGES_DIR
-RASCOMP_SEED_POSTMAN=true
-
-RASCOMP_ORG_NOME
-RASCOMP_ORG_EMAIL
-RASCOMP_ORG_PASSWORD
 ```
 
-Também existe:
+## Profile de demonstração
+
+Existe um profile opt-in para apresentações e validação visual. Ele não roda em execução normal.
 
 ```powershell
-.\run-local.ps1
+$env:SPRING_PROFILES_ACTIVE="testdata"
+.\mvnw spring-boot:run
 ```
 
-> [!IMPORTANT]
-> Credenciais e segredos devem permanecer fora do Git. `.env.local` e `/uploads/` são ignorados.
-
----
-
-## 🧪 Testes e Qualidade
-
-O núcleo competitivo passou por bateria manual completa de **Follow Line e Sumô**.
-
-A arquitetura de acesso também foi testada manualmente em:
+### Credenciais de demonstração
 
 ```text
-Flyway V5                         ✅
-PARTICIPANTE register/login       ✅
-/auth/me                          ✅
-401 sem autenticação              ✅
-403 / ownership                   ✅
-equipe / competidor / robô        ✅
-upload de foto                    ✅
-inscrição                         ✅
-competidor de outra equipe        ✅ rejeitado
-API pública sanitizada            ✅
+ORGANIZAÇÃO
+organizacao.demo@rascomp.local
+Rascomp@2026
+
+PARTICIPANTE
+lider.demo@rascomp.local
+Rascomp@2026
 ```
 
-Testes automatizados:
+### Cenário ao vivo
+
+**RRC 2026 · Demonstração ao vivo**
+
+As datas são relativas ao dia da execução para o evento aparecer em andamento aproximadamente no meio do período.
+
+Inclui:
+
+- inscrições aprovadas;
+- 3 inscrições pendentes para aprovação ao vivo;
+- inscrição rejeitada;
+- Follow com ranking pré-estabelecido;
+- `Chronos Demo` com **2 de 3 tomadas preenchidas** e a terceira disponível;
+- Mini Sumô com chave parcialmente executada;
+- `Titan Demo` com vitória registrada;
+- round com penalidade;
+- round por Suicídio/WO;
+- categoria 3 kg com **10 participantes**, gerando chave de 16 e **6 BYEs**;
+- fotos locais de Chronos e Titan.
+
+### Cenário histórico
+
+**RRC 2025 · Histórico completo**
+
+- competição finalizada;
+- 32 robôs;
+- chave completa com 31 partidas;
+- 16 avos, oitavas, quartas, semifinal e final;
+- resultados preservados;
+- exemplos de Suicídio/WO e penalidade.
+
+> O initializer é idempotente. A inicialização do profile contra o MySQL local deve ser validada na máquina de demonstração antes da apresentação.
+
+## Testes automatizados
+
+A CI executa:
+
+```powershell
+.\mvnw test
+```
+
+Estado validado na `main` em **26/08/2026**:
 
 ```text
-28 testes
-0 falhas
+Tests run: 45
+Failures: 0
+Errors: 0
+Skipped: 0
+BUILD SUCCESS
 ```
 
-Após o merge do PR #4, o workflow **Backend Tests #43** executou novamente na `main` e terminou com **success**.
+Cobertura relevante:
 
-### Pendência manual de fechamento
+- ownership e política de acesso;
+- usuários/autenticação;
+- aprovação e rejeição de inscrições + auditoria;
+- configuração de categorias;
+- inspeção de Sumô;
+- geração/regeneração de chaves;
+- chave de 32 participantes;
+- chave de 10 participantes com BYEs;
+- proteção de chave histórica;
+- rounds e resultados de Sumô;
+- penalidades;
+- Suicídio/WO;
+- fechamento de batalha;
+- limites/duplicidade de tentativas Follow;
+- tempo acima do limite;
+- penalidade no tempo final;
+- melhor tentativa da tomada e melhor tomada do ranking.
 
-Antes de declarar o backend definitivamente encerrado, repetir:
+## Documentação
 
-```text
-login ORGANIZACAO
-→ /auth/me = ORGANIZACAO
-→ acesso administrativo
-→ aprovar/rejeitar Registration
-→ validar reviewedByUser + reviewedAt
-```
+- `rascomp/docs/CONTINUIDADE.md` — estado e próximos passos
+- `rascomp/docs/FLUXO_DO_SISTEMA.md` — fluxo de domínio
+- `rascomp/docs/ENTIDADES_E_CRUDS.md` — entidades e contratos
+- `rascomp/docs/CONGELAMENTO_API.md` — decisões de API
+- `rascomp/docs/TESTES_POSTMAN.md` — validações manuais
+- Swagger local: `http://localhost:8080/swagger-ui/index.html`
 
-Essa pendência não bloqueou o merge da arquitetura e será fechada junto da revisão Swagger/final.
+## Próximas frentes
 
----
-
-## 🔄 Camunda
-
-Infraestrutura atual:
-
-```text
-Process Engine   ✅
-JobExecutor      ✅
-tabelas ACT_*    ✅
-REST starter     ✅
-BPMN Rascomp     ⏳
-```
-
-Primeiro processo candidato:
-
-```text
-PARTICIPANTE envia inscrição
-          ↓
-       PENDENTE
-          ↓
- tarefa da ORGANIZACAO
-       ↙       ↘
- APROVADA     REJEITADA
-```
-
-Camunda deverá orquestrar processos/human tasks. Ranking, inspeção, rounds e chaveamentos continuam nos services Java.
-
----
-
-## 📊 Estado do Projeto
-
-```text
-Núcleo competitivo Follow/Sumô      ✅
-MySQL + Flyway V1–V5                 ✅
-UserAccount                          ✅
-PARTICIPANTE / ORGANIZACAO           ✅
-JWT + BCrypt                         ✅
-Ownership                            ✅
-Fotos dos robôs                      ✅
-Registration com participantes      ✅
-API participante                     ✅
-API pública sanitizada               ✅
-PR #4                                ✅ mergeado
-CI pós-merge                         ✅ Backend Tests #43
-Congelamento da API                  ✅ renovado
-Swagger / OpenAPI                    ⏳ PRÓXIMA ETAPA
-Camunda BPMN funcional               ⏳ pós-Swagger
-Frontend de Gestão                   🔄 paralelo
-Frontend Público / Landing           🔄 paralelo
-```
-
----
-
-## 🗺️ Roadmap
-
-```text
-NÚCLEO COMPETITIVO                  ✅
-          ↓
-USUÁRIOS + JWT + OWNERSHIP          ✅
-          ↓
-SMOKE LOCAL                         ✅
-          ↓
-MERGE PR #4                         ✅
-          ↓
-CI PÓS-MERGE                        ✅
-          ↓
-NOVO CONGELAMENTO                   ✅
-          ↓
-SWAGGER / OPENAPI                   ◀ PRÓXIMO
-          ↓
-REVALIDAR ORGANIZACAO
-          ↓
-REVISÃO FINAL DO BACKEND
-          ↓
-CHECKPOINT CAMUNDA
-          ↓
-FRONTEND DE GESTÃO + LANDING
-```
-
-O contrato atual está registrado em [`CONGELAMENTO_API.md`](rascomp/docs/CONGELAMENTO_API.md).
-
----
-
-## 📚 Documentação Técnica
-
-```text
-rascomp/docs/CONTINUIDADE.md
-rascomp/docs/CONGELAMENTO_API.md
-rascomp/docs/TESTES_POSTMAN.md
-rascomp/docs/ENDPOINTS_INTERNOS.md
-rascomp/docs/JSON_EXEMPLOS.md
-rascomp/docs/FLUXO_DO_SISTEMA.md
-rascomp/docs/ENTIDADES_E_CRUDS.md
-rascomp/docs/diagrama-uml-completo.puml
-```
-
-`CONTINUIDADE.md` é a fonte principal para retomada do projeto por outra sessão/agente.
-
----
-
-## 🧭 Forma de Trabalho
-
-```text
-objetivo
-  ↓
-implementação delegada
-  ↓
-revisão do contrato
-  ↓
-CI
-  ↓
-smoke objetivo
-  ↓
-documentação
-  ↓
-merge
-```
-
-A prioridade do Rascomp é manter **domínio, contrato, segurança e qualidade verificáveis** enquanto os dois frontends avançam em paralelo.
-
-<p align="right">(<a href="#readme-top">voltar ao topo ⬆</a>)</p>
+1. validar o profile `testdata` contra o MySQL da máquina de apresentação;
+2. consolidar regras oficiais restantes de penalidades/checkpoints;
+3. concluir o portal participante;
+4. consolidar o frontend ADMIN;
+5. desenvolver a landing pública RAS UFRB + RRC.
