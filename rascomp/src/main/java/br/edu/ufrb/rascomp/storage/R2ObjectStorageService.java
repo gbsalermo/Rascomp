@@ -112,7 +112,7 @@ public class R2ObjectStorageService implements ObjectStorageService {
                 .build();
 
         PresignedPutObjectRequest presigned = r2S3Presigner.presignPutObject(presignRequest);
-        return presigned.url().toURI();
+        return URI.create(presigned.url().toString());
     }
 
     private String validateObjectKey(String objectKey) {
