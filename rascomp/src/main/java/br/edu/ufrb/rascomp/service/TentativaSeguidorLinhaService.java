@@ -48,6 +48,17 @@ public class TentativaSeguidorLinhaService {
     }
 
     @Transactional(readOnly = true)
+    public List<TentativaSeguidorLinhaDTO> listarPorContexto(Long competitionId, Long categoryId) {
+        return tentativaRepository
+                .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
+                        competitionId,
+                        categoryId)
+                .stream()
+                .map(TentativaSeguidorLinhaDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public TentativaSeguidorLinhaDTO buscarPorId(Long id) {
         return new TentativaSeguidorLinhaDTO(buscarTentativa(id));
     }
