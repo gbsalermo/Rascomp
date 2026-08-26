@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import br.edu.ufrb.rascomp.dto.CompetitorDTO;
+import br.edu.ufrb.rascomp.dto.ConfigFollowDTO;
 import br.edu.ufrb.rascomp.dto.ParticipantCompetitorRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantRegistrationRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantRobotRequest;
@@ -17,6 +18,7 @@ import br.edu.ufrb.rascomp.dto.RobotImageDTO;
 import br.edu.ufrb.rascomp.dto.TeamDTO;
 import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.model.Competitor;
+import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
@@ -33,6 +35,7 @@ public class ParticipantPortalService {
     private final RegistrationService registrationService;
     private final RobotImageService robotImageService;
     private final TentativaSeguidorLinhaService tentativaSeguidorLinhaService;
+    private final ConfigFollowService configFollowService;
 
     @Transactional(readOnly = true)
     public List<TeamDTO> minhasEquipes() {
@@ -70,7 +73,6 @@ public class ParticipantPortalService {
     public CompetitorDTO tornarMeCompetidor(Long teamId) {
         Team team = accessPolicyService.exigirEquipeDoResponsavel(teamId);
         UserAccount usuario = accessPolicyService.usuarioAtual();
-
         CompetitorDTO dto = new CompetitorDTO();
         dto.setNome(usuario.getNome());
         dto.setEmail(usuario.getEmail());
@@ -155,6 +157,12 @@ public class ParticipantPortalService {
         return tentativaSeguidorLinhaService.listarPorInscricao(registrationId);
     }
 
+    @Transactional(readOnly = true)
+    public ConfigFollowDTO configFollow(Long registrationId) {
+        Registration registration = accessPolicyService.exigirInscricaoDaEquipe(registrationId);
+        return configFollowService.buscarPorCategoria(registration.getCategory().getId());
+    }
+
     @Transactional
     public RegistrationDTO inscrever(Long teamId, ParticipantRegistrationRequest request) {
         accessPolicyService.exigirEquipeDoResponsavel(teamId);
@@ -162,7 +170,6 @@ public class ParticipantPortalService {
         if (!robot.getTeam().getId().equals(teamId)) {
             throw new IllegalArgumentException("O robô deve pertencer à equipe informada.");
         }
-
         RegistrationDTO dto = new RegistrationDTO();
         dto.setCompetitionId(request.getCompetitionId());
         dto.setCategoryId(request.getCategoryId());
