@@ -15,6 +15,7 @@ import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RobotDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
 import br.edu.ufrb.rascomp.dto.TeamDTO;
+import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.model.Competitor;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
@@ -31,6 +32,7 @@ public class ParticipantPortalService {
     private final RobotService robotService;
     private final RegistrationService registrationService;
     private final RobotImageService robotImageService;
+    private final TentativaSeguidorLinhaService tentativaSeguidorLinhaService;
 
     @Transactional(readOnly = true)
     public List<TeamDTO> minhasEquipes() {
@@ -145,6 +147,12 @@ public class ParticipantPortalService {
     public List<RegistrationDTO> inscricoes(Long teamId) {
         accessPolicyService.exigirEquipeDoResponsavel(teamId);
         return registrationService.listarPorEquipe(teamId, false);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TentativaSeguidorLinhaDTO> tentativasFollow(Long registrationId) {
+        accessPolicyService.exigirInscricaoDaEquipe(registrationId);
+        return tentativaSeguidorLinhaService.listarPorInscricao(registrationId);
     }
 
     @Transactional
