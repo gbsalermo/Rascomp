@@ -336,7 +336,6 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
             Institution ras,
             Institution visitante,
             UserAccount organizacao) {
-        // Chronos: duas tomadas completas e a terceira livre para demonstrar ao vivo.
         tentativa(chronos, 1, 1, "47.820", 5, 0, true, true, "Aquecimento.");
         tentativa(chronos, 1, 2, "44.610", 5, 1, true, true, "Uma penalidade.");
         tentativa(chronos, 1, 3, "43.950", 5, 0, true, true, "Melhor da tomada 1.");
@@ -453,7 +452,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
 
         Bracket bracket = garantirChave(competition, category);
         Long bracketId = bracket.getId();
-        for (int rodada = 1; rodada <= 5; rodada++) {
+        for (int rodada : List.of(1, 2, 3, 4, 5)) {
             List<Match> partidas = matchRepository.findByBracketIdOrderByRodadaAscOrdemAsc(bracketId).stream()
                     .filter(m -> m.getRodada() == rodada).toList();
             for (Match item : partidas) {
@@ -482,7 +481,6 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         try {
             if (inspecaoSumoService.estaAptaParaCompetir(registration.getId())) return;
         } catch (Exception ignored) {
-            // segue para criar inspeção válida
         }
         InspecaoSumoDTO dto = new InspecaoSumoDTO();
         dto.setRegistrationId(registration.getId());
@@ -491,13 +489,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         inspecaoSumoService.registrar(dto);
     }
 
-    private void vitoria(
-            Match match,
-            Registration winner,
-            boolean wo,
-            int penalidadesA,
-            int penalidadesB,
-            String observacao) {
+    private void vitoria(Match match, Registration winner, boolean wo, int penalidadesA, int penalidadesB, String observacao) {
         RoundSumoDTO round = new RoundSumoDTO();
         round.setMatchId(match.getId());
         round.setWinnerRegistrationId(winner.getId());
@@ -509,18 +501,9 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         roundSumoService.registrar(round);
     }
 
-    private void tentativa(
-            Registration registration,
-            int tomada,
-            int numeroTentativa,
-            String tempo,
-            int checkpoints,
-            int penalidade,
-            boolean concluida,
-            boolean valida,
-            String observacao) {
-        if (tentativaRepository.existsByRegistrationIdAndTomadaAndNumeroTentativa(
-                registration.getId(), tomada, numeroTentativa)) return;
+    private void tentativa(Registration registration, int tomada, int numeroTentativa, String tempo, int checkpoints,
+            int penalidade, boolean concluida, boolean valida, String observacao) {
+        if (tentativaRepository.existsByRegistrationIdAndTomadaAndNumeroTentativa(registration.getId(), tomada, numeroTentativa)) return;
         TentativaSeguidorLinha item = new TentativaSeguidorLinha();
         item.setRegistration(registration);
         item.setTomada(tomada);
