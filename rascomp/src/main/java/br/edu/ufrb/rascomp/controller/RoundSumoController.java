@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.edu.ufrb.rascomp.dto.BatalhaSumoDTO;
 import br.edu.ufrb.rascomp.dto.RoundSumoDTO;
 import br.edu.ufrb.rascomp.service.RoundSumoService;
 import jakarta.validation.Valid;
@@ -27,6 +28,11 @@ public class RoundSumoController {
     @PostMapping
     public ResponseEntity<RoundSumoDTO> registrar(@Valid @RequestBody RoundSumoDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(roundSumoService.registrar(dto));
+    }
+
+    @PostMapping("/batalha")
+    public ResponseEntity<List<RoundSumoDTO>> registrarBatalha(@Valid @RequestBody BatalhaSumoDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(roundSumoService.registrarBatalha(dto));
     }
 
     @GetMapping("/{id}")
