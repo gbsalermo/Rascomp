@@ -1,131 +1,235 @@
-# RasComp — Gestão de Competições de Robótica
+# RasComp — Plataforma de Gestão do RRC
 
-Backend da plataforma **RasComp**, desenvolvida para apoiar a organização e a divulgação das competições de robótica da **RAS UFRB**. O evento é o **RRC**; RasComp é o sistema.
+Backend da plataforma **RasComp**, usada para organizar e publicar as competições de robótica da **RAS UFRB**.
 
-A API cobre o ciclo competitivo completo: contas, equipes, competidores, robôs, fotos, inscrições, análise da organização, Follow Line, Sumô, chaveamentos, resultados, histórico e projeções públicas.
+```text
+RAS UFRB = organização
+RRC      = evento/competição
+RasComp  = plataforma de software
+```
+
+## Stack
+
+- Java 21
+- Spring Boot 3.5.x
+- Spring Security + JWT + BCrypt
+- JPA/Hibernate
+- MySQL
+- Flyway V1–V7
+- Maven
+- Swagger/OpenAPI
+- Cloudflare R2 preparado para mídia futura
 
 ## Estado atual
 
-- Java 21 + Spring Boot 3.5.3
-- MySQL persistente
-- Flyway **V1–V7**
-- Spring Security + JWT + BCrypt
-- ownership real para participantes
-- API administrativa, API de participante e API pública separadas
-- fotos de robôs com armazenamento local configurável
-- Follow Line com tomadas, tentativas e ranking backend-first
-- Sumô com inspeção, BYE, chaveamento, rounds, penalidades e progressão automática
-- histórico versionado de chaves
-- **45 testes automatizados, 0 falhas, 0 erros** na CI da `main`
-
-## Arquitetura de acesso
-
 ```text
-/api/v1/public/**
-└─ leitura pública sanitizada
-
-/api/v1/participante/**
-└─ PARTICIPANTE + ownership da equipe
-
-/api/v1/**
-└─ ORGANIZACAO
+Autenticação / JWT                     ✅
+Ownership participante                 ✅
+Competições                            ✅
+Equipes / competidores / robôs         ✅
+Inscrições / revisão                   ✅
+Fotos de robôs                         ✅
+Follow Line                            ✅
+Ranking por melhor tomada              ✅
+Sumô / inspeção / rounds               ✅
+2 penalidades = derrota do round       ✅
+Suicídio/WO                            ✅
+Chaves / BYE / progressão              ✅
+Histórico de chaves                    ✅
+API pública                            ✅
+API participante                       ✅ base funcional
+Testdata/demo                          ✅
 ```
 
-O backend é a fonte de verdade para elegibilidade, ranking, progressão, vencedores e resultados oficiais.
+Último checkpoint automatizado revisado:
+
+```text
+48 testes
+0 failures
+0 errors
+0 skipped
+
+Demo profile:
+MySQL + Flyway + testdata ✅
+```
+
+## Arquitetura de acesso atual
+
+O modelo atual ainda é legado e será refatorado:
+
+```text
+/api/v1/public/**       → público
+/api/v1/participante/** → PARTICIPANTE
+/api/v1/**              → ORGANIZACAO
+```
+
+Roles atuais:
+
+```text
+PARTICIPANTE
+ORGANIZACAO
+```
+
+## Matriz de permissões aprovada para a próxima fase
+
+```text
+DEV
+├─ acesso total
+├─ criar/alterar competição
+├─ permissões
+├─ manutenção estrutural
+└─ Ajustes Gerais
+
+GESTAO
+├─ operação de Follow
+├─ operação de Sumô
+├─ inspeção/partidas/resultados operacionais
+└─ sem criação de competição/manutenção estrutural
+
+MIDIA
+└─ conteúdo e mídia da Landing
+
+PARTICIPANTE
+└─ própria equipe/robôs/inscrições/acompanhamento
+```
+
+A autorização será aplicada no backend por endpoint/operação; esconder tela no frontend não substitui segurança.
 
 ## Follow Line
 
-```text
-Robô / inscrição
-├─ Tomada 1
-│  ├─ Tentativa 1
-│  ├─ Tentativa 2
-│  └─ Tentativa 3
-├─ Tomada 2
-└─ ...
-```
-
-Cada tentativa pode registrar tempo bruto, penalidade, checkpoints, conclusão, validade e observação.
+Domínio:
 
 ```text
-tempoFinal = tempoSegundos + penalidadeSegundos
+Registration
+└─ Tomadas
+   └─ Tentativas
 ```
 
-A classificação segue explicitamente:
+Ranking:
 
 ```text
-tentativas válidas + concluídas
-        ↓
-melhor tentativa de cada tomada
-        ↓
-melhor tomada do robô
-        ↓
-ranking
+tentativas válidas + concluídas + com tempo
+→ melhor tentativa de cada tomada
+→ melhor tomada da inscrição/robô
+→ ranking por menor tempo final
 ```
 
-`checkpointsAlcancados` permanece como dado operacional. Até confirmação da regra oficial, checkpoints não alteram o ranking.
+```text
+tempo final = tempo bruto + penalidade
+```
+
+`checkpointsAlcancados` permanece como dado operacional enquanto o regulamento não definir impacto oficial.
 
 ## Sumô
 
-As categorias competitivas permanecem independentes por `categoryId`. Mini/3 kg e RC/Autônomo podem existir como categorias diferentes sem criar motores de regra diferentes.
+Categorias como Mini/3 kg e RC/Autônomo usam o mesmo motor de Sumô e ficam isoladas por `competitionId + categoryId`.
+
+Fluxo:
 
 ```text
 Registration APROVADA
-        ↓
-Inspeção apta
-        ↓
-Bracket
-        ↓
-Match
-        ↓
-RoundSumo
-        ↓
-MatchResult automático
-        ↓
-progressão
+→ inspeção apta
+→ Bracket
+→ Match
+→ RoundSumo
+→ MatchResult automático
+→ progressão
 ```
 
-### Regras suportadas
+Regras atuais relevantes:
 
-- quantidade configurável de rounds;
-- vitórias necessárias para fechar a batalha;
-- round extra quando permitido;
+- rounds configuráveis;
+- vitórias necessárias configuráveis;
+- round adicional quando permitido;
 - BYE automático;
-- `SUICIDIO_WO`: perda do round pelo robô que sofreu a ocorrência;
-- penalidades separadas para robô A e B;
-- limite provisório: **2 penalidades por robô/round**;
-- atingir 2 penalidades ainda não produz consequência automática;
-- partidas históricas são read-only.
+- Suicídio/WO = vitória do adversário;
+- penalidades A/B;
+- **2 penalidades no mesmo round = derrota automática**;
+- chave histórica somente leitura.
 
-### Histórico de chaves
+## Nova modalidade aprovada: Futebol de Robôs
 
-```text
-nova geração
-   ↓
-nova chave      atual=true
-chave anterior  atual=false
-```
+Planejada para a próxima evolução.
 
-Partidas, rounds e resultados anteriores permanecem preservados.
+Características recebidas:
 
-## Fotos dos robôs
+- dois competidores;
+- robôs fornecidos pela RAS;
+- inscrição sem robô próprio;
+- equipe permanece no desenho por enquanto;
+- vencedor por confronto.
 
-O backend possui fluxo completo de imagens:
+O schema atual **não suporta isso sem migration**, pois `Registration.robot` e `ParticipantRegistrationRequest.robotId` são obrigatórios. A solução não será criar robôs fake: a inscrição precisa aceitar legitimamente modalidade sem robô próprio.
 
-- JPEG / PNG / WEBP;
-- validação da assinatura real do arquivo;
-- até 5 MB;
-- múltiplas fotos;
-- uma principal;
-- ownership no portal participante;
-- leitura pública;
-- armazenamento configurável por `ROBOT_IMAGES_DIR`.
+## Mídia / CMS
 
-Padrão local:
+O backend já possui uma abstração de object storage/R2:
 
 ```text
-./uploads/robots
+storage/ObjectStorageService.java
+storage/R2ObjectStorageService.java
 ```
+
+O fluxo atual de fotos de robôs continua usando storage local específico:
+
+```text
+RobotImageService
+→ RobotImageStorageService
+→ ./uploads/robots
+```
+
+A nova área MIDIA deverá usar uma arquitetura editorial própria, sugerida:
+
+```text
+MediaAsset
+ContentSlot
+ContentItem
+```
+
+para que a Landing deixe de depender de textos/imagens hardcoded.
+
+## Regras
+
+Nova frente aprovada para armazenar/publicar regras de:
+
+- Follow Line;
+- Sumô e textos específicos de subcategorias;
+- Futebol de Robôs;
+- ambiente/vestimenta/segurança.
+
+Os textos finais dependem de confirmação do regulamento oficial.
+
+## Ajustes Gerais DEV
+
+Futura área de manutenção privilegiada. Não será um editor cru de tabelas: cada ação deve ter service próprio, validação e auditoria.
+
+Exemplos:
+
+```text
+alterarRole
+transferirCompetidor
+transferirRobo
+transferirResponsabilidadeDaEquipe
+corrigirInscricao
+ativar/desativar
+```
+
+## Achados principais da revisão estrutural
+
+### Prioridade alta
+
+1. `RegistrationService.reativar()` não revalida a janela de inscrições.
+2. Cancelamento de inscrição pelo participante precisa política explícita depois de aprovação/chave/início.
+3. Geração/regeneração de chave precisa estados da competição formalmente permitidos.
+4. Edição futura de `MatchResult` depois de alimentar a próxima fase é perigosa e precisa ser bloqueada ou possuir rollback/reprocessamento.
+5. Segurança `ORGANIZACAO` atual é ampla demais para DEV/GESTAO/MIDIA.
+
+### Dívida técnica
+
+- diretório rastreado `rascomp/bin/` contém artefatos antigos/compilados e deve ser removido em commit isolado;
+- `.gitignore` já foi preparado para ignorar `bin/` daqui em diante;
+- comentários antigos de `ConfigFollow` e `ConfigSumo` foram atualizados;
+- avaliar remoção de `.classpath`, `.project` e `.gitkeep` desnecessários já rastreados.
 
 ## Migrations
 
@@ -133,13 +237,15 @@ Padrão local:
 V1 — schema competitivo principal
 V2 — inspeções de Sumô
 V3 — rounds de Sumô
-V4 — limpeza de artefatos legados
-V5 — usuários, ownership, participantes e fotos
-V6 — histórico/versionamento de chaveamentos
-V7 — motivo do round e penalidades de Sumô
+V4 — limpeza de artefatos legados de schema
+V5 — usuários / ownership / fotos
+V6 — histórico de chaves
+V7 — motivos/penalidades de round
 ```
 
-Migrations aplicadas não devem ser reescritas; mudanças futuras entram em `V8+`.
+Mudanças futuras: **V8+**.
+
+Nunca reescrever migration que já foi aplicada.
 
 ## Executar localmente
 
@@ -156,113 +262,58 @@ DB_USERNAME
 DB_PASSWORD
 JWT_SECRET
 ROBOT_IMAGES_DIR
+R2_ENABLED
+R2_*
 ```
 
-## Profile de demonstração
-
-Existe um profile opt-in para apresentações e validação visual. Ele não roda em execução normal.
+## Profile de demonstração/testes visuais
 
 ```powershell
 $env:SPRING_PROFILES_ACTIVE="testdata"
 .\mvnw spring-boot:run
 ```
 
-### Credenciais de demonstração
+O profile é opt-in e nunca deve ser ativado em produção.
 
-```text
-ORGANIZAÇÃO
-organizacao.demo@rascomp.local
-Rascomp@2026
+## Fonte de verdade
 
-PARTICIPANTE
-lider.demo@rascomp.local
-Rascomp@2026
-```
+O backend é responsável por:
 
-### Cenário ao vivo
-
-**RRC 2026 · Demonstração ao vivo**
-
-As datas são relativas ao dia da execução para o evento aparecer em andamento aproximadamente no meio do período.
-
-Inclui:
-
-- inscrições aprovadas;
-- 3 inscrições pendentes para aprovação ao vivo;
-- inscrição rejeitada;
-- Follow com ranking pré-estabelecido;
-- `Chronos Demo` com **2 de 3 tomadas preenchidas** e a terceira disponível;
-- Mini Sumô com chave parcialmente executada;
-- `Titan Demo` com vitória registrada;
-- round com penalidade;
-- round por Suicídio/WO;
-- categoria 3 kg com **10 participantes**, gerando chave de 16 e **6 BYEs**;
-- fotos locais de Chronos e Titan.
-
-### Cenário histórico
-
-**RRC 2025 · Histórico completo**
-
-- competição finalizada;
-- 32 robôs;
-- chave completa com 31 partidas;
-- 16 avos, oitavas, quartas, semifinal e final;
-- resultados preservados;
-- exemplos de Suicídio/WO e penalidade.
-
-> O initializer é idempotente. A inicialização do profile contra o MySQL local deve ser validada na máquina de demonstração antes da apresentação.
-
-## Testes automatizados
-
-A CI executa:
-
-```powershell
-.\mvnw test
-```
-
-Estado validado na `main` em **26/08/2026**:
-
-```text
-Tests run: 45
-Failures: 0
-Errors: 0
-Skipped: 0
-BUILD SUCCESS
-```
-
-Cobertura relevante:
-
-- ownership e política de acesso;
-- usuários/autenticação;
-- aprovação e rejeição de inscrições + auditoria;
-- configuração de categorias;
-- inspeção de Sumô;
-- geração/regeneração de chaves;
-- chave de 32 participantes;
-- chave de 10 participantes com BYEs;
-- proteção de chave histórica;
-- rounds e resultados de Sumô;
-- penalidades;
-- Suicídio/WO;
-- fechamento de batalha;
-- limites/duplicidade de tentativas Follow;
-- tempo acima do limite;
-- penalidade no tempo final;
-- melhor tentativa da tomada e melhor tomada do ranking.
+- autorização real;
+- ownership;
+- elegibilidade;
+- ranking;
+- inspeção;
+- BYE;
+- vencedor;
+- progressão;
+- campeão;
+- resultado oficial.
 
 ## Documentação
 
-- `rascomp/docs/CONTINUIDADE.md` — estado e próximos passos
-- `rascomp/docs/FLUXO_DO_SISTEMA.md` — fluxo de domínio
-- `rascomp/docs/ENTIDADES_E_CRUDS.md` — entidades e contratos
+- `rascomp/docs/CONTINUIDADE.md` — checkpoint do backend e roadmap
+- `rascomp/docs/FLUXO_DO_SISTEMA.md` — fluxo histórico de domínio
+- `rascomp/docs/ENTIDADES_E_CRUDS.md` — entidades/CRUDs
 - `rascomp/docs/CONGELAMENTO_API.md` — decisões de API
-- `rascomp/docs/TESTES_POSTMAN.md` — validações manuais
-- Swagger local: `http://localhost:8080/swagger-ui/index.html`
+- `rascomp/docs/CLOUDFLARE_R2.md` — storage R2
+- Dossiê canônico cross-repo: `Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md`
 
-## Próximas frentes
+Swagger local:
 
-1. validar o profile `testdata` contra o MySQL da máquina de apresentação;
-2. consolidar regras oficiais restantes de penalidades/checkpoints;
-3. concluir o portal participante;
-4. consolidar o frontend ADMIN;
-5. desenvolver a landing pública RAS UFRB + RRC.
+```text
+http://localhost:8080/swagger-ui/index.html
+```
+
+## Próxima ordem de trabalho
+
+```text
+0. estabilização dos achados da revisão
+1. DEV | GESTAO | MIDIA | PARTICIPANTE
+2. Ajustes Gerais DEV + auditoria
+3. CMS/Mídia
+4. Regras
+5. Futebol de Robôs
+6. participante completo
+7. consolidação pública Landing/Galeria
+```
