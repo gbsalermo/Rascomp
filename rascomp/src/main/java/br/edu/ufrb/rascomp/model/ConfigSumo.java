@@ -25,52 +25,49 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ConfigSumo implements Serializable{
-	
-	private static final long serialVersionUID = 1L;
+public class ConfigSumo implements Serializable {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	@OneToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "competition_category_id", nullable = false, unique = true)
-	private CompetitionCategory competitionCategory;
-	
-	@Column(nullable = false, precision = 8, scale = 3)
-	private BigDecimal pesoMax;
-	
-	@Column(nullable = false)
-	private Boolean exigeInspecao; 
-	
-	@Column(nullable = false)
-	private Integer maxTentativasInspecao;
-	
-	@Column(nullable = false)
-    private Integer numeroRounds;                // ex: 3
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "competition_category_id", nullable = false, unique = true)
+    private CompetitionCategory competitionCategory;
+
+    @Column(nullable = false, precision = 8, scale = 3)
+    private BigDecimal pesoMax;
 
     @Column(nullable = false)
-    private Integer roundsParaVencer;              // ex: 2 (melhor de 3)
+    private Boolean exigeInspecao;
 
     @Column(nullable = false)
-    private Boolean permiteRoundDesempate;         // ex: true (4º round se empatar 1x1... ver observação abaixo)
+    private Integer maxTentativasInspecao;
 
-  
+    /** Quantidade de rounds regulares previstos para a batalha. */
+    @Column(nullable = false)
+    private Integer numeroRounds;
+
+    /** Quantidade de vitórias necessárias para encerrar a batalha. */
+    @Column(nullable = false)
+    private Integer roundsParaVencer;
+
+    /** Permite no máximo um round adicional quando ainda não há vencedor. */
+    @Column(nullable = false)
+    private Boolean permiteRoundDesempate;
+
     /*
-     * TODO — módulo de resultados:
+     * RoundSumo registra cada round e MatchResultService consolida a batalha.
+     * Regras atuais relevantes:
+     * - rounds sem vencedor não contam para roundsParaVencer;
+     * - SUICIDIO_WO encerra o round com vitória do adversário;
+     * - 2 penalidades no mesmo round causam derrota automática do robô penalizado;
+     * - o round adicional só é aceito quando configurado e a batalha ainda não
+     *   possui vencedor.
      *
-     * Criar RoundSumo relacionado a Match para registrar:
-     * - número do round;
-     * - vencedor;
-     * - motivo da vitória;
-     * - status do round: finalizado, empatado, anulado ou cancelado.
-     *
-     * Regras definidas:
-     * - numeroRounds representa somente os rounds regulares;
-     * - roundsParaVencer define quantas vitórias encerram a batalha;
-     * - o round de desempate é adicional;
-     * - o round adicional ocorre quando algum round regular não produz
-     *   resultado válido, por empate, anulação, cancelamento ou problema técnico;
-     * - rounds sem vencedor não contam para roundsParaVencer.
+     * Mini/3 kg e RC/Autônomo permanecem categorias distintas usando este
+     * mesmo motor de Sumô; não são modalidades técnicas diferentes no backend.
      */
 }
