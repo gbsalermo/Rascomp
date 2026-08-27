@@ -16,7 +16,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
 @Entity
 @Table(name = "config_follow")
@@ -26,45 +25,42 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 public class ConfigFollow implements Serializable {
-	
-	private static final long serialVersionUID = 1L;
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	@OneToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "competition_category_id", nullable = false, unique = true)
-	private CompetitionCategory competitionCategory;
-	
-	@Column(nullable = false)
-	private Integer numeroTomadas;  //ex: 3 tomadas/tentativas por robo
-	
-	@Column(nullable = false)
-	private Integer tentativasPorTomada; //quantidade máxima de tentativas permitidas em cada tomada
-	
-	@Column(nullable = false)
-    private Integer maxTempoSegundos; // tempo máximo permitido para uma tentativa do robô concluir o percurso
 
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "competition_category_id", nullable = false, unique = true)
+    private CompetitionCategory competitionCategory;
+
+    /** Quantidade de tomadas disponíveis para cada inscrição/robô. */
     @Column(nullable = false)
-    private Integer numeroCheckpoints; // quantidade total de checkpoints existentes no percurso da categoria
-	
-	}
+    private Integer numeroTomadas;
 
-/*
- * TODO (módulo de resultados/Registration):
- * Implementar entidade TentativaSeguidorLinha (registration_id, numeroTomada,
- * numeroTentativa, completou, tempoRegistrado) para registrar o resultado bruto
- * de cada tentativa do robô.
- *
- * Implementar método de cálculo (ex: PontuacaoSeguidorLinhaService) que:
- * 1. Agrupa as tentativas por numeroTomada
- * 2. Em cada tomada, pega o menor tempoRegistrado entre as tentativas com completou = true
- *    (se nenhuma tentativa da tomada foi completada, a tomada não gera tempo)
- * 3. Entre os tempos de tomada válidos, pega o menor de todos — esse é o tempo final do robô
- *
- * Decisão de implementação: calcular sob demanda a cada consulta de ranking
- * (mais simples e sempre correto para o volume esperado da competição),
- * ao invés de cachear um campo de "melhor tempo" na Registration.
- */
+    /** Quantidade máxima de tentativas registráveis dentro de cada tomada. */
+    @Column(nullable = false)
+    private Integer tentativasPorTomada;
 
+    /** Tempo máximo permitido para uma tentativa concluir o percurso. */
+    @Column(nullable = false)
+    private Integer maxTempoSegundos;
+
+    /** Quantidade total de checkpoints existentes no percurso da categoria. */
+    @Column(nullable = false)
+    private Integer numeroCheckpoints;
+
+    /*
+     * O resultado bruto é persistido em TentativaSeguidorLinha.
+     * RankingFollowService calcula sob demanda:
+     * 1. somente tentativas válidas, concluídas e com tempo;
+     * 2. a melhor tentativa de cada tomada;
+     * 3. a melhor tomada da inscrição/robô;
+     * 4. a ordenação pelo tempo final (tempo + penalidade).
+     *
+     * Checkpoints são dados operacionais e não alteram o ranking enquanto
+     * o regulamento oficial não definir impacto competitivo específico.
+     */
+}
