@@ -1,345 +1,424 @@
 # Continuidade do Projeto — RasComp
 
-Última atualização: **26/08/2026**
+Última atualização: **26/08/2026 — pós-aprovação da apresentação**
 
 ## 1. Marco atual
 
-O backend está em fase de **consolidação para demonstração do ADMIN e início do portal PARTICIPANTE**.
+O projeto foi apresentado à equipe e aprovado. O backend atual forma uma base funcional para operação do RRC e agora entra em fase de **estabilização + evolução de governança**.
 
 ```text
-AUTENTICAÇÃO / OWNERSHIP                 ✅
+AUTENTICAÇÃO / JWT                       ✅
+OWNERSHIP PARTICIPANTE                   ✅
 MYSQL + FLYWAY V1–V7                     ✅
 INSCRIÇÕES + REVISÃO                     ✅
-FOLLOW LINE                              ✅ domínio implementado
-SUMÔ                                     ✅ domínio implementado
+FOLLOW LINE                              ✅
+SUMÔ                                     ✅
+2 PENALIDADES = DERROTA DO ROUND         ✅
 HISTÓRICO DE CHAVES                      ✅
-FOTOS DOS ROBÔS                          ✅ backend completo
-API PARTICIPANTE                         ✅ base + consultas de desempenho
-API PÚBLICA                              ✅ projeções read-only
+FOTOS DOS ROBÔS                          ✅
+API PARTICIPANTE                         ✅ base funcional
+API PÚBLICA                              ✅
 TESTES AUTOMATIZADOS                     ✅ 48 / 48
-PROFILE DE DEMONSTRAÇÃO                  ✅ validado em MySQL real na CI
+PROFILE TESTDATA                         ✅ MySQL + Flyway na CI
 ```
 
-CI validada em 26/08/2026:
+## 2. Roadmap pós-aprovação
 
 ```text
-Tests run: 48
-Failures: 0
-Errors: 0
-Skipped: 0
-BUILD SUCCESS
-
-Demo profile:
-MySQL + Flyway + SPRING_PROFILES_ACTIVE=testdata ✅
+0. ESTABILIZAÇÃO / CORREÇÕES DA REVISÃO
+1. PERMISSÕES: DEV | GESTAO | MIDIA | PARTICIPANTE
+2. AJUSTES GERAIS DEV + AUDITORIA
+3. CMS / MÍDIA
+4. REGRAS
+5. FUTEBOL DE ROBÔS
+6. PARTICIPANTE COMPLETO
+7. CONSOLIDAÇÃO LANDING/GALERIA
 ```
 
-Antes da apresentação ainda é recomendado fazer um smoke test local na máquina usada na demonstração.
+Não iniciar Mídia/Futebol antes de definir a nova matriz de autorização no backend.
 
-## 2. Regra oficial atual — Follow Line
+## 3. Permissões aprovadas
 
-O domínio deve ser lido como:
+### DEV
+
+Acesso total e estrutural:
+
+- criar/editar/desativar competição;
+- alterar roles;
+- manutenção de inscrições;
+- transferir competidor entre equipes;
+- transferir robô entre equipes;
+- trocar responsável da equipe;
+- Ajustes Gerais;
+- ações excepcionais auditadas.
+
+### GESTAO
+
+Operação da competição:
+
+- inspeção;
+- Sumô;
+- Follow;
+- partidas e resultados operacionais;
+- acompanhamento da edição.
+
+Não cria competição nem executa manutenção estrutural DEV.
+
+### MIDIA
+
+Gestão editorial da Landing:
+
+- upload de mídia;
+- conteúdos/tópicos;
+- slots/janelas;
+- galeria;
+- publicação conforme política a definir.
+
+### PARTICIPANTE
+
+Ownership da própria equipe, competidores, robôs, fotos, inscrições e acompanhamento.
+
+### Estado atual que será substituído
 
 ```text
-inscrição / robô
-    ↓
-tomadas
-    ↓
-tentativas dentro de cada tomada
+UserRole = PARTICIPANTE | ORGANIZACAO
+
+/api/v1/participante/** → PARTICIPANTE
+/api/v1/**              → ORGANIZACAO
 ```
 
-Ranking:
+Arquivos centrais da futura refatoração:
 
 ```text
-1. considerar somente tentativas válidas e concluídas;
-2. calcular tempo final = tempo + penalidade;
-3. selecionar a melhor tentativa de cada tomada;
-4. selecionar a melhor tomada do robô;
-5. ordenar os robôs pelo tempo final da melhor tomada.
+model/Enum/UserRole.java
+config/SecurityConfig.java
+model/UserAccount.java
+service/UserAccountService.java
+controller/UserAccountController.java
+controllers por domínio
 ```
+
+## 4. Distinção importante: usuário × competidor × responsável
+
+```text
+UserAccount
+→ autenticação e role
+
+Competitor
+→ pessoa inscrita como competidor
+→ pertence a uma Team
+→ pode opcionalmente vincular UserAccount
+
+Team.responsibleUser
+→ usuário que possui ownership da equipe no portal
+```
+
+Por isso uma operação DEV de “mover participante” deve deixar claro se transfere:
+
+- `Competitor.team`;
+- responsabilidade da `Team`;
+- ou ambos de forma coordenada.
+
+Não implementar isso como atualização genérica de FK.
+
+## 5. Follow Line
+
+```text
+Registration
+└─ Tomadas
+   └─ Tentativas
+```
+
+Ranking atual:
+
+```text
+válida + concluída + tempo
+→ melhor tentativa da tomada
+→ melhor tomada da inscrição
+→ menor tempo final
+```
+
+```text
+tempoFinal = tempoSegundos + penalidadeSegundos
+```
+
+### Pendente de regra
+
+- impacto oficial de checkpoints;
+- combinações válidas de `concluida`, `valida` e `tempoSegundos=null`;
+- sanções/desclassificações oficiais além do que já é persistido.
+
+Comentários obsoletos de `ConfigFollow` foram removidos e substituídos pela regra implementada.
+
+## 6. Sumô
+
+Motor comum para categorias Mini/3 kg e RC/Autônomo.
+
+```text
+APROVADA
+→ inspeção
+→ chave
+→ partida
+→ rounds
+→ MatchResult automático
+→ progressão
+```
+
+Regras consolidadas:
+
+- `SUICIDIO_WO` = adversário vence o round;
+- 0/1 penalidade = disputa normal;
+- **2 penalidades = derrota automática**;
+- `motivoResultado=PENALIDADES` nesse caso;
+- BYE automático;
+- chave histórica read-only.
+
+Comentários obsoletos de `ConfigSumo` foram removidos e substituídos pela regra implementada.
+
+## 7. Futebol de Robôs — nova modalidade
+
+Requisito recebido:
+
+```text
+2 competidores
+robôs fornecidos pela RAS
+inscrição sem robô próprio
+Team mantida no desenho por enquanto
+```
+
+### Incompatibilidade atual
+
+Hoje:
+
+```text
+Registration.robot                    obrigatório
+ParticipantRegistrationRequest.robotId @NotNull
+RegistrationService                   sempre busca Robot
+unicidade                              competition + category + robot
+```
+
+Portanto a nova modalidade exige migration e estratégia própria de elegibilidade/duplicidade.
+
+Recomendação:
+
+```text
+Modalidade += FUTEBOL
+Registration.robot opcional quando a modalidade permitir
+regra de inscrição por modalidade
+reaproveitar Match/MatchResult onde fizer sentido
+```
+
+### Ainda precisa de decisão
+
+- equipe é obrigatória ou apenas recomendada;
+- como Robô A/B é atribuído;
+- tempo/gols/empate/desempate;
+- formato de chave/grupos;
+- eventual inspeção.
+
+## 8. CMS / Mídia
+
+Já existe base de R2:
+
+```text
+storage/ObjectStorageService.java
+storage/R2ObjectStorageService.java
+config/R2StorageConfiguration.java
+config/R2StorageProperties.java
+```
+
+O fluxo de fotos dos robôs continua separado em storage local:
+
+```text
+RobotImageService
+→ RobotImageStorageService
+```
+
+Estrutura sugerida para CMS:
+
+```text
+MediaAsset
+ContentSlot
+ContentItem
+```
+
+A nova API pública deve fornecer os conteúdos publicados para `landing-page/` e galeria.
+
+## 9. Regras
+
+Área futura com conteúdo oficial para:
+
+- Follow;
+- Sumô;
+- textos específicos de RC/subcategorias;
+- Futebol;
+- ambiente/vestimenta.
+
+Não codificar textos como regra oficial antes de confirmação da organização.
+
+Modelo sugerido:
+
+```text
+RuleContent
+├─ escopo (CATEGORIA | AMBIENTE)
+├─ category opcional
+├─ seção
+├─ título
+├─ conteúdo
+├─ ordem
+├─ ativo
+└─ publicado
+```
+
+Definir depois se edição cabe a DEV, MIDIA ou ambos.
+
+## 10. Ajustes Gerais DEV
+
+Deve substituir operações manuais no banco, porém não será CRUD bruto de tabelas.
+
+Exemplos de services explícitos:
+
+```text
+alterarRole(userId, role)
+transferirCompetidor(competitorId, teamId)
+transferirRobo(robotId, teamId)
+transferirResponsabilidade(teamId, userId)
+corrigirInscricao(...)
+```
+
+Antes de liberar essa área, criar auditoria de ações sensíveis.
+
+## 11. Achados da revisão — prioridade
+
+### P0 manutenção
+
+#### `rascomp/bin/` rastreado
+
+Existe uma árvore antiga com artefatos compilados/cópias de projeto dentro de `rascomp/bin/`.
+
+`.gitignore` já foi atualizado para ignorar `bin/` daqui em diante, porém os arquivos já rastreados ainda precisam ser removidos num commit isolado:
+
+```bash
+git rm -r rascomp/bin
+```
+
+Depois rodar toda a CI.
+
+Também avaliar `.classpath`, `.project` e `.gitkeep` obsoletos já rastreados.
+
+### P1 lógica
+
+1. `RegistrationService.reativar()` não chama `validarInscricoesAbertas()`.
+2. Cancelamento de inscrição pelo participante precisa regra de estado após aprovação/chave/início.
+3. `BracketGenerationService` não restringe explicitamente estados de `Competition` para geração/regeneração.
+4. Alterar `MatchResult` depois que o vencedor já avançou pode deixar próxima fase inconsistente; isso é especialmente crítico antes de FUTEBOL e Ajustes Gerais DEV.
+5. Autorização atual `ORGANIZACAO` é ampla e incompatível com a matriz nova.
+
+### P2 arquitetura/manutenção
+
+1. `AccessPolicyService` hoje trata ownership do participante, apesar do nome genérico; não misturar nele todas as permissões DEV/GESTAO sem reorganização.
+2. Storage R2 e storage local de RobotImage estão paralelos; definir estratégia ao criar CMS.
+3. documentação histórica deve apontar o dossiê mestre como referência.
+
+## 12. Ponto correto já validado: usuário inativo
+
+`UserAccount.isEnabled()` retorna `ativo`, e `JwtService.tokenValido()` exige `usuario.isEnabled()`.
 
 Portanto:
 
-- a unidade competitiva mostrada no ranking é a **melhor tomada**;
-- a tomada é representada pelo resultado da sua melhor tentativa;
-- o histórico deve ser apresentado por tomada, expandindo suas tentativas;
-- checkpoints continuam como dado operacional até confirmação de impacto oficial.
+```text
+DEV/GESTAO desativa conta
+→ token existente deixa de autenticar nas próximas requisições
+```
 
-Configuração atual:
+Essa lógica não precisa ser refeita.
+
+## 13. Migrations
 
 ```text
-ConfigFollow
-├─ numeroTomadas
-├─ tentativasPorTomada
-├─ maxTempoSegundos
-└─ numeroCheckpoints
+V1 schema principal
+V2 inspeção Sumô
+V3 rounds Sumô
+V4 limpeza de schema legado
+V5 usuários/ownership/fotos
+V6 histórico de chaves
+V7 penalidades/motivo de round
 ```
 
-## 3. Regra oficial atual — Sumô
+Próxima alteração estrutural: **V8+**.
 
-### Categorias
+Nunca reescrever migration já aplicada.
 
-`RC`, `AUTÔNOMO`, `MINI` e `3 KG` são tratados como categorias competitivas/configurações, não como motores independentes.
+## 14. Testes
 
-Exemplo:
+Último checkpoint revisado:
 
 ```text
-SUMÔ
-├─ Mini Sumô RC
-├─ Mini Sumô Autônomo
-├─ Sumô 3 kg RC
-└─ Sumô 3 kg Autônomo
+48 testes
+0 falhas
+0 erros
 ```
 
-O isolamento ocorre por:
+CI também inicializa:
 
 ```text
-competitionId + categoryId
+MySQL real
+→ Flyway
+→ testdata
 ```
 
-Um robô híbrido pode possuir inscrições distintas em categorias diferentes e cada uma participa somente da própria chave.
+Novas features devem acrescentar testes especialmente para:
 
-### Rounds
+### Roles
 
-Motor comum:
+- DEV acessa tudo;
+- GESTAO opera evento e não cria competição;
+- MIDIA acessa CMS e não opera competição;
+- PARTICIPANTE mantém ownership;
+- matriz de 403 por área.
 
-- vitória normal;
-- empate;
-- anulação;
-- cancelamento;
-- `SUICIDIO_WO`: derrota do robô que sofreu a ocorrência;
-- penalidades A/B por round;
-- máximo de 2 penalidades por robô/round;
-- **2 penalidades = derrota automática naquele round**.
+### Futebol
 
-Regra de penalidade consolidada:
+- inscrição sem robot;
+- inscrição com team/competidor válidos;
+- duplicidade;
+- chave/partida/resultado;
+- publicação pública.
+
+### Ajustes Gerais
+
+- transferências preservam integridade;
+- operações auditadas;
+- bloqueios em entidades com histórico competitivo.
+
+### CMS
+
+- upload válido/inválido;
+- autorização MIDIA/DEV;
+- publicação/despublicação;
+- ordenação/slots;
+- conteúdo público sanitizado.
+
+## 15. Próxima execução recomendada
 
 ```text
-0 penalidades → disputa normal
-1 penalidade  → disputa normal
-2 penalidades → derrota automática do robô penalizado
+1. remover artefatos versionados em commit isolado
+2. corrigir P1 de Registration/chave/resultado
+3. CI verde
+4. refatorar UserRole + SecurityConfig
+5. implementar permissões por domínio
+6. criar auditoria + Ajustes Gerais
+7. CMS/Mídia
+8. Regras
+9. Futebol
 ```
 
-Ao atingir 2 penalidades:
+## 16. Dossiê mestre
 
-- o status do round é consolidado como `FINALIZADO`;
-- o adversário se torna o vencedor independentemente do vencedor recebido no payload;
-- `motivoResultado = PENALIDADES`;
-- a regra é aplicada no backend e não depende do frontend;
-- um mesmo round não pode terminar com os dois robôs em 2 penalidades, pois a disputa deve encerrar quando um deles recebe a segunda.
-
-O backend continua responsável por:
+Mapa completo cross-repo, incluindo “quero alterar X, onde mexo?” e arquitetura da Landing:
 
 ```text
-rounds
-→ fechamento da partida
-→ MatchResult
-→ vencedor
-→ progressão
-→ campeão
+Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
 ```
 
-### Chaves
-
-- geração usa apenas inscrições aprovadas/ativas e aptas;
-- tamanho é a próxima potência de dois;
-- BYE é resolvido automaticamente;
-- chave nova substitui a vigente sem apagar a anterior;
-- chave histórica não aceita alterações;
-- API pública mostra apenas a chave vigente/ativa.
-
-## 4. Ativo / inativo
-
-A desativação é lógica e deve preservar histórico.
-
-### Usuários
-
-Já existe suporte administrativo:
-
-```text
-GET   /api/v1/usuarios?role=PARTICIPANTE|ORGANIZACAO
-PATCH /api/v1/usuarios/{id}/ativo?ativo=true|false
-```
-
-### Equipes
-
-```text
-DELETE /api/v1/equipes/{id}          → desativa
-PATCH  /api/v1/equipes/{id}/reativar → reativa
-```
-
-### Robôs
-
-```text
-DELETE /api/v1/robos/{id}          → desativa
-PATCH  /api/v1/robos/{id}/reativar → reativa
-```
-
-A interface ADMIN expõe esses controles sem apagar inscrições, partidas ou resultados históricos.
-
-## 5. Fotos dos robôs
-
-Fluxo consolidado:
-
-```text
-Robot
-  ↓
-RobotImage (0..N)
-  ↓
-uma foto principal
-```
-
-Backend:
-
-- JPEG/PNG/WEBP;
-- assinatura real validada;
-- 5 MB;
-- storage local configurável;
-- ownership participante;
-- leitura pública;
-- principal + galeria.
-
-Configuração:
-
-```text
-ROBOT_IMAGES_DIR
-padrão: ./uploads/robots
-```
-
-Uso esperado nos clientes:
-
-- portal participante: upload/galeria;
-- operação Follow: foto do robô da tomada;
-- arena Sumô: fotos dos dois adversários;
-- landing futura: cards e resultados públicos.
-
-## 6. Profile de demonstração
-
-Ativar:
-
-```powershell
-$env:SPRING_PROFILES_ACTIVE="testdata"
-.\mvnw spring-boot:run
-```
-
-`application-testdata.properties` habilita:
-
-```text
-bracket-history seed
-follow-line seed
-demo-showcase seed
-```
-
-### Usuários demo
-
-```text
-ORGANIZAÇÃO
-organizacao.demo@rascomp.local
-Rascomp@2026
-
-PARTICIPANTE
-lider.demo@rascomp.local
-Rascomp@2026
-```
-
-### Edição ao vivo
-
-```text
-RRC 2026 · Demonstração ao vivo
-```
-
-Estado preparado:
-
-- competição EM_ANDAMENTO;
-- datas relativas a hoje para demonstrar progresso ~50%;
-- aprovadas + 3 pendentes + 1 rejeitada;
-- Follow com ranking pré-carregado;
-- Chronos Demo com Tomadas 1 e 2 preenchidas e Tomada 3 livre;
-- Sumô de 8 robôs parcialmente avançado;
-- Titan Demo já venceu uma partida;
-- exemplos de penalidade e Suicídio/WO;
-- 3 kg com 10 robôs para demonstrar chave 16 + 6 BYEs;
-- fotos demo de Chronos e Titan.
-
-### Edição histórica
-
-```text
-RRC 2025 · Histórico completo
-```
-
-Estado preparado:
-
-- FINALIZADA;
-- 32 robôs;
-- 31 partidas;
-- 16 avos → oitavas → quartas → semifinal → final;
-- resultados consolidados;
-- exemplo de WO e penalidade.
-
-## 7. Bateria de testes
-
-Cobertura atual relevante:
-
-```text
-AccessPolicy / ownership                   ✅
-UserAccount                                ✅
-Team ownership                             ✅
-Registration ownership                    ✅
-Aprovação/rejeição + reviewer              ✅
-CompetitionCategory                       ✅
-Inspeção Sumô                              ✅
-Bracket generation                         ✅
-Bracket history / current                  ✅
-Bracket 32 participantes                   ✅
-Bracket 10 participantes / 6 BYEs          ✅
-Match                                      ✅
-MatchResult                                ✅
-Round Sumô                                 ✅
-Penalidade 0..2                            ✅
-2 penalidades → derrota automática         ✅
-Payload com vencedor incorreto é corrigido ✅
-2 penalidades para os dois lados rejeitado ✅
-Suicídio/WO                                ✅
-Fechamento por vitórias                    ✅
-Bloqueio de round histórico                ✅
-Tentativa Follow                           ✅
-Duplicidade tomada/tentativa               ✅
-Limites tomada/tentativa/checkpoint        ✅
-Tempo > máximo → inválida                  ✅
-Penalidade no tempo final                  ✅
-Ranking melhor tomada                      ✅
-```
-
-## 8. API participante — extensão atual
-
-Além da gestão de equipe/competidores/robôs/inscrições/fotos, o participante pode consultar o próprio histórico competitivo de Follow com ownership:
-
-```text
-GET /api/v1/participante/inscricoes/{registrationId}/tentativas-follow
-GET /api/v1/participante/inscricoes/{registrationId}/config-follow
-```
-
-A visualização de Sumô pode usar as projeções públicas de chave/resultados, sem expor endpoints administrativos.
-
-## 9. Próximos passos após a demonstração
-
-Ordem recomendada:
-
-```text
-1. fazer smoke test local na máquina da apresentação
-2. consolidar visual/técnico do ADMIN
-3. confirmar impacto oficial de checkpoints Follow
-4. concluir funcionalidades de participante
-5. implementar fluxo real de convite/entrada em equipe
-6. revisar upload/gestão de múltiplas fotos no participante
-7. iniciar Landing Page RAS UFRB + RRC
-```
-
-## 10. Cuidados
-
-- não criar regra competitiva somente no frontend;
-- não misturar categorias de Sumô;
-- não apagar chaves históricas ao regenerar;
-- não permitir PARTICIPANTE alterar resultado oficial;
-- não versionar uploads ou segredos;
-- migrations futuras entram em `V8+`;
-- seed `testdata` nunca deve ser habilitado em produção.
+Atualizar esse documento quando responsabilidades arquiteturais mudarem.
