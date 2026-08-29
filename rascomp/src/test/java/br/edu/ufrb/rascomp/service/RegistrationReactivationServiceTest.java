@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -101,6 +102,7 @@ class RegistrationReactivationServiceTest {
         registration.setCategory(category);
         registration.setTeam(team);
         registration.setRobot(robot);
+        registration.setCompetitors(new LinkedHashSet<>());
         registration.setStatus(StatusRegistration.CANCELADA);
         registration.setAtivo(false);
         registration.setReviewedByUser(reviewer);
