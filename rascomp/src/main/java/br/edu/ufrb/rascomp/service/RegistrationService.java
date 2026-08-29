@@ -149,6 +149,7 @@ public class RegistrationService {
         validarDisponibilidade(
                 registration.getCompetition(), registration.getCategory(),
                 registration.getTeam(), registration.getRobot());
+        validarInscricoesAbertas(registration.getCompetition());
         registration.setAtivo(true);
         registration.setStatus(StatusRegistration.PENDENTE);
         registration.setReviewedByUser(null);
