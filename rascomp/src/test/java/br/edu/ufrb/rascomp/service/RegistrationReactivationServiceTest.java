@@ -109,11 +109,12 @@ class RegistrationReactivationServiceTest {
         registration.setReviewedAt(LocalDateTime.now().minusDays(1));
 
         when(registrationRepository.findById(6L)).thenReturn(Optional.of(registration));
-        when(registrationRepository.save(any(Registration.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
     void deveReativarQuandoInscricoesEstaoAbertasEDentroDaJanela() {
+        when(registrationRepository.save(any(Registration.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
         RegistrationDTO result = service.reativar(6L);
 
         assertTrue(result.getAtivo());
