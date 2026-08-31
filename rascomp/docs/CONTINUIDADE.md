@@ -1,93 +1,175 @@
-# Continuidade do Projeto — RasComp
+# Continuidade — RasComp Backend
 
-Última atualização: **26/08/2026 — pós-aprovação da apresentação**
+Última atualização: **31/08/2026**
 
-## 1. Marco atual
+Este arquivo registra o **checkpoint funcional do backend**. Ele não define um roadmap próprio.
 
-O projeto foi apresentado à equipe e aprovado. O backend atual forma uma base funcional para operação do RRC e agora entra em fase de **estabilização + evolução de governança**.
+Planejamento canônico cross-repo:
+
+```text
+gbsalermo/Rascomp-FRONT
+docs/ETAPAS_POS_PROJETO.md
+```
+
+Dossiê arquitetural canônico:
+
+```text
+gbsalermo/Rascomp-FRONT
+docs/DOSSIE_PROJETO_RASCOMP.md
+```
+
+Índice/hierarquia da documentação:
+
+```text
+gbsalermo/Rascomp-FRONT
+docs/README.md
+```
+
+---
+
+# 1. Marco atual
+
+O RasComp foi apresentado e aprovado. O backend forma uma base funcional do RRC e está agora no ciclo de estabilização pós-projeto.
+
+Estado oficial:
+
+```text
+ETAPA 0  ✅ concluída / validada
+ETAPA 1  🚧 atual — correções de lógica e riscos
+ETAPA 2+ ⏳ não iniciadas
+```
+
+Não iniciar ETAPA 2 ou refatorações estruturais amplas antes da validação da ETAPA 1.
+
+---
+
+# 2. Estado funcional conhecido
 
 ```text
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
 MYSQL + FLYWAY V1–V7                     ✅
+COMPETIÇÕES                              ✅
+EQUIPES / COMPETIDORES / ROBÔS           ✅
 INSCRIÇÕES + REVISÃO                     ✅
-FOLLOW LINE                              ✅
-SUMÔ                                     ✅
-2 PENALIDADES = DERROTA DO ROUND         ✅
-HISTÓRICO DE CHAVES                      ✅
 FOTOS DOS ROBÔS                          ✅
+FOLLOW LINE                              ✅
+RANKING FOLLOW                           ✅
+SUMÔ / INSPEÇÃO / ROUNDS                 ✅
+2 PENALIDADES = DERROTA DO ROUND         ✅
+SUICÍDIO/WO                              ✅
+CHAVES / BYE / PROGRESSÃO                ✅
+HISTÓRICO DE CHAVES                      ✅
 API PARTICIPANTE                         ✅ base funcional
 API PÚBLICA                              ✅
-TESTES AUTOMATIZADOS                     ✅ 48 / 48
-PROFILE TESTDATA                         ✅ MySQL + Flyway na CI
+PROFILE TESTDATA                         ✅
 ```
 
-## 2. Roadmap pós-aprovação
+Último checkpoint automatizado documentado:
 
 ```text
-0. ESTABILIZAÇÃO / CORREÇÕES DA REVISÃO
-1. PERMISSÕES: DEV | GESTAO | MIDIA | PARTICIPANTE
-2. AJUSTES GERAIS DEV + AUDITORIA
-3. CMS / MÍDIA
-4. REGRAS
-5. FUTEBOL DE ROBÔS
-6. PARTICIPANTE COMPLETO
-7. CONSOLIDAÇÃO LANDING/GALERIA
+48 testes
+0 falhas
+0 erros
+0 skipped
+
+MySQL + Flyway + testdata ✅
 ```
 
-Não iniciar Mídia/Futebol antes de definir a nova matriz de autorização no backend.
+Não presumir que a contagem continua igual após mudanças futuras; atualizar somente depois de uma execução real.
 
-## 3. Permissões aprovadas
+---
 
-### DEV
-
-Acesso total e estrutural:
-
-- criar/editar/desativar competição;
-- alterar roles;
-- manutenção de inscrições;
-- transferir competidor entre equipes;
-- transferir robô entre equipes;
-- trocar responsável da equipe;
-- Ajustes Gerais;
-- ações excepcionais auditadas.
-
-### GESTAO
-
-Operação da competição:
-
-- inspeção;
-- Sumô;
-- Follow;
-- partidas e resultados operacionais;
-- acompanhamento da edição.
-
-Não cria competição nem executa manutenção estrutural DEV.
-
-### MIDIA
-
-Gestão editorial da Landing:
-
-- upload de mídia;
-- conteúdos/tópicos;
-- slots/janelas;
-- galeria;
-- publicação conforme política a definir.
-
-### PARTICIPANTE
-
-Ownership da própria equipe, competidores, robôs, fotos, inscrições e acompanhamento.
-
-### Estado atual que será substituído
+# 3. Stack e estrutura
 
 ```text
-UserRole = PARTICIPANTE | ORGANIZACAO
+Java 21
+Spring Boot 3.5.x
+Spring Security + JWT + BCrypt
+JPA / Hibernate
+MySQL
+Flyway
+Maven
+Swagger/OpenAPI
+Cloudflare R2 preparado para mídia futura
+```
 
+Código:
+
+```text
+rascomp/src/main/java/br/edu/ufrb/rascomp/
+```
+
+Pacotes principais:
+
+```text
+config
+controller
+dto
+exception
+model
+repository
+security
+service
+storage
+teste
+```
+
+---
+
+# 4. Migrations
+
+```text
+V1 — schema competitivo principal
+V2 — inspeções de Sumô
+V3 — rounds de Sumô
+V4 — remoção/limpeza de schema legado de Follow/chaves
+V5 — usuários / ownership / fotos
+V6 — histórico de chaves
+V7 — regras estendidas de round/penalidades
+```
+
+Regra congelada:
+
+```text
+V1–V7 nunca são reescritas
+próxima mudança estrutural = V8+
+```
+
+Em 31/08/2026 ainda não existe migration V8 no branch principal.
+
+---
+
+# 5. Segurança atual
+
+Modelo implementado:
+
+```text
+UserRole
+├─ PARTICIPANTE
+└─ ORGANIZACAO
+```
+
+Política predominante:
+
+```text
+/api/v1/public/**       → público
 /api/v1/participante/** → PARTICIPANTE
 /api/v1/**              → ORGANIZACAO
 ```
 
-Arquivos centrais da futura refatoração:
+A nova matriz:
+
+```text
+DEV
+GESTAO
+MIDIA
+PARTICIPANTE
+```
+
+é uma decisão aprovada para a **ETAPA 3** e ainda não está implementada.
+
+Arquivos centrais futuros:
 
 ```text
 model/Enum/UserRole.java
@@ -98,30 +180,136 @@ controller/UserAccountController.java
 controllers por domínio
 ```
 
-## 4. Distinção importante: usuário × competidor × responsável
+Conta inativa já está protegida corretamente: `JwtService.tokenValido()` depende de `usuario.isEnabled()`.
+
+---
+
+# 6. Distinção de domínio crítica
 
 ```text
 UserAccount
-→ autenticação e role
+→ autenticação / role / ativo
 
 Competitor
-→ pessoa inscrita como competidor
-→ pertence a uma Team
-→ pode opcionalmente vincular UserAccount
+→ pessoa que compete
+→ pertence a Team
+→ pode vincular UserAccount
 
 Team.responsibleUser
-→ usuário que possui ownership da equipe no portal
+→ usuário responsável pela equipe no portal
 ```
 
-Por isso uma operação DEV de “mover participante” deve deixar claro se transfere:
+Não implementar movimentações administrativas como troca genérica de FK.
 
-- `Competitor.team`;
-- responsabilidade da `Team`;
-- ou ambos de forma coordenada.
+Futuros Ajustes Gerais devem separar:
 
-Não implementar isso como atualização genérica de FK.
+```text
+transferirCompetidor
+transferirResponsabilidade
+transferirRobo
+alterarRole
+```
 
-## 5. Follow Line
+---
+
+# 7. Registration
+
+Modelo atual:
+
+```text
+Registration
+├─ Competition obrigatória
+├─ CompetitionCategory obrigatória
+├─ Team obrigatória
+├─ Robot obrigatório
+├─ Competitor(s)
+├─ status
+├─ requestedByUser
+├─ reviewedByUser
+└─ ativo
+```
+
+Unicidade atual:
+
+```text
+competition + category + robot
+```
+
+Arquivos:
+
+```text
+model/Registration.java
+dto/RegistrationDTO.java
+dto/ParticipantRegistrationRequest.java
+controller/RegistrationController.java
+service/RegistrationService.java
+repository/RegistrationRepository.java
+service/ParticipantPortalService.java
+```
+
+---
+
+# 8. ETAPA 1 — riscos atuais que ainda precisam ser fechados
+
+A ETAPA 1 está em andamento. Não registrar estes itens como corrigidos até implementação + testes + validação.
+
+## 8.1 Reativação
+
+Problema confirmado:
+
+```text
+RegistrationService.reativar()
+→ reativa Registration como PENDENTE
+→ não chama validarInscricoesAbertas()
+```
+
+Risco: reativação fora da janela de inscrição.
+
+## 8.2 Cancelamento
+
+Precisa regra explícita para cancelamento após:
+
+- aprovação;
+- geração de chave;
+- início da competição;
+- geração de histórico competitivo.
+
+Ownership existe, mas não resolve sozinho a consistência do estado.
+
+## 8.3 Chave
+
+`BracketGenerationService` precisa restringir explicitamente os estados de `Competition` válidos para geração/regeneração.
+
+## 8.4 MatchResult após progressão
+
+Alterar um vencedor depois de ele alimentar a próxima fase pode corromper a árvore.
+
+Decidir e implementar:
+
+```text
+bloqueio
+ou
+rollback/reprocessamento explícito
+```
+
+## 8.5 Follow
+
+Formalizar combinações válidas de:
+
+```text
+concluida
+valida
+tempoSegundos
+checkpointsAlcancados
+```
+
+O impacto de checkpoints no ranking ainda depende do regulamento oficial.
+
+---
+
+# 9. Follow Line
+
+Domínio:
 
 ```text
 Registration
@@ -142,25 +330,21 @@ válida + concluída + tempo
 tempoFinal = tempoSegundos + penalidadeSegundos
 ```
 
-### Pendente de regra
+`checkpointsAlcancados` é persistido/exibido, mas não altera ranking atualmente.
 
-- impacto oficial de checkpoints;
-- combinações válidas de `concluida`, `valida` e `tempoSegundos=null`;
-- sanções/desclassificações oficiais além do que já é persistido.
+---
 
-Comentários obsoletos de `ConfigFollow` foram removidos e substituídos pela regra implementada.
+# 10. Sumô
 
-## 6. Sumô
-
-Motor comum para categorias Mini/3 kg e RC/Autônomo.
+Fluxo atual:
 
 ```text
-APROVADA
-→ inspeção
+Registration APROVADA
+→ inspeção apta
 → chave
 → partida
 → rounds
-→ MatchResult automático
+→ MatchResult
 → progressão
 ```
 
@@ -168,57 +352,30 @@ Regras consolidadas:
 
 - `SUICIDIO_WO` = adversário vence o round;
 - 0/1 penalidade = disputa normal;
-- **2 penalidades = derrota automática**;
+- **2 penalidades = derrota automática do round**;
 - `motivoResultado=PENALIDADES` nesse caso;
 - BYE automático;
 - chave histórica read-only.
 
-Comentários obsoletos de `ConfigSumo` foram removidos e substituídos pela regra implementada.
-
-## 7. Futebol de Robôs — nova modalidade
-
-Requisito recebido:
+Categorias compartilham o motor e se isolam por:
 
 ```text
-2 competidores
-robôs fornecidos pela RAS
-inscrição sem robô próprio
-Team mantida no desenho por enquanto
+competitionId + categoryId
 ```
 
-### Incompatibilidade atual
+---
 
-Hoje:
+# 11. Fotos e storage
+
+Fotos de robô hoje:
 
 ```text
-Registration.robot                    obrigatório
-ParticipantRegistrationRequest.robotId @NotNull
-RegistrationService                   sempre busca Robot
-unicidade                              competition + category + robot
+RobotImageService
+→ RobotImageStorageService
+→ ./uploads/robots
 ```
 
-Portanto a nova modalidade exige migration e estratégia própria de elegibilidade/duplicidade.
-
-Recomendação:
-
-```text
-Modalidade += FUTEBOL
-Registration.robot opcional quando a modalidade permitir
-regra de inscrição por modalidade
-reaproveitar Match/MatchResult onde fizer sentido
-```
-
-### Ainda precisa de decisão
-
-- equipe é obrigatória ou apenas recomendada;
-- como Robô A/B é atribuído;
-- tempo/gols/empate/desempate;
-- formato de chave/grupos;
-- eventual inspeção.
-
-## 8. CMS / Mídia
-
-Já existe base de R2:
+Em paralelo existe:
 
 ```text
 storage/ObjectStorageService.java
@@ -227,14 +384,59 @@ config/R2StorageConfiguration.java
 config/R2StorageProperties.java
 ```
 
-O fluxo de fotos dos robôs continua separado em storage local:
+A abstração R2 será reaproveitada pelo futuro CMS/Mídia. Não criar terceiro mecanismo de upload.
+
+---
+
+# 12. Dívida técnica reservada para ETAPA 2
+
+Em 31/08/2026 o repositório ainda contém:
 
 ```text
-RobotImageService
-→ RobotImageStorageService
+rascomp/bin/
 ```
 
-Estrutura sugerida para CMS:
+com árvore antiga/artefatos versionados. `.gitignore` já impede novos `bin/`, mas os arquivos rastreados continuam no branch principal.
+
+A remoção deve ocorrer na ETAPA 2, em commit isolado, seguida de CI.
+
+Também avaliar nessa etapa:
+
+```text
+.classpath
+.project
+.gitkeep desnecessários
+TODOs/comentários antigos
+código morto/duplicado
+```
+
+Não usar a existência dessa pendência para antecipar ETAPA 2 enquanto ETAPA 1 não estiver validada.
+
+---
+
+# 13. Evoluções já aprovadas, mas ainda não iniciadas
+
+A sequência oficial está somente no roadmap canônico. Para contexto técnico:
+
+## ETAPA 3 — roles
+
+```text
+DEV | GESTAO | MIDIA | PARTICIPANTE
+```
+
+## ETAPA 4 — avisos
+
+IN_APP persistido como fonte de verdade; Telegram complementar no futuro.
+
+## ETAPA 5 — Ajustes Gerais + auditoria
+
+Operações de domínio explícitas, não CRUD bruto/SQL.
+
+## ETAPA 6 — portabilidade
+
+Uma instalação por instituição organizadora. Não é multi-tenant.
+
+## ETAPA 7 — CMS/Mídia
 
 ```text
 MediaAsset
@@ -242,183 +444,91 @@ ContentSlot
 ContentItem
 ```
 
-A nova API pública deve fornecer os conteúdos publicados para `landing-page/` e galeria.
+Usar `ObjectStorageService`/R2.
 
-## 9. Regras
+## ETAPA 8 — Regras
 
-Área futura com conteúdo oficial para:
+Conteúdo oficial de Follow, Sumô, Futebol e ambiente/vestimenta.
 
-- Follow;
-- Sumô;
-- textos específicos de RC/subcategorias;
-- Futebol;
-- ambiente/vestimenta.
+## ETAPA 9 — Futebol de Robôs
 
-Não codificar textos como regra oficial antes de confirmação da organização.
+Hoje o schema é incompatível porque `Registration.robot`/`robotId` são obrigatórios.
 
-Modelo sugerido:
+A solução deverá permitir legitimamente inscrição sem robô próprio conforme modalidade. **Não criar robô fake.**
+
+## ETAPA 10 — participante completo
+
+Inclui identificador competitivo por `Registration` aprovada.
+
+## ETAPA 12–14
+
+Hardening → testes manuais → deploy cloud.
+
+---
+
+# 14. Futebol — decisões ainda abertas
+
+Antes de modelar/migrar:
+
+- Team obrigatória ou não;
+- como os robôs da organização são atribuídos;
+- tempo/placar;
+- empate/desempate;
+- formato competitivo;
+- inspeção/penalidades.
+
+---
+
+# 15. Executar localmente
+
+```powershell
+cd rascomp
+.\mvnw spring-boot:run
+```
+
+Variáveis principais:
 
 ```text
-RuleContent
-├─ escopo (CATEGORIA | AMBIENTE)
-├─ category opcional
-├─ seção
-├─ título
-├─ conteúdo
-├─ ordem
-├─ ativo
-└─ publicado
+DB_URL
+DB_USERNAME
+DB_PASSWORD
+JWT_SECRET
+ROBOT_IMAGES_DIR
+R2_ENABLED
+R2_*
 ```
 
-Definir depois se edição cabe a DEV, MIDIA ou ambos.
+Profile de demonstração/testdata:
 
-## 10. Ajustes Gerais DEV
+```powershell
+$env:SPRING_PROFILES_ACTIVE="testdata"
+.\mvnw spring-boot:run
+```
 
-Deve substituir operações manuais no banco, porém não será CRUD bruto de tabelas.
+`testdata` é opt-in e não deve ser habilitado em produção.
 
-Exemplos de services explícitos:
+Swagger:
 
 ```text
-alterarRole(userId, role)
-transferirCompetidor(competitorId, teamId)
-transferirRobo(robotId, teamId)
-transferirResponsabilidade(teamId, userId)
-corrigirInscricao(...)
+http://localhost:8080/swagger-ui/index.html
 ```
 
-Antes de liberar essa área, criar auditoria de ações sensíveis.
+---
 
-## 11. Achados da revisão — prioridade
-
-### P0 manutenção
-
-#### `rascomp/bin/` rastreado
-
-Existe uma árvore antiga com artefatos compilados/cópias de projeto dentro de `rascomp/bin/`.
-
-`.gitignore` já foi atualizado para ignorar `bin/` daqui em diante, porém os arquivos já rastreados ainda precisam ser removidos num commit isolado:
-
-```bash
-git rm -r rascomp/bin
-```
-
-Depois rodar toda a CI.
-
-Também avaliar `.classpath`, `.project` e `.gitkeep` obsoletos já rastreados.
-
-### P1 lógica
-
-1. `RegistrationService.reativar()` não chama `validarInscricoesAbertas()`.
-2. Cancelamento de inscrição pelo participante precisa regra de estado após aprovação/chave/início.
-3. `BracketGenerationService` não restringe explicitamente estados de `Competition` para geração/regeneração.
-4. Alterar `MatchResult` depois que o vencedor já avançou pode deixar próxima fase inconsistente; isso é especialmente crítico antes de FUTEBOL e Ajustes Gerais DEV.
-5. Autorização atual `ORGANIZACAO` é ampla e incompatível com a matriz nova.
-
-### P2 arquitetura/manutenção
-
-1. `AccessPolicyService` hoje trata ownership do participante, apesar do nome genérico; não misturar nele todas as permissões DEV/GESTAO sem reorganização.
-2. Storage R2 e storage local de RobotImage estão paralelos; definir estratégia ao criar CMS.
-3. documentação histórica deve apontar o dossiê mestre como referência.
-
-## 12. Ponto correto já validado: usuário inativo
-
-`UserAccount.isEnabled()` retorna `ativo`, e `JwtService.tokenValido()` exige `usuario.isEnabled()`.
-
-Portanto:
+# 16. Como outra IA deve continuar o backend
 
 ```text
-DEV/GESTAO desativa conta
-→ token existente deixa de autenticar nas próximas requisições
+1. ler Rascomp-FRONT/docs/README.md
+2. conferir ETAPA atual em ETAPAS_POS_PROJETO.md
+3. ler o Dossiê Mestre
+4. usar este arquivo como checkpoint do backend
+5. verificar o código atual antes de concluir qualquer coisa
+6. trabalhar somente na etapa atual
+7. criar/ajustar testes junto com regras
+8. migration nova somente V8+
+9. manter modo local
+10. atualizar documentação ao encerrar o checkpoint
+11. parar e aguardar validação antes de avançar
 ```
 
-Essa lógica não precisa ser refeita.
-
-## 13. Migrations
-
-```text
-V1 schema principal
-V2 inspeção Sumô
-V3 rounds Sumô
-V4 limpeza de schema legado
-V5 usuários/ownership/fotos
-V6 histórico de chaves
-V7 penalidades/motivo de round
-```
-
-Próxima alteração estrutural: **V8+**.
-
-Nunca reescrever migration já aplicada.
-
-## 14. Testes
-
-Último checkpoint revisado:
-
-```text
-48 testes
-0 falhas
-0 erros
-```
-
-CI também inicializa:
-
-```text
-MySQL real
-→ Flyway
-→ testdata
-```
-
-Novas features devem acrescentar testes especialmente para:
-
-### Roles
-
-- DEV acessa tudo;
-- GESTAO opera evento e não cria competição;
-- MIDIA acessa CMS e não opera competição;
-- PARTICIPANTE mantém ownership;
-- matriz de 403 por área.
-
-### Futebol
-
-- inscrição sem robot;
-- inscrição com team/competidor válidos;
-- duplicidade;
-- chave/partida/resultado;
-- publicação pública.
-
-### Ajustes Gerais
-
-- transferências preservam integridade;
-- operações auditadas;
-- bloqueios em entidades com histórico competitivo.
-
-### CMS
-
-- upload válido/inválido;
-- autorização MIDIA/DEV;
-- publicação/despublicação;
-- ordenação/slots;
-- conteúdo público sanitizado.
-
-## 15. Próxima execução recomendada
-
-```text
-1. remover artefatos versionados em commit isolado
-2. corrigir P1 de Registration/chave/resultado
-3. CI verde
-4. refatorar UserRole + SecurityConfig
-5. implementar permissões por domínio
-6. criar auditoria + Ajustes Gerais
-7. CMS/Mídia
-8. Regras
-9. Futebol
-```
-
-## 16. Dossiê mestre
-
-Mapa completo cross-repo, incluindo “quero alterar X, onde mexo?” e arquitetura da Landing:
-
-```text
-Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
-```
-
-Atualizar esse documento quando responsabilidades arquiteturais mudarem.
+Para a ETAPA 1 atual, a prioridade é integridade de `Registration`, estado competitivo de chaves/resultados e regras válidas do Follow — não novas features.
