@@ -1,12 +1,35 @@
-# RasComp — Plataforma de Gestão do RRC
+# RasComp — Backend da Plataforma de Gestão do RRC
 
-Backend da plataforma **RasComp**, usada para organizar e publicar as competições de robótica da **RAS UFRB**.
+Backend da plataforma **RasComp**, utilizada para organizar e publicar competições de robótica da RAS UFRB.
 
 ```text
-RAS UFRB = organização
+RAS UFRB = organização / capítulo estudantil
 RRC      = evento/competição
 RasComp  = plataforma de software
 ```
+
+---
+
+## Estado atual — 31/08/2026
+
+O projeto foi apresentado e aprovado. O ciclo atual é de estabilização antes das novas funcionalidades.
+
+```text
+ETAPA 0 — baseline/congelamento       ✅ concluída / validada
+ETAPA 1 — correções de lógica         🚧 etapa atual
+ETAPA 2+                              ⏳ não iniciadas
+```
+
+A ordem completa **não é mantida neste README**. O roadmap canônico cross-repo está em:
+
+```text
+gbsalermo/Rascomp-FRONT
+docs/ETAPAS_POS_PROJETO.md
+```
+
+Não avançar de etapa sem validação explícita.
+
+---
 
 ## Stack
 
@@ -20,7 +43,9 @@ RasComp  = plataforma de software
 - Swagger/OpenAPI
 - Cloudflare R2 preparado para mídia futura
 
-## Estado atual
+---
+
+## Estado funcional conhecido
 
 ```text
 Autenticação / JWT                     ✅
@@ -41,7 +66,7 @@ API participante                       ✅ base funcional
 Testdata/demo                          ✅
 ```
 
-Último checkpoint automatizado revisado:
+Último checkpoint automatizado documentado:
 
 ```text
 48 testes
@@ -49,13 +74,57 @@ Testdata/demo                          ✅
 0 errors
 0 skipped
 
-Demo profile:
 MySQL + Flyway + testdata ✅
 ```
 
-## Arquitetura de acesso atual
+Esse número é um checkpoint, não uma garantia permanente. Atualizar somente após nova execução real.
 
-O modelo atual ainda é legado e será refatorado:
+---
+
+## Arquitetura
+
+Código principal:
+
+```text
+rascomp/src/main/java/br/edu/ufrb/rascomp/
+```
+
+Fluxo predominante:
+
+```text
+Controller
+→ DTO
+→ Service
+→ Repository
+→ MySQL
+```
+
+O backend é a fonte de verdade para:
+
+- autorização;
+- ownership;
+- elegibilidade;
+- ranking;
+- inspeção;
+- BYE;
+- vencedor;
+- progressão;
+- campeão;
+- resultado competitivo.
+
+O frontend pode refletir uma regra para UX, mas não substituí-la.
+
+---
+
+## Segurança atual
+
+O modelo implementado ainda é legado:
+
+```text
+UserRole
+├─ PARTICIPANTE
+└─ ORGANIZACAO
+```
 
 ```text
 /api/v1/public/**       → público
@@ -63,37 +132,79 @@ O modelo atual ainda é legado e será refatorado:
 /api/v1/**              → ORGANIZACAO
 ```
 
-Roles atuais:
-
-```text
-PARTICIPANTE
-ORGANIZACAO
-```
-
-## Matriz de permissões aprovada para a próxima fase
+A matriz aprovada para a **ETAPA 3** é:
 
 ```text
 DEV
-├─ acesso total
-├─ criar/alterar competição
-├─ permissões
-├─ manutenção estrutural
-└─ Ajustes Gerais
-
 GESTAO
-├─ operação de Follow
-├─ operação de Sumô
-├─ inspeção/partidas/resultados operacionais
-└─ sem criação de competição/manutenção estrutural
-
 MIDIA
-└─ conteúdo e mídia da Landing
-
 PARTICIPANTE
-└─ própria equipe/robôs/inscrições/acompanhamento
 ```
 
-A autorização será aplicada no backend por endpoint/operação; esconder tela no frontend não substitui segurança.
+Ela ainda não está implementada.
+
+A conta desativada já é invalidada corretamente porque o JWT é validado junto com `usuario.isEnabled()`.
+
+---
+
+## Migrations
+
+```text
+V1 — schema competitivo principal
+V2 — inspeções de Sumô
+V3 — rounds de Sumô
+V4 — limpeza/remoção de estrutura legada de Follow/chaves
+V5 — usuários / ownership / fotos
+V6 — histórico de chaves
+V7 — regras estendidas de round/penalidades
+```
+
+Regra:
+
+```text
+V1–V7 nunca são reescritas
+próxima mudança estrutural = V8+
+```
+
+---
+
+## ETAPA 1 — riscos em tratamento
+
+A etapa atual existe para fechar integridade antes de novas features.
+
+### Registration
+
+`RegistrationService.reativar()` ainda precisa impedir reativação indevida fora da janela de inscrições.
+
+Também falta política explícita de cancelamento depois de:
+
+- aprovação;
+- geração de chave;
+- início da competição;
+- histórico competitivo.
+
+### Chaves
+
+`BracketGenerationService` precisa trabalhar apenas com estados de `Competition` explicitamente permitidos para geração/regeneração.
+
+### MatchResult
+
+Alterar vencedor depois que ele já avançou pode deixar a próxima fase inconsistente. A correção deve usar bloqueio ou rollback/reprocessamento explícito.
+
+### Follow
+
+Precisam ser formalizadas as combinações válidas de:
+
+```text
+concluida
+valida
+tempoSegundos
+checkpointsAlcancados
+```
+
+O impacto oficial de checkpoints continua pendente de regulamento.
+
+---
 
 ## Follow Line
 
@@ -105,24 +216,30 @@ Registration
    └─ Tentativas
 ```
 
-Ranking:
+Ranking atual:
 
 ```text
 tentativas válidas + concluídas + com tempo
-→ melhor tentativa de cada tomada
-→ melhor tomada da inscrição/robô
-→ ranking por menor tempo final
+→ melhor tentativa da tomada
+→ melhor tomada da inscrição
+→ menor tempo final
 ```
 
 ```text
 tempo final = tempo bruto + penalidade
 ```
 
-`checkpointsAlcancados` permanece como dado operacional enquanto o regulamento não definir impacto oficial.
+`checkpointsAlcancados` é persistido/exibido, mas não altera ranking atualmente.
+
+---
 
 ## Sumô
 
-Categorias como Mini/3 kg e RC/Autônomo usam o mesmo motor de Sumô e ficam isoladas por `competitionId + categoryId`.
+Categorias usam o mesmo motor e ficam isoladas por:
+
+```text
+competitionId + categoryId
+```
 
 Fluxo:
 
@@ -132,45 +249,24 @@ Registration APROVADA
 → Bracket
 → Match
 → RoundSumo
-→ MatchResult automático
+→ MatchResult
 → progressão
 ```
 
 Regras atuais relevantes:
 
 - rounds configuráveis;
-- vitórias necessárias configuráveis;
-- round adicional quando permitido;
 - BYE automático;
 - Suicídio/WO = vitória do adversário;
-- penalidades A/B;
-- **2 penalidades no mesmo round = derrota automática**;
-- chave histórica somente leitura.
+- 0/1 penalidade = disputa normal;
+- **2 penalidades = derrota automática do round**;
+- histórico de chaves somente leitura.
 
-## Nova modalidade aprovada: Futebol de Robôs
+---
 
-Planejada para a próxima evolução.
+## Fotos e storage
 
-Características recebidas:
-
-- dois competidores;
-- robôs fornecidos pela RAS;
-- inscrição sem robô próprio;
-- equipe permanece no desenho por enquanto;
-- vencedor por confronto.
-
-O schema atual **não suporta isso sem migration**, pois `Registration.robot` e `ParticipantRegistrationRequest.robotId` são obrigatórios. A solução não será criar robôs fake: a inscrição precisa aceitar legitimamente modalidade sem robô próprio.
-
-## Mídia / CMS
-
-O backend já possui uma abstração de object storage/R2:
-
-```text
-storage/ObjectStorageService.java
-storage/R2ObjectStorageService.java
-```
-
-O fluxo atual de fotos de robôs continua usando storage local específico:
+Fotos de robô hoje usam:
 
 ```text
 RobotImageService
@@ -178,74 +274,83 @@ RobotImageService
 → ./uploads/robots
 ```
 
-A nova área MIDIA deverá usar uma arquitetura editorial própria, sugerida:
+Também existe a abstração:
 
 ```text
-MediaAsset
-ContentSlot
-ContentItem
+storage/ObjectStorageService.java
+storage/R2ObjectStorageService.java
 ```
 
-para que a Landing deixe de depender de textos/imagens hardcoded.
+Ela será reutilizada pelo futuro CMS/Mídia. Não criar terceiro mecanismo de upload.
 
-## Regras
+---
 
-Nova frente aprovada para armazenar/publicar regras de:
+## Dívida técnica já mapeada para ETAPA 2
 
-- Follow Line;
-- Sumô e textos específicos de subcategorias;
-- Futebol de Robôs;
-- ambiente/vestimenta/segurança.
-
-Os textos finais dependem de confirmação do regulamento oficial.
-
-## Ajustes Gerais DEV
-
-Futura área de manutenção privilegiada. Não será um editor cru de tabelas: cada ação deve ter service próprio, validação e auditoria.
-
-Exemplos:
+O branch principal ainda possui:
 
 ```text
-alterarRole
-transferirCompetidor
-transferirRobo
-transferirResponsabilidadeDaEquipe
-corrigirInscricao
-ativar/desativar
+rascomp/bin/
 ```
 
-## Achados principais da revisão estrutural
+com artefatos antigos/versionados. A remoção é parte da ETAPA 2 e deve ocorrer em commit isolado com CI verde.
 
-### Prioridade alta
-
-1. `RegistrationService.reativar()` não revalida a janela de inscrições.
-2. Cancelamento de inscrição pelo participante precisa política explícita depois de aprovação/chave/início.
-3. Geração/regeneração de chave precisa estados da competição formalmente permitidos.
-4. Edição futura de `MatchResult` depois de alimentar a próxima fase é perigosa e precisa ser bloqueada ou possuir rollback/reprocessamento.
-5. Segurança `ORGANIZACAO` atual é ampla demais para DEV/GESTAO/MIDIA.
-
-### Dívida técnica
-
-- diretório rastreado `rascomp/bin/` contém artefatos antigos/compilados e deve ser removido em commit isolado;
-- `.gitignore` já foi preparado para ignorar `bin/` daqui em diante;
-- comentários antigos de `ConfigFollow` e `ConfigSumo` foram atualizados;
-- avaliar remoção de `.classpath`, `.project` e `.gitkeep` desnecessários já rastreados.
-
-## Migrations
+Também serão avaliados:
 
 ```text
-V1 — schema competitivo principal
-V2 — inspeções de Sumô
-V3 — rounds de Sumô
-V4 — limpeza de artefatos legados de schema
-V5 — usuários / ownership / fotos
-V6 — histórico de chaves
-V7 — motivos/penalidades de round
+.classpath
+.project
+.gitkeep desnecessários
+TODOs/comentários antigos
+código morto/duplicado
 ```
 
-Mudanças futuras: **V8+**.
+Não antecipar ETAPA 2 enquanto a ETAPA 1 não estiver validada.
 
-Nunca reescrever migration que já foi aplicada.
+---
+
+## Evoluções aprovadas para etapas futuras
+
+Sem substituir o roadmap canônico:
+
+```text
+ETAPA 3  DEV | GESTAO | MIDIA | PARTICIPANTE
+ETAPA 4  Avisos IN_APP + Telegram complementar futuro
+ETAPA 5  Ajustes Gerais DEV + auditoria
+ETAPA 6  Portabilidade — uma instalação por instituição
+ETAPA 7  CMS/Mídia usando ObjectStorageService/R2
+ETAPA 8  Regras
+ETAPA 9  Futebol de Robôs
+ETAPA 10 Participante completo + identificador de Registration
+ETAPA 11 Consolidação pública Landing/Galeria
+ETAPA 12 Hardening
+ETAPA 13 Testes manuais completos
+ETAPA 14 Deploy cloud
+```
+
+A lista acima é somente resumo. A autoridade de sequência é `Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`.
+
+---
+
+## Futebol de Robôs
+
+A modalidade futura não exigirá robô próprio do participante.
+
+O schema atual ainda é incompatível porque:
+
+```text
+Registration.robot                     obrigatório
+ParticipantRegistrationRequest.robotId obrigatório
+unicidade                               baseada em robot
+```
+
+A solução deverá permitir legitimamente `robot` opcional conforme modalidade.
+
+**Não criar robôs fake para satisfazer FK.**
+
+As regras competitivas ainda precisam ser fechadas antes da migration.
+
+---
 
 ## Executar localmente
 
@@ -266,7 +371,7 @@ R2_ENABLED
 R2_*
 ```
 
-## Profile de demonstração/testes visuais
+Profile de demonstração/testdata:
 
 ```powershell
 $env:SPRING_PROFILES_ACTIVE="testdata"
@@ -275,45 +380,63 @@ $env:SPRING_PROFILES_ACTIVE="testdata"
 
 O profile é opt-in e nunca deve ser ativado em produção.
 
-## Fonte de verdade
-
-O backend é responsável por:
-
-- autorização real;
-- ownership;
-- elegibilidade;
-- ranking;
-- inspeção;
-- BYE;
-- vencedor;
-- progressão;
-- campeão;
-- resultado oficial.
-
-## Documentação
-
-- `rascomp/docs/CONTINUIDADE.md` — checkpoint do backend e roadmap
-- `rascomp/docs/FLUXO_DO_SISTEMA.md` — fluxo histórico de domínio
-- `rascomp/docs/ENTIDADES_E_CRUDS.md` — entidades/CRUDs
-- `rascomp/docs/CONGELAMENTO_API.md` — decisões de API
-- `rascomp/docs/CLOUDFLARE_R2.md` — storage R2
-- Dossiê canônico cross-repo: `Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md`
-
-Swagger local:
+Swagger:
 
 ```text
 http://localhost:8080/swagger-ui/index.html
 ```
 
-## Próxima ordem de trabalho
+---
+
+## Documentação — ordem recomendada
+
+### Antes de alterar o projeto
 
 ```text
-0. estabilização dos achados da revisão
-1. DEV | GESTAO | MIDIA | PARTICIPANTE
-2. Ajustes Gerais DEV + auditoria
-3. CMS/Mídia
-4. Regras
-5. Futebol de Robôs
-6. participante completo
-7. consolidação pública Landing/Galeria
+1. Rascomp-FRONT/docs/README.md
+2. Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md
+3. Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
+4. rascomp/docs/CONTINUIDADE.md
 ```
+
+### Documentos deste backend
+
+```text
+rascomp/docs/CONTINUIDADE.md
+→ checkpoint vivo do backend
+
+rascomp/docs/ETAPAS_POS_PROJETO.md
+→ ponteiro para o roadmap canônico
+
+rascomp/docs/DOSSIE_PROJETO.md
+→ ponteiro para o dossiê canônico
+
+rascomp/docs/CLOUDFLARE_R2.md
+→ referência de storage
+
+rascomp/docs/DECISAO_DEPLOY_CLOUD.md
+rascomp/docs/DEPLOY_CLOUDFLARE.md
+→ referências de deploy futuro
+```
+
+Documentos como `CONGELAMENTO_API.md`, `ENDPOINTS_INTERNOS.md`, `ENTIDADES_E_CRUDS.md`, `FLUXO_DO_SISTEMA.md`, `JSON_EXEMPLOS.md`, arquivos `POS_SWAGGER_*` e `TESTES_POSTMAN.md` continuam como **referência técnica/histórica** e devem ser confrontados com código/migrations atuais antes de reutilização.
+
+---
+
+## Regra de continuidade
+
+Outra IA deve:
+
+```text
+ler o índice e o roadmap canônico
+confirmar a etapa atual
+verificar o código real
+trabalhar somente na etapa atual
+criar/ajustar testes junto com regras
+usar V8+ para novo schema
+preservar execução local
+atualizar documentação
+parar no checkpoint e aguardar validação
+```
+
+No estado atual, isso significa: **continuar a ETAPA 1, não iniciar novas features nem a limpeza da ETAPA 2**.
