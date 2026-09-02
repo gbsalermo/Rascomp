@@ -14,4 +14,5 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     Optional<Match> findByBracketIdAndRodadaAndOrdem(Long bracketId, Integer rodada, Integer ordem);
     boolean existsByBracketIdAndRodadaAndOrdem(Long bracketId, Integer rodada, Integer ordem);
     boolean existsByBracketIdAndRodadaAndOrdemAndIdNot(Long bracketId, Integer rodada, Integer ordem, Long id);
+    boolean existsByRegistrationAIdOrRegistrationBId(Long registrationAId, Long registrationBId);
 }

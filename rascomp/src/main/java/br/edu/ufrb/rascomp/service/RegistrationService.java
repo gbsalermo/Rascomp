@@ -23,9 +23,11 @@ import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
+import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
+import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -39,6 +41,8 @@ public class RegistrationService {
     private final RobotRepository robotRepository;
     private final CompetitorRepository competitorRepository;
     private final UserAccountService userAccountService;
+    private final MatchRepository matchRepository;
+    private final TentativaSeguidorLinhaRepository tentativaSeguidorLinhaRepository;
 
     @Transactional
     public RegistrationDTO criar(RegistrationDTO dto) {
@@ -115,6 +119,8 @@ public class RegistrationService {
     @Transactional
     public RegistrationDTO atualizar(Long id, RegistrationDTO dto) {
         Registration registration = buscarRegistration(id);
+        validarAtualizacaoSemCancelamentoDireto(registration, dto);
+
         Competition competition = buscarCompetition(dto.getCompetitionId());
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         Team team = buscarTeam(dto.getTeamId());
@@ -138,6 +144,7 @@ public class RegistrationService {
     @Transactional
     public void deletar(Long id) {
         Registration registration = buscarRegistration(id);
+        validarCancelamentoComum(registration);
         registration.setAtivo(false);
         registration.setStatus(StatusRegistration.CANCELADA);
         registrationRepository.save(registration);
@@ -149,11 +156,44 @@ public class RegistrationService {
         validarDisponibilidade(
                 registration.getCompetition(), registration.getCategory(),
                 registration.getTeam(), registration.getRobot());
+        validarInscricoesAbertas(registration.getCompetition());
         registration.setAtivo(true);
         registration.setStatus(StatusRegistration.PENDENTE);
         registration.setReviewedByUser(null);
         registration.setReviewedAt(null);
         return new RegistrationDTO(registrationRepository.save(registration));
+    }
+
+    private void validarAtualizacaoSemCancelamentoDireto(Registration registration, RegistrationDTO dto) {
+        boolean cancelamentoPorStatus = dto.getStatus() == StatusRegistration.CANCELADA
+                && registration.getStatus() != StatusRegistration.CANCELADA;
+        boolean inativacaoDireta = Boolean.FALSE.equals(dto.getAtivo())
+                && Boolean.TRUE.equals(registration.getAtivo());
+
+        if (cancelamentoPorStatus || inativacaoDireta) {
+            throw new IllegalArgumentException("Use o fluxo de cancelamento para cancelar ou inativar uma inscrição.");
+        }
+    }
+
+    private void validarCancelamentoComum(Registration registration) {
+        StatusRegistration status = registration.getStatus();
+        if (status != StatusRegistration.PENDENTE && status != StatusRegistration.APROVADA) {
+            throw new IllegalArgumentException("Somente inscrições pendentes ou aprovadas podem ser canceladas.");
+        }
+
+        StatusCompetition statusCompetition = registration.getCompetition().getStatus();
+        if (statusCompetition == StatusCompetition.EM_ANDAMENTO
+                || statusCompetition == StatusCompetition.FINALIZADA
+                || statusCompetition == StatusCompetition.CANCELADA) {
+            throw new IllegalArgumentException("A inscrição não pode ser cancelada neste estado da competição.");
+        }
+
+        Long registrationId = registration.getId();
+        boolean possuiMatch = matchRepository.existsByRegistrationAIdOrRegistrationBId(registrationId, registrationId);
+        boolean possuiTentativaFollow = tentativaSeguidorLinhaRepository.existsByRegistrationId(registrationId);
+        if (possuiMatch || possuiTentativaFollow) {
+            throw new IllegalArgumentException("A inscrição não pode ser cancelada pois já possui histórico competitivo.");
+        }
     }
 
     private void aplicarRevisaoSeNecessario(Registration registration, StatusRegistration novoStatus) {
