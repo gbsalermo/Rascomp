@@ -19,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
@@ -147,5 +148,37 @@ class RegistrationCancellationServiceTest {
         assertTrue(registration.getAtivo());
         assertEquals(StatusRegistration.APROVADA, registration.getStatus());
         verify(registrationRepository, never()).save(any(Registration.class));
+    }
+
+    @Test
+    void deveBloquearCancelamentoDiretoPorStatusNoPut() {
+        RegistrationDTO dto = new RegistrationDTO();
+        dto.setStatus(StatusRegistration.CANCELADA);
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.atualizar(20L, dto));
+
+        assertEquals("Use o fluxo de cancelamento para cancelar ou inativar uma inscrição.", error.getMessage());
+        assertTrue(registration.getAtivo());
+        assertEquals(StatusRegistration.PENDENTE, registration.getStatus());
+        verify(registrationRepository, never()).save(any(Registration.class));
+        verify(competitionRepository, never()).findById(any());
+    }
+
+    @Test
+    void deveBloquearInativacaoDiretaNoPut() {
+        RegistrationDTO dto = new RegistrationDTO();
+        dto.setAtivo(false);
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.atualizar(20L, dto));
+
+        assertEquals("Use o fluxo de cancelamento para cancelar ou inativar uma inscrição.", error.getMessage());
+        assertTrue(registration.getAtivo());
+        assertEquals(StatusRegistration.PENDENTE, registration.getStatus());
+        verify(registrationRepository, never()).save(any(Registration.class));
+        verify(competitionRepository, never()).findById(any());
     }
 }
