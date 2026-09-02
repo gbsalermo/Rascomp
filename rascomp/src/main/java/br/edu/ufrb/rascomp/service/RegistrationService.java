@@ -119,6 +119,8 @@ public class RegistrationService {
     @Transactional
     public RegistrationDTO atualizar(Long id, RegistrationDTO dto) {
         Registration registration = buscarRegistration(id);
+        validarAtualizacaoSemCancelamentoDireto(registration, dto);
+
         Competition competition = buscarCompetition(dto.getCompetitionId());
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         Team team = buscarTeam(dto.getTeamId());
@@ -160,6 +162,17 @@ public class RegistrationService {
         registration.setReviewedByUser(null);
         registration.setReviewedAt(null);
         return new RegistrationDTO(registrationRepository.save(registration));
+    }
+
+    private void validarAtualizacaoSemCancelamentoDireto(Registration registration, RegistrationDTO dto) {
+        boolean cancelamentoPorStatus = dto.getStatus() == StatusRegistration.CANCELADA
+                && registration.getStatus() != StatusRegistration.CANCELADA;
+        boolean inativacaoDireta = Boolean.FALSE.equals(dto.getAtivo())
+                && Boolean.TRUE.equals(registration.getAtivo());
+
+        if (cancelamentoPorStatus || inativacaoDireta) {
+            throw new IllegalArgumentException("Use o fluxo de cancelamento para cancelar ou inativar uma inscrição.");
+        }
     }
 
     private void validarCancelamentoComum(Registration registration) {
