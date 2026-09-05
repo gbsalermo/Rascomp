@@ -1,45 +1,28 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **31/08/2026**
+Última atualização: **04/09/2026**
 
-Este arquivo registra o **checkpoint funcional do backend**. Ele não define um roadmap próprio.
+Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
-Planejamento canônico cross-repo:
-
-```text
-gbsalermo/Rascomp-FRONT
-docs/ETAPAS_POS_PROJETO.md
-```
-
-Dossiê arquitetural canônico:
+Fontes canônicas:
 
 ```text
-gbsalermo/Rascomp-FRONT
-docs/DOSSIE_PROJETO_RASCOMP.md
-```
-
-Índice/hierarquia da documentação:
-
-```text
-gbsalermo/Rascomp-FRONT
-docs/README.md
+gbsalermo/Rascomp-FRONT/docs/README.md
+gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md
+gbsalermo/Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
 ```
 
 ---
 
 # 1. Marco atual
 
-O RasComp foi apresentado e aprovado. O backend forma uma base funcional do RRC e está agora no ciclo de estabilização pós-projeto.
-
-Estado oficial:
-
 ```text
 ETAPA 0  ✅ concluída / validada
-ETAPA 1  🚧 atual — correções de lógica e riscos
+ETAPA 1  🚧 atual — lógica e integridade
 ETAPA 2+ ⏳ não iniciadas
 ```
 
-Não iniciar ETAPA 2 ou refatorações estruturais amplas antes da validação da ETAPA 1.
+Em 04/09/2026 houve um checkpoint exclusivamente documental: READMEs, dossiê, roadmap e continuidades foram revisados e documentos obsoletos foram removidos. **Nenhuma correção funcional da ETAPA 1 foi marcada como concluída e a ETAPA 2 não foi iniciada.**
 
 ---
 
@@ -72,15 +55,14 @@ PROFILE TESTDATA                         ✅
 0 falhas
 0 erros
 0 skipped
-
 MySQL + Flyway + testdata ✅
 ```
 
-Não presumir que a contagem continua igual após mudanças futuras; atualizar somente depois de uma execução real.
+Não presumir que a contagem continua igual após futuras mudanças; atualizar somente depois de execução real.
 
 ---
 
-# 3. Stack e estrutura
+# 3. Stack
 
 ```text
 Java 21
@@ -93,6 +75,8 @@ Maven
 Swagger/OpenAPI
 Cloudflare R2 preparado para mídia futura
 ```
+
+**Camunda e PostgreSQL não fazem parte da arquitetura ativa.**
 
 Código:
 
@@ -123,34 +107,28 @@ teste
 V1 — schema competitivo principal
 V2 — inspeções de Sumô
 V3 — rounds de Sumô
-V4 — remoção/limpeza de schema legado de Follow/chaves
+V4 — remoção de estrutura legada Follow/chaves
 V5 — usuários / ownership / fotos
 V6 — histórico de chaves
 V7 — regras estendidas de round/penalidades
 ```
 
-Regra congelada:
+Regra:
 
 ```text
 V1–V7 nunca são reescritas
 próxima mudança estrutural = V8+
 ```
 
-Em 31/08/2026 ainda não existe migration V8 no branch principal.
-
 ---
 
 # 5. Segurança atual
 
-Modelo implementado:
-
 ```text
 UserRole
-├─ PARTICIPANTE
-└─ ORGANIZACAO
+├─ ORGANIZACAO
+└─ PARTICIPANTE
 ```
-
-Política predominante:
 
 ```text
 /api/v1/public/**       → público
@@ -158,33 +136,17 @@ Política predominante:
 /api/v1/**              → ORGANIZACAO
 ```
 
-A nova matriz:
+Nova matriz aprovada para ETAPA 3:
 
 ```text
-DEV
-GESTAO
-MIDIA
-PARTICIPANTE
+DEV | GESTAO | MIDIA | PARTICIPANTE
 ```
 
-é uma decisão aprovada para a **ETAPA 3** e ainda não está implementada.
-
-Arquivos centrais futuros:
-
-```text
-model/Enum/UserRole.java
-config/SecurityConfig.java
-model/UserAccount.java
-service/UserAccountService.java
-controller/UserAccountController.java
-controllers por domínio
-```
-
-Conta inativa já está protegida corretamente: `JwtService.tokenValido()` depende de `usuario.isEnabled()`.
+Conta inativa já é rejeitada nas autenticações subsequentes pela validação JWT.
 
 ---
 
-# 6. Distinção de domínio crítica
+# 6. Distinções de domínio
 
 ```text
 UserAccount
@@ -193,28 +155,17 @@ UserAccount
 Competitor
 → pessoa que compete
 → pertence a Team
-→ pode vincular UserAccount
+→ pode opcionalmente vincular UserAccount
 
 Team.responsibleUser
-→ usuário responsável pela equipe no portal
+→ responsável da equipe no portal
 ```
 
-Não implementar movimentações administrativas como troca genérica de FK.
-
-Futuros Ajustes Gerais devem separar:
-
-```text
-transferirCompetidor
-transferirResponsabilidade
-transferirRobo
-alterarRole
-```
+Não implementar transferências administrativas como simples troca genérica de FK.
 
 ---
 
 # 7. Registration
-
-Modelo atual:
 
 ```text
 Registration
@@ -229,13 +180,13 @@ Registration
 └─ ativo
 ```
 
-Unicidade atual:
+Unicidade:
 
 ```text
 competition + category + robot
 ```
 
-Arquivos:
+Arquivos centrais:
 
 ```text
 model/Registration.java
@@ -249,48 +200,23 @@ service/ParticipantPortalService.java
 
 ---
 
-# 8. ETAPA 1 — riscos atuais que ainda precisam ser fechados
-
-A ETAPA 1 está em andamento. Não registrar estes itens como corrigidos até implementação + testes + validação.
+# 8. ETAPA 1 — riscos ainda abertos
 
 ## 8.1 Reativação
 
-Problema confirmado:
-
-```text
-RegistrationService.reativar()
-→ reativa Registration como PENDENTE
-→ não chama validarInscricoesAbertas()
-```
-
-Risco: reativação fora da janela de inscrição.
+`RegistrationService.reativar()` reativa como `PENDENTE` sem chamar a validação de inscrições abertas.
 
 ## 8.2 Cancelamento
 
-Precisa regra explícita para cancelamento após:
-
-- aprovação;
-- geração de chave;
-- início da competição;
-- geração de histórico competitivo.
-
-Ownership existe, mas não resolve sozinho a consistência do estado.
+Precisa política explícita depois de aprovação, geração de chave, início da competição ou existência de histórico competitivo.
 
 ## 8.3 Chave
 
-`BracketGenerationService` precisa restringir explicitamente os estados de `Competition` válidos para geração/regeneração.
+`BracketGenerationService` precisa restringir estados de `Competition` válidos para geração/regeneração.
 
 ## 8.4 MatchResult após progressão
 
-Alterar um vencedor depois de ele alimentar a próxima fase pode corromper a árvore.
-
-Decidir e implementar:
-
-```text
-bloqueio
-ou
-rollback/reprocessamento explícito
-```
+Mudar vencedor depois de alimentar a próxima fase pode corromper a árvore. Implementar bloqueio ou rollback/reprocessamento explícito.
 
 ## 8.5 Follow
 
@@ -303,13 +229,13 @@ tempoSegundos
 checkpointsAlcancados
 ```
 
-O impacto de checkpoints no ranking ainda depende do regulamento oficial.
+Impacto de checkpoints depende de regulamento oficial.
+
+Nenhum destes itens deve ser marcado como corrigido antes de implementação + testes + validação.
 
 ---
 
 # 9. Follow Line
-
-Domínio:
 
 ```text
 Registration
@@ -317,7 +243,7 @@ Registration
    └─ Tentativas
 ```
 
-Ranking atual:
+Ranking:
 
 ```text
 válida + concluída + tempo
@@ -330,13 +256,11 @@ válida + concluída + tempo
 tempoFinal = tempoSegundos + penalidadeSegundos
 ```
 
-`checkpointsAlcancados` é persistido/exibido, mas não altera ranking atualmente.
+`checkpointsAlcancados` é persistido/exibido e atualmente não altera ranking.
 
 ---
 
 # 10. Sumô
-
-Fluxo atual:
 
 ```text
 Registration APROVADA
@@ -350,24 +274,17 @@ Registration APROVADA
 
 Regras consolidadas:
 
-- `SUICIDIO_WO` = adversário vence o round;
+- `SUICIDIO_WO` = adversário vence;
 - 0/1 penalidade = disputa normal;
-- **2 penalidades = derrota automática do round**;
-- `motivoResultado=PENALIDADES` nesse caso;
+- 2 penalidades = derrota automática do round;
 - BYE automático;
 - chave histórica read-only.
 
-Categorias compartilham o motor e se isolam por:
-
-```text
-competitionId + categoryId
-```
+Categorias ficam isoladas por `competitionId + categoryId`.
 
 ---
 
 # 11. Fotos e storage
-
-Fotos de robô hoje:
 
 ```text
 RobotImageService
@@ -375,107 +292,77 @@ RobotImageService
 → ./uploads/robots
 ```
 
-Em paralelo existe:
+Para mídia futura:
 
 ```text
-storage/ObjectStorageService.java
-storage/R2ObjectStorageService.java
-config/R2StorageConfiguration.java
-config/R2StorageProperties.java
+ObjectStorageService
+R2ObjectStorageService
 ```
 
-A abstração R2 será reaproveitada pelo futuro CMS/Mídia. Não criar terceiro mecanismo de upload.
+Não criar terceiro mecanismo de upload.
 
 ---
 
-# 12. Dívida técnica reservada para ETAPA 2
+# 12. ETAPA 4 — Avisos + Telegram
 
-Em 31/08/2026 o repositório ainda contém:
+A decisão de planejamento atual concentra avisos IN_APP e Telegram na mesma etapa.
+
+```text
+GESTAO/DEV
+→ publica aviso por Competition
+→ backend persiste IN_APP
+→ Telegram distribui a mesma comunicação se habilitado
+```
+
+Regras:
+
+- IN_APP é fonte de verdade;
+- integração Telegram fica no backend;
+- falha externa não invalida o aviso;
+- token não é versionado;
+- integração pode ser desligada;
+- vínculo `UserAccount ↔ Telegram` não é obrigatório inicialmente;
+- código competitivo futuro da `Registration` pode ser usado como identificação opcional.
+
+---
+
+# 13. Dívida técnica reservada à ETAPA 2
+
+Ainda existem:
 
 ```text
 rascomp/bin/
-```
-
-com árvore antiga/artefatos versionados. `.gitignore` já impede novos `bin/`, mas os arquivos rastreados continuam no branch principal.
-
-A remoção deve ocorrer na ETAPA 2, em commit isolado, seguida de CI.
-
-Também avaliar nessa etapa:
-
-```text
 .classpath
 .project
-.gitkeep desnecessários
-TODOs/comentários antigos
-código morto/duplicado
+.gitkeep desnecessários em packages
 ```
 
-Não usar a existência dessa pendência para antecipar ETAPA 2 enquanto ETAPA 1 não estiver validada.
+Além de TODOs/comentários antigos e possíveis duplicações.
+
+O checkpoint documental de 04/09 não removeu esses itens para não antecipar ETAPA 2.
 
 ---
 
-# 13. Evoluções já aprovadas, mas ainda não iniciadas
+# 14. Evoluções futuras resumidas
 
-A sequência oficial está somente no roadmap canônico. Para contexto técnico:
-
-## ETAPA 3 — roles
+A ordem oficial está somente no roadmap canônico:
 
 ```text
-DEV | GESTAO | MIDIA | PARTICIPANTE
+ETAPA 3  nova matriz de roles
+ETAPA 4  Avisos IN_APP + Telegram
+ETAPA 5  Ajustes Gerais + auditoria
+ETAPA 6  portabilidade institucional
+ETAPA 7  CMS/Mídia + Landing real
+ETAPA 8  Regras
+ETAPA 9  Futebol de Robôs
+ETAPA 10 participante completo + identificador competitivo
+ETAPA 11 Landing + Galeria
+ETAPA 12 Hardening
+ETAPA 13 testes manuais completos
+ETAPA 14 deploy cloud
 ```
 
-## ETAPA 4 — avisos
-
-IN_APP persistido como fonte de verdade; Telegram complementar no futuro.
-
-## ETAPA 5 — Ajustes Gerais + auditoria
-
-Operações de domínio explícitas, não CRUD bruto/SQL.
-
-## ETAPA 6 — portabilidade
-
-Uma instalação por instituição organizadora. Não é multi-tenant.
-
-## ETAPA 7 — CMS/Mídia
-
-```text
-MediaAsset
-ContentSlot
-ContentItem
-```
-
-Usar `ObjectStorageService`/R2.
-
-## ETAPA 8 — Regras
-
-Conteúdo oficial de Follow, Sumô, Futebol e ambiente/vestimenta.
-
-## ETAPA 9 — Futebol de Robôs
-
-Hoje o schema é incompatível porque `Registration.robot`/`robotId` são obrigatórios.
-
-A solução deverá permitir legitimamente inscrição sem robô próprio conforme modalidade. **Não criar robô fake.**
-
-## ETAPA 10 — participante completo
-
-Inclui identificador competitivo por `Registration` aprovada.
-
-## ETAPA 12–14
-
-Hardening → testes manuais → deploy cloud.
-
----
-
-# 14. Futebol — decisões ainda abertas
-
-Antes de modelar/migrar:
-
-- Team obrigatória ou não;
-- como os robôs da organização são atribuídos;
-- tempo/placar;
-- empate/desempate;
-- formato competitivo;
-- inspeção/penalidades.
+Futebol exigirá alteração real do domínio porque `Registration.robot` é obrigatório hoje. **Não criar robô fake para satisfazer FK.**
 
 ---
 
@@ -498,14 +385,14 @@ R2_ENABLED
 R2_*
 ```
 
-Profile de demonstração/testdata:
+Testdata:
 
 ```powershell
 $env:SPRING_PROFILES_ACTIVE="testdata"
 .\mvnw spring-boot:run
 ```
 
-`testdata` é opt-in e não deve ser habilitado em produção.
+Nunca habilitar `testdata` em produção.
 
 Swagger:
 
@@ -515,20 +402,20 @@ http://localhost:8080/swagger-ui/index.html
 
 ---
 
-# 16. Como outra IA deve continuar o backend
+# 16. Próximo passo / handoff
 
 ```text
 1. ler Rascomp-FRONT/docs/README.md
-2. conferir ETAPA atual em ETAPAS_POS_PROJETO.md
-3. ler o Dossiê Mestre
-4. usar este arquivo como checkpoint do backend
-5. verificar o código atual antes de concluir qualquer coisa
-6. trabalhar somente na etapa atual
-7. criar/ajustar testes junto com regras
-8. migration nova somente V8+
+2. conferir ETAPA 1 no roadmap
+3. ler Dossiê Mestre
+4. usar este arquivo como checkpoint backend
+5. verificar código real
+6. implementar correções da ETAPA 1
+7. criar/ajustar testes
+8. manter V1–V7 imutáveis
 9. manter modo local
-10. atualizar documentação ao encerrar o checkpoint
-11. parar e aguardar validação antes de avançar
+10. atualizar documentação no checkpoint
+11. aguardar validação antes da ETAPA 2
 ```
 
-Para a ETAPA 1 atual, a prioridade é integridade de `Registration`, estado competitivo de chaves/resultados e regras válidas do Follow — não novas features.
+Prioridade imediata: integridade de `Registration`, estado competitivo de chaves/resultados e regras válidas do Follow.
