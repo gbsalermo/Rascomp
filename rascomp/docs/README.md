@@ -1,21 +1,17 @@
 # RasComp Backend — Índice da Documentação
 
-Última revisão: **31/08/2026**
+Última revisão: **04/09/2026**
 
-Este diretório contém documentação viva e documentação histórica/técnica do backend.
-
-A documentação global do projeto é coordenada no repositório frontend para evitar roadmaps e dossiês duplicados.
-
----
+A documentação global do RasComp é coordenada no repositório frontend para evitar roadmaps e dossiês duplicados.
 
 ## Comece por aqui
 
 ```text
 1. gbsalermo/Rascomp-FRONT/docs/README.md
-   → índice global e hierarquia de autoridade
+   → índice global
 
 2. gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md
-   → único roadmap canônico + etapa atual
+   → roadmap canônico + etapa atual
 
 3. gbsalermo/Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
    → arquitetura e decisões cross-repo
@@ -24,7 +20,7 @@ A documentação global do projeto é coordenada no repositório frontend para e
    → checkpoint vivo deste backend
 ```
 
-Estado documentado em 31/08/2026:
+Estado em 04/09/2026:
 
 ```text
 ETAPA 0  ✅ concluída / validada
@@ -32,87 +28,89 @@ ETAPA 1  🚧 atual
 ETAPA 2+ ⏳ não iniciadas
 ```
 
+O checkpoint documental de 04/09 não representa avanço de etapa.
+
 ---
 
-## Documentos vivos / de decisão
+## Documentos ativos neste diretório
 
 ### `CONTINUIDADE.md`
 
-Checkpoint atual do backend: stack, migrations, testes, segurança, riscos da etapa atual e pendências.
+Checkpoint do backend: stack, migrations, segurança, estado funcional e riscos atuais.
 
 ### `ETAPAS_POS_PROJETO.md`
 
-Ponteiro para o roadmap canônico cross-repo. Não deve duplicar a sequência completa.
+Ponteiro para o roadmap cross-repo. Não duplica a sequência.
 
 ### `DOSSIE_PROJETO.md`
 
-Ponteiro para o Dossiê Mestre cross-repo. Não deve duplicar o dossiê.
+Ponteiro para o Dossiê Mestre cross-repo.
 
 ### `CLOUDFLARE_R2.md`
 
-Referência da abstração/storage R2 preparada para mídia futura.
+Referência técnica da abstração R2 preparada para mídia futura.
 
-### `DECISAO_DEPLOY_CLOUD.md`
+### `DECISAO_DEPLOY_CLOUD.md` / `DEPLOY_CLOUDFLARE.md`
 
-Decisão de arquitetura do deploy futuro. O deploy continua reservado à ETAPA 14.
-
-### `DEPLOY_CLOUDFLARE.md`
-
-Ponteiro/guia relacionado ao deploy futuro.
+Referências da ETAPA 14. O modo local continuará existindo.
 
 ---
 
-## Referência técnica/histórica
+## Documentação histórica removida
 
-Os arquivos abaixo são úteis para recuperar contratos e decisões de fases anteriores, mas **não devem ser tratados automaticamente como estado atual**:
+A revisão de 04/09/2026 removeu arquivos antigos de endpoints, Swagger/Postman, fluxo/UML e congelamento de API que já estavam desatualizados e, em alguns casos, ainda descreviam componentes que não pertencem à arquitetura atual.
 
-```text
-CONGELAMENTO_API.md
-ENDPOINTS_INTERNOS.md
-ENTIDADES_E_CRUDS.md
-FLUXO_DO_SISTEMA.md
-JSON_EXEMPLOS.md
-POS_SWAGGER_MODALIDADES_E_CATEGORIAS.md
-POS_SWAGGER_USUARIOS_EQUIPES_INSCRICAO.md
-TESTES_POSTMAN.md
-diagrama-uml-completo.puml
-```
-
-Antes de aplicar algo descrito neles, conferir:
+As informações ainda válidas foram consolidadas em:
 
 ```text
 código atual
-migrations atuais
-testes atuais
-CONTINUIDADE.md
+Swagger gerado pela aplicação
+migrations
 Dossiê Mestre
+CONTINUIDADE.md
 ```
 
-Se houver conflito de ordem de execução, o documento que prevalece é:
-
-```text
-Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md
-```
+**Camunda não faz parte do RasComp atual.**
 
 ---
 
-## Regras importantes do backend
+## Regras importantes
 
 ```text
 backend = fonte de verdade de domínio/autorização
-V1–V7 = migrations já aplicadas, não reescrever
+banco ativo = MySQL
+V1–V7 = migrations imutáveis
 V8+ = próxima mudança estrutural
-modo local deve continuar funcional
+roles atuais = ORGANIZACAO | PARTICIPANTE
 ETAPA atual = ETAPA 1
-não avançar sem validação
 ```
 
-Em 31/08/2026:
+Último checkpoint documentado:
 
 ```text
-roles implementadas = ORGANIZACAO | PARTICIPANTE
-rascomp/bin/ ainda rastreado = sim, reservado à ETAPA 2
-último checkpoint documentado = 48 testes / 0 falhas / 0 erros
+48 testes / 0 falhas / 0 erros
+MySQL + Flyway + testdata ✅
 ```
 
-Não atualizar status ou contagem de testes por inferência; registrar somente após validação real.
+Não atualizar a contagem por inferência.
+
+---
+
+## O que continua reservado à ETAPA 2
+
+```text
+rascomp/bin/
+.classpath
+.project
+.gitkeep desnecessários em packages de código
+TODOs/comentários obsoletos
+código morto/duplicado
+```
+
+Esses itens não foram removidos neste checkpoint porque a tarefa atual é exclusivamente documental.
+
+---
+
+## Próximo trabalho
+
+Após a revisão documental, retomar a **ETAPA 1 — correções de lógica e integridade**.
