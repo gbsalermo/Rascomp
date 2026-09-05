@@ -1,45 +1,24 @@
 # Dossiê do Projeto RasComp — Ponteiro
 
-Última revisão: **31/08/2026**
+Última revisão: **04/09/2026**
 
-O dossiê arquitetural **canônico e cross-repo** está mantido no repositório frontend para evitar duas cópias divergentes:
-
-```text
-gbsalermo/Rascomp-FRONT
-docs/DOSSIE_PROJETO_RASCOMP.md
-```
-
-Ele documenta em conjunto:
-
-- backend;
-- gestão autenticada;
-- portal do participante;
-- Landing pública;
-- galeria;
-- arquitetura e responsabilidades;
-- segurança atual e futura;
-- Follow, Sumô, chaves e resultados;
-- inscrições e ownership;
-- fotos/storage;
-- Avisos;
-- Ajustes Gerais;
-- portabilidade;
-- CMS/Mídia;
-- Regras;
-- Futebol de Robôs;
-- riscos e decisões abertas;
-- guia **“quero alterar X: onde mexo?”**.
-
-Este arquivo é somente um ponteiro e **não deve receber uma cópia do dossiê**.
-
-Para ordem de trabalho e etapa atual, usar exclusivamente:
+O Dossiê Mestre canônico e cross-repo está em:
 
 ```text
-gbsalermo/Rascomp-FRONT
-docs/ETAPAS_POS_PROJETO.md
+gbsalermo/Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
 ```
 
-Estado documentado em 31/08/2026:
+Ele consolida backend, gestão, participante, Landing, galeria, segurança, domínio competitivo, storage, roadmap relacionado, Avisos+Telegram, Ajustes Gerais, portabilidade, CMS/Mídia, Regras, Futebol, riscos e mapa de manutenção.
+
+Este arquivo é somente um ponteiro e não deve receber uma segunda cópia do dossiê.
+
+Para ordem de trabalho e etapa atual:
+
+```text
+gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md
+```
+
+Estado oficial:
 
 ```text
 ETAPA 0  ✅ concluída / validada
@@ -47,15 +26,16 @@ ETAPA 1  🚧 atual
 ETAPA 2+ ⏳ não iniciadas
 ```
 
-Para checkpoint específico do backend:
+O checkpoint documental de 04/09/2026 não altera esse estado.
+
+Checkpoint backend:
 
 ```text
 rascomp/docs/CONTINUIDADE.md
 ```
 
-Para a hierarquia completa da documentação:
+Índice global:
 
 ```text
-gbsalermo/Rascomp-FRONT
-docs/README.md
+gbsalermo/Rascomp-FRONT/docs/README.md
 ```
