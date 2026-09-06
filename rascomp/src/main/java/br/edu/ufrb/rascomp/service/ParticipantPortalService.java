@@ -12,6 +12,7 @@ import br.edu.ufrb.rascomp.dto.ParticipantCompetitorRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantRegistrationRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantRobotRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantTeamRequest;
+import br.edu.ufrb.rascomp.dto.RegistrationCancellationRequestDTO;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RobotDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
@@ -33,6 +34,7 @@ public class ParticipantPortalService {
     private final CompetitorService competitorService;
     private final RobotService robotService;
     private final RegistrationService registrationService;
+    private final RegistrationCancellationRequestService cancellationRequestService;
     private final RobotImageService robotImageService;
     private final TentativaSeguidorLinhaService tentativaSeguidorLinhaService;
     private final ConfigFollowService configFollowService;
@@ -190,6 +192,18 @@ public class ParticipantPortalService {
     public RegistrationDTO reativarInscricao(Long registrationId) {
         accessPolicyService.exigirInscricaoDaEquipe(registrationId);
         return registrationService.reativarPorParticipante(registrationId);
+    }
+
+    @Transactional
+    public RegistrationCancellationRequestDTO solicitarCancelamento(Long registrationId, String motivo) {
+        accessPolicyService.exigirInscricaoDaEquipe(registrationId);
+        return cancellationRequestService.solicitar(registrationId, accessPolicyService.usuarioAtual(), motivo);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RegistrationCancellationRequestDTO> solicitacoesCancelamento(Long registrationId) {
+        accessPolicyService.exigirInscricaoDaEquipe(registrationId);
+        return cancellationRequestService.listarPorInscricao(registrationId);
     }
 
     private TeamDTO teamDto(ParticipantTeamRequest request) {
