@@ -19,6 +19,7 @@ import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
@@ -57,8 +58,10 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        CompetitionCategory follow = buscarCategoriaPreferencial("Seguidor de Linha", Modalidade.FOLLOW_LINE);
-        CompetitionCategory sumo = buscarCategoriaPreferencial("Mini Sumô", Modalidade.SUMO);
+        CompetitionCategory follow = buscarCategoriaPreferencial(
+                "Seguidor de Linha", Modalidade.FOLLOW_LINE, null);
+        CompetitionCategory sumo = buscarCategoriaPreferencial(
+                "Mini Sumô", Modalidade.SUMO, SumoPhysicalClass.MINI_500G);
 
         ConfigFollow followConfig = garantirConfigFollow(follow);
         ConfigSumo sumoConfig = garantirConfigSumo(sumo);
@@ -130,6 +133,7 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
         System.out.println("        Use TentativaSeguidorLinha + RankingFollow. Não gere chaveamento para FOLLOW_LINE.");
         System.out.println("SUMO   - competição: " + sumoCompetition.getId()
                 + " | categoria: " + sumo.getId()
+                + " | classe física: " + sumo.getSumoPhysicalClass()
                 + " | inscrições: " + sumoA.getId() + ", " + sumoB.getId() + ", " + sumoC.getId());
         System.out.println("        ConfigSumo: pesoMax=" + sumoConfig.getPesoMax()
                 + " | maxTentativasInspecao=" + sumoConfig.getMaxTentativasInspecao()
@@ -140,13 +144,25 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
         System.out.println("============================================================");
     }
 
-    private CompetitionCategory buscarCategoriaPreferencial(String nome, Modalidade modalidade) {
-        return categoryRepository.findByModalidadeAndAtivoTrue(modalidade).stream()
+    private CompetitionCategory buscarCategoriaPreferencial(
+            String nome,
+            Modalidade modalidade,
+            SumoPhysicalClass sumoPhysicalClass) {
+
+        List<CompetitionCategory> ativas = categoryRepository.findByModalidadeAndAtivoTrue(modalidade);
+
+        return ativas.stream()
                 .filter(category -> nome.equals(category.getNome()))
+                .filter(category -> modalidade != Modalidade.SUMO
+                        || category.getSumoPhysicalClass() == sumoPhysicalClass)
                 .findFirst()
-                .or(() -> categoryRepository.findByModalidadeAndAtivoTrue(modalidade).stream().findFirst())
+                .or(() -> ativas.stream()
+                        .filter(category -> modalidade != Modalidade.SUMO
+                                || category.getSumoPhysicalClass() == sumoPhysicalClass)
+                        .findFirst())
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "Nenhuma categoria ativa encontrada para a modalidade " + modalidade + "."));
+                        "Nenhuma categoria ativa encontrada para a modalidade " + modalidade
+                                + (sumoPhysicalClass == null ? "." : " e classe física " + sumoPhysicalClass + ".")));
     }
 
     private ConfigFollow garantirConfigFollow(CompetitionCategory category) {
@@ -174,8 +190,14 @@ public class PostmanScenarioInitializer implements CommandLineRunner {
     }
 
     private BigDecimal pesoPadraoSumo(CompetitionCategory category) {
-        String nome = category.getNome() == null ? "" : category.getNome().toLowerCase();
-        return nome.contains("mini") ? new BigDecimal("0.500") : new BigDecimal("3.000");
+        if (category.getSumoPhysicalClass() == null) {
+            throw new IllegalArgumentException(
+                    "Categoria de Sumô sem classe física configurada: " + category.getNome());
+        }
+        return switch (category.getSumoPhysicalClass()) {
+            case MINI_500G -> new BigDecimal("0.500");
+            case SUMO_3KG -> new BigDecimal("3.000");
+        };
     }
 
     private Team buscarEquipePreferencial(List<Team> equipes, String nome, Team fallback) {
