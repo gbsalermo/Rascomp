@@ -27,6 +27,7 @@ import br.edu.ufrb.rascomp.model.Enum.RegistrationWindowChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
+import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRegistrationWindowChangeRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
@@ -42,6 +43,7 @@ class CompetitionRegistrationWindowServiceTest {
     @Mock private CompetitionRegistrationWindowChangeRepository changeRepository;
     @Mock private BracketRepository bracketRepository;
     @Mock private TentativaSeguidorLinhaRepository tentativaRepository;
+    @Mock private AusenciaTomadaSeguidorLinhaRepository ausenciaFollowRepository;
     @Mock private RoundSumoRepository roundSumoRepository;
     @Mock private MatchResultRepository matchResultRepository;
     @Mock private MatchRepository matchRepository;
@@ -121,6 +123,20 @@ class CompetitionRegistrationWindowServiceTest {
         competition.setFimInscricoes(LocalDate.now().minusDays(1));
         prepararBase();
         when(tentativaRepository.existsByRegistrationCompetitionId(10L)).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.alterar(10L, request(LocalDate.now().plusDays(2), "Tentar reabrir")));
+
+        verify(competitionRepository, never()).save(any());
+        verify(bracketRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void bloqueiaReaberturaQuandoFollowJaTemTomadaPerdidaPorAusencia() {
+        competition.setStatus(StatusCompetition.INSCRICOES_ENCERRADAS);
+        competition.setFimInscricoes(LocalDate.now().minusDays(1));
+        prepararBase();
+        when(ausenciaFollowRepository.existsByRegistrationCompetitionId(10L)).thenReturn(true);
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.alterar(10L, request(LocalDate.now().plusDays(2), "Tentar reabrir")));
