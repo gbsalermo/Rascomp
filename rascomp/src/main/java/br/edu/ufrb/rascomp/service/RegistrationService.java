@@ -17,6 +17,7 @@ import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
+import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
@@ -72,6 +73,7 @@ public class RegistrationService {
         validarDisponibilidade(competition, category, team, robot);
         validarInscricoesAbertas(competition);
         validarRobotDaEquipe(robot, team);
+        validarCompatibilidadeFisicaSumo(competition, category, robot, null);
         validarDuplicidade(dto, null);
 
         Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, exigirCompetidor);
@@ -130,6 +132,7 @@ public class RegistrationService {
 
         validarDisponibilidade(competition, category, team, robot);
         validarRobotDaEquipe(robot, team);
+        validarCompatibilidadeFisicaSumo(competition, category, robot, id);
         validarDuplicidade(dto, id);
 
         Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, false);
@@ -217,6 +220,8 @@ public class RegistrationService {
                 registration.getCompetition(), registration.getCategory(),
                 registration.getTeam(), registration.getRobot());
         validarInscricoesAbertas(registration.getCompetition());
+        validarCompatibilidadeFisicaSumo(
+                registration.getCompetition(), registration.getCategory(), registration.getRobot(), registration.getId());
 
         registration.setAtivo(true);
         registration.setStatus(StatusRegistration.PENDENTE);
@@ -254,6 +259,40 @@ public class RegistrationService {
         return tentativaRepository.existsByRegistrationId(registrationId)
                 || inspecaoSumoRepository.existsByRegistrationId(registrationId)
                 || matchRepository.existsByRegistrationAIdOrRegistrationBId(registrationId, registrationId);
+    }
+
+    private void validarCompatibilidadeFisicaSumo(
+            Competition competition,
+            CompetitionCategory category,
+            Robot robot,
+            Long registrationIdIgnorado) {
+
+        if (category.getModalidade() != Modalidade.SUMO) return;
+        if (category.getSumoPhysicalClass() == null) {
+            throw new IllegalArgumentException(
+                    "A categoria de Sumô não possui classe física configurada. Corrija a categoria antes de inscrever o robô.");
+        }
+
+        List<Registration> compromissos = registrationRepository.findByCompetitionIdAndRobotIdAndStatusIn(
+                competition.getId(),
+                robot.getId(),
+                List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA));
+
+        for (Registration existente : compromissos) {
+            if (registrationIdIgnorado != null && registrationIdIgnorado.equals(existente.getId())) continue;
+            CompetitionCategory categoriaExistente = existente.getCategory();
+            if (categoriaExistente.getModalidade() != Modalidade.SUMO) continue;
+            if (categoriaExistente.getSumoPhysicalClass() == null) {
+                throw new IllegalArgumentException(
+                        "Já existe uma inscrição de Sumô deste robô em categoria sem classe física configurada. "
+                                + "Corrija a categoria antes de continuar.");
+            }
+            if (categoriaExistente.getSumoPhysicalClass() != category.getSumoPhysicalClass()) {
+                throw new IllegalArgumentException(
+                        "O mesmo robô não pode competir nas classes físicas MINI_500G e SUMO_3KG na mesma edição. "
+                                + "Ele pode participar de várias categorias apenas quando a classe física de Sumô for a mesma.");
+            }
+        }
     }
 
     private void aplicarRevisaoSeNecessario(Registration registration, StatusRegistration novoStatus) {
