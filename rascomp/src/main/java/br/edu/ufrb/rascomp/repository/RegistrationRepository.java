@@ -1,5 +1,6 @@
 package br.edu.ufrb.rascomp.repository;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +18,10 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     List<Registration> findByTeamIdAndAtivoTrueOrderByDataCadastroDesc(Long teamId);
     List<Registration> findByRequestedByUserIdOrderByDataCadastroDesc(Long userId);
     List<Registration> findByStatusOrderByDataCadastroDesc(StatusRegistration status);
+    List<Registration> findByCompetitionIdAndRobotIdAndStatusIn(
+            Long competitionId,
+            Long robotId,
+            Collection<StatusRegistration> statuses);
     List<Registration> findByCompetitionIdAndCategoryIdAndStatusAndAtivoTrueOrderByIdAsc(
             Long competitionId,
             Long categoryId,
