@@ -31,6 +31,7 @@ import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
@@ -80,7 +81,12 @@ class RegistrationReviewServiceTest {
         robot.setAtivo(true);
 
         category = CompetitionCategory.builder()
-                .id(4L).nome("Mini Sumô").modalidade(Modalidade.SUMO).ativo(true).build();
+                .id(4L)
+                .nome("Mini Sumô")
+                .modalidade(Modalidade.SUMO)
+                .sumoPhysicalClass(SumoPhysicalClass.MINI_500G)
+                .ativo(true)
+                .build();
 
         competition = new Competition();
         competition.setId(5L);
