@@ -23,9 +23,12 @@ import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
+import br.edu.ufrb.rascomp.repository.InspecaoSumoRepository;
+import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
+import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -39,6 +42,9 @@ public class RegistrationService {
     private final RobotRepository robotRepository;
     private final CompetitorRepository competitorRepository;
     private final UserAccountService userAccountService;
+    private final TentativaSeguidorLinhaRepository tentativaRepository;
+    private final InspecaoSumoRepository inspecaoSumoRepository;
+    private final MatchRepository matchRepository;
 
     @Transactional
     public RegistrationDTO criar(RegistrationDTO dto) {
@@ -115,6 +121,8 @@ public class RegistrationService {
     @Transactional
     public RegistrationDTO atualizar(Long id, RegistrationDTO dto) {
         Registration registration = buscarRegistration(id);
+        validarEdicaoComum(registration, dto);
+
         Competition competition = buscarCompetition(dto.getCompetitionId());
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         Team team = buscarTeam(dto.getTeamId());
@@ -128,32 +136,111 @@ public class RegistrationService {
         preencher(registration, dto, competition, category, team, robot, competitors);
 
         if (dto.getStatus() != null && dto.getStatus() != registration.getStatus()) {
+            validarTransicaoDeRevisao(registration, dto.getStatus());
             aplicarRevisaoSeNecessario(registration, dto.getStatus());
             registration.setStatus(dto.getStatus());
         }
-        if (dto.getAtivo() != null) registration.setAtivo(dto.getAtivo());
+
+        registration.setAtivo(true);
         return new RegistrationDTO(registrationRepository.save(registration));
     }
 
     @Transactional
     public void deletar(Long id) {
         Registration registration = buscarRegistration(id);
-        registration.setAtivo(false);
-        registration.setStatus(StatusRegistration.CANCELADA);
-        registrationRepository.save(registration);
+        StatusRegistration status = registration.getStatus();
+
+        if (status == StatusRegistration.PENDENTE) {
+            cancelar(registration, StatusRegistration.CANCELADA);
+            return;
+        }
+
+        if (status == StatusRegistration.APROVADA) {
+            StatusRegistration destino = possuiAtividadeCompetitiva(registration.getId())
+                    ? StatusRegistration.DESISTENTE
+                    : StatusRegistration.CANCELADA;
+            cancelar(registration, destino);
+            return;
+        }
+
+        throw new IllegalArgumentException(
+                "Somente inscrições PENDENTES ou APROVADAS podem ser canceladas pelo fluxo comum.");
+    }
+
+    @Transactional
+    public void cancelarPorParticipante(Long id) {
+        Registration registration = buscarRegistration(id);
+        if (registration.getStatus() != StatusRegistration.PENDENTE) {
+            throw new IllegalArgumentException(
+                    "O participante só pode cancelar diretamente uma inscrição PENDENTE. "
+                            + "Inscrição APROVADA deve ter o cancelamento solicitado à organização.");
+        }
+        cancelar(registration, StatusRegistration.CANCELADA);
     }
 
     @Transactional
     public RegistrationDTO reativar(Long id) {
         Registration registration = buscarRegistration(id);
+        if (registration.getStatus() != StatusRegistration.CANCELADA
+                && registration.getStatus() != StatusRegistration.REJEITADA) {
+            throw new IllegalArgumentException(
+                    "Somente inscrições CANCELADAS ou REJEITADAS podem ser reabertas pela organização.");
+        }
+        return reativarInterno(registration);
+    }
+
+    @Transactional
+    public RegistrationDTO reativarPorParticipante(Long id) {
+        Registration registration = buscarRegistration(id);
+        if (registration.getStatus() != StatusRegistration.CANCELADA) {
+            throw new IllegalArgumentException(
+                    "O participante só pode reativar uma inscrição CANCELADA.");
+        }
+        return reativarInterno(registration);
+    }
+
+    private RegistrationDTO reativarInterno(Registration registration) {
         validarDisponibilidade(
                 registration.getCompetition(), registration.getCategory(),
                 registration.getTeam(), registration.getRobot());
+        validarInscricoesAbertas(registration.getCompetition());
+
         registration.setAtivo(true);
         registration.setStatus(StatusRegistration.PENDENTE);
         registration.setReviewedByUser(null);
         registration.setReviewedAt(null);
         return new RegistrationDTO(registrationRepository.save(registration));
+    }
+
+    private void validarEdicaoComum(Registration registration, RegistrationDTO dto) {
+        if (registration.getStatus() != StatusRegistration.PENDENTE) {
+            throw new IllegalArgumentException(
+                    "Somente inscrição PENDENTE pode ser editada pelo fluxo comum. "
+                            + "Use a operação específica para cancelamento, reabertura ou correção administrativa.");
+        }
+        if (Boolean.FALSE.equals(dto.getAtivo())) {
+            throw new IllegalArgumentException("Use a operação de cancelamento para desativar uma inscrição.");
+        }
+    }
+
+    private void validarTransicaoDeRevisao(Registration registration, StatusRegistration novoStatus) {
+        if (registration.getStatus() != StatusRegistration.PENDENTE
+                || (novoStatus != StatusRegistration.APROVADA && novoStatus != StatusRegistration.REJEITADA)) {
+            throw new IllegalArgumentException(
+                    "No fluxo comum, uma inscrição PENDENTE só pode ser APROVADA ou REJEITADA pela organização.");
+        }
+    }
+
+    private void cancelar(Registration registration, StatusRegistration statusDestino) {
+        registration.setAtivo(false);
+        registration.setStatus(statusDestino);
+        registrationRepository.save(registration);
+    }
+
+    private boolean possuiAtividadeCompetitiva(Long registrationId) {
+        return tentativaRepository.existsByRegistrationId(registrationId)
+                || inspecaoSumoRepository.existsByRegistrationId(registrationId)
+                || matchRepository.existsByRegistrationAIdOrRegistrationBId(registrationId, registrationId);
     }
 
     private void aplicarRevisaoSeNecessario(Registration registration, StatusRegistration novoStatus) {
