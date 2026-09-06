@@ -15,4 +15,5 @@ public interface RoundSumoRepository extends JpaRepository<RoundSumo, Long> {
     long countByMatchId(Long matchId);
 
     boolean existsByMatchIdAndNumeroRound(Long matchId, Integer numeroRound);
+    boolean existsByMatchBracketCompetitionId(Long competitionId);
 }
