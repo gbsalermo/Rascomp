@@ -78,7 +78,7 @@ public class FollowLineTestDataInitializer implements CommandLineRunner {
                 garantirEquipe("TESTE FL - Pulso", institution),
                 "Pulso FL");
 
-        // Veloz: tomada 1 representada por 42.315 s; tomada 2 e melhor, com 41.100 s.
+        // Veloz: tomada 1 representada por 42.315 s; tomada 2 é melhor, com 41.100 s.
         garantirTentativa(veloz, 1, 1, "42.315", 5, 0, true, true,
                 "Tomada 1 - tentativa valida de referencia.");
         garantirTentativa(veloz, 1, 2, "40.870", 5, 2, true, true,
@@ -94,7 +94,7 @@ public class FollowLineTestDataInitializer implements CommandLineRunner {
 
         garantirTentativa(trilha, 1, 1, "125.000", 4, 0, true, false,
                 "Tomada 1 - tentativa acima do limite configurado e marcada como invalida.");
-        garantirTentativa(pulso, 1, 1, "65.200", 3, 0, false, true,
+        garantirTentativa(pulso, 1, 1, null, 3, 0, false, false,
                 "Tomada 1 - tentativa interrompida para validar historico de nao concluidas.");
 
         System.out.println("============================================================");
@@ -102,8 +102,8 @@ public class FollowLineTestDataInitializer implements CommandLineRunner {
         System.out.println("Competicao: " + competition.getNome() + " (#" + competition.getId() + ")");
         System.out.println("Categoria: " + category.getNome() + " (#" + category.getId() + ")");
         System.out.println("Robos: Veloz FL, Falcao FL, Trilha FL e Pulso FL.");
-        System.out.println("Ha tomadas com multiplas tentativas, duas tomadas no mesmo robo, invalida e nao concluida.");
-        System.out.println("Ainda existem slots livres para novos registros pela tela operacional.");
+        System.out.println("Formato: 3 tomadas x 3 tentativas; ha valida, invalida e nao concluida.");
+        System.out.println("Ainda existem tomadas e tentativas livres para novos registros pela tela operacional.");
         System.out.println("============================================================");
     }
 
@@ -131,10 +131,12 @@ public class FollowLineTestDataInitializer implements CommandLineRunner {
                         .competitionCategory(category)
                         .build());
 
-        config.setNumeroTomadas(2);
+        config.setNumeroTomadas(3);
         config.setTentativasPorTomada(3);
         config.setMaxTempoSegundos(120);
         config.setNumeroCheckpoints(5);
+        config.setPenalidadePadraoSegundos(10);
+        config.setTempoApresentacaoSegundos(60);
         configFollowRepository.save(config);
     }
 
@@ -268,7 +270,7 @@ public class FollowLineTestDataInitializer implements CommandLineRunner {
         tentativa.setRegistration(registration);
         tentativa.setTomada(tomada);
         tentativa.setNumeroTentativa(numeroTentativa);
-        tentativa.setTempoSegundos(new BigDecimal(tempo));
+        tentativa.setTempoSegundos(tempo == null ? null : new BigDecimal(tempo));
         tentativa.setCheckpointsAlcancados(checkpoints);
         tentativa.setPenalidadeSegundos(penalidade);
         tentativa.setConcluida(concluida);
