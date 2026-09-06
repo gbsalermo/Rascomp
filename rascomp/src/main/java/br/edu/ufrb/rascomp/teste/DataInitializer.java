@@ -20,6 +20,7 @@ import br.edu.ufrb.rascomp.model.TentativaSeguidorLinha;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
@@ -60,6 +61,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Mini Sumô",
                 "Categoria de robôs de Sumô com peso máximo de 500 gramas.",
                 Modalidade.SUMO,
+                SumoPhysicalClass.MINI_500G,
                 true
         );
 
@@ -67,6 +69,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Sumô 3 kg",
                 "Categoria de robôs de Sumô com peso máximo de 3 kg.",
                 Modalidade.SUMO,
+                SumoPhysicalClass.SUMO_3KG,
                 true
         );
 
@@ -74,6 +77,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Seguidor de Linha",
                 "Categoria de robôs seguidores de linha.",
                 Modalidade.FOLLOW_LINE,
+                null,
                 true
         );
 
@@ -81,6 +85,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Sumô Experimental",
                 "Categoria inativa criada para testar validações.",
                 Modalidade.SUMO,
+                SumoPhysicalClass.MINI_500G,
                 false
         );
 
@@ -229,12 +234,14 @@ public class DataInitializer implements CommandLineRunner {
             String nome,
             String descricao,
             Modalidade modalidade,
+            SumoPhysicalClass sumoPhysicalClass,
             boolean ativo) {
 
         CompetitionCategory category = CompetitionCategory.builder()
                 .nome(nome)
                 .descricao(descricao)
                 .modalidade(modalidade)
+                .sumoPhysicalClass(sumoPhysicalClass)
                 .ativo(ativo)
                 .build();
 
