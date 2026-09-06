@@ -183,7 +183,13 @@ public class ParticipantPortalService {
     @Transactional
     public void cancelarInscricao(Long registrationId) {
         accessPolicyService.exigirInscricaoDaEquipe(registrationId);
-        registrationService.deletar(registrationId);
+        registrationService.cancelarPorParticipante(registrationId);
+    }
+
+    @Transactional
+    public RegistrationDTO reativarInscricao(Long registrationId) {
+        accessPolicyService.exigirInscricaoDaEquipe(registrationId);
+        return registrationService.reativarPorParticipante(registrationId);
     }
 
     private TeamDTO teamDto(ParticipantTeamRequest request) {
