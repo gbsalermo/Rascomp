@@ -23,10 +23,11 @@ public class CompetitionService {
         normalizar(dto);
         validarDatas(dto);
         validarNomeDuplicado(dto.getNome(), null);
+        validarStatusInicial(dto.getStatus());
 
         Competition competition = new Competition();
         preencher(competition, dto);
-        competition.setStatus(dto.getStatus() != null ? dto.getStatus() : StatusCompetition.PLANEJADA);
+        competition.setStatus(StatusCompetition.PLANEJADA);
         competition.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
 
         return new CompetitionDTO(competitionRepository.save(competition));
@@ -57,8 +58,13 @@ public class CompetitionService {
         normalizar(dto);
         validarDatas(dto);
         validarNomeDuplicado(dto.getNome(), id);
+
+        StatusCompetition novoStatus = dto.getStatus() != null ? dto.getStatus() : competition.getStatus();
+        validarTransicaoStatus(competition.getStatus(), novoStatus);
+        validarAtivoNoFluxoComum(dto.getAtivo());
+
         preencher(competition, dto);
-        if (dto.getStatus() != null) competition.setStatus(dto.getStatus());
+        competition.setStatus(novoStatus);
         if (dto.getAtivo() != null) competition.setAtivo(dto.getAtivo());
         return new CompetitionDTO(competitionRepository.save(competition));
     }
@@ -80,6 +86,42 @@ public class CompetitionService {
     private Competition buscarCompetition(Long id) {
         return competitionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Competição não encontrada com o id: " + id));
+    }
+
+    private void validarStatusInicial(StatusCompetition status) {
+        if (status != null && status != StatusCompetition.PLANEJADA) {
+            throw new IllegalArgumentException(
+                    "Nova competição deve iniciar como PLANEJADA. Use as transições de estado após a criação.");
+        }
+    }
+
+    private void validarTransicaoStatus(StatusCompetition atual, StatusCompetition novo) {
+        if (atual == novo) return;
+
+        boolean permitida = switch (atual) {
+            case PLANEJADA -> novo == StatusCompetition.INSCRICOES_ABERTAS
+                    || novo == StatusCompetition.CANCELADA;
+            case INSCRICOES_ABERTAS -> novo == StatusCompetition.INSCRICOES_ENCERRADAS
+                    || novo == StatusCompetition.CANCELADA;
+            case INSCRICOES_ENCERRADAS -> novo == StatusCompetition.EM_ANDAMENTO
+                    || novo == StatusCompetition.CANCELADA;
+            case EM_ANDAMENTO -> novo == StatusCompetition.FINALIZADA
+                    || novo == StatusCompetition.CANCELADA;
+            case FINALIZADA, CANCELADA -> false;
+        };
+
+        if (!permitida) {
+            throw new IllegalArgumentException(
+                    "Transição de competição inválida: " + atual + " → " + novo
+                            + ". Reabertura/prorrogação deve usar operação explícita quando disponível.");
+        }
+    }
+
+    private void validarAtivoNoFluxoComum(Boolean ativo) {
+        if (Boolean.FALSE.equals(ativo)) {
+            throw new IllegalArgumentException(
+                    "Use a operação específica de desativação para inativar uma competição.");
+        }
     }
 
     private void validarNomeDuplicado(String nome, Long id) {
