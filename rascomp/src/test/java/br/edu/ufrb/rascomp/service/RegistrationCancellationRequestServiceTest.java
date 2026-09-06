@@ -20,6 +20,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.RegistrationCancellationRequest;
+import br.edu.ufrb.rascomp.model.Robot;
+import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.StatusCancellationRequest;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
@@ -55,9 +57,20 @@ class RegistrationCancellationRequestServiceTest {
         competition.setDataInicio(LocalDate.now().plusDays(2));
         competition.setDataFim(LocalDate.now().plusDays(3));
 
+        Team team = new Team();
+        team.setId(11L);
+        team.setNome("Equipe Teste");
+
+        Robot robot = new Robot();
+        robot.setId(12L);
+        robot.setNome("Titan");
+        robot.setTeam(team);
+
         registration = new Registration();
         registration.setId(20L);
         registration.setCompetition(competition);
+        registration.setTeam(team);
+        registration.setRobot(robot);
         registration.setStatus(StatusRegistration.APROVADA);
         registration.setAtivo(true);
 
