@@ -1,6 +1,6 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **04/09/2026**
+Última atualização: **06/09/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
@@ -10,6 +10,13 @@ Fontes canônicas:
 gbsalermo/Rascomp-FRONT/docs/README.md
 gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md
 gbsalermo/Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
+gbsalermo/Rascomp-FRONT/docs/CONTRATO_REGRAS_COMPETITIVAS.md
+```
+
+Ponteiro local do contrato:
+
+```text
+rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md
 ```
 
 ---
@@ -18,11 +25,13 @@ gbsalermo/Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
 
 ```text
 ETAPA 0  ✅ concluída / validada
-ETAPA 1  🚧 atual — lógica e integridade
+ETAPA 1  🚧 atual — lógica, integridade e testes de fluxo
 ETAPA 2+ ⏳ não iniciadas
 ```
 
-Em 04/09/2026 houve um checkpoint exclusivamente documental: READMEs, dossiê, roadmap e continuidades foram revisados e documentos obsoletos foram removidos. **Nenhuma correção funcional da ETAPA 1 foi marcada como concluída e a ETAPA 2 não foi iniciada.**
+Em 04/09/2026 houve um checkpoint exclusivamente documental.
+
+Em 06/09/2026 foi consolidado o contrato competitivo da ETAPA 1. **As regras estão decididas/documentadas, mas ainda não devem ser marcadas como implementadas enquanto código e testes não forem atualizados.**
 
 ---
 
@@ -32,16 +41,16 @@ Em 04/09/2026 houve um checkpoint exclusivamente documental: READMEs, dossiê, r
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
 MYSQL + FLYWAY V1–V7                     ✅
-COMPETIÇÕES                              ✅
+COMPETIÇÕES                              ✅ base atual
 EQUIPES / COMPETIDORES / ROBÔS           ✅
-INSCRIÇÕES + REVISÃO                     ✅
+INSCRIÇÕES + REVISÃO                     ✅ base atual
 FOTOS DOS ROBÔS                          ✅
-FOLLOW LINE                              ✅
-RANKING FOLLOW                           ✅
-SUMÔ / INSPEÇÃO / ROUNDS                 ✅
+FOLLOW LINE                              ✅ base atual
+RANKING FOLLOW                           ✅ base atual
+SUMÔ / INSPEÇÃO / ROUNDS                 ✅ base atual
 2 PENALIDADES = DERROTA DO ROUND         ✅
 SUICÍDIO/WO                              ✅
-CHAVES / BYE / PROGRESSÃO                ✅
+CHAVES / BYE / PROGRESSÃO                ✅ base atual
 HISTÓRICO DE CHAVES                      ✅
 API PARTICIPANTE                         ✅ base funcional
 API PÚBLICA                              ✅
@@ -58,7 +67,7 @@ PROFILE TESTDATA                         ✅
 MySQL + Flyway + testdata ✅
 ```
 
-Não presumir que a contagem continua igual após futuras mudanças; atualizar somente depois de execução real.
+Esse checkpoint é anterior às novas regras formalizadas em 06/09/2026. Não presumir que elas já estão cobertas.
 
 ---
 
@@ -82,21 +91,6 @@ Código:
 
 ```text
 rascomp/src/main/java/br/edu/ufrb/rascomp/
-```
-
-Pacotes principais:
-
-```text
-config
-controller
-dto
-exception
-model
-repository
-security
-service
-storage
-teste
 ```
 
 ---
@@ -165,145 +159,340 @@ Não implementar transferências administrativas como simples troca genérica de
 
 ---
 
-# 7. Registration
+# 7. Registration — contrato aprovado
+
+Regras principais agora consolidadas:
 
 ```text
-Registration
-├─ Competition obrigatória
-├─ CompetitionCategory obrigatória
-├─ Team obrigatória
-├─ Robot obrigatório
-├─ Competitor(s)
-├─ status
-├─ requestedByUser
-├─ reviewedByUser
-└─ ativo
+PENDENTE
+→ participante pode editar/cancelar dentro da janela
+
+APROVADA
+→ participante não cancela diretamente
+→ solicita cancelamento
+→ organização decide
+
+REJEITADA
+→ somente organização pode reabrir para correção
+
+CANCELADA
+→ retirada antes de comprometimento competitivo relevante
+
+DESISTENTE
+→ já existe comprometimento/histórico competitivo e a inscrição deixa a competição
 ```
 
-Unicidade:
+Reativação comum:
 
 ```text
-competition + category + robot
+somente inscrições abertas
++
+dentro da janela
+→ retorna PENDENTE
 ```
 
-Arquivos centrais:
+Pagamento ainda não existe, mas quando habilitado deverá ser condição de aprovação conforme contrato.
+
+Robôs híbridos:
 
 ```text
-model/Registration.java
-dto/RegistrationDTO.java
-dto/ParticipantRegistrationRequest.java
-controller/RegistrationController.java
-service/RegistrationService.java
-repository/RegistrationRepository.java
-service/ParticipantPortalService.java
+mesmo Robot pode Auto + R/C da mesma classe física
+mesmo Robot pode também Follow
+mesmo Robot não pode Mini + 3 kg na mesma edição
 ```
+
+A implementação atual ainda usa unicidade `competition + category + robot`; revisar compatibilidade física sem destruir o conceito de um único robô da equipe.
 
 ---
 
-# 8. ETAPA 1 — riscos ainda abertos
+# 8. Competition — contrato aprovado
 
-## 8.1 Reativação
-
-`RegistrationService.reativar()` reativa como `PENDENTE` sem chamar a validação de inscrições abertas.
-
-## 8.2 Cancelamento
-
-Precisa política explícita depois de aprovação, geração de chave, início da competição ou existência de histórico competitivo.
-
-## 8.3 Chave
-
-`BracketGenerationService` precisa restringir estados de `Competition` válidos para geração/regeneração.
-
-## 8.4 MatchResult após progressão
-
-Mudar vencedor depois de alimentar a próxima fase pode corromper a árvore. Implementar bloqueio ou rollback/reprocessamento explícito.
-
-## 8.5 Follow
-
-Formalizar combinações válidas de:
+Fluxo normal:
 
 ```text
-concluida
-valida
-tempoSegundos
-checkpointsAlcancados
+PLANEJADA
+→ INSCRICOES_ABERTAS
+→ INSCRICOES_ENCERRADAS
+→ EM_ANDAMENTO
+→ FINALIZADA
 ```
 
-Impacto de checkpoints depende de regulamento oficial.
+Prorrogação/reabertura deve ser operação explícita com nova data e motivo.
 
-Nenhum destes itens deve ser marcado como corrigido antes de implementação + testes + validação.
+Não permitir simples alteração arbitrária de enum para voltar estados competitivos.
+
+Se uma chave já existir e ainda não houver atividade, reabertura pode exigir invalidar/regenerar a chave. Depois de atividade competitiva iniciada, reabertura comum é bloqueada.
 
 ---
 
-# 9. Follow Line
+# 9. Follow Line — contrato aprovado
 
 ```text
-Registration
-└─ Tomadas
-   └─ Tentativas
+3 tomadas
+×
+3 tentativas por tomada
+```
+
+Sem janela total obrigatória da tomada.
+
+Tempo máximo é por tentativa, configurável; referência inicial:
+
+```text
+120 s
+```
+
+Durante uma tomada:
+
+```text
+alteração física    ❌
+alteração de código ❌
+```
+
+Entre tomadas:
+
+```text
+alteração física    ✅
+alteração de código ✅
 ```
 
 Ranking:
 
 ```text
-válida + concluída + tempo
+tempoFinal = tempoSegundos + penalidades
 → melhor tentativa da tomada
-→ melhor tomada da inscrição
+→ melhor tomada do robô
 → menor tempo final
 ```
 
+Penalidade é entrada em segundos, com referência comum de `+10 s`, não valor rígido de código.
+
+Falha em parar corretamente após concluir pode gerar penalidade temporal sem invalidar automaticamente a tentativa.
+
+Estados classificáveis:
+
 ```text
-tempoFinal = tempoSegundos + penalidadeSegundos
+concluida=true
+valida=true
+tempoSegundos!=null
 ```
 
-`checkpointsAlcancados` é persistido/exibido e atualmente não altera ranking.
+Combinações impossíveis devem ser bloqueadas.
+
+Ausência na chamada:
+
+```text
+cronômetro de apresentação configurável
+referência 60 s
+→ não compareceu
+→ tomada PERDIDA_POR_AUSENCIA
+```
+
+Checkpoints continuam informativos e não alteram ranking.
 
 ---
 
-# 10. Sumô
+# 10. Sumô — contrato aprovado
+
+Categorias previstas:
 
 ```text
-Registration APROVADA
-→ inspeção apta
-→ chave
-→ partida
-→ rounds
-→ MatchResult
-→ progressão
+Mini 500 g Auto
+Mini 500 g R/C
+3 kg Auto
+3 kg R/C
 ```
 
-Regras consolidadas:
+Todas usam `Modalidade.SUMO`, isoladas por categoria.
 
-- `SUICIDIO_WO` = adversário vence;
-- 0/1 penalidade = disputa normal;
-- 2 penalidades = derrota automática do round;
-- BYE automático;
-- chave histórica read-only.
+## Inspeção
 
-Categorias ficam isoladas por `competitionId + categoryId`.
+A decisão passa a ser humana:
+
+```text
+organização inspeciona fisicamente
+→ informa APTO/INAPTO
+```
+
+Peso medido pode ser informativo, mas não deve decidir automaticamente aprovação.
+
+Follow não usa essa inspeção.
+
+## Partida
+
+```text
+3 rounds regulares
+2 vitórias necessárias
+```
+
+```text
+0 penalidades → normal
+1 penalidade  → normal
+2 penalidades → derrota automática do round
+SUICIDIO_WO  → adversário vence
+BYE          → avanço automático
+```
+
+## Rounds extras
+
+Rounds extras não transformam a partida em melhor de cinco.
+
+Só existem quando os rounds regulares não produziram vencedor por existirem rounds anulados/cancelados/não decisivos.
+
+Configuração inicial recomendada:
+
+```text
+3 rounds regulares
+2 vitórias
+máximo 2 rounds extras
+```
+
+Round extra exige justificativa e só pode existir enquanto ninguém tiver 2 vitórias.
+
+Se ainda não houver vencedor após o limite, usar decisão do juiz.
+
+## Auto/R/C
+
+Autônomo:
+
+```text
+5 s regulamentares após ativação
+```
+
+Falha de inicialização depois do procedimento pode gerar penalidade ou derrota do round conforme decisão do juiz; backend não decide automaticamente a consequência.
+
+R/C inicia ao comando do juiz e não usa o atraso regulamentar dos autônomos.
+
+## Juiz
+
+Decisão do juiz deve registrar:
+
+```text
+vencedor
+juiz
+justificativa
+data/hora
+```
+
+O juiz poderá possuir `UserAccount` ou ser cadastrado apenas no contexto da competição.
 
 ---
 
-# 11. Fotos e storage
+# 11. Chaves, agenda e progressão — contrato aprovado
+
+Geração normal:
 
 ```text
-RobotImageService
-→ RobotImageStorageService
-→ ./uploads/robots
+INSCRICOES_ENCERRADAS ✅
+demais estados       ❌ para geração comum
 ```
 
-Para mídia futura:
+Regeneração comum só antes de partida/round/resultado iniciado.
+
+Separar:
 
 ```text
-ObjectStorageService
-R2ObjectStorageService
+estrutura lógica da chave
+≠
+agenda operacional de execução
 ```
 
-Não criar terceiro mecanismo de upload.
+A agenda futura pode possuir pista, horário e ordem de execução, permitindo adiar/adiantar uma batalha sem mudar sua posição lógica.
+
+Permissões futuras:
+
+```text
+GESTAO → agenda operacional dentro das regras
+DEV    → correção estrutural excepcional e segura
+```
+
+## Correção após progressão
+
+Se a próxima partida ainda não começou:
+
+```text
+corrigir resultado
+→ desfazer slot anterior
+→ inserir vencedor correto
+→ tudo em uma transação
+```
+
+Se a dependência já começou/terminou:
+
+```text
+correção comum ❌
+```
+
+Rollback competitivo em cadeia fica para ferramenta DEV futura, com auditoria explícita.
 
 ---
 
-# 12. ETAPA 4 — Avisos + Telegram
+# 12. ETAPA 1 — alterações necessárias
+
+Prioridade derivada do contrato:
+
+```text
+1. Registration / Competition
+   - reativação
+   - cancelamento e desistência
+   - solicitação de cancelamento APROVADA
+   - prorrogação/reabertura
+   - compatibilidade de robô híbrido
+
+2. Follow
+   - estados válidos
+   - 3×3
+   - ausência
+   - penalidades/cronômetro
+
+3. Sumô
+   - inspeção humana
+   - rounds extras justificados
+   - decisão/identificação de juiz
+   - falha de inicialização
+
+4. Chaves
+   - status permitido
+   - regeneração protegida
+   - agenda x estrutura
+   - correção transacional antes da dependência
+   - bloqueio depois da dependência
+
+5. Testes automatizados de fluxo
+```
+
+Nenhum item acima está marcado como implementado apenas por estar documentado.
+
+---
+
+# 13. Estratégia de testes da ETAPA 1
+
+Hoje há testes unitários de services e smoke do profile `testdata`.
+
+Adicionar camada de testes de fluxo com Spring/Repositories reais para simular:
+
+```text
+CompetitionLifecycleFlow
+RegistrationFlow
+FollowCompetitionFlow
+SumoCompetitionFlow
+CompetitionIntegrityFlow
+```
+
+Cada operação inválida deve comprovar:
+
+```text
+erro esperado
++
+estado anterior preservado
++
+nenhuma persistência parcial
+```
+
+O CI deve continuar validando MySQL/Flyway além dos testes rápidos locais.
+
+---
+
+# 14. ETAPA 4 — Avisos + Telegram
 
 A decisão de planejamento atual concentra avisos IN_APP e Telegram na mesma etapa.
 
@@ -326,7 +515,7 @@ Regras:
 
 ---
 
-# 13. Dívida técnica reservada à ETAPA 2
+# 15. Dívida técnica reservada à ETAPA 2
 
 Ainda existem:
 
@@ -339,11 +528,11 @@ rascomp/bin/
 
 Além de TODOs/comentários antigos e possíveis duplicações.
 
-O checkpoint documental de 04/09 não removeu esses itens para não antecipar ETAPA 2.
+Não misturar essas tarefas com a implementação das regras da ETAPA 1.
 
 ---
 
-# 14. Evoluções futuras resumidas
+# 16. Evoluções futuras resumidas
 
 A ordem oficial está somente no roadmap canônico:
 
@@ -353,7 +542,7 @@ ETAPA 4  Avisos IN_APP + Telegram
 ETAPA 5  Ajustes Gerais + auditoria
 ETAPA 6  portabilidade institucional
 ETAPA 7  CMS/Mídia + Landing real
-ETAPA 8  Regras
+ETAPA 8  Regras públicas derivadas do contrato competitivo
 ETAPA 9  Futebol de Robôs
 ETAPA 10 participante completo + identificador competitivo
 ETAPA 11 Landing + Galeria
@@ -362,11 +551,9 @@ ETAPA 13 testes manuais completos
 ETAPA 14 deploy cloud
 ```
 
-Futebol exigirá alteração real do domínio porque `Registration.robot` é obrigatório hoje. **Não criar robô fake para satisfazer FK.**
-
 ---
 
-# 15. Executar localmente
+# 17. Executar localmente
 
 ```powershell
 cd rascomp
@@ -394,28 +581,20 @@ $env:SPRING_PROFILES_ACTIVE="testdata"
 
 Nunca habilitar `testdata` em produção.
 
-Swagger:
-
-```text
-http://localhost:8080/swagger-ui/index.html
-```
-
 ---
 
-# 16. Próximo passo / handoff
+# 18. Próximo passo / handoff
 
 ```text
-1. ler Rascomp-FRONT/docs/README.md
-2. conferir ETAPA 1 no roadmap
-3. ler Dossiê Mestre
-4. usar este arquivo como checkpoint backend
-5. verificar código real
-6. implementar correções da ETAPA 1
-7. criar/ajustar testes
-8. manter V1–V7 imutáveis
-9. manter modo local
-10. atualizar documentação no checkpoint
-11. aguardar validação antes da ETAPA 2
+1. ler contrato competitivo canônico
+2. comparar regra aprovada com código atual
+3. implementar por domínio, backend primeiro
+4. adicionar testes unitários e testes de fluxo
+5. usar V8+ se houver mudança de schema
+6. integrar frontend quando contrato/API mudar
+7. manter modo local e CI
+8. atualizar documentação no checkpoint
+9. aguardar validação antes da ETAPA 2
 ```
 
-Prioridade imediata: integridade de `Registration`, estado competitivo de chaves/resultados e regras válidas do Follow.
+Prioridade imediata recomendada: **Registration + Competition**, pois esses estados determinam a elegibilidade de todos os fluxos competitivos seguintes.
