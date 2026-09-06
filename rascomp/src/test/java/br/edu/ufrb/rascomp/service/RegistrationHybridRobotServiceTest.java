@@ -102,11 +102,6 @@ class RegistrationHybridRobotServiceTest {
         when(competitionRepository.findById(4L)).thenReturn(Optional.of(competition));
         when(teamRepository.findById(2L)).thenReturn(Optional.of(team));
         when(robotRepository.findById(3L)).thenReturn(Optional.of(robot));
-        when(registrationRepository.save(any(Registration.class))).thenAnswer(invocation -> {
-            Registration entity = invocation.getArgument(0);
-            if (entity.getId() == null) entity.setId(100L);
-            return entity;
-        });
     }
 
     @Test
@@ -117,6 +112,7 @@ class RegistrationHybridRobotServiceTest {
                 4L, 3L, List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA)))
                 .thenReturn(List.of(existente));
         when(registrationRepository.existsByCompetitionIdAndCategoryIdAndRobotId(4L, 11L, 3L)).thenReturn(false);
+        stubSave();
 
         RegistrationDTO result = service.criar(dto(11L));
 
@@ -146,6 +142,7 @@ class RegistrationHybridRobotServiceTest {
                 4L, 3L, List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA)))
                 .thenReturn(List.of(existenteFollow));
         when(registrationRepository.existsByCompetitionIdAndCategoryIdAndRobotId(4L, 12L, 3L)).thenReturn(false);
+        stubSave();
 
         RegistrationDTO result = service.criar(dto(12L));
 
@@ -160,6 +157,14 @@ class RegistrationHybridRobotServiceTest {
         assertThrows(IllegalArgumentException.class, () -> service.criar(dto(14L)));
 
         verify(registrationRepository, never()).save(any());
+    }
+
+    private void stubSave() {
+        when(registrationRepository.save(any(Registration.class))).thenAnswer(invocation -> {
+            Registration entity = invocation.getArgument(0);
+            if (entity.getId() == null) entity.setId(100L);
+            return entity;
+        });
     }
 
     private CompetitionCategory categoria(Long id, String nome, Modalidade modalidade, SumoPhysicalClass physicalClass) {
