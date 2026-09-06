@@ -29,6 +29,7 @@ import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
+import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
@@ -50,6 +51,7 @@ class RegistrationIntegrityServiceTest {
     @Mock private CompetitorRepository competitorRepository;
     @Mock private UserAccountService userAccountService;
     @Mock private TentativaSeguidorLinhaRepository tentativaRepository;
+    @Mock private AusenciaTomadaSeguidorLinhaRepository ausenciaFollowRepository;
     @Mock private InspecaoSumoRepository inspecaoSumoRepository;
     @Mock private MatchRepository matchRepository;
 
@@ -158,6 +160,17 @@ class RegistrationIntegrityServiceTest {
     void organizacaoMarcaComoDesistenteQuandoJaExisteAtividadeCompetitiva() {
         registration.setStatus(StatusRegistration.APROVADA);
         when(tentativaRepository.existsByRegistrationId(1L)).thenReturn(true);
+
+        service.deletar(1L);
+
+        assertEquals(StatusRegistration.DESISTENTE, registration.getStatus());
+        assertEquals(false, registration.getAtivo());
+    }
+
+    @Test
+    void ausenciaDeTomadaFollowTambemContaComoAtividadeCompetitiva() {
+        registration.setStatus(StatusRegistration.APROVADA);
+        when(ausenciaFollowRepository.existsByRegistrationId(1L)).thenReturn(true);
 
         service.deletar(1L);
 
