@@ -22,6 +22,7 @@ import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.TentativaSeguidorLinha;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
@@ -32,6 +33,7 @@ class TentativaSeguidorLinhaServiceTest {
     @Mock private TentativaSeguidorLinhaRepository tentativaRepository;
     @Mock private RegistrationRepository registrationRepository;
     @Mock private ConfigFollowRepository configFollowRepository;
+    @Mock private AusenciaTomadaSeguidorLinhaRepository ausenciaRepository;
 
     @InjectMocks
     private TentativaSeguidorLinhaService service;
@@ -59,6 +61,8 @@ class TentativaSeguidorLinhaServiceTest {
                 .tentativasPorTomada(3)
                 .maxTempoSegundos(180)
                 .numeroCheckpoints(5)
+                .penalidadePadraoSegundos(10)
+                .tempoApresentacaoSegundos(60)
                 .build();
 
         when(registrationRepository.findById(1L)).thenReturn(Optional.of(registration));
