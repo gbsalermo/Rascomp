@@ -49,6 +49,7 @@ import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.StatusRoundSumo;
+import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
@@ -141,10 +142,13 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         garantirFotoDemo(chronos, "CHRONOS", new Color(79, 25, 103));
         garantirFotoDemo(titan, "TITAN", new Color(159, 15, 59));
 
-        CompetitionCategory followCategory = garantirCategoria(FOLLOW_CATEGORY, Modalidade.FOLLOW_LINE);
-        CompetitionCategory miniCategory = garantirCategoria(MINI_CATEGORY, Modalidade.SUMO);
-        CompetitionCategory byeCategory = garantirCategoria(BYE_CATEGORY, Modalidade.SUMO);
-        CompetitionCategory historyCategory = garantirCategoria(HISTORY_SUMO_CATEGORY, Modalidade.SUMO);
+        CompetitionCategory followCategory = garantirCategoria(FOLLOW_CATEGORY, Modalidade.FOLLOW_LINE, null);
+        CompetitionCategory miniCategory = garantirCategoria(
+                MINI_CATEGORY, Modalidade.SUMO, SumoPhysicalClass.MINI_500G);
+        CompetitionCategory byeCategory = garantirCategoria(
+                BYE_CATEGORY, Modalidade.SUMO, SumoPhysicalClass.SUMO_3KG);
+        CompetitionCategory historyCategory = garantirCategoria(
+                HISTORY_SUMO_CATEGORY, Modalidade.SUMO, SumoPhysicalClass.MINI_500G);
         garantirConfigFollow(followCategory);
         garantirConfigSumo(miniCategory, "0.500");
         garantirConfigSumo(byeCategory, "3.000");
@@ -233,13 +237,17 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         return robotRepository.save(item);
     }
 
-    private CompetitionCategory garantirCategoria(String nome, Modalidade modalidade) {
+    private CompetitionCategory garantirCategoria(
+            String nome,
+            Modalidade modalidade,
+            SumoPhysicalClass sumoPhysicalClass) {
         CompetitionCategory item = categoryRepository.findAll().stream()
                 .filter(i -> nome.equalsIgnoreCase(i.getNome())).findFirst()
                 .orElseGet(() -> CompetitionCategory.builder().build());
         item.setNome(nome);
         item.setDescricao("Categoria preparada pelo profile local de demonstração.");
         item.setModalidade(modalidade);
+        item.setSumoPhysicalClass(modalidade == Modalidade.SUMO ? sumoPhysicalClass : null);
         item.setAtivo(true);
         return categoryRepository.save(item);
     }
