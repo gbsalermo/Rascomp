@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import br.edu.ufrb.rascomp.dto.CompetitionCategoryDTO;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import jakarta.persistence.EntityNotFoundException;
 
@@ -36,6 +37,7 @@ class CompetitionCategoryServiceTest {
         dto.setNome("Mini Sumo Teste");
         dto.setDescricao("Categoria automatizada");
         dto.setModalidade(Modalidade.SUMO);
+        dto.setSumoPhysicalClass(SumoPhysicalClass.MINI_500G);
         dto.setAtivo(null);
 
         when(competitionCategoryRepository.save(any(CompetitionCategory.class)))
@@ -50,7 +52,32 @@ class CompetitionCategoryServiceTest {
         assertEquals(10L, resultado.getId());
         assertEquals("Mini Sumo Teste", resultado.getNome());
         assertEquals(Modalidade.SUMO, resultado.getModalidade());
+        assertEquals(SumoPhysicalClass.MINI_500G, resultado.getSumoPhysicalClass());
         assertTrue(resultado.getAtivo());
+    }
+
+    @Test
+    void categoriaSumoDeveExigirClasseFisica() {
+        CompetitionCategoryDTO dto = new CompetitionCategoryDTO();
+        dto.setNome("Sumo sem classe");
+        dto.setModalidade(Modalidade.SUMO);
+
+        assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
+    }
+
+    @Test
+    void followIgnoraClasseFisicaDeSumo() {
+        CompetitionCategoryDTO dto = new CompetitionCategoryDTO();
+        dto.setNome("Seguidor de Linha");
+        dto.setModalidade(Modalidade.FOLLOW_LINE);
+        dto.setSumoPhysicalClass(SumoPhysicalClass.MINI_500G);
+
+        when(competitionCategoryRepository.save(any(CompetitionCategory.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        CompetitionCategoryDTO resultado = service.criar(dto);
+
+        assertEquals(null, resultado.getSumoPhysicalClass());
     }
 
     @Test
