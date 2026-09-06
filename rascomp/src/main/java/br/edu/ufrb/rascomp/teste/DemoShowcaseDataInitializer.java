@@ -259,6 +259,8 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         config.setTentativasPorTomada(3);
         config.setMaxTempoSegundos(120);
         config.setNumeroCheckpoints(5);
+        config.setPenalidadePadraoSegundos(10);
+        config.setTempoApresentacaoSegundos(60);
         configFollowRepository.save(config);
     }
 
@@ -349,7 +351,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         tentativa(chronos, 1, 3, "43.950", 5, 0, true, true, "Melhor da tomada 1.");
         tentativa(chronos, 2, 1, "42.780", 5, 0, true, true, "Evolução de tempo.");
         tentativa(chronos, 2, 2, "41.930", 5, 0, true, true, "Melhor marca atual.");
-        tentativa(chronos, 2, 3, "45.300", 4, 0, false, true, "Tentativa interrompida.");
+        tentativa(chronos, 2, 3, null, 4, 0, false, false, "Tentativa interrompida.");
 
         String[] nomes = { "Velocity Demo", "LineHunter Demo", "Pulsar Demo", "Vector Demo", "Orion Track Demo" };
         String[] marcas = { "38.420", "40.210", "43.150", "45.800", "49.100" };
@@ -516,7 +518,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         item.setRegistration(registration);
         item.setTomada(tomada);
         item.setNumeroTentativa(numeroTentativa);
-        item.setTempoSegundos(new BigDecimal(tempo));
+        item.setTempoSegundos(tempo == null ? null : new BigDecimal(tempo));
         item.setCheckpointsAlcancados(checkpoints);
         item.setPenalidadeSegundos(penalidade);
         item.setConcluida(concluida);
