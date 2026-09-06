@@ -18,6 +18,7 @@ import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
+import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRegistrationWindowChangeRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
@@ -36,6 +37,7 @@ public class CompetitionRegistrationWindowService {
     private final CompetitionRegistrationWindowChangeRepository changeRepository;
     private final BracketRepository bracketRepository;
     private final TentativaSeguidorLinhaRepository tentativaRepository;
+    private final AusenciaTomadaSeguidorLinhaRepository ausenciaFollowRepository;
     private final RoundSumoRepository roundSumoRepository;
     private final MatchResultRepository matchResultRepository;
     private final MatchRepository matchRepository;
@@ -107,6 +109,7 @@ public class CompetitionRegistrationWindowService {
 
     private void validarSemAtividadeCompetitiva(Long competitionId) {
         boolean houveAtividade = tentativaRepository.existsByRegistrationCompetitionId(competitionId)
+                || ausenciaFollowRepository.existsByRegistrationCompetitionId(competitionId)
                 || roundSumoRepository.existsByMatchBracketCompetitionId(competitionId)
                 || matchResultRepository.existsByMatchBracketCompetitionId(competitionId)
                 || matchRepository.existsByBracketCompetitionIdAndStatusIn(
