@@ -5,5 +5,6 @@ public enum StatusRegistration {
     APROVADA,
     REJEITADA,
     CANCELADA,
+    DESISTENTE,
     DESCLASSIFICADA
 }
