@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -23,6 +25,7 @@ import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.TentativaSeguidorLinha;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
@@ -33,6 +36,7 @@ class TentativaSeguidorLinhaRulesTest {
     @Mock private TentativaSeguidorLinhaRepository tentativaRepository;
     @Mock private RegistrationRepository registrationRepository;
     @Mock private ConfigFollowRepository configFollowRepository;
+    @Mock private AusenciaTomadaSeguidorLinhaRepository ausenciaRepository;
 
     @InjectMocks private TentativaSeguidorLinhaService service;
 
@@ -52,6 +56,8 @@ class TentativaSeguidorLinhaRulesTest {
                 .tentativasPorTomada(3)
                 .maxTempoSegundos(120)
                 .numeroCheckpoints(5)
+                .penalidadePadraoSegundos(10)
+                .tempoApresentacaoSegundos(60)
                 .build();
 
         when(registrationRepository.findById(8L)).thenReturn(Optional.of(registration));
@@ -98,6 +104,47 @@ class TentativaSeguidorLinhaRulesTest {
 
         TentativaSeguidorLinhaDTO result = service.criar(dto);
         assertEquals(0, new BigDecimal("42.250").compareTo(result.getTempoFinalSegundos()));
+    }
+
+    @Test
+    void naoConcluidaNaoPodeSerValida() {
+        TentativaSeguidorLinhaDTO dto = base(1, 1);
+        dto.setConcluida(false);
+        dto.setValida(true);
+        dto.setTempoSegundos(null);
+
+        assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
+        verify(tentativaRepository, never()).save(any());
+    }
+
+    @Test
+    void naoConcluidaDeveFicarSemTempo() {
+        TentativaSeguidorLinhaDTO dto = base(1, 1);
+        dto.setConcluida(false);
+        dto.setValida(false);
+
+        assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
+        verify(tentativaRepository, never()).save(any());
+    }
+
+    @Test
+    void concluidaDevePossuirTempo() {
+        TentativaSeguidorLinhaDTO dto = base(1, 1);
+        dto.setTempoSegundos(null);
+        dto.setConcluida(true);
+        dto.setValida(false);
+
+        assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
+        verify(tentativaRepository, never()).save(any());
+    }
+
+    @Test
+    void tomadaPerdidaPorAusenciaNaoAceitaTentativa() {
+        TentativaSeguidorLinhaDTO dto = base(2, 1);
+        when(ausenciaRepository.existsByRegistrationIdAndTomada(8L, 2)).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
+        verify(tentativaRepository, never()).save(any());
     }
 
     private TentativaSeguidorLinhaDTO base(int tomada, int tentativa) {
