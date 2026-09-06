@@ -19,6 +19,7 @@ import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.ConfigSumoRepository;
@@ -102,6 +103,7 @@ public class BracketHistoryTestDataInitializer implements CommandLineRunner {
                 .findFirst()
                 .map(item -> {
                     item.setModalidade(Modalidade.SUMO);
+                    item.setSumoPhysicalClass(SumoPhysicalClass.MINI_500G);
                     item.setAtivo(true);
                     return competitionCategoryRepository.save(item);
                 })
@@ -110,6 +112,7 @@ public class BracketHistoryTestDataInitializer implements CommandLineRunner {
                                 .nome(CATEGORY_NAME)
                                 .descricao("Categoria temporaria para validar geracao, regeneracao e historico de chaves.")
                                 .modalidade(Modalidade.SUMO)
+                                .sumoPhysicalClass(SumoPhysicalClass.MINI_500G)
                                 .ativo(true)
                                 .build()));
     }
