@@ -53,12 +53,14 @@ public class ConfigFollow implements Serializable {
     private Integer numeroCheckpoints;
 
     /** Penalidade temporal sugerida pela UI para ocorrências como "não parou". */
+    @Builder.Default
     @Column(name = "penalidade_padrao_segundos", nullable = false)
-    private Integer penalidadePadraoSegundos;
+    private Integer penalidadePadraoSegundos = 10;
 
     /** Tempo operacional de apresentação após a chamada de uma tomada. */
+    @Builder.Default
     @Column(name = "tempo_apresentacao_segundos", nullable = false)
-    private Integer tempoApresentacaoSegundos;
+    private Integer tempoApresentacaoSegundos = 60;
 
     /*
      * O resultado bruto é persistido em TentativaSeguidorLinha.
