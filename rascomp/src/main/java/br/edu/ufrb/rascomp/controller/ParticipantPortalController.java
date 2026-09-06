@@ -22,6 +22,8 @@ import br.edu.ufrb.rascomp.dto.ParticipantCompetitorRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantRegistrationRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantRobotRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantTeamRequest;
+import br.edu.ufrb.rascomp.dto.RegistrationCancellationCreateRequest;
+import br.edu.ufrb.rascomp.dto.RegistrationCancellationRequestDTO;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RobotDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
@@ -150,5 +152,19 @@ public class ParticipantPortalController {
     @PatchMapping("/inscricoes/{registrationId}/reativar")
     public ResponseEntity<RegistrationDTO> reativarInscricao(@PathVariable Long registrationId) {
         return ResponseEntity.ok(portalService.reativarInscricao(registrationId));
+    }
+
+    @PostMapping("/inscricoes/{registrationId}/solicitacoes-cancelamento")
+    public ResponseEntity<RegistrationCancellationRequestDTO> solicitarCancelamento(
+            @PathVariable Long registrationId,
+            @Valid @RequestBody RegistrationCancellationCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(portalService.solicitarCancelamento(registrationId, request.getMotivo()));
+    }
+
+    @GetMapping("/inscricoes/{registrationId}/solicitacoes-cancelamento")
+    public ResponseEntity<List<RegistrationCancellationRequestDTO>> solicitacoesCancelamento(
+            @PathVariable Long registrationId) {
+        return ResponseEntity.ok(portalService.solicitacoesCancelamento(registrationId));
     }
 }
