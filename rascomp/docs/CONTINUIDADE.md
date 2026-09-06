@@ -33,9 +33,15 @@ Em 04/09/2026 houve um checkpoint exclusivamente documental.
 
 Em 06/09/2026 foi consolidado o contrato competitivo da ETAPA 1.
 
-Também em 06/09/2026 foi concluído o **primeiro bloco funcional da ETAPA 1 — `Competition + Registration`**, com proteção inicial das transições de estado e do ciclo de inscrição.
+Também em 06/09/2026 foi concluído o bloco funcional de `Competition + Registration` relativo a:
 
-Este checkpoint **não encerra a ETAPA 1**. Permanecem pendentes os fluxos estruturais de solicitação de cancelamento, prorrogação/reabertura auditável, compatibilidade física dos robôs híbridos, Follow, Sumô, chaveamentos e testes integrados de competição completa.
+- máquina de estados da competição;
+- reativação/cancelamento/desistência;
+- solicitação persistida de cancelamento de inscrição aprovada;
+- prorrogação/reabertura auditável da janela de inscrições;
+- integração dos fluxos com o portal participante e a Gestão.
+
+Este checkpoint **não encerra a ETAPA 1**. Permanecem pendentes compatibilidade física dos robôs híbridos, Follow, Sumô, chaveamentos e testes integrados de competição completa.
 
 ---
 
@@ -44,10 +50,10 @@ Este checkpoint **não encerra a ETAPA 1**. Permanecem pendentes os fluxos estru
 ```text
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
-MYSQL + FLYWAY V1–V7                     ✅
-COMPETIÇÕES                              ✅ base + transições protegidas
+MYSQL + FLYWAY V1–V8                     ✅
+COMPETIÇÕES                              ✅ base + transições + prorrogação/reabertura
 EQUIPES / COMPETIDORES / ROBÔS           ✅
-INSCRIÇÕES + REVISÃO                     ✅ base + invariantes iniciais
+INSCRIÇÕES + REVISÃO                     ✅ base + invariantes + cancelamento solicitado
 FOTOS DOS ROBÔS                          ✅
 FOLLOW LINE                              ✅ base atual
 RANKING FOLLOW                           ✅ base atual
@@ -56,22 +62,22 @@ SUMÔ / INSPEÇÃO / ROUNDS                 ✅ base atual
 SUICÍDIO/WO                              ✅
 CHAVES / BYE / PROGRESSÃO                ✅ base atual
 HISTÓRICO DE CHAVES                      ✅
-API PARTICIPANTE                         ✅ base funcional
+API PARTICIPANTE                         ✅ base + cancelamento/reativação
 API PÚBLICA                              ✅
 PROFILE TESTDATA                         ✅
 ```
 
-Checkpoint automatizado após o primeiro bloco funcional da ETAPA 1:
+Checkpoint automatizado atual:
 
 ```text
-59 testes
+67 testes
 0 falhas
 0 erros
 0 skipped
-MySQL + Flyway + testdata ✅
+MySQL + Flyway V8 + testdata ✅
 ```
 
-O workflow também compilou a aplicação e inicializou o cenário completo `testdata` contra MySQL real no CI.
+O workflow compilou a aplicação e inicializou o cenário completo `testdata` contra MySQL real no CI.
 
 ---
 
@@ -109,16 +115,17 @@ V4 — remoção de estrutura legada Follow/chaves
 V5 — usuários / ownership / fotos
 V6 — histórico de chaves
 V7 — regras estendidas de round/penalidades
+V8 — solicitações de cancelamento + histórico da janela de inscrições
 ```
 
 Regra:
 
 ```text
-V1–V7 nunca são reescritas
-próxima mudança estrutural = V8+
+V1–V8 nunca são reescritas
+próxima mudança estrutural = V9+
 ```
 
-O primeiro bloco `Competition + Registration` não exigiu nova migration porque `registrations.status` já é textual e comporta `DESISTENTE`.
+A adição de `DESISTENTE` não exigiu migration própria porque `registrations.status` já é textual. A V8 foi necessária para persistir os novos históricos sem sobrecarregar `Registration` ou `Competition` com flags transitórias.
 
 ---
 
@@ -187,7 +194,9 @@ PENDENTE
 
 APROVADA
 → participante não pode cancelar diretamente
-→ backend informa que deve solicitar à organização
+→ participante abre solicitação de cancelamento
+→ Registration permanece APROVADA enquanto a solicitação está PENDENTE
+→ organização APROVA ou REJEITA a solicitação
 
 REJEITADA
 → organização pode reabrir para correção
@@ -197,13 +206,13 @@ CANCELADA / REJEITADA
 → retorna PENDENTE
 
 APROVADA sem atividade competitiva
-→ cancelamento pela organização = CANCELADA
+→ cancelamento aprovado = CANCELADA
 
 APROVADA com atividade competitiva
-→ cancelamento pela organização = DESISTENTE
+→ cancelamento aprovado = DESISTENTE
 ```
 
-Atividade competitiva atualmente detectada para essa proteção:
+Atividade competitiva atualmente detectada para a distinção `CANCELADA/DESISTENTE`:
 
 ```text
 tentativa Follow
@@ -220,25 +229,49 @@ O `PUT` genérico deixou de ser uma forma de contornar essas regras:
 - no fluxo comum, `PENDENTE` só muda para `APROVADA` ou `REJEITADA`;
 - aprovação/rejeição continuam exigindo ORGANIZACAO.
 
-No portal participante existe agora reativação segura de inscrição cancelada:
+## Solicitação de cancelamento persistida
+
+Modelo implementado:
+
+```text
+RegistrationCancellationRequest
+├─ registration
+├─ requestedByUser
+├─ status: PENDENTE | APROVADA | REJEITADA
+├─ motivo
+├─ reviewedByUser
+├─ reviewedAt
+├─ resposta
+└─ dataCadastro
+```
+
+Regras:
+
+- somente inscrição ativa e `APROVADA` aceita solicitação;
+- somente PARTICIPANTE usa o fluxo do portal;
+- não pode haver duas solicitações `PENDENTE` para a mesma inscrição;
+- competição `FINALIZADA` ou `CANCELADA` não aceita nova solicitação;
+- aprovação pela organização conclui o cancelamento de forma transacional;
+- rejeição mantém a inscrição `APROVADA`.
+
+Endpoints principais:
+
+```text
+POST /api/v1/participante/inscricoes/{id}/solicitacoes-cancelamento
+GET  /api/v1/participante/inscricoes/{id}/solicitacoes-cancelamento
+
+GET   /api/v1/solicitacoes-cancelamento-inscricao
+PATCH /api/v1/solicitacoes-cancelamento-inscricao/{id}/aprovar
+PATCH /api/v1/solicitacoes-cancelamento-inscricao/{id}/rejeitar
+```
+
+O portal participante também possui reativação segura:
 
 ```text
 PATCH /api/v1/participante/inscricoes/{registrationId}/reativar
 ```
 
-## Ainda pendente
-
-A regra aprovada para `APROVADA` é:
-
-```text
-participante solicita cancelamento
-→ organização analisa
-→ aceita ou rejeita
-```
-
-Esse fluxo ainda precisa de modelo persistente próprio; não foi improvisado com `observacao` ou mudança direta de status.
-
-Pagamento ainda não existe, mas quando habilitado deverá ser condição de aprovação conforme contrato.
+## Ainda pendente neste domínio
 
 Robôs híbridos:
 
@@ -249,6 +282,8 @@ mesmo Robot não pode Mini + 3 kg na mesma edição
 ```
 
 A implementação atual ainda usa unicidade `competition + category + robot`; revisar compatibilidade física sem destruir o conceito de um único robô da equipe.
+
+Pagamento ainda não existe e **não será antecipado nesta subparte**. Quando habilitado futuramente, deverá ser condição opcional de aprovação conforme contrato.
 
 ---
 
@@ -272,18 +307,61 @@ Implementado:
 - fluxo comum não permite pular estados;
 - `FINALIZADA` e `CANCELADA` não voltam para estados anteriores por simples `PUT`;
 - inativação não pode ser disfarçada usando `ativo=false` no update comum;
-- frontend Gestão oferece somente o estado atual e as próximas transições permitidas.
+- frontend Gestão oferece somente o estado atual e as próximas transições permitidas;
+- prorrogação/reabertura usa operação explícita e histórica.
 
-Ainda pendente:
+Operação:
 
 ```text
-prorrogarInscricoes(novaData, motivo)
-reabrir inscrições fechadas de forma auditável
+POST /api/v1/competicoes/{id}/prorrogar-inscricoes
+GET  /api/v1/competicoes/{id}/historico-inscricoes
 ```
 
-Prorrogação/reabertura deve ser operação explícita com nova data e motivo, e não simples alteração arbitrária de enum.
+Histórico persistido:
 
-Se uma chave já existir e ainda não houver atividade, reabertura pode exigir invalidar/regenerar a chave. Depois de atividade competitiva iniciada, reabertura comum é bloqueada.
+```text
+CompetitionRegistrationWindowChange
+├─ competition
+├─ tipo: PRORROGACAO | REABERTURA
+├─ dataFimAnterior
+├─ novaDataFim
+├─ motivo
+├─ realizadoPor
+└─ dataCadastro
+```
+
+Regras atuais:
+
+```text
+INSCRICOES_ABERTAS
+→ nova data posterior à atual
+→ PRORROGACAO
+→ continua INSCRICOES_ABERTAS
+
+INSCRICOES_ENCERRADAS
+→ somente sem atividade competitiva
+→ REABERTURA
+→ INSCRICOES_ABERTAS
+```
+
+A nova data não pode estar no passado nem ultrapassar `dataInicio` da competição.
+
+Para decidir se uma reabertura é segura, são verificados:
+
+- tentativas Follow;
+- rounds de Sumô;
+- resultados de partida;
+- partidas `EM_ANDAMENTO` ou `FINALIZADA`.
+
+Se existir chave atual ainda sem atividade competitiva, a reabertura:
+
+```text
+preserva a chave historicamente
+→ atual = false
+→ status = CANCELADO
+```
+
+A chave deverá ser gerada novamente depois do novo fechamento das inscrições.
 
 ---
 
@@ -495,23 +573,30 @@ Rollback competitivo em cadeia fica para ferramenta DEV futura, com auditoria ex
 ```text
 ✅ reativação respeita janela
 ✅ participante não cancela APROVADA diretamente
+✅ solicitação persistida de cancelamento APROVADA
+✅ análise de cancelamento pela organização
 ✅ CANCELADA x DESISTENTE protegidas pelo histórico
 ✅ edição genérica de Registration restringida
 ✅ reabertura de REJEITADA pela organização
 ✅ transições normais de Competition protegidas
-✅ frontend reflete transições permitidas
-✅ DESISTENTE refletido no frontend
-✅ 59 testes unitários verdes
-✅ MySQL/Flyway/testdata verdes
+✅ prorrogação/reabertura auditável
+✅ reabertura bloqueada após atividade competitiva
+✅ chave atual sem disputa é preservada e invalidada na reabertura
+✅ frontend Gestão e Participante integrados
+✅ 67 testes unitários verdes
+✅ MySQL/Flyway V8/testdata verdes
 ```
 
-Pendente dentro do mesmo domínio:
+Pendente dentro do domínio:
 
 ```text
-⏳ solicitação persistida de cancelamento APROVADA
-⏳ prorrogação/reabertura auditável de inscrições
 ⏳ compatibilidade física de robôs híbridos
-⏳ pagamento futuro como pré-condição opcional de aprovação
+```
+
+Reservado para evolução futura, sem implementação antecipada:
+
+```text
+pagamento como pré-condição opcional de aprovação
 ```
 
 Demais blocos:
@@ -543,7 +628,7 @@ Demais blocos:
 
 # 13. Estratégia de testes da ETAPA 1
 
-Agora há 59 testes unitários de services e smoke do profile `testdata` contra MySQL.
+Agora há 67 testes unitários de services e smoke do profile `testdata` contra MySQL/Flyway V8.
 
 A camada de fluxo integrado ainda será adicionada para simular:
 
@@ -611,22 +696,9 @@ Não misturar essas tarefas com a implementação das regras da ETAPA 1.
 
 # 16. Evoluções futuras resumidas
 
-A ordem oficial está somente no roadmap canônico:
+A ordem oficial está somente no roadmap canônico.
 
-```text
-ETAPA 3  nova matriz de roles
-ETAPA 4  Avisos IN_APP + Telegram
-ETAPA 5  Ajustes Gerais + auditoria
-ETAPA 6  portabilidade institucional
-ETAPA 7  CMS/Mídia + Landing real
-ETAPA 8  Regras públicas derivadas do contrato competitivo
-ETAPA 9  Futebol de Robôs
-ETAPA 10 participante completo + identificador competitivo
-ETAPA 11 Landing + Galeria
-ETAPA 12 Hardening
-ETAPA 13 testes manuais completos
-ETAPA 14 deploy cloud
-```
+Não usar esta seção para redefinir numeração de etapas; consultar `docs/ETAPAS_POS_PROJETO.md` antes de avançar.
 
 ---
 
@@ -662,14 +734,15 @@ Nunca habilitar `testdata` em produção.
 
 # 18. Próximo passo / handoff
 
-Próxima subparte recomendada ainda dentro de `Competition + Registration`:
+Próxima subparte recomendada da ETAPA 1:
 
 ```text
-1. modelar solicitação de cancelamento de APROVADA
-2. modelar prorrogação/reabertura auditável de inscrições
-3. usar migration V8+ se necessário
-4. testar regras e rollback
-5. integrar frontend
+1. revisar a modelagem atual de Category/Robot
+2. formalizar classe física de Sumô para robôs híbridos
+3. permitir Auto + R/C da mesma classe física
+4. bloquear Mini + 3 kg para o mesmo Robot na mesma edição
+5. adicionar migration V9+ somente se necessária
+6. testar invariantes e integrar frontend se o contrato/API mudar
 ```
 
 Depois disso avançar para **Follow Line**.
