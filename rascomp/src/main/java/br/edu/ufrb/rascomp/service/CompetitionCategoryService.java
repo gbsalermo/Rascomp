@@ -16,81 +16,73 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CompetitionCategoryService {
 
-	private final CompetitionCategoryRepository competitionCategoryRepository;
-	
-	@Transactional
-	public CompetitionCategoryDTO criar(CompetitionCategoryDTO dto) {
-		
-		CompetitionCategory category = new CompetitionCategory();
-		preencherCategory(category, dto);
-		
-		CompetitionCategory salvo = competitionCategoryRepository.save(category);
-		return new CompetitionCategoryDTO(salvo);
-	}
-	
-	
-	@Transactional(readOnly = true)
-	public List<CompetitionCategoryDTO> listarTodos(){
-		return competitionCategoryRepository.findAll()
-				.stream()
-				.map(CompetitionCategoryDTO::new)
-				.toList();
-	}
-	
-	@Transactional(readOnly = true)
-	public CompetitionCategoryDTO buscarPorId(Long id){
-		CompetitionCategory category = competitionCategoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com o id: " + id));
+    private final CompetitionCategoryRepository competitionCategoryRepository;
+
+    @Transactional
+    public CompetitionCategoryDTO criar(CompetitionCategoryDTO dto) {
+        CompetitionCategory category = new CompetitionCategory();
+        preencherCategory(category, dto);
+        CompetitionCategory salvo = competitionCategoryRepository.save(category);
+        return new CompetitionCategoryDTO(salvo);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CompetitionCategoryDTO> listarTodos() {
+        return competitionCategoryRepository.findAll()
+                .stream()
+                .map(CompetitionCategoryDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CompetitionCategoryDTO buscarPorId(Long id) {
+        CompetitionCategory category = competitionCategoryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o id: " + id));
         return new CompetitionCategoryDTO(category);
-	}
-	
-	@Transactional(readOnly = true)
-	public List<CompetitionCategoryDTO> listarPorModalidade(Modalidade modalidade){
-		return competitionCategoryRepository.findByModalidade(modalidade)
-				.stream()
-				.map(CompetitionCategoryDTO::new)
-				.toList();
-	}
-	
-	@Transactional(readOnly = true)
-	public List<CompetitionCategoryDTO> listarPorModalidadeAtiva(Modalidade modalidade){
-		return competitionCategoryRepository.findByModalidadeAndAtivoTrue(modalidade)
-				.stream()
-				.map(CompetitionCategoryDTO::new)
-				.toList();
-	}
-	
-	@Transactional
+    }
+
+    @Transactional(readOnly = true)
+    public List<CompetitionCategoryDTO> listarPorModalidade(Modalidade modalidade) {
+        return competitionCategoryRepository.findByModalidade(modalidade)
+                .stream()
+                .map(CompetitionCategoryDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CompetitionCategoryDTO> listarPorModalidadeAtiva(Modalidade modalidade) {
+        return competitionCategoryRepository.findByModalidadeAndAtivoTrue(modalidade)
+                .stream()
+                .map(CompetitionCategoryDTO::new)
+                .toList();
+    }
+
+    @Transactional
     public CompetitionCategoryDTO atualizar(Long id, CompetitionCategoryDTO dto) {
-		CompetitionCategory category = competitionCategoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado"));
-        
+        CompetitionCategory category = competitionCategoryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
         preencherCategory(category, dto);
         CompetitionCategory atualizado = competitionCategoryRepository.save(category);
         return new CompetitionCategoryDTO(atualizado);
     }
-	
-	@Transactional
+
+    @Transactional
     public void deletar(Long id) {
-
-		CompetitionCategory category = competitionCategoryRepository.findById(id)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(
-                                "Produto não encontrado com o id: " + id));
-
+        CompetitionCategory category = competitionCategoryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o id: " + id));
         category.setAtivo(false);
     }
-	
-	private void preencherCategory(
-	        CompetitionCategory category,
-	        CompetitionCategoryDTO dto) {
 
-		category.setNome(dto.getNome());
-		category.setDescricao(dto.getDescricao());
-		category.setModalidade(dto.getModalidade());
-		category.setAtivo(
-	        dto.getAtivo() != null ? dto.getAtivo() : true);
-	}
-	
-	
+    private void preencherCategory(CompetitionCategory category, CompetitionCategoryDTO dto) {
+        if (dto.getModalidade() == Modalidade.SUMO && dto.getSumoPhysicalClass() == null) {
+            throw new IllegalArgumentException("Categoria de Sumô deve informar a classe física: MINI_500G ou SUMO_3KG.");
+        }
+
+        category.setNome(dto.getNome().trim());
+        category.setDescricao(dto.getDescricao() == null || dto.getDescricao().isBlank()
+                ? null : dto.getDescricao().trim());
+        category.setModalidade(dto.getModalidade());
+        category.setSumoPhysicalClass(dto.getModalidade() == Modalidade.SUMO ? dto.getSumoPhysicalClass() : null);
+        category.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
+    }
 }
