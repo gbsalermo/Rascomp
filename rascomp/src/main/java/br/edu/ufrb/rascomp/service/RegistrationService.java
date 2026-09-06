@@ -21,6 +21,7 @@ import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
+import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
@@ -44,6 +45,7 @@ public class RegistrationService {
     private final CompetitorRepository competitorRepository;
     private final UserAccountService userAccountService;
     private final TentativaSeguidorLinhaRepository tentativaRepository;
+    private final AusenciaTomadaSeguidorLinhaRepository ausenciaFollowRepository;
     private final InspecaoSumoRepository inspecaoSumoRepository;
     private final MatchRepository matchRepository;
 
@@ -257,6 +259,7 @@ public class RegistrationService {
 
     private boolean possuiAtividadeCompetitiva(Long registrationId) {
         return tentativaRepository.existsByRegistrationId(registrationId)
+                || ausenciaFollowRepository.existsByRegistrationId(registrationId)
                 || inspecaoSumoRepository.existsByRegistrationId(registrationId)
                 || matchRepository.existsByRegistrationAIdOrRegistrationBId(registrationId, registrationId);
     }
@@ -360,32 +363,32 @@ public class RegistrationService {
                         dto.getCompetitionId(), dto.getCategoryId(), dto.getRobotId())
                 : registrationRepository.existsByCompetitionIdAndCategoryIdAndRobotIdAndIdNot(
                         dto.getCompetitionId(), dto.getCategoryId(), dto.getRobotId(), id);
-        if (existe) throw new IllegalArgumentException("Este robô já está inscrito nesta categoria da competição.");
-    }
-
-    private Registration buscarRegistration(Long id) {
-        return registrationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Inscrição não encontrada: " + id));
+        if (existe) throw new IllegalArgumentException("Já existe inscrição deste robô para esta categoria na competição.");
     }
 
     private Competition buscarCompetition(Long id) {
         return competitionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Competição não encontrada: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Competição não encontrada com o id: " + id));
     }
 
     private CompetitionCategory buscarCategory(Long id) {
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o id: " + id));
     }
 
     private Team buscarTeam(Long id) {
         return teamRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Equipe não encontrada: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Equipe não encontrada com o id: " + id));
     }
 
     private Robot buscarRobot(Long id) {
         return robotRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Robô não encontrado: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Robô não encontrado com o id: " + id));
+    }
+
+    private Registration buscarRegistration(Long id) {
+        return registrationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Inscrição não encontrada com o id: " + id));
     }
 
     private void preencher(
@@ -401,8 +404,6 @@ public class RegistrationService {
         registration.setTeam(team);
         registration.setRobot(robot);
         registration.setCompetitors(competitors);
-        registration.setObservacao(
-                dto.getObservacao() == null || dto.getObservacao().isBlank()
-                        ? null : dto.getObservacao().trim());
+        registration.setObservacao(dto.getObservacao());
     }
 }
