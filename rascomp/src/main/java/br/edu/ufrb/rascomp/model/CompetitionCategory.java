@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,35 +32,38 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class CompetitionCategory implements Serializable {
-	
-	private static final long serialVersionUID = 1L;
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	@Column(nullable = false, length = 100)
-	private String nome;
-		
-	@Column(length = 500)
-	private String descricao;
-	
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private Modalidade modalidade;
-	
-	@Builder.Default
-	@Column(nullable = false)
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 100)
+    private String nome;
+
+    @Column(length = 500)
+    private String descricao;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Modalidade modalidade;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sumo_physical_class", length = 20)
+    private SumoPhysicalClass sumoPhysicalClass;
+
+    @Builder.Default
+    @Column(nullable = false)
     private Boolean ativo = true;
-	
-	@OneToOne(mappedBy = "competitionCategory", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-	private ConfigSumo configSumo;
-	
-	@OneToOne(mappedBy = "competitionCategory", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-	private ConfigFollow configFollow;
-	
-	@CreationTimestamp
-	@Column(nullable = false, updatable = false)
-	private LocalDateTime dataCadastro;
-	
+
+    @OneToOne(mappedBy = "competitionCategory", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private ConfigSumo configSumo;
+
+    @OneToOne(mappedBy = "competitionCategory", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private ConfigFollow configFollow;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime dataCadastro;
 }
