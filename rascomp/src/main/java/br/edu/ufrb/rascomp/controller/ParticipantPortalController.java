@@ -146,4 +146,9 @@ public class ParticipantPortalController {
         portalService.cancelarInscricao(registrationId);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/inscricoes/{registrationId}/reativar")
+    public ResponseEntity<RegistrationDTO> reativarInscricao(@PathVariable Long registrationId) {
+        return ResponseEntity.ok(portalService.reativarInscricao(registrationId));
+    }
 }
