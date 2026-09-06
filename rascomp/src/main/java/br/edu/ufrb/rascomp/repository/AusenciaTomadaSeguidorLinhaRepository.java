@@ -16,5 +16,7 @@ public interface AusenciaTomadaSeguidorLinhaRepository extends JpaRepository<Aus
             Long competitionId,
             Long categoryId);
 
+    boolean existsByRegistrationId(Long registrationId);
+    boolean existsByRegistrationCompetitionId(Long competitionId);
     boolean existsByRegistrationIdAndTomada(Long registrationId, Integer tomada);
 }
