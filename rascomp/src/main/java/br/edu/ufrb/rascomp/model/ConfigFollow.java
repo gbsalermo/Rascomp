@@ -36,11 +36,11 @@ public class ConfigFollow implements Serializable {
     @JoinColumn(name = "competition_category_id", nullable = false, unique = true)
     private CompetitionCategory competitionCategory;
 
-    /** Quantidade de tomadas disponíveis para cada inscrição/robô. */
+    /** Quantidade de tomadas da regra competitiva RRC. */
     @Column(nullable = false)
     private Integer numeroTomadas;
 
-    /** Quantidade máxima de tentativas registráveis dentro de cada tomada. */
+    /** Quantidade de tentativas da regra competitiva RRC em cada tomada. */
     @Column(nullable = false)
     private Integer tentativasPorTomada;
 
@@ -51,6 +51,14 @@ public class ConfigFollow implements Serializable {
     /** Quantidade total de checkpoints existentes no percurso da categoria. */
     @Column(nullable = false)
     private Integer numeroCheckpoints;
+
+    /** Penalidade temporal sugerida pela UI para ocorrências como "não parou". */
+    @Column(name = "penalidade_padrao_segundos", nullable = false)
+    private Integer penalidadePadraoSegundos;
+
+    /** Tempo operacional de apresentação após a chamada de uma tomada. */
+    @Column(name = "tempo_apresentacao_segundos", nullable = false)
+    private Integer tempoApresentacaoSegundos;
 
     /*
      * O resultado bruto é persistido em TentativaSeguidorLinha.
