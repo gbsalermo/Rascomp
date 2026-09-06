@@ -31,7 +31,11 @@ ETAPA 2+ ⏳ não iniciadas
 
 Em 04/09/2026 houve um checkpoint exclusivamente documental.
 
-Em 06/09/2026 foi consolidado o contrato competitivo da ETAPA 1. **As regras estão decididas/documentadas, mas ainda não devem ser marcadas como implementadas enquanto código e testes não forem atualizados.**
+Em 06/09/2026 foi consolidado o contrato competitivo da ETAPA 1.
+
+Também em 06/09/2026 foi concluído o **primeiro bloco funcional da ETAPA 1 — `Competition + Registration`**, com proteção inicial das transições de estado e do ciclo de inscrição.
+
+Este checkpoint **não encerra a ETAPA 1**. Permanecem pendentes os fluxos estruturais de solicitação de cancelamento, prorrogação/reabertura auditável, compatibilidade física dos robôs híbridos, Follow, Sumô, chaveamentos e testes integrados de competição completa.
 
 ---
 
@@ -41,9 +45,9 @@ Em 06/09/2026 foi consolidado o contrato competitivo da ETAPA 1. **As regras est
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
 MYSQL + FLYWAY V1–V7                     ✅
-COMPETIÇÕES                              ✅ base atual
+COMPETIÇÕES                              ✅ base + transições protegidas
 EQUIPES / COMPETIDORES / ROBÔS           ✅
-INSCRIÇÕES + REVISÃO                     ✅ base atual
+INSCRIÇÕES + REVISÃO                     ✅ base + invariantes iniciais
 FOTOS DOS ROBÔS                          ✅
 FOLLOW LINE                              ✅ base atual
 RANKING FOLLOW                           ✅ base atual
@@ -57,17 +61,17 @@ API PÚBLICA                              ✅
 PROFILE TESTDATA                         ✅
 ```
 
-Último checkpoint automatizado documentado:
+Checkpoint automatizado após o primeiro bloco funcional da ETAPA 1:
 
 ```text
-48 testes
+59 testes
 0 falhas
 0 erros
 0 skipped
 MySQL + Flyway + testdata ✅
 ```
 
-Esse checkpoint é anterior às novas regras formalizadas em 06/09/2026. Não presumir que elas já estão cobertas.
+O workflow também compilou a aplicação e inicializou o cenário completo `testdata` contra MySQL real no CI.
 
 ---
 
@@ -114,6 +118,8 @@ V1–V7 nunca são reescritas
 próxima mudança estrutural = V8+
 ```
 
+O primeiro bloco `Competition + Registration` não exigiu nova migration porque `registrations.status` já é textual e comporta `DESISTENTE`.
+
 ---
 
 # 5. Segurança atual
@@ -159,37 +165,78 @@ Não implementar transferências administrativas como simples troca genérica de
 
 ---
 
-# 7. Registration — contrato aprovado
+# 7. Registration — contrato e implementação atual
 
-Regras principais agora consolidadas:
+Estados atuais:
 
 ```text
 PENDENTE
-→ participante pode editar/cancelar dentro da janela
-
 APROVADA
-→ participante não cancela diretamente
-→ solicita cancelamento
-→ organização decide
-
 REJEITADA
-→ somente organização pode reabrir para correção
-
 CANCELADA
-→ retirada antes de comprometimento competitivo relevante
-
 DESISTENTE
-→ já existe comprometimento/histórico competitivo e a inscrição deixa a competição
+DESCLASSIFICADA
 ```
 
-Reativação comum:
+## Implementado em 06/09/2026
 
 ```text
-somente inscrições abertas
-+
-dentro da janela
+PENDENTE
+→ participante pode cancelar diretamente
+→ edição comum permanece permitida
+
+APROVADA
+→ participante não pode cancelar diretamente
+→ backend informa que deve solicitar à organização
+
+REJEITADA
+→ organização pode reabrir para correção
+
+CANCELADA / REJEITADA
+→ reabertura valida competição ativa + janela de inscrições
 → retorna PENDENTE
+
+APROVADA sem atividade competitiva
+→ cancelamento pela organização = CANCELADA
+
+APROVADA com atividade competitiva
+→ cancelamento pela organização = DESISTENTE
 ```
+
+Atividade competitiva atualmente detectada para essa proteção:
+
+```text
+tentativa Follow
+ou
+inspeção de Sumô
+ou
+participação em Match
+```
+
+O `PUT` genérico deixou de ser uma forma de contornar essas regras:
+
+- somente `PENDENTE` pode ser editada pelo fluxo comum;
+- `ativo=false` não é aceito como atalho de cancelamento;
+- no fluxo comum, `PENDENTE` só muda para `APROVADA` ou `REJEITADA`;
+- aprovação/rejeição continuam exigindo ORGANIZACAO.
+
+No portal participante existe agora reativação segura de inscrição cancelada:
+
+```text
+PATCH /api/v1/participante/inscricoes/{registrationId}/reativar
+```
+
+## Ainda pendente
+
+A regra aprovada para `APROVADA` é:
+
+```text
+participante solicita cancelamento
+→ organização analisa
+→ aceita ou rejeita
+```
+
+Esse fluxo ainda precisa de modelo persistente próprio; não foi improvisado com `observacao` ou mudança direta de status.
 
 Pagamento ainda não existe, mas quando habilitado deverá ser condição de aprovação conforme contrato.
 
@@ -205,9 +252,9 @@ A implementação atual ainda usa unicidade `competition + category + robot`; re
 
 ---
 
-# 8. Competition — contrato aprovado
+# 8. Competition — contrato e implementação atual
 
-Fluxo normal:
+Fluxo normal protegido no backend:
 
 ```text
 PLANEJADA
@@ -217,9 +264,24 @@ PLANEJADA
 → FINALIZADA
 ```
 
-Prorrogação/reabertura deve ser operação explícita com nova data e motivo.
+`CANCELADA` pode ser alcançada pelos estados operacionais permitidos.
 
-Não permitir simples alteração arbitrária de enum para voltar estados competitivos.
+Implementado:
+
+- nova competição nasce obrigatoriamente `PLANEJADA`;
+- fluxo comum não permite pular estados;
+- `FINALIZADA` e `CANCELADA` não voltam para estados anteriores por simples `PUT`;
+- inativação não pode ser disfarçada usando `ativo=false` no update comum;
+- frontend Gestão oferece somente o estado atual e as próximas transições permitidas.
+
+Ainda pendente:
+
+```text
+prorrogarInscricoes(novaData, motivo)
+reabrir inscrições fechadas de forma auditável
+```
+
+Prorrogação/reabertura deve ser operação explícita com nova data e motivo, e não simples alteração arbitrária de enum.
 
 Se uma chave já existir e ainda não houver atividade, reabertura pode exigir invalidar/regenerar a chave. Depois de atividade competitiva iniciada, reabertura comum é bloqueada.
 
@@ -426,18 +488,35 @@ Rollback competitivo em cadeia fica para ferramenta DEV futura, com auditoria ex
 
 ---
 
-# 12. ETAPA 1 — alterações necessárias
+# 12. ETAPA 1 — estado das alterações
 
-Prioridade derivada do contrato:
+## Bloco 1 — Competition + Registration
 
 ```text
-1. Registration / Competition
-   - reativação
-   - cancelamento e desistência
-   - solicitação de cancelamento APROVADA
-   - prorrogação/reabertura
-   - compatibilidade de robô híbrido
+✅ reativação respeita janela
+✅ participante não cancela APROVADA diretamente
+✅ CANCELADA x DESISTENTE protegidas pelo histórico
+✅ edição genérica de Registration restringida
+✅ reabertura de REJEITADA pela organização
+✅ transições normais de Competition protegidas
+✅ frontend reflete transições permitidas
+✅ DESISTENTE refletido no frontend
+✅ 59 testes unitários verdes
+✅ MySQL/Flyway/testdata verdes
+```
 
+Pendente dentro do mesmo domínio:
+
+```text
+⏳ solicitação persistida de cancelamento APROVADA
+⏳ prorrogação/reabertura auditável de inscrições
+⏳ compatibilidade física de robôs híbridos
+⏳ pagamento futuro como pré-condição opcional de aprovação
+```
+
+Demais blocos:
+
+```text
 2. Follow
    - estados válidos
    - 3×3
@@ -457,18 +536,16 @@ Prioridade derivada do contrato:
    - correção transacional antes da dependência
    - bloqueio depois da dependência
 
-5. Testes automatizados de fluxo
+5. Testes automatizados de fluxo completo
 ```
-
-Nenhum item acima está marcado como implementado apenas por estar documentado.
 
 ---
 
 # 13. Estratégia de testes da ETAPA 1
 
-Hoje há testes unitários de services e smoke do profile `testdata`.
+Agora há 59 testes unitários de services e smoke do profile `testdata` contra MySQL.
 
-Adicionar camada de testes de fluxo com Spring/Repositories reais para simular:
+A camada de fluxo integrado ainda será adicionada para simular:
 
 ```text
 CompetitionLifecycleFlow
@@ -585,16 +662,16 @@ Nunca habilitar `testdata` em produção.
 
 # 18. Próximo passo / handoff
 
+Próxima subparte recomendada ainda dentro de `Competition + Registration`:
+
 ```text
-1. ler contrato competitivo canônico
-2. comparar regra aprovada com código atual
-3. implementar por domínio, backend primeiro
-4. adicionar testes unitários e testes de fluxo
-5. usar V8+ se houver mudança de schema
-6. integrar frontend quando contrato/API mudar
-7. manter modo local e CI
-8. atualizar documentação no checkpoint
-9. aguardar validação antes da ETAPA 2
+1. modelar solicitação de cancelamento de APROVADA
+2. modelar prorrogação/reabertura auditável de inscrições
+3. usar migration V8+ se necessário
+4. testar regras e rollback
+5. integrar frontend
 ```
 
-Prioridade imediata recomendada: **Registration + Competition**, pois esses estados determinam a elegibilidade de todos os fluxos competitivos seguintes.
+Depois disso avançar para **Follow Line**.
+
+Não iniciar ETAPA 2 sem conclusão e validação explícita da ETAPA 1.
