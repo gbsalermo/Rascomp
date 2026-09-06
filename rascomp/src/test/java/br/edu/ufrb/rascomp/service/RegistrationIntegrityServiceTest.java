@@ -106,7 +106,6 @@ class RegistrationIntegrityServiceTest {
         registration.setStatus(StatusRegistration.PENDENTE);
 
         when(registrationRepository.findById(1L)).thenReturn(Optional.of(registration));
-        when(registrationRepository.save(any(Registration.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -125,6 +124,7 @@ class RegistrationIntegrityServiceTest {
     void organizacaoPodeReabrirRejeitadaDentroDaJanela() {
         registration.setStatus(StatusRegistration.REJEITADA);
         registration.setAtivo(false);
+        when(registrationRepository.save(any(Registration.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         RegistrationDTO result = service.reativar(1L);
 
