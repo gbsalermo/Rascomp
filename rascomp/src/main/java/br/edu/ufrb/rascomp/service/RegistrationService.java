@@ -179,6 +179,19 @@ public class RegistrationService {
     }
 
     @Transactional
+    public RegistrationDTO cancelarAprovadaPorSolicitacao(Long id) {
+        Registration registration = buscarRegistration(id);
+        if (registration.getStatus() != StatusRegistration.APROVADA || !Boolean.TRUE.equals(registration.getAtivo())) {
+            throw new IllegalArgumentException("A inscrição precisa estar APROVADA e ativa para concluir a solicitação.");
+        }
+        StatusRegistration destino = possuiAtividadeCompetitiva(registration.getId())
+                ? StatusRegistration.DESISTENTE
+                : StatusRegistration.CANCELADA;
+        cancelar(registration, destino);
+        return new RegistrationDTO(registration);
+    }
+
+    @Transactional
     public RegistrationDTO reativar(Long id) {
         Registration registration = buscarRegistration(id);
         if (registration.getStatus() != StatusRegistration.CANCELADA
