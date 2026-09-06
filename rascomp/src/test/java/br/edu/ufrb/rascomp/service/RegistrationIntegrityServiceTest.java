@@ -28,6 +28,7 @@ import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
@@ -82,6 +83,7 @@ class RegistrationIntegrityServiceTest {
                 .id(40L)
                 .nome("Mini Sumô")
                 .modalidade(Modalidade.SUMO)
+                .sumoPhysicalClass(SumoPhysicalClass.MINI_500G)
                 .ativo(true)
                 .build();
 
