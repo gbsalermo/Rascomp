@@ -16,7 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.edu.ufrb.rascomp.dto.CompetitionDTO;
+import br.edu.ufrb.rascomp.dto.CompetitionRegistrationWindowChangeDTO;
+import br.edu.ufrb.rascomp.dto.CompetitionRegistrationWindowChangeRequest;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
+import br.edu.ufrb.rascomp.service.CompetitionRegistrationWindowService;
 import br.edu.ufrb.rascomp.service.CompetitionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CompetitionController {
     private final CompetitionService competitionService;
+    private final CompetitionRegistrationWindowService registrationWindowService;
 
     @PostMapping
     public ResponseEntity<CompetitionDTO> criar(@Valid @RequestBody CompetitionDTO dto) {
@@ -63,5 +67,17 @@ public class CompetitionController {
     @PatchMapping("/{id}/reativar")
     public ResponseEntity<CompetitionDTO> reativar(@PathVariable Long id) {
         return ResponseEntity.ok(competitionService.reativar(id));
+    }
+
+    @PostMapping("/{id}/prorrogar-inscricoes")
+    public ResponseEntity<CompetitionRegistrationWindowChangeDTO> prorrogarInscricoes(
+            @PathVariable Long id,
+            @Valid @RequestBody CompetitionRegistrationWindowChangeRequest request) {
+        return ResponseEntity.ok(registrationWindowService.alterar(id, request));
+    }
+
+    @GetMapping("/{id}/historico-inscricoes")
+    public ResponseEntity<List<CompetitionRegistrationWindowChangeDTO>> historicoInscricoes(@PathVariable Long id) {
+        return ResponseEntity.ok(registrationWindowService.historico(id));
     }
 }
