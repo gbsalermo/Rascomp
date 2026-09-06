@@ -1,5 +1,6 @@
 package br.edu.ufrb.rascomp.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -7,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import br.edu.ufrb.rascomp.model.Match;
+import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 
 @Repository
 public interface MatchRepository extends JpaRepository<Match, Long> {
@@ -15,4 +17,5 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     boolean existsByBracketIdAndRodadaAndOrdem(Long bracketId, Integer rodada, Integer ordem);
     boolean existsByBracketIdAndRodadaAndOrdemAndIdNot(Long bracketId, Integer rodada, Integer ordem, Long id);
     boolean existsByRegistrationAIdOrRegistrationBId(Long registrationAId, Long registrationBId);
+    boolean existsByBracketCompetitionIdAndStatusIn(Long competitionId, Collection<StatusMatch> statuses);
 }
