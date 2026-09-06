@@ -33,15 +33,17 @@ Em 04/09/2026 houve um checkpoint exclusivamente documental.
 
 Em 06/09/2026 foi consolidado o contrato competitivo da ETAPA 1.
 
-Também em 06/09/2026 foi concluído o bloco funcional de `Competition + Registration` relativo a:
+Também em 06/09/2026 foi concluído o bloco funcional de **`Competition + Registration`**, cobrindo:
 
 - máquina de estados da competição;
 - reativação/cancelamento/desistência;
 - solicitação persistida de cancelamento de inscrição aprovada;
 - prorrogação/reabertura auditável da janela de inscrições;
-- integração dos fluxos com o portal participante e a Gestão.
+- compatibilidade física de robôs híbridos;
+- integração dos fluxos com o portal participante e a Gestão;
+- initializers/testdata alinhados às novas invariantes.
 
-Este checkpoint **não encerra a ETAPA 1**. Permanecem pendentes compatibilidade física dos robôs híbridos, Follow, Sumô, chaveamentos e testes integrados de competição completa.
+Este checkpoint **não encerra a ETAPA 1**. O próximo bloco é **Follow Line**; depois permanecem Sumô, chaveamentos e testes integrados de competição completa.
 
 ---
 
@@ -50,10 +52,10 @@ Este checkpoint **não encerra a ETAPA 1**. Permanecem pendentes compatibilidade
 ```text
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
-MYSQL + FLYWAY V1–V8                     ✅
+MYSQL + FLYWAY V1–V9                     ✅
 COMPETIÇÕES                              ✅ base + transições + prorrogação/reabertura
 EQUIPES / COMPETIDORES / ROBÔS           ✅
-INSCRIÇÕES + REVISÃO                     ✅ base + invariantes + cancelamento solicitado
+INSCRIÇÕES + REVISÃO                     ✅ invariantes + cancelamento solicitado + híbridos
 FOTOS DOS ROBÔS                          ✅
 FOLLOW LINE                              ✅ base atual
 RANKING FOLLOW                           ✅ base atual
@@ -70,11 +72,11 @@ PROFILE TESTDATA                         ✅
 Checkpoint automatizado atual:
 
 ```text
-67 testes
+73 testes
 0 falhas
 0 erros
 0 skipped
-MySQL + Flyway V8 + testdata ✅
+MySQL + Flyway V9 + testdata ✅
 ```
 
 O workflow compilou a aplicação e inicializou o cenário completo `testdata` contra MySQL real no CI.
@@ -116,16 +118,19 @@ V5 — usuários / ownership / fotos
 V6 — histórico de chaves
 V7 — regras estendidas de round/penalidades
 V8 — solicitações de cancelamento + histórico da janela de inscrições
+V9 — classe física de Sumô nas categorias
 ```
 
 Regra:
 
 ```text
-V1–V8 nunca são reescritas
-próxima mudança estrutural = V9+
+V1–V9 nunca são reescritas
+próxima mudança estrutural = V10+
 ```
 
-A adição de `DESISTENTE` não exigiu migration própria porque `registrations.status` já é textual. A V8 foi necessária para persistir os novos históricos sem sobrecarregar `Registration` ou `Competition` com flags transitórias.
+A adição de `DESISTENTE` não exigiu migration própria porque `registrations.status` já é textual. A V8 persistiu os novos históricos sem sobrecarregar `Registration` ou `Competition` com flags transitórias. A V9 adicionou `sumo_physical_class` a `competition_categories` e fez backfill das categorias Sumô legadas a partir de `config_sumo.peso_max` apenas durante a migração.
+
+No runtime atual, a classe física **não é inferida pelo nome da categoria**.
 
 ---
 
@@ -166,6 +171,12 @@ Competitor
 
 Team.responsibleUser
 → responsável da equipe no portal
+
+Robot
+→ um único robô físico da equipe
+
+CompetitionCategory.sumoPhysicalClass
+→ classe física competitiva da categoria de Sumô
 ```
 
 Não implementar transferências administrativas como simples troca genérica de FK.
@@ -271,19 +282,43 @@ O portal participante também possui reativação segura:
 PATCH /api/v1/participante/inscricoes/{registrationId}/reativar
 ```
 
-## Ainda pendente neste domínio
+## Robôs híbridos — implementado
 
-Robôs híbridos:
+`Robot` continua representando um único robô físico. A classe física pertence à categoria de Sumô:
 
 ```text
-mesmo Robot pode Auto + R/C da mesma classe física
-mesmo Robot pode também Follow
-mesmo Robot não pode Mini + 3 kg na mesma edição
+SumoPhysicalClass
+├─ MINI_500G
+└─ SUMO_3KG
 ```
 
-A implementação atual ainda usa unicidade `competition + category + robot`; revisar compatibilidade física sem destruir o conceito de um único robô da equipe.
+Regras aplicadas por `RegistrationService` na criação, edição e reativação:
 
-Pagamento ainda não existe e **não será antecipado nesta subparte**. Quando habilitado futuramente, deverá ser condição opcional de aprovação conforme contrato.
+```text
+mesmo Robot + mesma Competition
+├─ Follow + Mini                         ✅
+├─ Follow + 3 kg                         ✅
+├─ Mini Auto + Mini R/C                  ✅
+├─ 3 kg Auto + 3 kg R/C                  ✅
+└─ Mini + 3 kg                           ❌
+```
+
+A validação compara apenas inscrições `PENDENTE` ou `APROVADA` do mesmo robô na mesma edição. Inscrições Follow não participam do conflito de classe física.
+
+Categoria `SUMO` sem `sumoPhysicalClass` não recebe nova inscrição pelo fluxo normal.
+
+A metadata é explícita em `CompetitionCategory`; não há inferência runtime por nome como `"Mini"` ou `"3 kg"`.
+
+Initializers alinhados:
+
+```text
+DataInitializer
+PostmanScenarioInitializer
+BracketHistoryTestDataInitializer
+DemoShowcaseDataInitializer
+```
+
+Pagamento ainda não existe e **não é bloqueador deste bloco**. Quando habilitado futuramente, deverá ser condição opcional de aprovação conforme contrato.
 
 ---
 
@@ -568,7 +603,7 @@ Rollback competitivo em cadeia fica para ferramenta DEV futura, com auditoria ex
 
 # 12. ETAPA 1 — estado das alterações
 
-## Bloco 1 — Competition + Registration
+## Bloco 1 — Competition + Registration ✅ CONCLUÍDO
 
 ```text
 ✅ reativação respeita janela
@@ -582,15 +617,13 @@ Rollback competitivo em cadeia fica para ferramenta DEV futura, com auditoria ex
 ✅ prorrogação/reabertura auditável
 ✅ reabertura bloqueada após atividade competitiva
 ✅ chave atual sem disputa é preservada e invalidada na reabertura
-✅ frontend Gestão e Participante integrados
-✅ 67 testes unitários verdes
-✅ MySQL/Flyway V8/testdata verdes
-```
-
-Pendente dentro do domínio:
-
-```text
-⏳ compatibilidade física de robôs híbridos
+✅ classe física de Sumô explícita na categoria
+✅ robô híbrido permitido dentro da mesma classe física
+✅ Mini + 3 kg bloqueado para o mesmo Robot na mesma edição
+✅ initializers alinhados à classe física
+✅ frontend exibe a classe física das categorias Sumô
+✅ 73 testes unitários verdes
+✅ MySQL/Flyway V9/testdata verdes
 ```
 
 Reservado para evolução futura, sem implementação antecipada:
@@ -599,7 +632,7 @@ Reservado para evolução futura, sem implementação antecipada:
 pagamento como pré-condição opcional de aprovação
 ```
 
-Demais blocos:
+Próximos blocos da ETAPA 1:
 
 ```text
 2. Follow
@@ -628,7 +661,7 @@ Demais blocos:
 
 # 13. Estratégia de testes da ETAPA 1
 
-Agora há 67 testes unitários de services e smoke do profile `testdata` contra MySQL/Flyway V8.
+Agora há 73 testes unitários de services e smoke do profile `testdata` contra MySQL/Flyway V9.
 
 A camada de fluxo integrado ainda será adicionada para simular:
 
@@ -734,17 +767,17 @@ Nunca habilitar `testdata` em produção.
 
 # 18. Próximo passo / handoff
 
-Próxima subparte recomendada da ETAPA 1:
+Próximo bloco recomendado da ETAPA 1:
 
 ```text
-1. revisar a modelagem atual de Category/Robot
-2. formalizar classe física de Sumô para robôs híbridos
-3. permitir Auto + R/C da mesma classe física
-4. bloquear Mini + 3 kg para o mesmo Robot na mesma edição
-5. adicionar migration V9+ somente se necessária
-6. testar invariantes e integrar frontend se o contrato/API mudar
+FOLLOW LINE
+1. comparar contrato × TentativaSeguidorLinha/ConfigFollow/RankingFollowService
+2. formalizar estados válidos de tentativa
+3. fixar o perfil RRC 3 tomadas × 3 tentativas
+4. modelar perda de tomada por ausência
+5. alinhar penalidades e cronômetro operacional
+6. adicionar testes derivados do contrato
+7. integrar a UX focada na tomada/robô
 ```
-
-Depois disso avançar para **Follow Line**.
 
 Não iniciar ETAPA 2 sem conclusão e validação explícita da ETAPA 1.
