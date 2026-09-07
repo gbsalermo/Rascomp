@@ -34,4 +34,7 @@ public class RoundSumoItemDTO {
 
     @Size(max = 500)
     private String observacao;
+
+    @Size(max = 500)
+    private String justificativa;
 }
