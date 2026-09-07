@@ -74,8 +74,15 @@ public class CompetitionCategoryService {
     }
 
     private void preencherCategory(CompetitionCategory category, CompetitionCategoryDTO dto) {
-        if (dto.getModalidade() == Modalidade.SUMO && dto.getSumoPhysicalClass() == null) {
-            throw new IllegalArgumentException("Categoria de Sumô deve informar a classe física: MINI_500G ou SUMO_3KG.");
+        if (dto.getModalidade() == Modalidade.SUMO) {
+            if (dto.getSumoPhysicalClass() == null) {
+                throw new IllegalArgumentException(
+                        "Categoria de Sumô deve informar a classe física: MINI_500G ou SUMO_3KG.");
+            }
+            if (dto.getSumoControlMode() == null) {
+                throw new IllegalArgumentException(
+                        "Categoria de Sumô deve informar o modo de controle: AUTONOMO ou RC.");
+            }
         }
 
         category.setNome(dto.getNome().trim());
@@ -83,6 +90,7 @@ public class CompetitionCategoryService {
                 ? null : dto.getDescricao().trim());
         category.setModalidade(dto.getModalidade());
         category.setSumoPhysicalClass(dto.getModalidade() == Modalidade.SUMO ? dto.getSumoPhysicalClass() : null);
+        category.setSumoControlMode(dto.getModalidade() == Modalidade.SUMO ? dto.getSumoControlMode() : null);
         category.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
     }
 }
