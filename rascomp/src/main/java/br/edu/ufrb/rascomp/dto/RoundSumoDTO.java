@@ -46,6 +46,9 @@ public class RoundSumoDTO {
     @Size(max = 500)
     private String observacao;
 
+    @Size(max = 500)
+    private String justificativa;
+
     private LocalDateTime dataCadastro;
 
     public RoundSumoDTO(RoundSumo entity) {
@@ -59,6 +62,7 @@ public class RoundSumoDTO {
         this.penalidadesA = entity.getPenalidadesA();
         this.penalidadesB = entity.getPenalidadesB();
         this.observacao = entity.getObservacao();
+        this.justificativa = entity.getJustificativa();
         this.dataCadastro = entity.getDataCadastro();
     }
 }
