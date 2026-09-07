@@ -73,7 +73,7 @@ class InspecaoSumoServiceTest {
     }
 
     @Test
-    void deveAprovarInspecaoDentroDoPesoMaximo() {
+    void deveAprovarInspecaoPorDecisaoHumanaMesmoAcimaDoPesoDeReferencia() {
         when(inspecaoRepository.existsByRegistrationIdAndAprovadaTrue(10L)).thenReturn(false);
         when(inspecaoRepository.countByRegistrationId(10L)).thenReturn(0L);
         when(inspecaoRepository.save(any(InspecaoSumo.class)))
@@ -83,23 +83,23 @@ class InspecaoSumoServiceTest {
                     return entity;
                 });
 
-        InspecaoSumoDTO dto = novaInspecao(new BigDecimal("0.450"));
+        InspecaoSumoDTO dto = novaInspecao(new BigDecimal("0.600"), true);
         InspecaoSumoDTO resultado = service.registrar(dto);
 
         assertTrue(resultado.getAprovada());
         assertEquals(1, resultado.getNumeroTentativa());
-        assertEquals(0, new BigDecimal("0.450").compareTo(resultado.getPesoMedido()));
+        assertEquals(0, new BigDecimal("0.600").compareTo(resultado.getPesoMedido()));
         verify(registrationRepository, never()).save(registration);
     }
 
     @Test
-    void ultimaReprovacaoDeveDesclassificarInscricao() {
+    void ultimaReprovacaoHumanaDeveDesclassificarInscricao() {
         when(inspecaoRepository.existsByRegistrationIdAndAprovadaTrue(10L)).thenReturn(false);
         when(inspecaoRepository.countByRegistrationId(10L)).thenReturn(2L);
         when(inspecaoRepository.save(any(InspecaoSumo.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        InspecaoSumoDTO resultado = service.registrar(novaInspecao(new BigDecimal("0.600")));
+        InspecaoSumoDTO resultado = service.registrar(novaInspecao(new BigDecimal("0.450"), false));
 
         assertFalse(resultado.getAprovada());
         assertEquals(3, resultado.getNumeroTentativa());
@@ -117,10 +117,11 @@ class InspecaoSumoServiceTest {
         verify(inspecaoRepository, never()).existsByRegistrationIdAndAprovadaTrue(10L);
     }
 
-    private InspecaoSumoDTO novaInspecao(BigDecimal peso) {
+    private InspecaoSumoDTO novaInspecao(BigDecimal peso, boolean aprovada) {
         InspecaoSumoDTO dto = new InspecaoSumoDTO();
         dto.setRegistrationId(10L);
         dto.setPesoMedido(peso);
+        dto.setAprovada(aprovada);
         dto.setObservacao("Teste automatizado");
         return dto;
     }
