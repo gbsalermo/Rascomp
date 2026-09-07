@@ -2,6 +2,7 @@ package br.edu.ufrb.rascomp.dto;
 
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.SumoControlMode;
 import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,6 +28,7 @@ public class CompetitionCategoryDTO {
     private Modalidade modalidade;
 
     private SumoPhysicalClass sumoPhysicalClass;
+    private SumoControlMode sumoControlMode;
 
     private Boolean ativo;
 
@@ -36,6 +38,7 @@ public class CompetitionCategoryDTO {
         this.descricao = entity.getDescricao();
         this.modalidade = entity.getModalidade();
         this.sumoPhysicalClass = entity.getSumoPhysicalClass();
+        this.sumoControlMode = entity.getSumoControlMode();
         this.ativo = entity.getAtivo();
     }
 }
