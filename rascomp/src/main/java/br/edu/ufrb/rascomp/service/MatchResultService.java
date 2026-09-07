@@ -75,29 +75,46 @@ public class MatchResultService {
                 "Resultado consolidado automaticamente pelos rounds do Sumô.");
     }
 
+    @Transactional
+    public MatchResultDTO criarPorDecisaoJuiz(
+            Match match,
+            Registration winner,
+            int vitoriasA,
+            int vitoriasB,
+            String judgeNome,
+            String justificativa) {
+
+        validarBracketOperavel(match);
+        if (match.getBracket().getCategory().getModalidade() != Modalidade.SUMO) {
+            throw new IllegalArgumentException("Decisão de juiz só pode consolidar partida da modalidade SUMO.");
+        }
+        if (resultRepository.existsByMatchId(match.getId())) {
+            throw new IllegalArgumentException("A partida já possui resultado consolidado.");
+        }
+        if (winner == null) {
+            throw new IllegalArgumentException("Decisão de juiz exige vencedor.");
+        }
+
+        String observacao = "Decisão do juiz " + judgeNome + ": " + justificativa;
+        return salvarResultado(match, winner, vitoriasA, vitoriasB, observacao);
+    }
+
     @Transactional(readOnly = true)
     public List<MatchResultDTO> listarTodos() {
         return resultRepository.findAllByOrderByIdAsc()
-                .stream()
-                .map(MatchResultDTO::new)
-                .toList();
+                .stream().map(MatchResultDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
     public List<MatchResultDTO> listarPorChaveamento(Long bracketId) {
         return resultRepository.findByMatchBracketIdOrderByIdAsc(bracketId)
-                .stream()
-                .map(MatchResultDTO::new)
-                .toList();
+                .stream().map(MatchResultDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
     public List<MatchResultDTO> listarPorCompeticao(Long competitionId) {
-        return resultRepository
-                .findByMatchBracketCompetitionIdOrderByIdAsc(competitionId)
-                .stream()
-                .map(MatchResultDTO::new)
-                .toList();
+        return resultRepository.findByMatchBracketCompetitionIdOrderByIdAsc(competitionId)
+                .stream().map(MatchResultDTO::new).toList();
     }
 
     @Transactional(readOnly = true)
@@ -160,7 +177,7 @@ public class MatchResultService {
 
         if (modalidade == Modalidade.SUMO) {
             throw new IllegalArgumentException(
-                    "O resultado de uma partida de Sumô é calculado automaticamente pelos rounds.");
+                    "O resultado de uma partida de Sumô é calculado pelos rounds ou por decisão de juiz registrada.");
         }
     }
 
