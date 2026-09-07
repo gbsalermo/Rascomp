@@ -2,6 +2,8 @@ package br.edu.ufrb.rascomp.service;
 
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,6 +11,7 @@ import br.edu.ufrb.rascomp.dto.InspecaoSumoDTO;
 import br.edu.ufrb.rascomp.model.ConfigSumo;
 import br.edu.ufrb.rascomp.model.InspecaoSumo;
 import br.edu.ufrb.rascomp.model.Registration;
+import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.ConfigSumoRepository;
@@ -43,7 +46,7 @@ public class InspecaoSumoService {
             throw new IllegalArgumentException("Limite máximo de tentativas de inspeção atingido.");
         }
 
-        boolean aprovada = dto.getPesoMedido().compareTo(config.getPesoMax()) <= 0;
+        boolean aprovada = Boolean.TRUE.equals(dto.getAprovada());
 
         InspecaoSumo inspecao = new InspecaoSumo();
         inspecao.setRegistration(registration);
@@ -51,6 +54,7 @@ public class InspecaoSumoService {
         inspecao.setPesoMedido(dto.getPesoMedido());
         inspecao.setAprovada(aprovada);
         inspecao.setObservacao(normalizar(dto.getObservacao()));
+        inspecao.setRegistradoPor(usuarioAtualOpcional());
 
         InspecaoSumo salva = inspecaoRepository.save(inspecao);
 
@@ -135,6 +139,12 @@ public class InspecaoSumoService {
     private InspecaoSumo buscarInspecao(Long id) {
         return inspecaoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Inspeção de Sumô não encontrada: " + id));
+    }
+
+    private UserAccount usuarioAtualOpcional() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) return null;
+        return authentication.getPrincipal() instanceof UserAccount user ? user : null;
     }
 
     private String normalizar(String valor) {
