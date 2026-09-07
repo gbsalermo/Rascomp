@@ -20,6 +20,7 @@ import br.edu.ufrb.rascomp.model.TentativaSeguidorLinha;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.SumoControlMode;
 import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
@@ -242,6 +243,7 @@ public class DataInitializer implements CommandLineRunner {
                 .descricao(descricao)
                 .modalidade(modalidade)
                 .sumoPhysicalClass(sumoPhysicalClass)
+                .sumoControlMode(modalidade == Modalidade.SUMO ? SumoControlMode.RC : null)
                 .ativo(ativo)
                 .build();
 
