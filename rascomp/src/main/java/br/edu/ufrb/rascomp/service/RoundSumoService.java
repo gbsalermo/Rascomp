@@ -46,10 +46,12 @@ public class RoundSumoService {
         validarInspecoes(match);
 
         int numeroRound = Math.toIntExact(roundRepository.countByMatchId(match.getId()) + 1);
-        validarLimiteDeRounds(match, config, numeroRound);
+        validarLimiteDeRounds(match, config, numeroRound, dto.getJustificativa());
 
         Registration winner = buscarWinnerOpcional(dto.getWinnerRegistrationId());
         MotivoResultadoRoundSumo motivo = normalizarMotivo(dto.getMotivoResultado());
+        validarMotivoEspecial(motivo, dto.getJustificativa());
+
         int penalidadesA = normalizarPenalidades(dto.getPenalidadesA(), "A");
         int penalidadesB = normalizarPenalidades(dto.getPenalidadesB(), "B");
 
@@ -76,6 +78,7 @@ public class RoundSumoService {
         round.setPenalidadesA(penalidadesA);
         round.setPenalidadesB(penalidadesB);
         round.setObservacao(normalizar(dto.getObservacao()));
+        round.setJustificativa(normalizar(dto.getJustificativa()));
 
         if (match.getStatus() == StatusMatch.AGENDADA) {
             match.setStatus(StatusMatch.EM_ANDAMENTO);
@@ -103,6 +106,7 @@ public class RoundSumoService {
             round.setPenalidadesA(item.getPenalidadesA());
             round.setPenalidadesB(item.getPenalidadesB());
             round.setObservacao(item.getObservacao());
+            round.setJustificativa(item.getJustificativa());
             registrados.add(registrar(round));
         }
         return registrados;
@@ -127,20 +131,12 @@ public class RoundSumoService {
         int vitoriasB = Math.toIntExact(contarVitorias(match, match.getRegistrationB()));
 
         if (vitoriasA >= config.getRoundsParaVencer()) {
-            matchResultService.criarAutomaticoSumo(
-                    match,
-                    match.getRegistrationA(),
-                    vitoriasA,
-                    vitoriasB);
+            matchResultService.criarAutomaticoSumo(match, match.getRegistrationA(), vitoriasA, vitoriasB);
             return;
         }
 
         if (vitoriasB >= config.getRoundsParaVencer()) {
-            matchResultService.criarAutomaticoSumo(
-                    match,
-                    match.getRegistrationB(),
-                    vitoriasA,
-                    vitoriasB);
+            matchResultService.criarAutomaticoSumo(match, match.getRegistrationB(), vitoriasA, vitoriasB);
         }
     }
 
@@ -211,23 +207,44 @@ public class RoundSumoService {
         }
     }
 
-    private void validarLimiteDeRounds(Match match, ConfigSumo config, int numeroRound) {
-        if (numeroRound <= config.getNumeroRounds()) {
-            return;
+    private void validarLimiteDeRounds(
+            Match match,
+            ConfigSumo config,
+            int numeroRound,
+            String justificativa) {
+
+        if (numeroRound <= config.getNumeroRounds()) return;
+
+        int maxExtras = config.getMaxRoundsExtras() == null ? 0 : config.getMaxRoundsExtras();
+        if (!Boolean.TRUE.equals(config.getPermiteRoundDesempate()) || maxExtras <= 0) {
+            throw new IllegalArgumentException("A categoria não permite rounds extras.");
         }
 
-        boolean podeDesempate = Boolean.TRUE.equals(config.getPermiteRoundDesempate())
-                && numeroRound == config.getNumeroRounds() + 1;
-
-        if (!podeDesempate) {
-            throw new IllegalArgumentException("Limite de rounds atingido para esta categoria.");
+        int numeroExtra = numeroRound - config.getNumeroRounds();
+        if (numeroExtra > maxExtras) {
+            throw new IllegalArgumentException(
+                    "Limite de rounds extras atingido. A partida deve seguir para decisão dos juízes.");
         }
 
         long vitoriasA = contarVitorias(match, match.getRegistrationA());
         long vitoriasB = contarVitorias(match, match.getRegistrationB());
-
         if (vitoriasA >= config.getRoundsParaVencer() || vitoriasB >= config.getRoundsParaVencer()) {
-            throw new IllegalArgumentException("A partida já possui vencedor e não necessita round de desempate.");
+            throw new IllegalArgumentException("A partida já possui vencedor e não necessita round extra.");
+        }
+
+        if (normalizar(justificativa) == null) {
+            throw new IllegalArgumentException("Round extra exige justificativa obrigatória.");
+        }
+    }
+
+    private void validarMotivoEspecial(MotivoResultadoRoundSumo motivo, String justificativa) {
+        if (motivo == MotivoResultadoRoundSumo.DECISAO_JUIZ) {
+            throw new IllegalArgumentException(
+                    "Decisão do juiz encerra a partida por operação específica e não deve ser registrada como round.");
+        }
+
+        if (motivo == MotivoResultadoRoundSumo.FALHA_INICIALIZACAO && normalizar(justificativa) == null) {
+            throw new IllegalArgumentException("Falha de inicialização exige justificativa.");
         }
     }
 
