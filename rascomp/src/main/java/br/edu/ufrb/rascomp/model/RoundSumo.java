@@ -72,6 +72,9 @@ public class RoundSumo implements Serializable {
     @Column(length = 500)
     private String observacao;
 
+    @Column(length = 500)
+    private String justificativa;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime dataCadastro;
