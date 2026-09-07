@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.SumoControlMode;
 import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -52,6 +53,10 @@ public class CompetitionCategory implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(name = "sumo_physical_class", length = 20)
     private SumoPhysicalClass sumoPhysicalClass;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sumo_control_mode", length = 20)
+    private SumoControlMode sumoControlMode;
 
     @Builder.Default
     @Column(nullable = false)
