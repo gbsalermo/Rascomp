@@ -48,14 +48,20 @@ public class InspecaoSumo implements Serializable {
     @Column(name = "numero_tentativa", nullable = false)
     private Integer numeroTentativa;
 
-    @Column(name = "peso_medido", nullable = false, precision = 8, scale = 3)
+    /** Medição informativa; não decide automaticamente a aptidão. */
+    @Column(name = "peso_medido", precision = 8, scale = 3)
     private BigDecimal pesoMedido;
 
+    /** Decisão humana da organização após a inspeção física. */
     @Column(nullable = false)
     private Boolean aprovada;
 
     @Column(length = 500)
     private String observacao;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "registrado_por_user_id")
+    private UserAccount registradoPor;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
