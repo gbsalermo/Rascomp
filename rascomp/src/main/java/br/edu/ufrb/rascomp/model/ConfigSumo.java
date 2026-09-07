@@ -37,6 +37,7 @@ public class ConfigSumo implements Serializable {
     @JoinColumn(name = "competition_category_id", nullable = false, unique = true)
     private CompetitionCategory competitionCategory;
 
+    /** Referência informativa da classe; a inspeção humana decide APTO/INAPTO. */
     @Column(nullable = false, precision = 8, scale = 3)
     private BigDecimal pesoMax;
 
@@ -54,20 +55,12 @@ public class ConfigSumo implements Serializable {
     @Column(nullable = false)
     private Integer roundsParaVencer;
 
-    /** Permite no máximo um round adicional quando ainda não há vencedor. */
+    /** Habilita rounds extras quando os regulares não produziram vencedor. */
     @Column(nullable = false)
     private Boolean permiteRoundDesempate;
 
-    /*
-     * RoundSumo registra cada round e MatchResultService consolida a batalha.
-     * Regras atuais relevantes:
-     * - rounds sem vencedor não contam para roundsParaVencer;
-     * - SUICIDIO_WO encerra o round com vitória do adversário;
-     * - 2 penalidades no mesmo round causam derrota automática do robô penalizado;
-     * - o round adicional só é aceito quando configurado e a batalha ainda não
-     *   possui vencedor.
-     *
-     * Mini/3 kg e RC/Autônomo permanecem categorias distintas usando este
-     * mesmo motor de Sumô; não são modalidades técnicas diferentes no backend.
-     */
+    /** Limite de rounds extras disponíveis quando permitidos. */
+    @Builder.Default
+    @Column(name = "max_rounds_extras", nullable = false)
+    private Integer maxRoundsExtras = 2;
 }
