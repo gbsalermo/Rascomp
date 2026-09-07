@@ -188,7 +188,8 @@ public class DemoOitavasDataInitializer {
         InspecaoSumoDTO dto = new InspecaoSumoDTO();
         dto.setRegistrationId(registration.getId());
         dto.setPesoMedido(new BigDecimal("0.480"));
-        dto.setObservacao("Inspeção aprovada automaticamente para a demonstração de oitavas.");
+        dto.setAprovada(true);
+        dto.setObservacao("Inspeção aprovada por decisão simulada da organização para a demonstração de oitavas.");
         inspecaoSumoService.registrar(dto);
     }
 
