@@ -25,15 +25,17 @@ public class InspecaoSumoDTO {
 
     private Integer numeroTentativa;
 
-    @NotNull(message = "Peso medido é obrigatório")
     @DecimalMin(value = "0.001", message = "Peso medido deve ser maior que zero")
     private BigDecimal pesoMedido;
 
+    @NotNull(message = "Informe o resultado humano da inspeção")
     private Boolean aprovada;
 
     @Size(max = 500, message = "Observação deve possuir no máximo 500 caracteres")
     private String observacao;
 
+    private Long registradoPorId;
+    private String registradoPorNome;
     private LocalDateTime dataCadastro;
 
     public InspecaoSumoDTO(InspecaoSumo entity) {
@@ -43,6 +45,8 @@ public class InspecaoSumoDTO {
         this.pesoMedido = entity.getPesoMedido();
         this.aprovada = entity.getAprovada();
         this.observacao = entity.getObservacao();
+        this.registradoPorId = entity.getRegistradoPor() != null ? entity.getRegistradoPor().getId() : null;
+        this.registradoPorNome = entity.getRegistradoPor() != null ? entity.getRegistradoPor().getNome() : null;
         this.dataCadastro = entity.getDataCadastro();
     }
 }
