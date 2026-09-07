@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import br.edu.ufrb.rascomp.dto.CompetitionCategoryDTO;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.SumoControlMode;
 import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -38,6 +39,7 @@ class CompetitionCategoryServiceTest {
         dto.setDescricao("Categoria automatizada");
         dto.setModalidade(Modalidade.SUMO);
         dto.setSumoPhysicalClass(SumoPhysicalClass.MINI_500G);
+        dto.setSumoControlMode(SumoControlMode.RC);
         dto.setAtivo(null);
 
         when(competitionCategoryRepository.save(any(CompetitionCategory.class)))
@@ -53,6 +55,7 @@ class CompetitionCategoryServiceTest {
         assertEquals("Mini Sumo Teste", resultado.getNome());
         assertEquals(Modalidade.SUMO, resultado.getModalidade());
         assertEquals(SumoPhysicalClass.MINI_500G, resultado.getSumoPhysicalClass());
+        assertEquals(SumoControlMode.RC, resultado.getSumoControlMode());
         assertTrue(resultado.getAtivo());
     }
 
@@ -61,16 +64,28 @@ class CompetitionCategoryServiceTest {
         CompetitionCategoryDTO dto = new CompetitionCategoryDTO();
         dto.setNome("Sumo sem classe");
         dto.setModalidade(Modalidade.SUMO);
+        dto.setSumoControlMode(SumoControlMode.RC);
 
         assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
     }
 
     @Test
-    void followIgnoraClasseFisicaDeSumo() {
+    void categoriaSumoDeveExigirModoDeControle() {
+        CompetitionCategoryDTO dto = new CompetitionCategoryDTO();
+        dto.setNome("Sumo sem modo");
+        dto.setModalidade(Modalidade.SUMO);
+        dto.setSumoPhysicalClass(SumoPhysicalClass.MINI_500G);
+
+        assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
+    }
+
+    @Test
+    void followIgnoraCamposEspecificosDeSumo() {
         CompetitionCategoryDTO dto = new CompetitionCategoryDTO();
         dto.setNome("Seguidor de Linha");
         dto.setModalidade(Modalidade.FOLLOW_LINE);
         dto.setSumoPhysicalClass(SumoPhysicalClass.MINI_500G);
+        dto.setSumoControlMode(SumoControlMode.AUTONOMO);
 
         when(competitionCategoryRepository.save(any(CompetitionCategory.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -78,6 +93,7 @@ class CompetitionCategoryServiceTest {
         CompetitionCategoryDTO resultado = service.criar(dto);
 
         assertEquals(null, resultado.getSumoPhysicalClass());
+        assertEquals(null, resultado.getSumoControlMode());
     }
 
     @Test
