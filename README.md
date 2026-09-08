@@ -8,15 +8,21 @@ RRC      = evento/competição
 RasComp  = plataforma de software
 ```
 
-## Estado atual — 04/09/2026
+## Estado atual — 08/09/2026
 
 ```text
 ETAPA 0  ✅ baseline concluída / validada
 ETAPA 1  🚧 atual — correções de lógica e integridade
 ETAPA 2+ ⏳ não iniciadas
+
+Bloco 1 — Competition + Registration  ✅
+Bloco 2 — Follow Line                  ✅
+Bloco 3 — Sumô                         ✅
+Bloco 4 — Chaves                       ⏭️ próximo / não iniciado
+Bloco 5 — Fluxos integrados            ⏳
 ```
 
-Em 04/09/2026 foi realizado um checkpoint de limpeza/revisão **documental**. Não houve mudança funcional nem antecipação da ETAPA 2.
+O Bloco 3 foi encerrado após alinhamento do backend, frontend, testdata e documentação competitiva. A ETAPA 1 continua aberta; a limpeza técnica da ETAPA 2 não foi antecipada.
 
 Roadmap canônico cross-repo:
 
@@ -30,6 +36,12 @@ Dossiê Mestre:
 gbsalermo/Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
 ```
 
+Contrato competitivo:
+
+```text
+gbsalermo/Rascomp-FRONT/docs/CONTRATO_REGRAS_COMPETITIVAS.md
+```
+
 ---
 
 ## Stack
@@ -39,7 +51,7 @@ gbsalermo/Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
 - Spring Security + JWT + BCrypt
 - JPA/Hibernate
 - **MySQL**
-- Flyway V1–V7
+- Flyway V1–V11
 - Maven
 - Swagger/OpenAPI
 - Cloudflare R2 preparado para mídia futura
@@ -67,7 +79,7 @@ Controller
 → MySQL
 ```
 
-O backend é fonte de verdade para autorização, ownership, elegibilidade, inscrições, ranking, inspeção, BYE, vencedor, progressão, campeão e resultados competitivos.
+O backend é fonte de verdade para autorização, ownership, elegibilidade, inscrições, ranking, inspeção, BYE, vencedor, progressão, campeão, rounds e resultados competitivos.
 
 ---
 
@@ -80,27 +92,34 @@ Competições                            ✅
 Equipes / competidores / robôs         ✅
 Inscrições / revisão                   ✅
 Fotos de robôs                         ✅
-Follow Line / ranking                  ✅
-Sumô / inspeção / rounds               ✅
+Follow Line / ranking                  ✅ Bloco 2 alinhado
+Ausência de tomada Follow              ✅ auditável
+Sumô / inspeção / rounds               ✅ Bloco 3 alinhado
+Inspeção humana APTO/INAPTO            ✅
+Modo Sumô AUTONOMO / RC                ✅
+Rounds extras justificados             ✅
+Falha de inicialização                 ✅
+Juízes / decisão de juiz               ✅ auditável
 2 penalidades = derrota do round       ✅
 Suicídio/WO                            ✅
-Chaves / BYE / progressão              ✅
+Chaves / BYE / progressão              ✅ base atual; Bloco 4 pendente
 Histórico de chaves                    ✅
 API pública                            ✅
 API participante                       ✅ base funcional
 Testdata                               ✅
 ```
 
-Último checkpoint automatizado documentado:
+Último checkpoint automatizado confirmado no CI:
 
 ```text
-48 testes
+87 testes
 0 falhas
 0 erros
-MySQL + Flyway + testdata ✅
+0 skipped
+MySQL + Flyway V11 + testdata ✅
 ```
 
-Não atualizar essa contagem sem nova execução real.
+O workflow também inicializou o cenário completo `testdata` contra MySQL real.
 
 ---
 
@@ -131,48 +150,57 @@ A conta inativa já deixa de autenticar nas requisições seguintes.
 ## Migrations
 
 ```text
-V1 — schema competitivo principal
-V2 — inspeções de Sumô
-V3 — rounds de Sumô
-V4 — remoção de estrutura legada Follow/chaves
-V5 — usuários / ownership / fotos
-V6 — histórico de chaves
-V7 — regras estendidas de round/penalidades
+V1  — schema competitivo principal
+V2  — inspeções de Sumô
+V3  — rounds de Sumô
+V4  — remoção de estrutura legada Follow/chaves
+V5  — usuários / ownership / fotos
+V6  — histórico de chaves
+V7  — regras estendidas de round/penalidades
+V8  — cancelamento de inscrição + histórico de janela
+V9  — classe física das categorias de Sumô
+V10 — Follow 3×3 + parâmetros operacionais + ausência
+V11 — modo Sumô + rounds extras + inspeção auditável + juízes/decisão
 ```
 
 Regra congelada:
 
 ```text
-V1–V7 nunca são reescritas
-próxima mudança estrutural = V8+
+V1–V11 nunca são reescritas
+próxima mudança estrutural = V12+
 ```
 
 ---
 
-## ETAPA 1 — riscos em tratamento
+## ETAPA 1 — estado dos riscos
 
-1. `RegistrationService.reativar()` não revalida a janela de inscrições.
-2. Cancelamento precisa política explícita conforme estado competitivo.
-3. Geração/regeneração de chave precisa restringir estados de `Competition`.
-4. Alteração de `MatchResult` após progressão precisa bloqueio ou rollback/reprocessamento.
-5. Estados válidos de tentativa Follow precisam formalização.
+```text
+Reativação de inscrição                         ✅ Bloco 1
+Cancelamento / CANCELADA x DESISTENTE           ✅ Bloco 1
+Estados válidos Follow                          ✅ Bloco 2
+Contrato operacional Follow                     ✅ Bloco 2
+Contrato operacional Sumô                       ✅ Bloco 3
+Geração/regeneração de chave                    ⏭️ Bloco 4
+Correção de resultado após progressão           ⏭️ Bloco 4
+Fluxos integrados completos                     ⏳ Bloco 5
+```
 
-O efeito oficial dos checkpoints do Follow depende de regulamento e não deve ser inventado.
+O efeito de checkpoints do Follow continua apenas informativo e não deve ser alterado sem nova regra competitiva aprovada.
 
 ---
 
 ## Follow Line
 
 ```text
-Registration
-└─ Tomadas
-   └─ Tentativas
+3 tomadas
+×
+3 tentativas por tomada
 ```
 
 Ranking:
 
 ```text
-válida + concluída + tempo
+tentativa classificável
 → melhor tentativa da tomada
 → melhor tomada da inscrição
 → menor tempo final
@@ -182,13 +210,15 @@ válida + concluída + tempo
 tempoFinal = tempoSegundos + penalidadeSegundos
 ```
 
+Também existe tomada perdida por ausência como evento próprio e auditável, sem tentativas fictícias.
+
 ---
 
 ## Sumô
 
 ```text
 Registration APROVADA
-→ inspeção apta
+→ inspeção humana APTO/INAPTO
 → Bracket
 → Match
 → RoundSumo
@@ -198,11 +228,29 @@ Registration APROVADA
 
 Regras relevantes:
 
-- BYE automático;
-- Suicídio/WO = adversário vence;
+- peso medido é opcional/informativo e não decide inspeção;
+- categorias Sumô usam `AUTONOMO | RC`;
+- perfil padrão: 3 rounds regulares / 2 vitórias;
+- rounds extras somente quando necessários, limitados e justificados;
+- falha de inicialização possui motivo explícito e decisão humana;
 - 0/1 penalidade = disputa normal;
 - 2 penalidades = derrota automática do round;
+- Suicídio/WO = adversário vence;
+- BYE = avanço automático;
+- decisão de juiz é operação específica, identificada e justificada;
 - chave histórica é read-only.
+
+---
+
+## Próximo bloco — Chaves
+
+O Bloco 4 ainda **não foi iniciado**. Ele deverá fechar:
+
+- estado de `Competition` permitido para geração comum;
+- regeneração somente antes de atividade competitiva;
+- estrutura lógica da chave × agenda operacional;
+- correção transacional antes da dependência seguinte iniciar;
+- bloqueio de correção comum quando a dependência já iniciou.
 
 ---
 
@@ -242,7 +290,7 @@ O backend será responsável pela integração Telegram. Vínculo obrigatório `
 
 ## Dívida técnica reservada à ETAPA 2
 
-O repositório ainda contém:
+O repositório ainda contém itens como:
 
 ```text
 rascomp/bin/
@@ -251,7 +299,7 @@ rascomp/bin/
 .gitkeep desnecessários em alguns packages
 ```
 
-Essa limpeza **não foi antecipada** pelo checkpoint documental e permanece ETAPA 2.
+Essa limpeza permanece na ETAPA 2.
 
 ---
 
@@ -281,6 +329,8 @@ $env:SPRING_PROFILES_ACTIVE="testdata"
 .\mvnw spring-boot:run
 ```
 
+Nunca habilitar `testdata` em produção.
+
 Swagger:
 
 ```text
@@ -297,7 +347,8 @@ Leia:
 1. Rascomp-FRONT/docs/README.md
 2. Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md
 3. Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
-4. rascomp/docs/CONTINUIDADE.md
+4. Rascomp-FRONT/docs/CONTRATO_REGRAS_COMPETITIVAS.md
+5. rascomp/docs/CONTINUIDADE.md
 ```
 
-Depois do checkpoint documental, o próximo trabalho é **retomar a ETAPA 1**.
+Próximo trabalho, quando explicitamente autorizado: **ETAPA 1 · Bloco 4 — Chaves**.
