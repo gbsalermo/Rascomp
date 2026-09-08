@@ -49,6 +49,7 @@ import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.StatusRoundSumo;
+import br.edu.ufrb.rascomp.model.Enum.SumoControlMode;
 import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
@@ -248,6 +249,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         item.setDescricao("Categoria preparada pelo profile local de demonstração.");
         item.setModalidade(modalidade);
         item.setSumoPhysicalClass(modalidade == Modalidade.SUMO ? sumoPhysicalClass : null);
+        item.setSumoControlMode(modalidade == Modalidade.SUMO ? SumoControlMode.RC : null);
         item.setAtivo(true);
         return categoryRepository.save(item);
     }
@@ -273,6 +275,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         config.setNumeroRounds(3);
         config.setRoundsParaVencer(2);
         config.setPermiteRoundDesempate(true);
+        config.setMaxRoundsExtras(2);
         configSumoRepository.save(config);
     }
 
@@ -495,7 +498,8 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         InspecaoSumoDTO dto = new InspecaoSumoDTO();
         dto.setRegistrationId(registration.getId());
         dto.setPesoMedido(new BigDecimal(peso));
-        dto.setObservacao("Inspeção aprovada pelo profile de demonstração.");
+        dto.setAprovada(true);
+        dto.setObservacao("Inspeção aprovada por decisão simulada da organização no profile de demonstração.");
         inspecaoSumoService.registrar(dto);
     }
 
