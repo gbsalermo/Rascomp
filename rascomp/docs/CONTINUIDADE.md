@@ -1,6 +1,6 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **06/09/2026**
+Última atualização: **08/09/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
@@ -29,11 +29,14 @@ ETAPA 1  🚧 atual — lógica, integridade e testes de fluxo
 ETAPA 2+ ⏳ não iniciadas
 ```
 
-Em 06/09/2026 foram concluídos dois blocos funcionais da ETAPA 1:
+Blocos concluídos da ETAPA 1:
 
 ```text
 Bloco 1 — Competition + Registration ✅
 Bloco 2 — Follow Line                 ✅
+Bloco 3 — Sumô                        ✅
+Bloco 4 — Chaves                      ⏭️ próximo / não iniciado
+Bloco 5 — Fluxos integrados           ⏳
 ```
 
 O Bloco 1 consolidou ciclo da competição, inscrições, cancelamento/desistência, prorrogação/reabertura e compatibilidade física de robôs híbridos.
@@ -50,7 +53,20 @@ O Bloco 2 consolidou o contrato operacional do Follow:
 - ranking preservado pela melhor tentativa válida da tomada e melhor tomada do robô;
 - initializers/testdata alinhados.
 
-Este checkpoint **não encerra a ETAPA 1**. O próximo bloco é **Sumô**; depois permanecem Chaves e testes integrados de competição completa.
+O Bloco 3 consolidou o contrato operacional do Sumô:
+
+- inspeção humana `APTO/INAPTO`;
+- peso medido apenas informativo/auditável;
+- modo de controle `AUTONOMO | RC` por categoria;
+- 3 rounds regulares / 2 vitórias;
+- rounds extras limitados e justificados;
+- `FALHA_INICIALIZACAO` como motivo explícito sem consequência automática escolhida pelo sistema;
+- juiz cadastrado no contexto da competição;
+- decisão final de juiz identificada e justificada após esgotar os rounds disponíveis;
+- initializers/testdata alinhados ao novo contrato;
+- Flyway V11.
+
+Este checkpoint **não encerra a ETAPA 1**. O próximo bloco é **Chaves**; depois permanecem os testes integrados de competição completa.
 
 ---
 
@@ -59,7 +75,7 @@ Este checkpoint **não encerra a ETAPA 1**. O próximo bloco é **Sumô**; depoi
 ```text
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
-MYSQL + FLYWAY V1–V10                    ✅
+MYSQL + FLYWAY V1–V11                    ✅
 COMPETIÇÕES                              ✅ transições + prorrogação/reabertura
 EQUIPES / COMPETIDORES / ROBÔS           ✅
 INSCRIÇÕES + REVISÃO                     ✅ invariantes + cancelamento + híbridos
@@ -67,9 +83,15 @@ FOTOS DOS ROBÔS                          ✅
 FOLLOW LINE                              ✅ contrato RRC operacional
 RANKING FOLLOW                           ✅
 AUSÊNCIA DE TOMADA FOLLOW                ✅ auditável
-SUMÔ / INSPEÇÃO / ROUNDS                 ✅ base atual; Bloco 3 pendente
-2 PENALIDADES = DERROTA DO ROUND         ✅ base atual
-SUICÍDIO/WO                              ✅ base atual
+SUMÔ / INSPEÇÃO / ROUNDS                 ✅ Bloco 3 alinhado
+INSPEÇÃO HUMANA APTO/INAPTO              ✅
+SUMÔ AUTONOMO / RC                       ✅
+ROUNDS EXTRAS JUSTIFICADOS                ✅
+FALHA DE INICIALIZAÇÃO                    ✅
+JUÍZES DE COMPETIÇÃO                      ✅
+DECISÃO DE JUIZ                           ✅ auditável
+2 PENALIDADES = DERROTA DO ROUND         ✅
+SUICÍDIO/WO                              ✅
 CHAVES / BYE / PROGRESSÃO                ✅ base atual; Bloco 4 pendente
 HISTÓRICO DE CHAVES                      ✅
 API PARTICIPANTE                         ✅ base + cancelamento/reativação
@@ -80,11 +102,11 @@ PROFILE TESTDATA                         ✅
 Checkpoint automatizado atual confirmado no CI:
 
 ```text
-86 testes
+87 testes
 0 falhas
 0 erros
 0 skipped
-MySQL + Flyway V10 + testdata ✅
+MySQL + Flyway V11 + testdata ✅
 ```
 
 O workflow também compilou a aplicação e inicializou o cenário completo `testdata` contra MySQL real.
@@ -128,13 +150,14 @@ V7  — regras estendidas de round/penalidades
 V8  — solicitações de cancelamento + histórico da janela de inscrições
 V9  — classe física de Sumô nas categorias
 V10 — alinhamento Follow 3×3 + parâmetros operacionais + ausência de tomada
+V11 — modo de controle Sumô + rounds extras + auditoria de inspeção + juízes/decisão de juiz
 ```
 
 Regra:
 
 ```text
-V1–V10 nunca são reescritas
-próxima mudança estrutural = V11+
+V1–V11 nunca são reescritas
+próxima mudança estrutural = V12+
 ```
 
 A V10:
@@ -144,6 +167,8 @@ A V10:
 - adiciona `tempo_apresentacao_segundos` com default 60;
 - cria `ausencias_tomada_seguidor_linha` com unicidade por `registration + tomada`;
 - registra usuário da organização, observação e data/hora.
+
+A V11 consolida a estrutura necessária ao Bloco 3 do Sumô, incluindo metadata de modo de controle, limite de rounds extras, auditoria da inspeção e entidades de juiz/decisão de juiz.
 
 ---
 
@@ -190,6 +215,9 @@ Robot
 
 CompetitionCategory.sumoPhysicalClass
 → classe física competitiva da categoria de Sumô
+
+CompetitionCategory.sumoControlMode
+→ AUTONOMO | RC
 ```
 
 Não implementar transferências administrativas como simples troca genérica de FK.
@@ -426,9 +454,9 @@ valida=false
 
 ---
 
-# 9. Sumô — contrato aprovado / Bloco 3 próximo
+# 9. Sumô — Bloco 3 concluído
 
-Categorias previstas:
+Categorias previstas e suportadas pelo mesmo motor:
 
 ```text
 Mini 500 g Auto
@@ -439,18 +467,34 @@ Mini 500 g R/C
 
 Todas usam `Modalidade.SUMO`, isoladas por categoria.
 
-O próximo bloco deve alinhar principalmente:
+## 9.1 Inspeção
+
+`InspecaoSumoService` recebe explicitamente a decisão humana:
 
 ```text
-inspeção humana APTO/INAPTO
-peso apenas informativo
-autônomo × R/C
-falha de inicialização
-rounds extras justificados
-identificação/decisão do juiz
+aprovada=true  → APTO
+aprovada=false → INAPTO
 ```
 
-Regras-base já existentes que devem ser preservadas:
+`pesoMedido` é opcional e informativo. Estar acima ou abaixo de `pesoMax` não substitui a decisão da organização.
+
+O registro também preserva responsável e data/hora para auditoria.
+
+## 9.2 Modo de controle
+
+```text
+SumoControlMode
+├─ AUTONOMO
+└─ RC
+```
+
+Categorias `SUMO` exigem modo de controle configurado. Categorias não-Sumô não usam essa metadata.
+
+A regra regulamentar de 5 s do autônomo é orientação operacional; o backend não transforma o atraso/falha em resultado automático.
+
+## 9.3 Rounds e motivos
+
+Regras preservadas:
 
 ```text
 3 rounds regulares
@@ -461,6 +505,75 @@ Regras-base já existentes que devem ser preservadas:
 SUICIDIO_WO  → adversário vence
 BYE          → avanço automático
 ```
+
+Motivos explícitos suportados:
+
+```text
+DISPUTA
+SUICIDIO_WO
+PENALIDADES
+FALHA_INICIALIZACAO
+DECISAO_JUIZ
+```
+
+`FALHA_INICIALIZACAO` exige justificativa. A consequência é informada pela operação humana; o sistema não escolhe automaticamente entre penalidade ou perda do round.
+
+## 9.4 Rounds extras
+
+`ConfigSumo.maxRoundsExtras` limita os extras.
+
+Um round extra só é aceito se:
+
+- não houver vencedor;
+- os rounds regulares já tiverem sido consumidos;
+- a categoria permitir desempate;
+- o limite de extras não tiver sido alcançado;
+- existir justificativa.
+
+## 9.5 Juízes e decisão final
+
+Modelo:
+
+```text
+CompetitionJudge
+→ pertence à Competition
+→ nome obrigatório
+→ UserAccount opcional
+→ ativo/inativo
+
+MatchJudgeDecision
+→ Match
+→ vencedor
+→ juiz
+→ justificativa
+→ data/hora
+```
+
+A decisão de juiz só é aceita depois de esgotar rounds regulares + extras disponíveis, sem vencedor pelos rounds.
+
+A operação valida que:
+
+- a partida/chave estão ativas e atuais;
+- os dois participantes existem;
+- o vencedor participa da partida;
+- o juiz está ativo e pertence à mesma competição;
+- não existe decisão anterior;
+- justificativa é obrigatória.
+
+A decisão cria o resultado oficial e alimenta a progressão pelo fluxo normal de resultado.
+
+## 9.6 Initializers
+
+Foram alinhados ao novo contrato:
+
+```text
+DataInitializer
+DemoOitavasDataInitializer
+BracketHistoryTestDataInitializer
+DemoShowcaseDataInitializer
+```
+
+Categorias Sumô de demonstração possuem modo de controle e inspeções aprovadas enviam explicitamente a decisão humana.
 
 ---
 
@@ -492,30 +605,26 @@ Correção de resultado antes da dependência iniciar deve ser transacional; dep
 ```text
 Bloco 1 — Competition + Registration       ✅ CONCLUÍDO
 Bloco 2 — Follow Line                       ✅ CONCLUÍDO
-Bloco 3 — Sumô                              ← PRÓXIMO
-Bloco 4 — Chaves e progressão               ⏳
+Bloco 3 — Sumô                              ✅ CONCLUÍDO
+Bloco 4 — Chaves e progressão               ⏭️ PRÓXIMO / NÃO INICIADO
 Bloco 5 — Testes integrados de competição   ⏳
 ```
 
-Bloco 2 concluído com:
+Bloco 3 concluído com:
 
 ```text
-✅ estrutura 3×3 protegida
-✅ estados válidos de tentativa
-✅ tempo máximo por tentativa
-✅ penalidade configurável
-✅ ação operacional “não parou”
-✅ cronômetro de tentativa
-✅ cronômetro de apresentação
-✅ perda de tomada por ausência
-✅ ausência auditável e sem tentativas fictícias
-✅ ausência tratada como atividade competitiva
-✅ ranking preservado
-✅ checkpoints sem efeito no ranking
+✅ inspeção humana APTO/INAPTO
+✅ peso medido apenas informativo
+✅ modo AUTONOMO / RC
+✅ rounds regulares preservados
+✅ rounds extras limitados + justificados
+✅ FALHA_INICIALIZACAO formalizada
+✅ juízes por competição
+✅ decisão de juiz identificada + justificada
 ✅ initializers alinhados
 ✅ frontend Gestão integrado
-✅ 86 testes verdes
-✅ MySQL/Flyway V10/testdata verdes
+✅ 87 testes verdes
+✅ MySQL/Flyway V11/testdata verdes
 ✅ frontend typecheck/build verdes
 ```
 
@@ -523,22 +632,9 @@ Bloco 2 concluído com:
 
 # 12. Estratégia de testes da ETAPA 1
 
-O checkpoint atual possui **86 testes unitários** de services e smoke do profile `testdata` contra MySQL/Flyway V10.
+O checkpoint atual possui **87 testes unitários** de services e smoke do profile `testdata` contra MySQL/Flyway V11.
 
-O núcleo do Follow já possui cobertura para:
-
-- 3×3;
-- tentativa duplicada;
-- limites de tomada/tentativa/checkpoint;
-- tempo acima do máximo;
-- penalidade no tempo final;
-- estados impossíveis;
-- ausência após tentativa;
-- ausência duplicada;
-- participante tentando registrar ausência;
-- tentativa depois de ausência;
-- ausência contando como atividade competitiva;
-- reabertura de inscrições depois de ausência.
+O núcleo do Sumô possui cobertura para regras de inspeção humana, categoria/configuração e rounds, incluindo limitações de extras e motivos especiais. O profile completo também valida que os initializers continuam inicializando contra MySQL real.
 
 A camada integrada de competição completa ainda será adicionada no Bloco 5 para simular:
 
@@ -629,15 +725,14 @@ Nunca habilitar `testdata` em produção.
 Próximo bloco da ETAPA 1:
 
 ```text
-SUMÔ
-1. comparar contrato × InspecaoSumo / ConfigSumo / RoundSumo
-2. trocar decisão automática por peso por inspeção humana APTO/INAPTO
-3. manter peso medido apenas informativo/auditável
-4. formalizar falha de inicialização Auto/R/C
-5. proteger rounds extras e exigir justificativa
-6. modelar identificação/decisão do juiz
-7. adicionar testes derivados do contrato
-8. integrar frontend somente após o contrato backend estar consistente
+CHAVES
+1. validar estados de Competition permitidos para gerar chave
+2. bloquear regeneração comum depois de atividade competitiva
+3. separar estrutura lógica da chave da agenda operacional quando aplicável
+4. implementar correção segura antes da próxima dependência iniciar
+5. bloquear correção comum quando a dependência já iniciou
+6. adicionar testes derivados do contrato
+7. integrar frontend quando o contrato backend mudar
 ```
 
 Não iniciar ETAPA 2 sem conclusão e validação explícita da ETAPA 1.
