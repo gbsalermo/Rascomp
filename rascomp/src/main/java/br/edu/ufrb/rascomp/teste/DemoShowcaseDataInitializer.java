@@ -173,6 +173,11 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         prepararPendenciasDashboard(live, followCategory, miniCategory, visitante, organizacao);
         prepararHistoricoCompleto(history, historyCategory, visitante, organizacao);
 
+        live.setStatus(StatusCompetition.EM_ANDAMENTO);
+        competitionRepository.save(live);
+        history.setStatus(StatusCompetition.FINALIZADA);
+        competitionRepository.save(history);
+
         System.out.println("============================================================");
         System.out.println("RASCOMP · CENARIO COMPLETO DE DEMONSTRACAO PRONTO");
         System.out.println("Ao vivo: " + live.getNome() + " (#" + live.getId() + ")");
@@ -288,7 +293,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         item.setFimInscricoes(hoje.minusDays(2));
         item.setDataInicio(hoje.minusDays(1));
         item.setDataFim(hoje.plusDays(1));
-        item.setStatus(StatusCompetition.EM_ANDAMENTO);
+        item.setStatus(StatusCompetition.INSCRICOES_ENCERRADAS);
         item.setAtivo(true);
         return competitionRepository.save(item);
     }
@@ -301,7 +306,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         item.setFimInscricoes(LocalDate.of(2025, 9, 1));
         item.setDataInicio(LocalDate.of(2025, 10, 10));
         item.setDataFim(LocalDate.of(2025, 10, 12));
-        item.setStatus(StatusCompetition.FINALIZADA);
+        item.setStatus(StatusCompetition.INSCRICOES_ENCERRADAS);
         item.setAtivo(true);
         return competitionRepository.save(item);
     }
@@ -381,7 +386,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
             UserAccount organizacao) {
         List<Registration> regs = new ArrayList<>();
         regs.add(titan);
-        for (int i = 1; i <= 7; i++) {
+        for (int i = 1; i <= 15; i++) {
             Team team = garantirEquipe("Equipe Mini Demo " + i, i % 2 == 0 ? ras : visitante, null);
             Robot robot = garantirRobo("MiniBot Demo " + i, team, "Mini Sumô de demonstração.");
             regs.add(garantirInscricao(
