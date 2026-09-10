@@ -36,6 +36,7 @@ public class RoundSumoService {
     private final ConfigSumoRepository configSumoRepository;
     private final InspecaoSumoService inspecaoSumoService;
     private final MatchResultService matchResultService;
+    private final BracketProgressionService bracketProgressionService;
 
     @Transactional
     public RoundSumoDTO registrar(RoundSumoDTO dto) {
@@ -84,6 +85,7 @@ public class RoundSumoService {
             match.setStatus(StatusMatch.EM_ANDAMENTO);
             matchRepository.save(match);
         }
+        bracketProgressionService.marcarChaveEmAndamento(match.getBracket());
 
         RoundSumo salvo = roundRepository.save(round);
         apurarResultadoAutomatico(match, config);
