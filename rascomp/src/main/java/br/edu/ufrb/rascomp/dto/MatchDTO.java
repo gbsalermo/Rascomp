@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.Registration;
+import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoPartida;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -37,6 +38,9 @@ public class MatchDTO {
     private String robotBNome;
     private String teamBNome;
     private LocalDateTime dataHora;
+    private String pista;
+    private Integer ordemExecucao;
+    private StatusConvocacaoPartida statusConvocacao;
     private StatusMatch status;
     private Boolean ativo;
     private LocalDateTime dataCadastro;
@@ -56,6 +60,9 @@ public class MatchDTO {
         preencherParticipanteA(entity.getRegistrationA());
         preencherParticipanteB(entity.getRegistrationB());
         this.dataHora = entity.getDataHora();
+        this.pista = entity.getPista();
+        this.ordemExecucao = entity.getOrdemExecucao();
+        this.statusConvocacao = entity.getStatusConvocacao();
         this.status = entity.getStatus();
         this.ativo = entity.getAtivo();
         this.dataCadastro = entity.getDataCadastro();
