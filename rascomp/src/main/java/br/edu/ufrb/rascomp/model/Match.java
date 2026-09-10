@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoPartida;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -62,6 +63,16 @@ public class Match implements Serializable {
 
     @Column
     private LocalDateTime dataHora;
+
+    @Column(length = 80)
+    private String pista;
+
+    @Column
+    private Integer ordemExecucao;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 24)
+    private StatusConvocacaoPartida statusConvocacao = StatusConvocacaoPartida.NAO_CONVOCADA;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
