@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.edu.ufrb.rascomp.dto.MatchAgendaDTO;
 import br.edu.ufrb.rascomp.dto.MatchDTO;
 import br.edu.ufrb.rascomp.service.MatchService;
 import jakarta.validation.Valid;
@@ -49,6 +50,13 @@ public class MatchController {
     @PutMapping("/{id}")
     public ResponseEntity<MatchDTO> atualizar(@PathVariable Long id, @Valid @RequestBody MatchDTO dto) {
         return ResponseEntity.ok(matchService.atualizar(id, dto));
+    }
+
+    @PatchMapping("/{id}/agenda")
+    public ResponseEntity<MatchDTO> atualizarAgenda(
+            @PathVariable Long id,
+            @Valid @RequestBody MatchAgendaDTO dto) {
+        return ResponseEntity.ok(matchService.atualizarAgenda(id, dto));
     }
 
     @DeleteMapping("/{id}")
