@@ -1,6 +1,6 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **08/09/2026**
+Última atualização: **09/09/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
@@ -35,8 +35,8 @@ Blocos concluídos da ETAPA 1:
 Bloco 1 — Competition + Registration ✅
 Bloco 2 — Follow Line                 ✅
 Bloco 3 — Sumô                        ✅
-Bloco 4 — Chaves                      ⏭️ próximo / não iniciado
-Bloco 5 — Fluxos integrados           ⏳
+Bloco 4 — Chaves                      ✅
+Bloco 5 — Fluxos integrados           ⏭️ próximo / não iniciado
 ```
 
 O Bloco 1 consolidou ciclo da competição, inscrições, cancelamento/desistência, prorrogação/reabertura e compatibilidade física de robôs híbridos.
@@ -66,7 +66,20 @@ O Bloco 3 consolidou o contrato operacional do Sumô:
 - initializers/testdata alinhados ao novo contrato;
 - Flyway V11.
 
-Este checkpoint **não encerra a ETAPA 1**. O próximo bloco é **Chaves**; depois permanecem os testes integrados de competição completa.
+O Bloco 4 consolidou a integridade do chaveamento:
+
+- geração/regeneração comum somente em `INSCRICOES_ENCERRADAS`;
+- BYE automático não é tratado como disputa competitiva real;
+- regeneração bloqueada depois de round, resultado ou partida realmente iniciada/finalizada;
+- chave marcada `EM_ANDAMENTO` quando começa uma disputa real;
+- estrutura lógica protegida contra edição comum após geração;
+- agenda operacional separada da árvore competitiva;
+- correção segura do vencedor propagado enquanto a próxima dependência ainda não começou;
+- correção comum bloqueada depois que a partida dependente possui atividade competitiva;
+- initializers/testdata alinhados à nova sequência;
+- Flyway V12.
+
+Este checkpoint **não encerra a ETAPA 1**. O próximo bloco é **Fluxos integrados completos**. A ETAPA 2 permanece não iniciada.
 
 ---
 
@@ -75,7 +88,7 @@ Este checkpoint **não encerra a ETAPA 1**. O próximo bloco é **Chaves**; depo
 ```text
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
-MYSQL + FLYWAY V1–V11                    ✅
+MYSQL + FLYWAY V1–V12                    ✅
 COMPETIÇÕES                              ✅ transições + prorrogação/reabertura
 EQUIPES / COMPETIDORES / ROBÔS           ✅
 INSCRIÇÕES + REVISÃO                     ✅ invariantes + cancelamento + híbridos
@@ -92,7 +105,8 @@ JUÍZES DE COMPETIÇÃO                      ✅
 DECISÃO DE JUIZ                           ✅ auditável
 2 PENALIDADES = DERROTA DO ROUND         ✅
 SUICÍDIO/WO                              ✅
-CHAVES / BYE / PROGRESSÃO                ✅ base atual; Bloco 4 pendente
+CHAVES / BYE / PROGRESSÃO                ✅ Bloco 4 alinhado
+AGENDA OPERACIONAL DE PARTIDAS           ✅ separada da árvore lógica
 HISTÓRICO DE CHAVES                      ✅
 API PARTICIPANTE                         ✅ base + cancelamento/reativação
 API PÚBLICA                              ✅
@@ -102,11 +116,11 @@ PROFILE TESTDATA                         ✅
 Checkpoint automatizado atual confirmado no CI:
 
 ```text
-87 testes
+98 testes
 0 falhas
 0 erros
 0 skipped
-MySQL + Flyway V11 + testdata ✅
+MySQL + Flyway V12 + testdata ✅
 ```
 
 O workflow também compilou a aplicação e inicializou o cenário completo `testdata` contra MySQL real.
@@ -151,13 +165,14 @@ V8  — solicitações de cancelamento + histórico da janela de inscrições
 V9  — classe física de Sumô nas categorias
 V10 — alinhamento Follow 3×3 + parâmetros operacionais + ausência de tomada
 V11 — modo de controle Sumô + rounds extras + auditoria de inspeção + juízes/decisão de juiz
+V12 — separação da agenda operacional da estrutura lógica das partidas
 ```
 
 Regra:
 
 ```text
-V1–V11 nunca são reescritas
-próxima mudança estrutural = V12+
+V1–V12 nunca são reescritas
+próxima mudança estrutural = V13+
 ```
 
 A V10:
@@ -169,6 +184,8 @@ A V10:
 - registra usuário da organização, observação e data/hora.
 
 A V11 consolida a estrutura necessária ao Bloco 3 do Sumô, incluindo metadata de modo de controle, limite de rounds extras, auditoria da inspeção e entidades de juiz/decisão de juiz.
+
+A V12 separa a agenda operacional da estrutura competitiva da partida, permitindo armazenar pista, ordem de execução e estado de convocação sem reescrever rodada, ordem lógica ou participantes da chave.
 
 ---
 
@@ -577,26 +594,97 @@ Categorias Sumô de demonstração possuem modo de controle e inspeções aprova
 
 ---
 
-# 10. Chaves, agenda e progressão — Bloco 4 pendente
+# 10. Chaves, agenda e progressão — Bloco 4 concluído
 
-Contrato já aprovado:
+## 10.1 Geração e regeneração
 
-```text
-INSCRICOES_ENCERRADAS ✅ para geração comum
-demais estados       ❌
-```
-
-Regeneração comum só antes de atividade competitiva dependente.
-
-Separar futuramente:
+Fluxo comum permitido:
 
 ```text
-estrutura lógica da chave
-≠
-agenda operacional de execução
+Competition.status == INSCRICOES_ENCERRADAS ✅
+demais estados                              ❌
 ```
 
-Correção de resultado antes da dependência iniciar deve ser transacional; depois da dependência iniciada, correção comum deve ser bloqueada.
+`BracketIntegrityService` centraliza a proteção.
+
+Regeneração continua possível enquanto a chave estiver apenas montada. Um BYE automático, isoladamente, **não conta como atividade competitiva real**.
+
+Regeneração comum é bloqueada depois de existir qualquer um dos seguintes sinais:
+
+```text
+RoundSumo
+MatchResult
+Match EM_ANDAMENTO
+Match FINALIZADA com os dois participantes reais
+```
+
+## 10.2 Estrutura lógica x agenda operacional
+
+A árvore competitiva e a agenda são conceitos separados:
+
+```text
+estrutura lógica
+→ rodada
+→ ordem lógica
+→ registrationA / registrationB
+→ próxima partida
+
+agenda operacional
+→ dataHora
+→ pista
+→ ordemExecucao
+→ statusConvocacao
+```
+
+Depois que a chave foi gerada, o fluxo comum não pode reescrever rodada, ordem lógica ou participantes por uma edição genérica de partida.
+
+A agenda possui operação específica:
+
+```text
+PATCH /api/v1/partidas/{id}/agenda
+```
+
+Isso permite reorganizar horários, pistas, chamadas e execução simultânea sem alterar quem enfrenta quem.
+
+## 10.3 Progressão e estado da chave
+
+BYE continua avançando automaticamente.
+
+Quando uma disputa real começa, a chave passa para `EM_ANDAMENTO`.
+
+A progressão continua preenchendo somente o slot esperado da partida seguinte e preserva a árvore lógica.
+
+## 10.4 Correção de resultado propagado
+
+Política implementada:
+
+```text
+resultado anterior corrigido
++
+próxima partida ainda sem atividade
+→ remover/substituir vencedor propagado com segurança
+→ manter restante da árvore
+
+próxima partida já possui round, resultado ou começou/finalizou
+→ bloquear correção comum
+→ não reescrever histórico competitivo silenciosamente
+```
+
+Rollback competitivo excepcional, caso venha a existir, pertence a ferramentas administrativas futuras e deverá ser explícito/auditável.
+
+## 10.5 Testdata
+
+O cenário de demonstração foi corrigido sem bypass de regra de produção:
+
+```text
+1. Competition de demonstração entra no seed como INSCRICOES_ENCERRADAS
+2. participantes e inspeções são montados
+3. chave é gerada no estado permitido
+4. disputas/histórico são preparados
+5. estado final do cenário é restaurado para EM_ANDAMENTO ou FINALIZADA
+```
+
+O Mini Sumô ao vivo agora monta os 16 participantes antes da primeira geração, evitando regeneração de uma chave já disputada.
 
 ---
 
@@ -606,25 +694,25 @@ Correção de resultado antes da dependência iniciar deve ser transacional; dep
 Bloco 1 — Competition + Registration       ✅ CONCLUÍDO
 Bloco 2 — Follow Line                       ✅ CONCLUÍDO
 Bloco 3 — Sumô                              ✅ CONCLUÍDO
-Bloco 4 — Chaves e progressão               ⏭️ PRÓXIMO / NÃO INICIADO
-Bloco 5 — Testes integrados de competição   ⏳
+Bloco 4 — Chaves e progressão               ✅ CONCLUÍDO
+Bloco 5 — Testes integrados de competição   ⏭️ PRÓXIMO / NÃO INICIADO
 ```
 
-Bloco 3 concluído com:
+Bloco 4 concluído com:
 
 ```text
-✅ inspeção humana APTO/INAPTO
-✅ peso medido apenas informativo
-✅ modo AUTONOMO / RC
-✅ rounds regulares preservados
-✅ rounds extras limitados + justificados
-✅ FALHA_INICIALIZACAO formalizada
-✅ juízes por competição
-✅ decisão de juiz identificada + justificada
-✅ initializers alinhados
+✅ geração restrita a INSCRICOES_ENCERRADAS
+✅ regeneração protegida contra atividade competitiva
+✅ BYE diferenciado de disputa real
+✅ estrutura lógica protegida
+✅ agenda operacional separada
+✅ progressão protegida
+✅ correção segura antes da dependência
+✅ bloqueio depois da dependência iniciada
+✅ testdata alinhado sem bypass
 ✅ frontend Gestão integrado
-✅ 87 testes verdes
-✅ MySQL/Flyway V11/testdata verdes
+✅ 98 testes verdes
+✅ MySQL/Flyway V12/testdata verdes
 ✅ frontend typecheck/build verdes
 ```
 
@@ -632,9 +720,11 @@ Bloco 3 concluído com:
 
 # 12. Estratégia de testes da ETAPA 1
 
-O checkpoint atual possui **87 testes unitários** de services e smoke do profile `testdata` contra MySQL/Flyway V11.
+O checkpoint atual possui **98 testes** no backend e smoke do profile `testdata` contra MySQL/Flyway V12.
 
-O núcleo do Sumô possui cobertura para regras de inspeção humana, categoria/configuração e rounds, incluindo limitações de extras e motivos especiais. O profile completo também valida que os initializers continuam inicializando contra MySQL real.
+A cobertura atual inclui regras de Competition/Registration, Follow, Sumô e, no Bloco 4, integridade de geração/regeneração, progressão, proteção da agenda e correção segura de dependências.
+
+O profile completo valida também que os initializers continuam inicializando contra MySQL real sob as mesmas invariantes usadas em produção.
 
 A camada integrada de competição completa ainda será adicionada no Bloco 5 para simular:
 
@@ -725,14 +815,16 @@ Nunca habilitar `testdata` em produção.
 Próximo bloco da ETAPA 1:
 
 ```text
-CHAVES
-1. validar estados de Competition permitidos para gerar chave
-2. bloquear regeneração comum depois de atividade competitiva
-3. separar estrutura lógica da chave da agenda operacional quando aplicável
-4. implementar correção segura antes da próxima dependência iniciar
-5. bloquear correção comum quando a dependência já iniciou
-6. adicionar testes derivados do contrato
-7. integrar frontend quando o contrato backend mudar
+FLUXOS INTEGRADOS COMPLETOS
+1. CompetitionLifecycleFlow
+2. RegistrationFlow
+3. FollowCompetitionFlow
+4. SumoCompetitionFlow
+5. CompetitionIntegrityFlow
+6. validar erro esperado + estado anterior preservado + nenhuma persistência parcial
+7. manter os testes atuais verdes durante os novos cenários
 ```
+
+O Bloco 5 deve testar os fluxos completos sem reabrir decisões já fechadas nos Blocos 1–4.
 
 Não iniciar ETAPA 2 sem conclusão e validação explícita da ETAPA 1.
