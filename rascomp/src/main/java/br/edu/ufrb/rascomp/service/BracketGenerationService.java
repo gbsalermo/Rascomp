@@ -35,6 +35,7 @@ public class BracketGenerationService {
     private final CompetitionRepository competitionRepository;
     private final CompetitionCategoryRepository categoryRepository;
     private final BracketProgressionService bracketProgressionService;
+    private final BracketIntegrityService bracketIntegrityService;
     private final InspecaoSumoService inspecaoSumoService;
 
     @Transactional
@@ -44,6 +45,11 @@ public class BracketGenerationService {
 
         validarAtivos(competition, category);
         validarCategoriaSumo(category);
+        bracketIntegrityService.validarEstadoParaGeracao(competition);
+
+        List<Bracket> chavesAtuais = bracketRepository
+                .findByCompetitionIdAndCategoryIdAndAtualTrue(competitionId, categoryId);
+        bracketIntegrityService.validarRegeneracaoPermitida(chavesAtuais);
 
         List<Registration> participantes = buscarParticipantesElegiveis(competitionId, categoryId);
         if (participantes.size() < 2) {
@@ -51,7 +57,7 @@ public class BracketGenerationService {
                     "São necessárias pelo menos duas inscrições de Sumô ativas, aprovadas e aptas para gerar o chaveamento.");
         }
 
-        marcarChavesAtuaisComoHistoricas(competitionId, categoryId);
+        marcarChavesAtuaisComoHistoricas(chavesAtuais);
 
         List<Registration> participantesSorteados = new ArrayList<>(participantes);
         Collections.shuffle(participantesSorteados);
@@ -80,10 +86,13 @@ public class BracketGenerationService {
                 .toList();
     }
 
-    private void marcarChavesAtuaisComoHistoricas(Long competitionId, Long categoryId) {
-        List<Bracket> atuais = bracketRepository
-                .findByCompetitionIdAndCategoryIdAndAtualTrue(competitionId, categoryId);
-        atuais.forEach(item -> item.setAtual(false));
+    private void marcarChavesAtuaisComoHistoricas(List<Bracket> atuais) {
+        atuais.forEach(item -> {
+            item.setAtual(false);
+            if (item.getStatus() != StatusBracket.FINALIZADO) {
+                item.setStatus(StatusBracket.CANCELADO);
+            }
+        });
         if (!atuais.isEmpty()) bracketRepository.saveAll(atuais);
     }
 
