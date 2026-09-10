@@ -11,6 +11,7 @@ import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.MatchResultRepository;
+import br.edu.ufrb.rascomp.repository.RoundSumoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -20,6 +21,7 @@ public class BracketProgressionService {
 
     private final MatchRepository matchRepository;
     private final MatchResultRepository matchResultRepository;
+    private final RoundSumoRepository roundSumoRepository;
     private final BracketRepository bracketRepository;
 
     @Transactional
@@ -49,6 +51,36 @@ public class BracketProgressionService {
     }
 
     @Transactional
+    public void corrigirVencedor(
+            Match match,
+            Registration vencedorAnterior,
+            Registration novoVencedor) {
+
+        if (vencedorAnterior != null) validarVencedorDaPartida(match, vencedorAnterior);
+        if (novoVencedor != null) validarVencedorDaPartida(match, novoVencedor);
+
+        if (mesmaInscricao(vencedorAnterior, novoVencedor)) return;
+
+        Match proximaPartida = buscarProximaPartida(match);
+        if (proximaPartida == null) {
+            if (novoVencedor == null) reabrirChaveamento(match.getBracket());
+            else finalizarChaveamento(match.getBracket());
+            return;
+        }
+
+        validarProximaPartidaEditavel(proximaPartida);
+
+        if (match.getOrdem() % 2 != 0) {
+            corrigirSlotA(proximaPartida, vencedorAnterior, novoVencedor);
+        } else {
+            corrigirSlotB(proximaPartida, vencedorAnterior, novoVencedor);
+        }
+
+        atualizarStatus(proximaPartida);
+        matchRepository.save(proximaPartida);
+    }
+
+    @Transactional
     public void avancarBye(Match match) {
         if (match.getStatus() != StatusMatch.BYE) {
             return;
@@ -65,6 +97,15 @@ public class BracketProgressionService {
         match.setStatus(StatusMatch.FINALIZADA);
         matchRepository.save(match);
         avancarVencedor(match, winner);
+    }
+
+    @Transactional
+    public void marcarChaveEmAndamento(Bracket bracket) {
+        Bracket atual = buscarBracket(bracket.getId());
+        if (atual.getStatus() == StatusBracket.GERADO) {
+            atual.setStatus(StatusBracket.EM_ANDAMENTO);
+            bracketRepository.save(atual);
+        }
     }
 
     private Match buscarProximaPartida(Match match) {
@@ -95,6 +136,41 @@ public class BracketProgressionService {
         proximaPartida.setRegistrationB(winner);
     }
 
+    private void corrigirSlotA(
+            Match proximaPartida,
+            Registration vencedorAnterior,
+            Registration novoVencedor) {
+        validarSlotCorrigivel(proximaPartida.getRegistrationA(), vencedorAnterior, novoVencedor, "A");
+        proximaPartida.setRegistrationA(novoVencedor);
+    }
+
+    private void corrigirSlotB(
+            Match proximaPartida,
+            Registration vencedorAnterior,
+            Registration novoVencedor) {
+        validarSlotCorrigivel(proximaPartida.getRegistrationB(), vencedorAnterior, novoVencedor, "B");
+        proximaPartida.setRegistrationB(novoVencedor);
+    }
+
+    private void validarSlotCorrigivel(
+            Registration atual,
+            Registration vencedorAnterior,
+            Registration novoVencedor,
+            String slot) {
+
+        if (atual == null) return;
+        if (mesmaInscricao(atual, vencedorAnterior)) return;
+        if (mesmaInscricao(atual, novoVencedor)) return;
+
+        throw new IllegalArgumentException(
+                "O slot " + slot + " da próxima partida contém outro participante e não pode ser corrigido automaticamente.");
+    }
+
+    private boolean mesmaInscricao(Registration a, Registration b) {
+        if (a == null || b == null) return a == b;
+        return a.getId().equals(b.getId());
+    }
+
     private void atualizarStatus(Match match) {
         if (match.getRegistrationA() != null && match.getRegistrationB() != null) {
             match.setStatus(StatusMatch.AGENDADA);
@@ -116,16 +192,31 @@ public class BracketProgressionService {
 
     private void validarProximaPartidaEditavel(Match match) {
         if (matchResultRepository.existsByMatchId(match.getId())
+                || roundSumoRepository.existsByMatchId(match.getId())
                 || match.getStatus() == StatusMatch.EM_ANDAMENTO
-                || match.getStatus() == StatusMatch.FINALIZADA) {
-            throw new IllegalArgumentException("A próxima partida já foi iniciada/finalizada e não pode receber alteração de participante.");
+                || match.getStatus() == StatusMatch.FINALIZADA
+                || match.getStatus() == StatusMatch.CANCELADA) {
+            throw new IllegalArgumentException(
+                    "A próxima partida já foi iniciada/finalizada e não pode receber correção de participante.");
         }
     }
 
     private void finalizarChaveamento(Bracket bracket) {
-        Bracket atual = bracketRepository.findById(bracket.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Chaveamento não encontrado: " + bracket.getId()));
+        Bracket atual = buscarBracket(bracket.getId());
         atual.setStatus(StatusBracket.FINALIZADO);
         bracketRepository.save(atual);
+    }
+
+    private void reabrirChaveamento(Bracket bracket) {
+        Bracket atual = buscarBracket(bracket.getId());
+        if (atual.getStatus() == StatusBracket.FINALIZADO) {
+            atual.setStatus(StatusBracket.EM_ANDAMENTO);
+            bracketRepository.save(atual);
+        }
+    }
+
+    private Bracket buscarBracket(Long id) {
+        return bracketRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Chaveamento não encontrado: " + id));
     }
 }
