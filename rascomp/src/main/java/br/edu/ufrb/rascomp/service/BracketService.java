@@ -24,6 +24,7 @@ public class BracketService {
     private final BracketRepository bracketRepository;
     private final CompetitionRepository competitionRepository;
     private final CompetitionCategoryRepository categoryRepository;
+    private final BracketIntegrityService bracketIntegrityService;
 
     @Transactional
     public BracketDTO criar(BracketDTO dto) {
@@ -31,6 +32,7 @@ public class BracketService {
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         validarAtivos(competition, category);
         validarCategoriaSumo(category);
+        bracketIntegrityService.validarEstadoParaGeracao(competition);
 
         Bracket bracket = new Bracket();
         preencher(bracket, dto, competition, category);
@@ -70,10 +72,13 @@ public class BracketService {
     @Transactional
     public BracketDTO atualizar(Long id, BracketDTO dto) {
         Bracket bracket = buscarBracket(id);
+        bracketIntegrityService.validarSemAtividadeCompetitiva(bracket);
+
         Competition competition = buscarCompetitionParaAtualizacao(dto.getCompetitionId());
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         validarAtivos(competition, category);
         validarCategoriaSumo(category);
+        bracketIntegrityService.validarEstadoParaGeracao(competition);
 
         preencher(bracket, dto, competition, category);
         if (dto.getStatus() != null) bracket.setStatus(dto.getStatus());
@@ -91,6 +96,7 @@ public class BracketService {
     @Transactional
     public void deletar(Long id) {
         Bracket bracket = buscarBracket(id);
+        bracketIntegrityService.validarSemAtividadeCompetitiva(bracket);
         bracket.setAtivo(false);
         bracket.setAtual(false);
         bracket.setStatus(StatusBracket.CANCELADO);
@@ -100,9 +106,11 @@ public class BracketService {
     @Transactional
     public BracketDTO reativar(Long id) {
         Bracket bracket = buscarBracket(id);
+        bracketIntegrityService.validarSemAtividadeCompetitiva(bracket);
         Competition competition = buscarCompetitionParaAtualizacao(bracket.getCompetition().getId());
         validarAtivos(competition, bracket.getCategory());
         validarCategoriaSumo(bracket.getCategory());
+        bracketIntegrityService.validarEstadoParaGeracao(competition);
         bracket.setAtivo(true);
         bracket.setStatus(StatusBracket.RASCUNHO);
         tornarAtual(bracket, competition.getId(), bracket.getCategory().getId());
@@ -115,8 +123,15 @@ public class BracketService {
 
         List<Bracket> anteriores = atuais.stream()
                 .filter(item -> !Objects.equals(item.getId(), target.getId()))
-                .peek(item -> item.setAtual(false))
                 .toList();
+
+        bracketIntegrityService.validarRegeneracaoPermitida(anteriores);
+        anteriores.forEach(item -> {
+            item.setAtual(false);
+            if (item.getStatus() != StatusBracket.FINALIZADO) {
+                item.setStatus(StatusBracket.CANCELADO);
+            }
+        });
 
         if (!anteriores.isEmpty()) bracketRepository.saveAll(anteriores);
         target.setAtual(true);
