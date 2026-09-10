@@ -24,6 +24,7 @@ import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
@@ -41,6 +42,7 @@ class BracketGenerationScaleTest {
     @Mock private CompetitionRepository competitionRepository;
     @Mock private CompetitionCategoryRepository categoryRepository;
     @Mock private BracketProgressionService bracketProgressionService;
+    @Mock private BracketIntegrityService bracketIntegrityService;
     @Mock private InspecaoSumoService inspecaoSumoService;
 
     @InjectMocks private BracketGenerationService service;
@@ -55,6 +57,7 @@ class BracketGenerationScaleTest {
         competition.setId(10L);
         competition.setNome("RRC Escala");
         competition.setAtivo(true);
+        competition.setStatus(StatusCompetition.INSCRICOES_ENCERRADAS);
 
         category = CompetitionCategory.builder()
                 .id(20L)
@@ -94,6 +97,7 @@ class BracketGenerationScaleTest {
         assertEquals(2, countRound(4));
         assertEquals(1, countRound(5));
         assertEquals(0, saved.stream().filter(m -> m.getStatus() == StatusMatch.BYE).count());
+        verify(bracketIntegrityService).validarEstadoParaGeracao(competition);
         verify(bracketProgressionService, never()).avancarBye(any(Match.class));
     }
 
