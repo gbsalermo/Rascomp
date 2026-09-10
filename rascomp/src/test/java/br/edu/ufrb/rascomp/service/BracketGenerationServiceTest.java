@@ -28,6 +28,7 @@ import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
@@ -45,6 +46,7 @@ class BracketGenerationServiceTest {
     @Mock private CompetitionRepository competitionRepository;
     @Mock private CompetitionCategoryRepository categoryRepository;
     @Mock private BracketProgressionService bracketProgressionService;
+    @Mock private BracketIntegrityService bracketIntegrityService;
     @Mock private InspecaoSumoService inspecaoSumoService;
 
     @InjectMocks
@@ -59,6 +61,7 @@ class BracketGenerationServiceTest {
         competition.setId(1L);
         competition.setNome("RRC Teste");
         competition.setAtivo(true);
+        competition.setStatus(StatusCompetition.INSCRICOES_ENCERRADAS);
 
         categorySumo = CompetitionCategory.builder()
                 .id(1L)
@@ -107,6 +110,8 @@ class BracketGenerationServiceTest {
         assertEquals(1, partidasSalvas.stream()
                 .filter(m -> m.getStatus() == StatusMatch.AGUARDANDO_PARTICIPANTES)
                 .count());
+        verify(bracketIntegrityService).validarEstadoParaGeracao(competition);
+        verify(bracketIntegrityService).validarRegeneracaoPermitida(List.of());
         verify(bracketProgressionService, times(1)).avancarBye(any(Match.class));
     }
 
@@ -114,6 +119,7 @@ class BracketGenerationServiceTest {
     void inscricaoNaoAptaNaoDeveEntrarNaChave() {
         when(competitionRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(competition));
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(categorySumo));
+        when(bracketRepository.findByCompetitionIdAndCategoryIdAndAtualTrue(1L, 1L)).thenReturn(List.of());
 
         Registration apta = registration(1L);
         Registration naoApta = registration(2L);
