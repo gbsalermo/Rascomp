@@ -7,6 +7,7 @@ import br.edu.ufrb.rascomp.model.Bracket;
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
+import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoPartida;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
@@ -176,6 +177,7 @@ public class BracketProgressionService {
             match.setStatus(StatusMatch.AGENDADA);
         } else {
             match.setStatus(StatusMatch.AGUARDANDO_PARTICIPANTES);
+            match.setStatusConvocacao(StatusConvocacaoPartida.NAO_CONVOCADA);
         }
     }
 
