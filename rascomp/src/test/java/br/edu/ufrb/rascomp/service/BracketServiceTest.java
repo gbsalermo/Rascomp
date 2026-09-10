@@ -22,6 +22,7 @@ import br.edu.ufrb.rascomp.model.Bracket;
 import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
@@ -32,6 +33,7 @@ class BracketServiceTest {
     @Mock private BracketRepository bracketRepository;
     @Mock private CompetitionRepository competitionRepository;
     @Mock private CompetitionCategoryRepository categoryRepository;
+    @Mock private BracketIntegrityService bracketIntegrityService;
 
     @InjectMocks
     private BracketService service;
@@ -58,7 +60,7 @@ class BracketServiceTest {
         dto.setNome("Chave inválida");
 
         assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
-        verifyNoInteractions(bracketRepository);
+        verifyNoInteractions(bracketRepository, bracketIntegrityService);
     }
 
     @Test
@@ -80,6 +82,7 @@ class BracketServiceTest {
         anterior.setCompetition(competition);
         anterior.setCategory(sumo);
         anterior.setNome("Chave anterior");
+        anterior.setStatus(StatusBracket.GERADO);
         anterior.setAtivo(true);
         anterior.setAtual(true);
 
@@ -98,6 +101,8 @@ class BracketServiceTest {
 
         assertFalse(anterior.getAtual());
         assertTrue(criado.getAtual());
+        verify(bracketIntegrityService).validarEstadoParaGeracao(competition);
+        verify(bracketIntegrityService).validarRegeneracaoPermitida(List.of(anterior));
         verify(bracketRepository).saveAll(List.of(anterior));
     }
 }
