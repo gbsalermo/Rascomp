@@ -13,6 +13,7 @@ public interface MatchResultRepository extends JpaRepository<MatchResult, Long> 
     Optional<MatchResult> findByMatchId(Long matchId);
     boolean existsByMatchId(Long matchId);
     boolean existsByMatchIdAndIdNot(Long matchId, Long id);
+    boolean existsByMatchBracketId(Long bracketId);
     boolean existsByMatchBracketCompetitionId(Long competitionId);
 
     List<MatchResult> findAllByOrderByIdAsc();
