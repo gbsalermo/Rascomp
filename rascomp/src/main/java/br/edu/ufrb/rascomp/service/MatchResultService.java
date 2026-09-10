@@ -133,23 +133,28 @@ public class MatchResultService {
     @Transactional
     public MatchResultDTO atualizar(Long id, MatchResultDTO dto) {
         MatchResult result = buscarResult(id);
-        Match match = buscarMatch(dto.getMatchId());
+        Match match = result.getMatch();
+
+        if (!match.getId().equals(dto.getMatchId())) {
+            throw new IllegalArgumentException("Um resultado existente não pode ser movido para outra partida.");
+        }
+
         validarOperacaoManualPermitida(match);
 
         if (resultRepository.existsByMatchIdAndIdNot(match.getId(), id))
             throw new IllegalArgumentException("A partida já possui outro resultado.");
 
-        Registration winner = buscarWinnerOpcional(dto.getWinnerRegistrationId());
-        validarResultado(match, winner, dto);
-        preencher(result, dto, match, winner);
+        Registration vencedorAnterior = result.getWinner();
+        Registration novoVencedor = buscarWinnerOpcional(dto.getWinnerRegistrationId());
+        validarResultado(match, novoVencedor, dto);
+
+        bracketProgressionService.corrigirVencedor(match, vencedorAnterior, novoVencedor);
+
+        preencher(result, dto, match, novoVencedor);
         MatchResult salvo = resultRepository.save(result);
 
         match.setStatus(StatusMatch.FINALIZADA);
         matchRepository.save(match);
-
-        if (winner != null) {
-            bracketProgressionService.avancarVencedor(match, winner);
-        }
 
         return new MatchResultDTO(salvo);
     }
@@ -159,6 +164,8 @@ public class MatchResultService {
         MatchResult result = buscarResult(id);
         Match match = result.getMatch();
         validarOperacaoManualPermitida(match);
+
+        bracketProgressionService.corrigirVencedor(match, result.getWinner(), null);
 
         match.setStatus(match.getRegistrationA() == null || match.getRegistrationB() == null
                 ? StatusMatch.BYE : StatusMatch.AGENDADA);
