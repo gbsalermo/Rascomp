@@ -226,8 +226,19 @@ class MatchServiceTest {
     }
 
     private Registration registration(Long id) {
+        Team team = new Team();
+        team.setId(id + 1000);
+        team.setNome("Equipe " + id);
+
+        Robot robot = new Robot();
+        robot.setId(id + 2000);
+        robot.setNome("Robô " + id);
+        robot.setTeam(team);
+
         Registration registration = new Registration();
         registration.setId(id);
+        registration.setTeam(team);
+        registration.setRobot(robot);
         return registration;
     }
 }
