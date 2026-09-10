@@ -48,6 +48,7 @@ class RoundSumoServiceTest {
     @Mock private ConfigSumoRepository configSumoRepository;
     @Mock private InspecaoSumoService inspecaoSumoService;
     @Mock private MatchResultService matchResultService;
+    @Mock private BracketProgressionService bracketProgressionService;
 
     @InjectMocks private RoundSumoService service;
 
@@ -114,6 +115,7 @@ class RoundSumoServiceTest {
         assertEquals(1, result.getPenalidadesB());
         assertEquals(101L, result.getWinnerRegistrationId());
         assertEquals(StatusMatch.EM_ANDAMENTO, match.getStatus());
+        verify(bracketProgressionService).marcarChaveEmAndamento(match.getBracket());
         verify(matchResultService, never()).criarAutomaticoSumo(any(), any(), any(Integer.class), any(Integer.class));
     }
 
