@@ -94,7 +94,7 @@ O Bloco 5 fechou a validação integrada da ETAPA 1:
 - total da suíte: **111 testes / 0 falhas / 0 erros / 0 skipped**;
 - `demo-profile` verde contra MySQL real + Flyway V12.
 
-As **ETAPAS 1 e 2 estão concluídas e validadas**. A **ETAPA 3 está em andamento**, com o Bloco 1 do backend concluído.
+As **ETAPAS 1 e 2 estão concluídas e validadas**. A **ETAPA 3 está em andamento** com backend, frontend e validação automatizada integrados.
 
 ---
 
@@ -182,13 +182,14 @@ V9  — classe física de Sumô nas categorias
 V10 — alinhamento Follow 3×3 + parâmetros operacionais + ausência de tomada
 V11 — modo de controle Sumô + rounds extras + auditoria de inspeção + juízes/decisão de juiz
 V12 — separação da agenda operacional da estrutura lógica das partidas
+V13 — migração da matriz de permissões ORGANIZACAO → DEV
 ```
 
 Regra:
 
 ```text
-V1–V12 nunca são reescritas
-próxima mudança estrutural = V13+
+V1–V13 nunca são reescritas
+próxima mudança estrutural = V14+
 ```
 
 A V10:
@@ -209,21 +210,20 @@ A V12 separa a agenda operacional da estrutura competitiva da partida, permitind
 
 ```text
 UserRole
-├─ ORGANIZACAO
+├─ DEV
+├─ GESTAO
+├─ MIDIA
 └─ PARTICIPANTE
 ```
 
 ```text
 /api/v1/public/**       → público
 /api/v1/participante/** → PARTICIPANTE
-/api/v1/**              → ORGANIZACAO
+/api/v1/usuarios/**     → DEV
+/api/v1/**              → DEV | GESTAO
 ```
 
-Nova matriz aprovada para ETAPA 3:
-
-```text
-DEV | GESTAO | MIDIA | PARTICIPANTE
-```
+`MIDIA` permanece autenticado sem herdar os namespaces competitivos atuais; os módulos editoriais entram nas etapas próprias de mídia.
 
 Conta inativa já é rejeitada nas autenticações subsequentes pela validação JWT.
 
@@ -423,7 +423,7 @@ AusenciaTomadaSeguidorLinha
 
 Regras:
 
-- somente `ORGANIZACAO` registra;
+- somente `DEV` ou `GESTAO` registra;
 - inscrição precisa estar ativa, `APROVADA` e em `FOLLOW_LINE`;
 - tomada deve existir no 1..3;
 - não pode ser marcada depois de existir tentativa na mesma tomada;
@@ -884,3 +884,35 @@ Validação:
 - MySQL + Flyway V13 + testdata ✅
 
 Próximo bloco: frontend Gestão alinhado por capacidades semânticas.
+
+
+## Usuários locais para verificação prática da ETAPA 3
+
+Disponíveis somente quando o profile `testdata`/cenário de demonstração está habilitado:
+
+```text
+DEV
+organizacao.demo@rascomp.local
+Rascomp@2026
+
+GESTAO
+gestao.demo@rascomp.local
+Rascomp@2026
+
+MIDIA
+midia.demo@rascomp.local
+Rascomp@2026
+
+PARTICIPANTE
+lider.demo@rascomp.local
+Rascomp@2026
+```
+
+O participante `lider.demo` possui equipe, robôs e inscrições no cenário para validar o portal. As contas DEV/GESTAO/MIDIA servem para comparar restrições de navegação e autorização. Nunca habilitar `testdata` em produção.
+
+Validação automatizada da matriz:
+
+- `UserRoleTest` → capacidades semânticas;
+- `SecurityAuthorizationFlowTest` → autorização HTTP real;
+- `DemoShowcaseDataInitializerTest` → criação dos quatro perfis;
+- profile `testdata` → inicialização real contra MySQL + Flyway V13.
