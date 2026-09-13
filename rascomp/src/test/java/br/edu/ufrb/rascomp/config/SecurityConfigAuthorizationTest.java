@@ -18,7 +18,7 @@ import br.edu.ufrb.rascomp.security.JwtAuthenticationFilter;
 import br.edu.ufrb.rascomp.security.JwtService;
 
 @WebMvcTest(controllers = SecurityConfigAuthorizationTest.SecurityProbeController.class)
-@Import({ SecurityConfig.class, JwtAuthenticationFilter.class })
+@Import({ SecurityConfig.class, JwtAuthenticationFilter.class, SecurityConfigAuthorizationTest.SecurityProbeController.class })
 class SecurityConfigAuthorizationTest {
 
     @Autowired
