@@ -67,3 +67,17 @@ Validação adicional da ETAPA 3:
 - 120 testes / 0 falhas / 0 erros / 0 skipped;
 - profile `testdata` verde em MySQL + Flyway V13;
 - Frontend Checks #64–#66 verdes.
+
+
+## Política de criação de contas — ETAPA 3
+
+- cadastro público cria sempre `PARTICIPANTE`;
+- o cliente não escolhe role no cadastro comum;
+- contas `DEV | GESTAO | MIDIA` são criadas explicitamente por DEV;
+- a rota administrativa rejeita criação de `PARTICIPANTE`;
+- não existe promoção automática da conta pessoal para conta institucional nesta etapa;
+- a mesma pessoa pode ter conta pessoal de participante e conta institucional separada;
+- como `UserAccount.email` é único, as duas contas usam e-mails diferentes;
+- troca genérica de role continua reservada à ETAPA 5.
+
+Validação: Backend Tests #309 com 125 testes verdes e Frontend Checks #68 com typecheck + build verdes.
