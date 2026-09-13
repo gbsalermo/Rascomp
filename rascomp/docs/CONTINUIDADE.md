@@ -93,7 +93,7 @@ O Bloco 5 fechou a validação integrada da ETAPA 1:
 - total da suíte: **111 testes / 0 falhas / 0 erros / 0 skipped**;
 - `demo-profile` verde contra MySQL real + Flyway V12.
 
-A **ETAPA 1 está concluída e validada**. A ETAPA 2 é a próxima, mas permanece não iniciada até autorização explícita.
+As **ETAPAS 1 e 2 estão concluídas e validadas**. A ETAPA 3 é a próxima etapa funcional.
 
 ---
 
