@@ -90,7 +90,7 @@ O Bloco 5 fechou a validação integrada da ETAPA 1:
 - `CompetitionIntegrityFlowTest`;
 - verificação explícita de rollback: batalha com primeiro round válido e segundo inválido não persiste nenhum round nem alteração parcial;
 - verificação de operações inválidas preservando o estado anterior;
-- total da suíte: **109 testes / 0 falhas / 0 erros / 0 skipped**;
+- total da suíte: **111 testes / 0 falhas / 0 erros / 0 skipped**;
 - `demo-profile` verde contra MySQL real + Flyway V12.
 
 A **ETAPA 1 está concluída e validada**. A ETAPA 2 é a próxima, mas permanece não iniciada até autorização explícita.
@@ -130,7 +130,7 @@ PROFILE TESTDATA                         ✅
 Checkpoint automatizado atual confirmado no CI:
 
 ```text
-109 testes
+111 testes
 0 falhas
 0 erros
 0 skipped
@@ -735,7 +735,7 @@ Bloco 4 concluído com:
 
 # 12. Estratégia de testes da ETAPA 1
 
-O checkpoint atual possui **109 testes** no backend e smoke do profile `testdata` contra MySQL/Flyway V12.
+O checkpoint atual possui **111 testes** no backend e smoke do profile `testdata` contra MySQL/Flyway V12.
 
 A cobertura atual inclui regras de Competition/Registration, Follow, Sumô e, no Bloco 4, integridade de geração/regeneração, progressão, proteção da agenda e correção segura de dependências.
 
