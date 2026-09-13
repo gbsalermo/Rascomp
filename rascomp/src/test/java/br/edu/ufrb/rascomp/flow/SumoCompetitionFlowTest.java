@@ -61,6 +61,38 @@ class SumoCompetitionFlowTest extends IntegrationFlowTestSupport {
     }
 
     @Test
+    void byeDeveAvancarSemSerTratadoComoDisputaReal() {
+        organizacaoAutenticada();
+        Competition competition = competition(StatusCompetition.INSCRICOES_ENCERRADAS);
+        CompetitionCategory category = sumoCategory();
+
+        for (int i = 0; i < 3; i++) {
+            Team team = team();
+            Registration registration = approvedRegistration(competition, category, team, robot(team));
+            inspecionar(registration);
+        }
+
+        Long bracketId = bracketGenerationService.gerar(competition.getId(), category.getId()).getId();
+        var matches = matchRepository.findByBracketIdOrderByRodadaAscOrdemAsc(bracketId);
+
+        Match bye = matches.stream()
+                .filter(item -> item.getRodada() == 1)
+                .filter(item -> (item.getRegistrationA() == null) ^ (item.getRegistrationB() == null))
+                .findFirst()
+                .orElseThrow();
+        Match finalMatch = matches.stream()
+                .filter(item -> item.getRodada() == 2)
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(StatusMatch.FINALIZADA, matchRepository.findById(bye.getId()).orElseThrow().getStatus());
+        Match finalPersistida = matchRepository.findById(finalMatch.getId()).orElseThrow();
+        assertEquals(StatusMatch.AGUARDANDO_PARTICIPANTES, finalPersistida.getStatus());
+        assertTrue((finalPersistida.getRegistrationA() != null) ^ (finalPersistida.getRegistrationB() != null));
+        assertEquals(StatusBracket.GERADO, bracketRepository.findById(bracketId).orElseThrow().getStatus());
+    }
+
+    @Test
     void duasPenalidadesDevemDarVitoriaAutomaticaAoAdversario() {
         SumoFixture fixture = prepararPartida();
         Match match = fixture.match();
