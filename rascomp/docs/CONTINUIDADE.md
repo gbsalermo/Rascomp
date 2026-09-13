@@ -1,6 +1,6 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **12/09/2026**
+Última atualização: **13/09/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
