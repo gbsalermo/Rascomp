@@ -710,7 +710,7 @@ Bloco 1 — Competition + Registration       ✅ CONCLUÍDO
 Bloco 2 — Follow Line                       ✅ CONCLUÍDO
 Bloco 3 — Sumô                              ✅ CONCLUÍDO
 Bloco 4 — Chaves e progressão               ✅ CONCLUÍDO
-Bloco 5 — Testes integrados de competição   ⏭️ PRÓXIMO / NÃO INICIADO
+Bloco 5 — Testes integrados de competição   ✅ CONCLUÍDO
 ```
 
 Bloco 4 concluído com:
@@ -840,6 +840,6 @@ FLUXOS INTEGRADOS COMPLETOS
 7. manter os testes atuais verdes durante os novos cenários
 ```
 
-O Bloco 5 deve testar os fluxos completos sem reabrir decisões já fechadas nos Blocos 1–4.
+O Bloco 5 testou os fluxos completos sem reabrir decisões já fechadas nos Blocos 1–4.
 
-Não iniciar ETAPA 2 sem conclusão e validação explícita da ETAPA 1.
+A ETAPA 1 está concluída e validada. Não iniciar ETAPA 2 sem autorização explícita.
