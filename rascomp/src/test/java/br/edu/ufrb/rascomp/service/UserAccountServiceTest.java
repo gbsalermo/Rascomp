@@ -67,7 +67,7 @@ class UserAccountServiceTest {
     }
 
     @Test
-    void criarDevDeveUsarRoleOrganizacaoEHash() {
+    void criarDevDeveUsarRoleDevEHash() {
         RegisterRequest request = request("Organização", "org@rascomp.com", "OutraSenha123");
 
         when(userAccountRepository.existsByEmailIgnoreCase("org@rascomp.com")).thenReturn(false);
