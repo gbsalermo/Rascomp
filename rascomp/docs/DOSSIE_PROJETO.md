@@ -28,7 +28,7 @@ ETAPA 3  🚧 em andamento
 ETAPA 4+ ⏳ não iniciadas
 ```
 
-As ETAPAS 1 e 2 estão encerradas/validadas. A ETAPA 3 está em andamento; o backend já migrou para a nova matriz de permissões com Flyway V13.
+As ETAPAS 1 e 2 estão encerradas/validadas. A ETAPA 3 está em andamento com backend e frontend integrados à nova matriz de permissões, Flyway V13 e validação automatizada.
 
 Checkpoint backend:
 
@@ -47,7 +47,7 @@ gbsalermo/Rascomp-FRONT/docs/README.md
 O backend concluiu a limpeza estrutural prevista e o frontend concluiu a modularização incremental de APIs/tipos e a consolidação segura do CSS administrativo. Backend Tests #297 e Frontend Checks #57–#62 estão verdes. A ETAPA 2 está concluída/validada no escopo técnico; smoke visual e testes práticos ficam para etapas funcionais posteriores.
 
 
-## ETAPA 3 — checkpoint inicial do backend — 13/09/2026
+## ETAPA 3 — checkpoint integrado — 13/09/2026
 
 - `UserRole = DEV | GESTAO | MIDIA | PARTICIPANTE`;
 - V13 migra `ORGANIZACAO → DEV`;
@@ -58,3 +58,12 @@ O backend concluiu a limpeza estrutural prevista e o frontend concluiu a modular
 - verificações de negócio usam capacidade semântica;
 - Backend Tests #298 (PR) e #299 (main) verdes;
 - MySQL + Flyway V13 + `testdata` verdes.
+
+
+Validação adicional da ETAPA 3:
+
+- `SecurityAuthorizationFlowTest` — autorização HTTP para DEV/GESTAO/MIDIA/PARTICIPANTE;
+- `DemoShowcaseDataInitializerTest` — quatro usuários de demonstração;
+- 120 testes / 0 falhas / 0 erros / 0 skipped;
+- profile `testdata` verde em MySQL + Flyway V13;
+- Frontend Checks #64–#66 verdes.
