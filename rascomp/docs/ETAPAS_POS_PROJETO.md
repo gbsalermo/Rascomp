@@ -15,7 +15,7 @@ Estado oficial:
 ```text
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
-ETAPA 2  ⏭️ próxima / não iniciada
+ETAPA 2  🚧 em andamento
 ETAPA 3+ ⏳ não iniciadas
 ```
 

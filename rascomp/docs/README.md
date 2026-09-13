@@ -25,11 +25,11 @@ Estado oficial em 13/09/2026:
 ```text
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
-ETAPA 2  ⏭️ próxima / não iniciada
+ETAPA 2  🚧 em andamento
 ETAPA 3+ ⏳ não iniciadas
 ```
 
-A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 permanece não iniciada até autorização explícita.
+A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 foi autorizada em 13/09/2026 e está em andamento.
 
 ---
 
@@ -102,12 +102,11 @@ Não atualizar a contagem por inferência.
 ## O que continua reservado à ETAPA 2
 
 ```text
-rascomp/bin/
-.classpath
-.project
-.gitkeep desnecessários em packages de código
-TODOs/comentários obsoletos
-código morto/duplicado
+rascomp/bin/                                  ✅ removido
+.classpath / .project                           ✅ removidos
+.gitkeep desnecessários em packages de código   ✅ removidos
+TODOs/FIXMEs reais                              ✅ nenhum encontrado na varredura inicial
+código morto/duplicado                          🔎 revisão incremental
 ```
 
 Esses itens permanecem reservados à ETAPA 2 e não foram antecipados durante a ETAPA 1.

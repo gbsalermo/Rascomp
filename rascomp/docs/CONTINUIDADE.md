@@ -26,7 +26,7 @@ rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md
 ```text
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
-ETAPA 2   ⏭️ próxima / não iniciada
+ETAPA 2   🚧 em andamento
 ETAPA 3+ ⏳ não iniciadas
 ```
 
@@ -778,20 +778,20 @@ IN_APP continua sendo fonte de verdade; falha externa não invalida o aviso.
 
 ---
 
-# 14. Dívida técnica reservada à ETAPA 2
+# 14. ETAPA 2 — limpeza técnica
 
-Ainda existem itens como:
+Checkpoint inicial de 13/09/2026:
 
 ```text
-rascomp/bin/
-.classpath
-.project
-.gitkeep desnecessários em packages
+rascomp/bin/                                ✅ removido em commit isolado 775df79
+.classpath / .project                       ✅ removidos
+.gitkeep desnecessários em packages         ✅ removidos
+TODO: / FIXME reais                         ✅ nenhum encontrado na varredura inicial
+artefatos compilados/target versionados     ✅ nenhum remanescente
+código morto/duplicado                      🔎 revisão incremental, sem remoção especulativa
 ```
 
-Além de TODOs/comentários antigos e possíveis duplicações.
-
-Não misturar essas tarefas com a implementação das regras da ETAPA 1.
+Backend Tests #297 ficou verde após a limpeza estrutural. Nenhuma regra de negócio, migration ou package Java foi reorganizado sem ganho comprovado.
 
 ---
 
@@ -842,4 +842,4 @@ FLUXOS INTEGRADOS COMPLETOS
 
 O Bloco 5 testou os fluxos completos sem reabrir decisões já fechadas nos Blocos 1–4.
 
-A ETAPA 1 está concluída e validada. Não iniciar ETAPA 2 sem autorização explícita.
+A ETAPA 2 foi autorizada em 13/09/2026 e está em andamento. Não iniciar ETAPA 3 antes do checkpoint explícito.

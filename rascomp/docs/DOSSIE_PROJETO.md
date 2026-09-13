@@ -23,11 +23,11 @@ Estado oficial:
 ```text
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
-ETAPA 2  ⏭️ próxima / não iniciada
+ETAPA 2  🚧 em andamento
 ETAPA 3+ ⏳ não iniciadas
 ```
 
-A ETAPA 1 está encerrada com 111 testes verdes e MySQL/Flyway V12 validado. A ETAPA 2 permanece não iniciada.
+A ETAPA 1 está encerrada com 111 testes verdes e MySQL/Flyway V12 validado. A ETAPA 2 foi iniciada em 13/09/2026.
 
 Checkpoint backend:
 
