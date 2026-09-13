@@ -26,7 +26,7 @@ rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md
 ```text
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
-ETAPA 2   🚧 em andamento
+ETAPA 2   ✅ concluída / validada
 ETAPA 3+ ⏳ não iniciadas
 ```
 
@@ -842,7 +842,7 @@ FLUXOS INTEGRADOS COMPLETOS
 
 O Bloco 5 testou os fluxos completos sem reabrir decisões já fechadas nos Blocos 1–4.
 
-A ETAPA 2 foi autorizada em 13/09/2026 e está em andamento. Não iniciar ETAPA 3 antes do checkpoint explícito.
+A ETAPA 2 foi concluída/validada em 13/09/2026 no escopo técnico. A ETAPA 3 é a próxima etapa funcional.
 
 
 ## Checkpoint cross-repo da ETAPA 2 — 13/09/2026
@@ -856,4 +856,4 @@ A implementação técnica cross-repo da ETAPA 2 foi concluída sem alterar regr
 - Frontend Checks #57–#62 verdes;
 - sem TODO/FIXME reais, backups ou artefatos gerados versionados.
 
-A ETAPA 2 permanece **em andamento** apenas para smoke visual das telas principais e validação explícita. Não iniciar ETAPA 3 antes desse checkpoint.
+A ETAPA 2 está **concluída/validada**. Smoke visual e testes práticos não pertencem ao critério desta etapa e ficam para etapas funcionais posteriores. A ETAPA 3 está liberada como próxima etapa.

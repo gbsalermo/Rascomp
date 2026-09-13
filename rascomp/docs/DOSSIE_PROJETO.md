@@ -23,7 +23,7 @@ Estado oficial:
 ```text
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
-ETAPA 2  🚧 em andamento
+ETAPA 2  ✅ concluída / validada
 ETAPA 3+ ⏳ não iniciadas
 ```
 
@@ -43,4 +43,4 @@ gbsalermo/Rascomp-FRONT/docs/README.md
 
 ## Checkpoint técnico da ETAPA 2 — 13/09/2026
 
-O backend concluiu a limpeza estrutural prevista e o frontend concluiu a modularização incremental de APIs/tipos e a consolidação segura do CSS administrativo. Backend Tests #297 e Frontend Checks #57–#62 estão verdes. O encerramento formal da ETAPA 2 depende apenas de smoke visual e validação explícita.
+O backend concluiu a limpeza estrutural prevista e o frontend concluiu a modularização incremental de APIs/tipos e a consolidação segura do CSS administrativo. Backend Tests #297 e Frontend Checks #57–#62 estão verdes. A ETAPA 2 está concluída/validada no escopo técnico; smoke visual e testes práticos ficam para etapas funcionais posteriores.

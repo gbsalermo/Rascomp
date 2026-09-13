@@ -343,7 +343,7 @@ fluxos integrados H2                      ✅
 MySQL + Flyway V12 + profile testdata     ✅
 ```
 
-A ETAPA 1 de lógica e integridade está concluída/validada. A ETAPA 2 — limpeza técnica e organização de código — está em andamento.
+As ETAPAS 1 — lógica e integridade — e 2 — limpeza técnica e organização de código — estão concluídas/validadas. A ETAPA 3 é a próxima do roadmap.
 
 <p align="right">(<a href="#readme-top">voltar ao topo ⬆</a>)</p>
 

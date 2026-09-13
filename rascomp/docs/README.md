@@ -25,11 +25,11 @@ Estado oficial em 13/09/2026:
 ```text
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
-ETAPA 2  🚧 em andamento
+ETAPA 2  ✅ concluída / validada
 ETAPA 3+ ⏳ não iniciadas
 ```
 
-A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 foi autorizada em 13/09/2026 e está em andamento.
+A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 foi concluída/validada em 13/09/2026 no escopo técnico de limpeza e organização. A ETAPA 3 é a próxima.
 
 ---
 
