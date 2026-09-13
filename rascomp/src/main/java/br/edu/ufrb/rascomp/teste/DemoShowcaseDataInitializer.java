@@ -128,10 +128,9 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        UserAccount organizacao = garantirUsuario(DEV_EMAIL, "DEV Demo RAS", UserRole.DEV);
-        garantirUsuario(MANAGEMENT_EMAIL, "Gestão Demo RAS", UserRole.GESTAO);
-        garantirUsuario(MEDIA_EMAIL, "Mídia Demo RAS", UserRole.MIDIA);
-        UserAccount participante = garantirUsuario(PARTICIPANT_EMAIL, "Líder Demo", UserRole.PARTICIPANTE);
+        List<UserAccount> usuariosDemo = garantirUsuariosDeAcesso();
+        UserAccount organizacao = usuariosDemo.get(0);
+        UserAccount participante = usuariosDemo.get(3);
 
         Institution ras = garantirInstituicao("RAS-DEMO", "Instituição Demo RAS UFRB");
         Institution visitante = garantirInstituicao("ROBODEMO", "Instituto de Robótica Demo");
@@ -192,6 +191,14 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         System.out.println("PARTICIPANTE: " + PARTICIPANT_EMAIL + " / " + DEMO_PASSWORD);
         System.out.println("Destaques: Follow 2/3 tomadas, Sumô parcial, BYEs e chave completa de 32 robôs.");
         System.out.println("============================================================");
+    }
+
+    List<UserAccount> garantirUsuariosDeAcesso() {
+        return List.of(
+                garantirUsuario(DEV_EMAIL, "DEV Demo RAS", UserRole.DEV),
+                garantirUsuario(MANAGEMENT_EMAIL, "Gestão Demo RAS", UserRole.GESTAO),
+                garantirUsuario(MEDIA_EMAIL, "Mídia Demo RAS", UserRole.MIDIA),
+                garantirUsuario(PARTICIPANT_EMAIL, "Líder Demo", UserRole.PARTICIPANTE));
     }
 
     private UserAccount garantirUsuario(String email, String nome, UserRole role) {
