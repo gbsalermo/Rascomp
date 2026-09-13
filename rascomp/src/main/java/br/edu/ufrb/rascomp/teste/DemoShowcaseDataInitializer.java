@@ -126,7 +126,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        UserAccount organizacao = garantirUsuario(ORGANIZATION_EMAIL, "Organização Demo RAS", UserRole.ORGANIZACAO);
+        UserAccount organizacao = garantirUsuario(ORGANIZATION_EMAIL, "Organização Demo RAS", UserRole.DEV);
         UserAccount participante = garantirUsuario(PARTICIPANT_EMAIL, "Líder Demo", UserRole.PARTICIPANTE);
 
         Institution ras = garantirInstituicao("RAS-DEMO", "Instituição Demo RAS UFRB");
