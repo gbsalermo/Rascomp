@@ -15,6 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import br.edu.ufrb.rascomp.dto.BatalhaSumoDTO;
 import br.edu.ufrb.rascomp.dto.InspecaoSumoDTO;
+import br.edu.ufrb.rascomp.dto.RoundSumoDTO;
 import br.edu.ufrb.rascomp.dto.RoundSumoItemDTO;
 import br.edu.ufrb.rascomp.model.Bracket;
 import br.edu.ufrb.rascomp.model.Competition;
@@ -28,6 +29,7 @@ import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRoundSumo;
 import br.edu.ufrb.rascomp.service.BracketGenerationService;
+import br.edu.ufrb.rascomp.service.BracketProgressionService;
 import br.edu.ufrb.rascomp.service.InspecaoSumoService;
 import br.edu.ufrb.rascomp.service.RoundSumoService;
 
@@ -36,6 +38,7 @@ import br.edu.ufrb.rascomp.service.RoundSumoService;
 class CompetitionIntegrityFlowTest extends IntegrationFlowTestSupport {
 
     @Autowired private BracketGenerationService bracketGenerationService;
+    @Autowired private BracketProgressionService bracketProgressionService;
     @Autowired private InspecaoSumoService inspecaoService;
     @Autowired private RoundSumoService roundSumoService;
 
@@ -98,6 +101,64 @@ class CompetitionIntegrityFlowTest extends IntegrationFlowTestSupport {
         assertEquals(StatusMatch.AGENDADA, persistida.getStatus());
         assertEquals(StatusBracket.GERADO, persistido.getStatus());
         assertFalse(matchResultRepository.findByMatchId(match.getId()).isPresent());
+    }
+
+    @Test
+    void correcaoDeSemifinalDeveSerBloqueadaDepoisQueFinalComecou() {
+        organizacaoAutenticada();
+        Competition competition = competition(StatusCompetition.INSCRICOES_ENCERRADAS);
+        CompetitionCategory category = sumoCategory();
+
+        for (int i = 0; i < 4; i++) {
+            Team team = team();
+            Registration registration = approvedRegistration(competition, category, team, robot(team));
+            inspecionar(registration);
+        }
+
+        Long bracketId = bracketGenerationService.gerar(competition.getId(), category.getId()).getId();
+        List<Match> semifinais = matchRepository.findByBracketIdOrderByRodadaAscOrdemAsc(bracketId).stream()
+                .filter(item -> item.getRodada() == 1)
+                .toList();
+
+        for (Match semifinal : semifinais) {
+            registrarDuasVitorias(semifinal, semifinal.getRegistrationA());
+        }
+
+        Match finalMatch = matchRepository.findByBracketIdAndRodadaAndOrdem(bracketId, 2, 1).orElseThrow();
+        Registration finalA = finalMatch.getRegistrationA();
+        Registration finalB = finalMatch.getRegistrationB();
+
+        RoundSumoDTO inicioFinal = round(finalMatch, finalA);
+        roundSumoService.registrar(inicioFinal);
+
+        Match semifinalCorrigida = semifinais.get(0);
+        Registration vencedorAnterior = semifinalCorrigida.getRegistrationA();
+        Registration novoVencedor = semifinalCorrigida.getRegistrationB();
+
+        assertThrows(IllegalArgumentException.class,
+                () -> bracketProgressionService.corrigirVencedor(
+                        semifinalCorrigida, vencedorAnterior, novoVencedor));
+
+        Match finalPersistida = matchRepository.findById(finalMatch.getId()).orElseThrow();
+        assertEquals(finalA.getId(), finalPersistida.getRegistrationA().getId());
+        assertEquals(finalB.getId(), finalPersistida.getRegistrationB().getId());
+        assertEquals(StatusMatch.EM_ANDAMENTO, finalPersistida.getStatus());
+    }
+
+    private void registrarDuasVitorias(Match match, Registration winner) {
+        roundSumoService.registrar(round(match, winner));
+        roundSumoService.registrar(round(match, winner));
+    }
+
+    private RoundSumoDTO round(Match match, Registration winner) {
+        RoundSumoDTO dto = new RoundSumoDTO();
+        dto.setMatchId(match.getId());
+        dto.setWinnerRegistrationId(winner.getId());
+        dto.setStatus(StatusRoundSumo.FINALIZADO);
+        dto.setMotivoResultado(MotivoResultadoRoundSumo.DISPUTA);
+        dto.setPenalidadesA(0);
+        dto.setPenalidadesB(0);
+        return dto;
     }
 
     private void inspecionar(Registration registration) {
