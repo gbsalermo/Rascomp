@@ -1,6 +1,6 @@
 # RasComp — Contrato de Regras Competitivas — Ponteiro do Backend
 
-Última revisão: **08/09/2026**
+Última revisão: **13/09/2026**
 
 O contrato competitivo canônico do RasComp é cross-repo e está mantido em:
 
@@ -36,11 +36,12 @@ Checkpoint atual da ETAPA 1:
 Bloco 1 — Competition + Registration  ✅
 Bloco 2 — Follow Line                  ✅
 Bloco 3 — Sumô                         ✅
-Bloco 4 — Chaves                       ⏭️ próximo / não iniciado
-Bloco 5 — Fluxos integrados            ⏳
+Bloco 4 — Chaves                       ✅
+Bloco 5 — Fluxos integrados            ✅
+ETAPA 1                                ✅ concluída / validada
 ```
 
-O Bloco 3 está consolidado no contrato com Flyway V11, inspeção humana `APTO/INAPTO`, modo `AUTONOMO | RC`, rounds extras justificados e decisão de juiz auditável.
+O contrato canônico está consolidado até o Bloco 5. Checkpoint final da ETAPA 1: **111 testes**, H2 flowtest integrado e MySQL + Flyway V12 + `testdata` verdes.
 
 O backend deve usar o contrato canônico antes de alterar regra competitiva.
 
