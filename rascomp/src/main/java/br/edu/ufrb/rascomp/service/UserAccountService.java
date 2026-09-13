@@ -29,7 +29,16 @@ public class UserAccountService {
 
     @Transactional
     public UserAccountDTO criarDev(RegisterRequest request) {
-        return new UserAccountDTO(criar(request, UserRole.DEV));
+        return criarInterno(request, UserRole.DEV);
+    }
+
+    @Transactional
+    public UserAccountDTO criarInterno(RegisterRequest request, UserRole role) {
+        if (role == null || role == UserRole.PARTICIPANTE) {
+            throw new IllegalArgumentException(
+                    "Contas PARTICIPANTE devem ser criadas pelo cadastro comum.");
+        }
+        return new UserAccountDTO(criar(request, role));
     }
 
     @Transactional(readOnly = true)

@@ -67,6 +67,33 @@ class UserAccountServiceTest {
     }
 
     @Test
+    void criarInternoDeveCriarGestaoComRoleExplicita() {
+        RegisterRequest request = request("Gestão", "gestao@rascomp.com", "OutraSenha123");
+
+        when(userAccountRepository.existsByEmailIgnoreCase("gestao@rascomp.com")).thenReturn(false);
+        when(userAccountRepository.save(any(UserAccount.class))).thenAnswer(invocation -> {
+            UserAccount entity = invocation.getArgument(0);
+            entity.setId(19L);
+            return entity;
+        });
+
+        var dto = service.criarInterno(request, UserRole.GESTAO);
+
+        assertEquals(UserRole.GESTAO, dto.getRole());
+    }
+
+    @Test
+    void criarInternoDeveRejeitarParticipante() {
+        RegisterRequest request = request("Participante", "participante.interno@rascomp.com", "OutraSenha123");
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.criarInterno(request, UserRole.PARTICIPANTE));
+
+        assertTrue(ex.getMessage().contains("cadastro comum"));
+    }
+
+    @Test
     void criarDevDeveUsarRoleDevEHash() {
         RegisterRequest request = request("Organização", "org@rascomp.com", "OutraSenha123");
 

@@ -35,6 +35,14 @@ public class UserAccountController {
                 .body(userAccountService.criarDev(request));
     }
 
+    @PostMapping("/internos")
+    public ResponseEntity<UserAccountDTO> criarInterno(
+            @Valid @RequestBody RegisterRequest request,
+            @RequestParam UserRole role) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(userAccountService.criarInterno(request, role));
+    }
+
     @GetMapping
     public ResponseEntity<List<UserAccountDTO>> listar(@RequestParam UserRole role) {
         return ResponseEntity.ok(userAccountService.listarPorRole(role));
