@@ -27,10 +27,10 @@ Esse documento consolida as regras aprovadas durante a ETAPA 1 para:
 - geração/regeneração de chave;
 - agenda de partidas separada da estrutura lógica;
 - correção de resultado após progressão;
-- matriz de alterações necessárias;
+- matriz final de implementação da ETAPA 1;
 - cenários de testes automatizados de fluxo.
 
-Checkpoint atual da ETAPA 1:
+Checkpoint final da ETAPA 1:
 
 ```text
 Bloco 1 — Competition + Registration  ✅
