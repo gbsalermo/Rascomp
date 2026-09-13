@@ -52,7 +52,8 @@ public class SecurityConfig {
                         "/swagger-ui/**",
                         "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/v1/participante/**").hasRole("PARTICIPANTE")
-                .requestMatchers("/api/v1/**").hasRole("ORGANIZACAO")
+                .requestMatchers("/api/v1/usuarios/**").hasRole("DEV")
+                .requestMatchers("/api/v1/**").hasAnyRole("DEV", "GESTAO")
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
