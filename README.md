@@ -343,7 +343,7 @@ fluxos integrados H2                      ✅
 MySQL + Flyway V12 + profile testdata     ✅
 ```
 
-As ETAPAS 1 — lógica e integridade — e 2 — limpeza técnica e organização de código — estão concluídas/validadas. A ETAPA 3 está em andamento. O backend já usa `DEV | GESTAO | MIDIA | PARTICIPANTE` com Flyway V13; o frontend é o próximo bloco.
+As ETAPAS 1 — lógica e integridade — e 2 — limpeza técnica e organização de código — estão concluídas/validadas. A ETAPA 3 está em andamento com backend e frontend integrados à matriz `DEV | GESTAO | MIDIA | PARTICIPANTE`, Flyway V13 e testes automatizados de autorização.
 
 <p align="right">(<a href="#readme-top">voltar ao topo ⬆</a>)</p>
 
