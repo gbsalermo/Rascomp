@@ -131,7 +131,7 @@ PROFILE TESTDATA                         ✅
 Checkpoint automatizado atual confirmado no CI:
 
 ```text
-120 testes
+125 testes
 0 falhas
 0 erros
 0 skipped
@@ -230,6 +230,44 @@ UserRole
 Conta inativa já é rejeitada nas autenticações subsequentes pela validação JWT.
 
 ---
+
+## 5.1 Política de criação de contas
+
+Regra vigente:
+
+```text
+POST /api/v1/auth/register
+→ sempre PARTICIPANTE
+
+POST /api/v1/usuarios/internos?role=...
+→ somente DEV
+→ DEV | GESTAO | MIDIA
+→ rejeita PARTICIPANTE
+```
+
+O DTO público de cadastro não define privilégios. O backend força `PARTICIPANTE` independentemente de campos extras enviados pelo cliente.
+
+Uma pessoa pode possuir duas contas separadas, por exemplo:
+
+```text
+pessoal@...       → PARTICIPANTE
+institucional@... → GESTAO
+```
+
+`UserAccount.email` continua único, portanto duas contas exigem e-mails distintos. Isso impede que a conta usada para competir herde automaticamente privilégios institucionais.
+
+Mudança genérica de role permanece fora da ETAPA 3 e reservada à ETAPA 5.
+
+Checkpoint após a regra:
+
+```text
+Backend Tests #309
+125 testes
+0 falhas
+0 erros
+0 skipped
+MySQL + Flyway V13 + testdata ✅
+```
 
 # 6. Distinções de domínio
 
