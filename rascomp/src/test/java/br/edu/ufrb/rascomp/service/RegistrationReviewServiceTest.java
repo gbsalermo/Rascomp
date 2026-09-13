@@ -120,7 +120,7 @@ class RegistrationReviewServiceTest {
 
     @Test
     void organizacaoDeveAprovarERegistrarRevisor() {
-        UserAccount organizacao = user(90L, UserRole.ORGANIZACAO);
+        UserAccount organizacao = user(90L, UserRole.DEV);
         when(userAccountService.buscarAtual()).thenReturn(organizacao);
 
         RegistrationDTO result = service.atualizar(6L, dto(StatusRegistration.APROVADA));
@@ -140,7 +140,7 @@ class RegistrationReviewServiceTest {
 
     @Test
     void rejeicaoTambemDeveRegistrarAuditoria() {
-        UserAccount organizacao = user(92L, UserRole.ORGANIZACAO);
+        UserAccount organizacao = user(92L, UserRole.DEV);
         when(userAccountService.buscarAtual()).thenReturn(organizacao);
 
         service.atualizar(6L, dto(StatusRegistration.REJEITADA));
