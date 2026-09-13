@@ -1,6 +1,6 @@
 # Dossiê do Projeto RasComp — Ponteiro
 
-Última revisão: **04/09/2026**
+Última revisão: **13/09/2026**
 
 O Dossiê Mestre canônico e cross-repo está em:
 
@@ -22,11 +22,12 @@ Estado oficial:
 
 ```text
 ETAPA 0  ✅ concluída / validada
-ETAPA 1  🚧 atual
-ETAPA 2+ ⏳ não iniciadas
+ETAPA 1  ✅ concluída / validada
+ETAPA 2  ⏭️ próxima / não iniciada
+ETAPA 3+ ⏳ não iniciadas
 ```
 
-O checkpoint documental de 04/09/2026 não altera esse estado.
+A ETAPA 1 está encerrada com 111 testes verdes e MySQL/Flyway V12 validado. A ETAPA 2 permanece não iniciada.
 
 Checkpoint backend:
 
