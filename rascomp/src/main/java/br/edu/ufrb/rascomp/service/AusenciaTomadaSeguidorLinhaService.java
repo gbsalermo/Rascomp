@@ -33,7 +33,7 @@ public class AusenciaTomadaSeguidorLinhaService {
 
     @Transactional
     public AusenciaTomadaSeguidorLinhaDTO marcar(AusenciaTomadaSeguidorLinhaDTO dto) {
-        UserAccount organizacao = exigirOrganizacao();
+        UserAccount organizacao = exigirOperadorCompeticao();
         Registration registration = buscarRegistration(dto.getRegistrationId());
         validarRegistration(registration);
 
@@ -80,7 +80,7 @@ public class AusenciaTomadaSeguidorLinhaService {
                 .toList();
     }
 
-    private UserAccount exigirOrganizacao() {
+    private UserAccount exigirOperadorCompeticao() {
         UserAccount atual = userAccountService.buscarAtual();
         if (!atual.getRole().podeOperarCompeticao()) {
             throw new AccessDeniedException("Apenas DEV ou GESTÃO podem registrar ausência em uma tomada de Follow.");
