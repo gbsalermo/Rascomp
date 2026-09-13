@@ -1,6 +1,6 @@
 # RasComp Backend — Índice da Documentação
 
-Última revisão: **04/09/2026**
+Última revisão: **13/09/2026**
 
 A documentação global do RasComp é coordenada no repositório frontend para evitar roadmaps e dossiês duplicados.
 
@@ -20,15 +20,16 @@ A documentação global do RasComp é coordenada no repositório frontend para e
    → checkpoint vivo deste backend
 ```
 
-Estado em 04/09/2026:
+Estado oficial em 13/09/2026:
 
 ```text
 ETAPA 0  ✅ concluída / validada
-ETAPA 1  🚧 atual
-ETAPA 2+ ⏳ não iniciadas
+ETAPA 1  ✅ concluída / validada
+ETAPA 2  ⏭️ próxima / não iniciada
+ETAPA 3+ ⏳ não iniciadas
 ```
 
-O checkpoint documental de 04/09 não representa avanço de etapa.
+A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 permanece não iniciada até autorização explícita.
 
 ---
 
@@ -79,17 +80,19 @@ CONTINUIDADE.md
 ```text
 backend = fonte de verdade de domínio/autorização
 banco ativo = MySQL
-V1–V7 = migrations imutáveis
-V8+ = próxima mudança estrutural
+V1–V12 = migrations imutáveis
+V13+ = próxima mudança estrutural
 roles atuais = ORGANIZACAO | PARTICIPANTE
-ETAPA atual = ETAPA 1
+ETAPA 1 = concluída / validada
+ETAPA 2 = próxima / não iniciada
 ```
 
 Último checkpoint documentado:
 
 ```text
-48 testes / 0 falhas / 0 erros
-MySQL + Flyway + testdata ✅
+111 testes / 0 falhas / 0 erros / 0 skipped
+H2 flowtest integrado ✅
+MySQL + Flyway V12 + testdata ✅
 ```
 
 Não atualizar a contagem por inferência.
@@ -107,10 +110,10 @@ TODOs/comentários obsoletos
 código morto/duplicado
 ```
 
-Esses itens não foram removidos neste checkpoint porque a tarefa atual é exclusivamente documental.
+Esses itens permanecem reservados à ETAPA 2 e não foram antecipados durante a ETAPA 1.
 
 ---
 
 ## Próximo trabalho
 
-Após a revisão documental, retomar a **ETAPA 1 — correções de lógica e integridade**.
+Próximo trabalho do roadmap: **ETAPA 2 — Limpeza técnica e organização de código**, ainda não iniciada. Confirmar autorização antes de começar.
