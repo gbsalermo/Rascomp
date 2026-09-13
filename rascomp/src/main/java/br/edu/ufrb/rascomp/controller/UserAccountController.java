@@ -24,15 +24,15 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/usuarios")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ORGANIZACAO')")
+@PreAuthorize("hasRole('DEV')")
 public class UserAccountController {
 
     private final UserAccountService userAccountService;
 
-    @PostMapping("/organizacao")
-    public ResponseEntity<UserAccountDTO> criarOrganizacao(@Valid @RequestBody RegisterRequest request) {
+    @PostMapping("/dev")
+    public ResponseEntity<UserAccountDTO> criarDev(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(userAccountService.criarOrganizacao(request));
+                .body(userAccountService.criarDev(request));
     }
 
     @GetMapping
