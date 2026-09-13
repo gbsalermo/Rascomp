@@ -127,8 +127,8 @@ public class RegistrationCancellationRequestService {
 
     private UserAccount exigirOrganizacao() {
         UserAccount atual = userAccountService.buscarAtual();
-        if (atual.getRole() != UserRole.ORGANIZACAO) {
-            throw new AccessDeniedException("Apenas a ORGANIZAÇÃO pode analisar solicitações de cancelamento.");
+        if (!atual.getRole().podeOperarCompeticao()) {
+            throw new AccessDeniedException("Apenas DEV ou GESTÃO podem analisar solicitações de cancelamento.");
         }
         return atual;
     }
