@@ -135,8 +135,8 @@ public class CompetitionRegistrationWindowService {
 
     private UserAccount exigirOrganizacao() {
         UserAccount atual = userAccountService.buscarAtual();
-        if (atual.getRole() != UserRole.ORGANIZACAO) {
-            throw new AccessDeniedException("Apenas a ORGANIZAÇÃO pode prorrogar ou reabrir inscrições.");
+        if (!atual.getRole().podeOperarCompeticao()) {
+            throw new AccessDeniedException("Apenas DEV ou GESTÃO podem prorrogar ou reabrir inscrições.");
         }
         return atual;
     }
