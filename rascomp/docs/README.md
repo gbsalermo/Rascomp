@@ -84,7 +84,7 @@ V1–V12 = migrations imutáveis
 V13+ = próxima mudança estrutural
 roles atuais = ORGANIZACAO | PARTICIPANTE
 ETAPA 1 = concluída / validada
-ETAPA 2 = próxima / não iniciada
+ETAPA 2 = concluída / validada
 ```
 
 Último checkpoint documentado:
@@ -99,7 +99,7 @@ Não atualizar a contagem por inferência.
 
 ---
 
-## O que continua reservado à ETAPA 2
+## O que foi concluído na ETAPA 2
 
 ```text
 rascomp/bin/                                  ✅ removido
@@ -109,10 +109,10 @@ TODOs/FIXMEs reais                              ✅ nenhum encontrado na varredu
 código morto/duplicado                          🔎 revisão incremental
 ```
 
-Esses itens permanecem reservados à ETAPA 2 e não foram antecipados durante a ETAPA 1.
+Esses itens foram executados na ETAPA 2 sem antecipação durante a ETAPA 1.
 
 ---
 
 ## Próximo trabalho
 
-Próximo trabalho do roadmap: **ETAPA 2 — Limpeza técnica e organização de código**, ainda não iniciada. Confirmar autorização antes de começar.
+Próximo trabalho do roadmap: **ETAPA 3 — Nova matriz de permissões**.
