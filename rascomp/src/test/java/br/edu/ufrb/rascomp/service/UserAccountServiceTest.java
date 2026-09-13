@@ -67,7 +67,7 @@ class UserAccountServiceTest {
     }
 
     @Test
-    void criarOrganizacaoDeveUsarRoleOrganizacaoEHash() {
+    void criarDevDeveUsarRoleOrganizacaoEHash() {
         RegisterRequest request = request("Organização", "org@rascomp.com", "OutraSenha123");
 
         when(userAccountRepository.existsByEmailIgnoreCase("org@rascomp.com")).thenReturn(false);
@@ -77,9 +77,9 @@ class UserAccountServiceTest {
             return entity;
         });
 
-        var dto = service.criarOrganizacao(request);
+        var dto = service.criarDev(request);
 
-        assertEquals(UserRole.ORGANIZACAO, dto.getRole());
+        assertEquals(UserRole.DEV, dto.getRole());
     }
 
     private RegisterRequest request(String nome, String email, String senha) {
