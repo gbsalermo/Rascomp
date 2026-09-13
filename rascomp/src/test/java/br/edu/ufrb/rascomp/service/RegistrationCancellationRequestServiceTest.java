@@ -83,7 +83,7 @@ class RegistrationCancellationRequestServiceTest {
         organizacao = new UserAccount();
         organizacao.setId(40L);
         organizacao.setNome("Organização");
-        organizacao.setRole(UserRole.ORGANIZACAO);
+        organizacao.setRole(UserRole.DEV);
         organizacao.setAtivo(true);
     }
 
