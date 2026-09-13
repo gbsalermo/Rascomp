@@ -65,7 +65,7 @@ abstract class IntegrationFlowTestSupport {
         user.setNome(unique("Organizacao"));
         user.setEmail(unique("org").toLowerCase() + "@flow.local");
         user.setPasswordHash("not-used-in-flow-test");
-        user.setRole(UserRole.ORGANIZACAO);
+        user.setRole(UserRole.DEV);
         user.setAtivo(true);
         user = userAccountRepository.save(user);
 

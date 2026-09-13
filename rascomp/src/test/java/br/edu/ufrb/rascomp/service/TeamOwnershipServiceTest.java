@@ -58,7 +58,7 @@ class TeamOwnershipServiceTest {
 
     @Test
     void responsavelDeEquipeNaoPodeSerUsuarioOrganizacao() {
-        UserAccount organizacao = usuario(2L, UserRole.ORGANIZACAO, true);
+        UserAccount organizacao = usuario(2L, UserRole.DEV, true);
         TeamDTO dto = new TeamDTO();
         dto.setNome("Equipe");
         dto.setInstitutionId(1L);
