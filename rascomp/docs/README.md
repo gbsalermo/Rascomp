@@ -26,10 +26,11 @@ Estado oficial em 13/09/2026:
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
-ETAPA 3+ ⏳ não iniciadas
+ETAPA 3  🚧 em andamento
+ETAPA 4+ ⏳ não iniciadas
 ```
 
-A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 foi concluída/validada em 13/09/2026 no escopo técnico de limpeza e organização. A ETAPA 3 é a próxima.
+A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 foi concluída/validada em 13/09/2026 no escopo técnico de limpeza e organização. A ETAPA 3 está em andamento; o Bloco 1 do backend foi concluído.
 
 ---
 
@@ -80,9 +81,9 @@ CONTINUIDADE.md
 ```text
 backend = fonte de verdade de domínio/autorização
 banco ativo = MySQL
-V1–V12 = migrations imutáveis
-V13+ = próxima mudança estrutural
-roles atuais = ORGANIZACAO | PARTICIPANTE
+V1–V13 = migrations imutáveis
+V14+ = próxima mudança estrutural
+roles atuais = DEV | GESTAO | MIDIA | PARTICIPANTE
 ETAPA 1 = concluída / validada
 ETAPA 2 = concluída / validada
 ```
@@ -115,4 +116,4 @@ Esses itens foram executados na ETAPA 2 sem antecipação durante a ETAPA 1.
 
 ## Próximo trabalho
 
-Próximo trabalho do roadmap: **ETAPA 3 — Nova matriz de permissões**.
+Trabalho atual do roadmap: **ETAPA 3 — Nova matriz de permissões**. Backend Bloco 1 concluído; frontend pendente.
