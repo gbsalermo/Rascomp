@@ -96,7 +96,14 @@ jobs:
                 fi
               done
 
-              while IFS='|' read -r email role; do
+              for account in \
+                "organizacao.demo@rascomp.local|DEV" \
+                "gestao.demo@rascomp.local|GESTAO" \
+                "midia.demo@rascomp.local|MIDIA" \
+                "lider.demo@rascomp.local|PARTICIPANTE"; do
+                email="${account%%|*}"
+                role="${account##*|}"
+
                 response=$(curl -fsS \
                   -H "Content-Type: application/json" \
                   -d "{\"email\":\"$email\",\"senha\":\"Rascomp@2026\",\"lembrarDeMim\":false}" \
@@ -109,12 +116,7 @@ jobs:
                   kill "$APP_PID" || true
                   exit 1
                 fi
-              done <<'ROLE_USERS'
-              organizacao.demo@rascomp.local|DEV
-              gestao.demo@rascomp.local|GESTAO
-              midia.demo@rascomp.local|MIDIA
-              lider.demo@rascomp.local|PARTICIPANTE
-              ROLE_USERS
+              done
 
               echo "Demo profile, role users and real logins initialized successfully."
               tail -n 120 demo-profile.log
