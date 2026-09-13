@@ -45,7 +45,7 @@ public class CompetitionRegistrationWindowService {
 
     @Transactional
     public CompetitionRegistrationWindowChangeDTO alterar(Long competitionId, CompetitionRegistrationWindowChangeRequest request) {
-        UserAccount atual = exigirOrganizacao();
+        UserAccount atual = exigirOperadorCompeticao();
         Competition competition = buscarCompetition(competitionId);
 
         if (!Boolean.TRUE.equals(competition.getAtivo())) {
@@ -133,7 +133,7 @@ public class CompetitionRegistrationWindowService {
         bracketRepository.saveAll(atuais);
     }
 
-    private UserAccount exigirOrganizacao() {
+    private UserAccount exigirOperadorCompeticao() {
         UserAccount atual = userAccountService.buscarAtual();
         if (!atual.getRole().podeOperarCompeticao()) {
             throw new AccessDeniedException("Apenas DEV ou GESTÃO podem prorrogar ou reabrir inscrições.");
