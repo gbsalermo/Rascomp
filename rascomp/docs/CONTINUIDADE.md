@@ -830,23 +830,20 @@ Nunca habilitar `testdata` em produção.
 
 # 16. Próximo passo / handoff
 
-A ETAPA 1 foi concluída. Próxima etapa do roadmap:
+Estado atual:
 
 ```text
-FLUXOS INTEGRADOS COMPLETOS
-1. CompetitionLifecycleFlow
-2. RegistrationFlow
-3. FollowCompetitionFlow
-4. SumoCompetitionFlow
-5. CompetitionIntegrityFlow
-6. validar erro esperado + estado anterior preservado + nenhuma persistência parcial
-7. manter os testes atuais verdes durante os novos cenários
+ETAPA 1 — lógica/integridade             ✅ CONCLUÍDA
+ETAPA 2 — limpeza/organização            ✅ CONCLUÍDA
+ETAPA 3 — matriz de permissões
+├─ backend                               ✅
+├─ frontend                              ✅
+├─ testes automatizados                  ✅
+├─ MySQL/Flyway V13 + testdata           ✅
+└─ checkpoint prático dos quatro perfis  🚧 PENDENTE DO USUÁRIO
 ```
 
-O Bloco 5 testou os fluxos completos sem reabrir decisões já fechadas nos Blocos 1–4.
-
-A ETAPA 2 foi concluída/validada em 13/09/2026 no escopo técnico. A ETAPA 3 é a próxima etapa funcional.
-
+Não iniciar a ETAPA 4 antes do fechamento explícito da ETAPA 3.
 
 ## Checkpoint cross-repo da ETAPA 2 — 13/09/2026
 
@@ -859,15 +856,12 @@ A implementação técnica cross-repo da ETAPA 2 foi concluída sem alterar regr
 - Frontend Checks #57–#62 verdes;
 - sem TODO/FIXME reais, backups ou artefatos gerados versionados.
 
-A ETAPA 2 está **concluída/validada**. Smoke visual e testes práticos não pertencem ao critério desta etapa e ficam para etapas funcionais posteriores. A ETAPA 3 está liberada como próxima etapa.
+A ETAPA 2 está **concluída/validada**. Smoke visual e testes práticos não pertencem ao critério desta etapa.
 
-
-## Checkpoint backend da ETAPA 3 — 13/09/2026
-
-A nova matriz foi integrada no backend:
+## Checkpoint integrado da ETAPA 3 — 13/09/2026
 
 ```text
-DEV           → acesso integral atual + administração de usuários
+DEV           → operação competitiva + usuários + sistema
 GESTAO        → operação competitiva
 MIDIA         → autenticado, sem herdar operação competitiva
 PARTICIPANTE  → namespace próprio do portal
@@ -877,16 +871,17 @@ Compatibilidade:
 
 - V13 migra `ORGANIZACAO → DEV`;
 - variáveis `RASCOMP_ORG_*` permanecem como fallback temporário do bootstrap;
-- nenhuma regra competitiva foi alterada.
+- nenhuma regra competitiva da ETAPA 1 foi alterada.
 
 Validação:
 
-- Backend Tests #298 ✅
-- Backend Tests #299 ✅
-- MySQL + Flyway V13 + testdata ✅
-
-Próximo bloco: frontend Gestão alinhado por capacidades semânticas.
-
+- `UserRoleTest` ✅
+- `SecurityAuthorizationFlowTest` ✅
+- `DemoShowcaseDataInitializerTest` ✅
+- 120 testes / 0 falhas / 0 erros / 0 skipped ✅
+- MySQL + Flyway V13 + `testdata` ✅
+- Frontend Checks #64–#66 ✅
+- CI valida presença e login real dos quatro perfis `testdata`.
 
 ## Usuários locais para verificação prática da ETAPA 3
 
