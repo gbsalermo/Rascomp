@@ -82,8 +82,8 @@ public class AusenciaTomadaSeguidorLinhaService {
 
     private UserAccount exigirOrganizacao() {
         UserAccount atual = userAccountService.buscarAtual();
-        if (atual.getRole() != UserRole.ORGANIZACAO) {
-            throw new AccessDeniedException("Apenas a ORGANIZAÇÃO pode registrar ausência em uma tomada de Follow.");
+        if (!atual.getRole().podeOperarCompeticao()) {
+            throw new AccessDeniedException("Apenas DEV ou GESTÃO podem registrar ausência em uma tomada de Follow.");
         }
         return atual;
     }
