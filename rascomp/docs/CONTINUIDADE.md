@@ -131,11 +131,13 @@ PROFILE TESTDATA                         ✅
 Checkpoint automatizado atual confirmado no CI:
 
 ```text
-111 testes
+120 testes
 0 falhas
 0 erros
 0 skipped
 H2 flowtest integrado ✅
+SecurityAuthorizationFlowTest ✅
+DemoShowcaseDataInitializerTest ✅
 MySQL + Flyway V13 + testdata ✅
 ```
 
