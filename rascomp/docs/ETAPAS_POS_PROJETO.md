@@ -1,6 +1,6 @@
 # RasComp — Etapas Pós-Projeto — Ponteiro do Backend
 
-Última revisão: **04/09/2026**
+Última revisão: **13/09/2026**
 
 O roadmap pós-aprovação é cross-repo e possui uma única fonte canônica:
 
@@ -14,24 +14,22 @@ Estado oficial:
 
 ```text
 ETAPA 0  ✅ concluída / validada
-ETAPA 1  🚧 atual — lógica e integridade
-ETAPA 2+ ⏳ não iniciadas
+ETAPA 1  ✅ concluída / validada
+ETAPA 2  ⏭️ próxima / não iniciada
+ETAPA 3+ ⏳ não iniciadas
 ```
 
-Em 04/09/2026 houve um checkpoint documental antes da retomada da ETAPA 1; ele não representa avanço para a ETAPA 2.
+A ETAPA 1 foi concluída após Competition/Registration, Follow, Sumô, Chaves e Fluxos integrados. Checkpoint final: 111 testes verdes + MySQL/Flyway V12/testdata.
 
-Prioridades backend da ETAPA 1:
+Próximo marco:
 
 ```text
-Registration.reativar() e janela de inscrições
-política de cancelamento por estado competitivo
-estados permitidos para geração/regeneração de chave
-proteção de MatchResult após progressão
-estados válidos de tentativa Follow
-testes das regras corrigidas
+ETAPA 2 — Limpeza técnica e organização de código
+→ próxima / não iniciada
+→ não iniciar sem autorização explícita
 ```
 
-Não iniciar limpeza técnica da ETAPA 2 nem roles da ETAPA 3 antes da validação explícita.
+Roles da ETAPA 3 continuam fora do escopo até a conclusão da ETAPA 2 e do checkpoint correspondente.
 
 Referências:
 
