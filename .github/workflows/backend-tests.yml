@@ -83,7 +83,20 @@ jobs:
 
           for attempt in $(seq 1 60); do
             if grep -q "CENARIO COMPLETO DE DEMONSTRACAO PRONTO" demo-profile.log; then
-              echo "Demo profile initialized successfully."
+              for marker in \
+                "DEV: organizacao.demo@rascomp.local" \
+                "GESTAO: gestao.demo@rascomp.local" \
+                "MIDIA: midia.demo@rascomp.local" \
+                "PARTICIPANTE: lider.demo@rascomp.local"; do
+                if ! grep -q "$marker" demo-profile.log; then
+                  echo "Demo profile missing expected role user: $marker"
+                  cat demo-profile.log
+                  kill "$APP_PID" || true
+                  exit 1
+                fi
+              done
+
+              echo "Demo profile and role users initialized successfully."
               tail -n 120 demo-profile.log
               kill "$APP_PID" || true
               exit 0
