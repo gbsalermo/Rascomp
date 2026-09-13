@@ -28,8 +28,8 @@ public class UserAccountService {
     }
 
     @Transactional
-    public UserAccountDTO criarOrganizacao(RegisterRequest request) {
-        return new UserAccountDTO(criar(request, UserRole.ORGANIZACAO));
+    public UserAccountDTO criarDev(RegisterRequest request) {
+        return new UserAccountDTO(criar(request, UserRole.DEV));
     }
 
     @Transactional(readOnly = true)
