@@ -29,7 +29,7 @@ ETAPA 2 — Limpeza técnica e organização de código
 → ETAPA 3 é a próxima etapa funcional
 ```
 
-Roles da ETAPA 3 continuam fora do escopo até a conclusão da ETAPA 2 e do checkpoint correspondente.
+Roles da ETAPA 3 continuam fora do escopo histórico da ETAPA 2; com a ETAPA 2 concluída, a ETAPA 3 está liberada como próxima etapa funcional.
 
 Referências:
 
