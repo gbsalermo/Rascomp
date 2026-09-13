@@ -27,7 +27,8 @@ rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2   ✅ concluída / validada
-ETAPA 3+ ⏳ não iniciadas
+ETAPA 3   🚧 em andamento
+ETAPA 4+ ⏳ não iniciadas
 ```
 
 Blocos concluídos da ETAPA 1:
@@ -93,7 +94,7 @@ O Bloco 5 fechou a validação integrada da ETAPA 1:
 - total da suíte: **111 testes / 0 falhas / 0 erros / 0 skipped**;
 - `demo-profile` verde contra MySQL real + Flyway V12.
 
-As **ETAPAS 1 e 2 estão concluídas e validadas**. A ETAPA 3 é a próxima etapa funcional.
+As **ETAPAS 1 e 2 estão concluídas e validadas**. A **ETAPA 3 está em andamento**, com o Bloco 1 do backend concluído.
 
 ---
 
@@ -102,7 +103,7 @@ As **ETAPAS 1 e 2 estão concluídas e validadas**. A ETAPA 3 é a próxima etap
 ```text
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
-MYSQL + FLYWAY V1–V12                    ✅
+MYSQL + FLYWAY V1–V13                    ✅
 COMPETIÇÕES                              ✅ transições + prorrogação/reabertura
 EQUIPES / COMPETIDORES / ROBÔS           ✅
 INSCRIÇÕES + REVISÃO                     ✅ invariantes + cancelamento + híbridos
@@ -135,7 +136,7 @@ Checkpoint automatizado atual confirmado no CI:
 0 erros
 0 skipped
 H2 flowtest integrado ✅
-MySQL + Flyway V12 + testdata ✅
+MySQL + Flyway V13 + testdata ✅
 ```
 
 O workflow também compilou a aplicação e inicializou o cenário completo `testdata` contra MySQL real.
@@ -857,3 +858,29 @@ A implementação técnica cross-repo da ETAPA 2 foi concluída sem alterar regr
 - sem TODO/FIXME reais, backups ou artefatos gerados versionados.
 
 A ETAPA 2 está **concluída/validada**. Smoke visual e testes práticos não pertencem ao critério desta etapa e ficam para etapas funcionais posteriores. A ETAPA 3 está liberada como próxima etapa.
+
+
+## Checkpoint backend da ETAPA 3 — 13/09/2026
+
+A nova matriz foi integrada no backend:
+
+```text
+DEV           → acesso integral atual + administração de usuários
+GESTAO        → operação competitiva
+MIDIA         → autenticado, sem herdar operação competitiva
+PARTICIPANTE  → namespace próprio do portal
+```
+
+Compatibilidade:
+
+- V13 migra `ORGANIZACAO → DEV`;
+- variáveis `RASCOMP_ORG_*` permanecem como fallback temporário do bootstrap;
+- nenhuma regra competitiva foi alterada.
+
+Validação:
+
+- Backend Tests #298 ✅
+- Backend Tests #299 ✅
+- MySQL + Flyway V13 + testdata ✅
+
+Próximo bloco: frontend Gestão alinhado por capacidades semânticas.
