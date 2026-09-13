@@ -45,3 +45,5 @@ gbsalermo/Rascomp-FRONT/docs/README.md
 ```
 
 Avisos IN_APP e Telegram estão consolidados na ETAPA 4. Deploy permanece ETAPA 14, preservando o modo local.
+
+> Checkpoint 13/09/2026: ETAPA 2 com implementação técnica concluída cross-repo; smoke visual e validação explícita ainda pendentes. A fonte canônica detalhada continua em `Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`.

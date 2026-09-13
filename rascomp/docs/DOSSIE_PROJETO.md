@@ -40,3 +40,7 @@ rascomp/docs/CONTINUIDADE.md
 ```text
 gbsalermo/Rascomp-FRONT/docs/README.md
 ```
+
+## Checkpoint técnico da ETAPA 2 — 13/09/2026
+
+O backend concluiu a limpeza estrutural prevista e o frontend concluiu a modularização incremental de APIs/tipos e a consolidação segura do CSS administrativo. Backend Tests #297 e Frontend Checks #57–#62 estão verdes. O encerramento formal da ETAPA 2 depende apenas de smoke visual e validação explícita.

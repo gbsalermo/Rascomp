@@ -843,3 +843,17 @@ FLUXOS INTEGRADOS COMPLETOS
 O Bloco 5 testou os fluxos completos sem reabrir decisões já fechadas nos Blocos 1–4.
 
 A ETAPA 2 foi autorizada em 13/09/2026 e está em andamento. Não iniciar ETAPA 3 antes do checkpoint explícito.
+
+
+## Checkpoint cross-repo da ETAPA 2 — 13/09/2026
+
+A implementação técnica cross-repo da ETAPA 2 foi concluída sem alterar regras competitivas:
+
+- backend limpo e Backend Tests #297 verde;
+- frontend modularizado por domínio;
+- `api.ts` e `types.ts` reduzidos a fachadas;
+- CSS administrativo consolidado preservando cascata;
+- Frontend Checks #57–#62 verdes;
+- sem TODO/FIXME reais, backups ou artefatos gerados versionados.
+
+A ETAPA 2 permanece **em andamento** apenas para smoke visual das telas principais e validação explícita. Não iniciar ETAPA 3 antes desse checkpoint.
