@@ -97,7 +97,7 @@ class AusenciaTomadaSeguidorLinhaServiceTest {
         organizacao.setId(6L);
         organizacao.setNome("Organização");
         organizacao.setEmail("organizacao@rascomp.local");
-        organizacao.setRole(UserRole.ORGANIZACAO);
+        organizacao.setRole(UserRole.DEV);
         organizacao.setAtivo(true);
 
         lenient().when(registrationRepository.findById(5L)).thenReturn(Optional.of(registration));
