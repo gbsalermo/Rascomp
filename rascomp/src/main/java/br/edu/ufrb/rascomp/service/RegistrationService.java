@@ -302,9 +302,9 @@ public class RegistrationService {
         if (novoStatus != StatusRegistration.APROVADA && novoStatus != StatusRegistration.REJEITADA) return;
 
         UserAccount atual = userAccountService.buscarAtual();
-        if (atual.getRole() != UserRole.ORGANIZACAO) {
+        if (!atual.getRole().podeOperarCompeticao()) {
             throw new org.springframework.security.access.AccessDeniedException(
-                    "Apenas a ORGANIZAÇÃO pode aprovar ou rejeitar inscrições.");
+                    "Apenas DEV ou GESTÃO podem aprovar ou rejeitar inscrições.");
         }
         registration.setReviewedByUser(atual);
         registration.setReviewedAt(LocalDateTime.now());
