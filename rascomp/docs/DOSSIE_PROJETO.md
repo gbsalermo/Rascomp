@@ -27,7 +27,7 @@ ETAPA 2  ✅ concluída / validada
 ETAPA 3+ ⏳ não iniciadas
 ```
 
-A ETAPA 1 está encerrada com 111 testes verdes e MySQL/Flyway V12 validado. A ETAPA 2 foi iniciada em 13/09/2026.
+As ETAPAS 1 e 2 estão encerradas/validadas. O backend mantém 111 testes verdes e MySQL/Flyway V12 validado. A ETAPA 3 é a próxima etapa funcional.
 
 Checkpoint backend:
 
