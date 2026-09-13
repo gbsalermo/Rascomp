@@ -90,7 +90,9 @@ import lombok.RequiredArgsConstructor;
 public class DemoShowcaseDataInitializer implements CommandLineRunner {
 
     public static final String PARTICIPANT_EMAIL = "lider.demo@rascomp.local";
-    public static final String ORGANIZATION_EMAIL = "organizacao.demo@rascomp.local";
+    public static final String DEV_EMAIL = "organizacao.demo@rascomp.local";
+    public static final String MANAGEMENT_EMAIL = "gestao.demo@rascomp.local";
+    public static final String MEDIA_EMAIL = "midia.demo@rascomp.local";
     public static final String DEMO_PASSWORD = "Rascomp@2026";
 
     private static final String LIVE_COMPETITION = "RRC 2026 · Demonstração ao vivo";
@@ -126,7 +128,9 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        UserAccount organizacao = garantirUsuario(ORGANIZATION_EMAIL, "Organização Demo RAS", UserRole.DEV);
+        UserAccount organizacao = garantirUsuario(DEV_EMAIL, "DEV Demo RAS", UserRole.DEV);
+        garantirUsuario(MANAGEMENT_EMAIL, "Gestão Demo RAS", UserRole.GESTAO);
+        garantirUsuario(MEDIA_EMAIL, "Mídia Demo RAS", UserRole.MIDIA);
         UserAccount participante = garantirUsuario(PARTICIPANT_EMAIL, "Líder Demo", UserRole.PARTICIPANTE);
 
         Institution ras = garantirInstituicao("RAS-DEMO", "Instituição Demo RAS UFRB");
@@ -182,8 +186,10 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         System.out.println("RASCOMP · CENARIO COMPLETO DE DEMONSTRACAO PRONTO");
         System.out.println("Ao vivo: " + live.getNome() + " (#" + live.getId() + ")");
         System.out.println("Histórico: " + history.getNome() + " (#" + history.getId() + ")");
+        System.out.println("DEV: " + DEV_EMAIL + " / " + DEMO_PASSWORD);
+        System.out.println("GESTAO: " + MANAGEMENT_EMAIL + " / " + DEMO_PASSWORD);
+        System.out.println("MIDIA: " + MEDIA_EMAIL + " / " + DEMO_PASSWORD);
         System.out.println("PARTICIPANTE: " + PARTICIPANT_EMAIL + " / " + DEMO_PASSWORD);
-        System.out.println("ORGANIZACAO: " + ORGANIZATION_EMAIL + " / " + DEMO_PASSWORD);
         System.out.println("Destaques: Follow 2/3 tomadas, Sumô parcial, BYEs e chave completa de 32 robôs.");
         System.out.println("============================================================");
     }
