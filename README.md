@@ -335,6 +335,16 @@ http://localhost:8080/swagger-ui/index.html
 .\mvnw test
 ```
 
+Checkpoint atual de qualidade:
+
+```text
+111 testes / 0 falhas / 0 erros / 0 skipped
+fluxos integrados H2                      ✅
+MySQL + Flyway V12 + profile testdata     ✅
+```
+
+A ETAPA 1 de lógica e integridade está concluída/validada. A ETAPA 2 é a próxima etapa do roadmap, mas ainda não foi iniciada.
+
 <p align="right">(<a href="#readme-top">voltar ao topo ⬆</a>)</p>
 
 ---
@@ -354,6 +364,7 @@ Ela reúne a Gestão autenticada, o Portal do Participante, a Landing pública e
 A documentação técnica detalhada permanece separada da apresentação do projeto.
 
 - [`rascomp/docs/README.md`](rascomp/docs/README.md) — índice da documentação do backend;
+- [`rascomp/docs/ETAPAS_POS_PROJETO.md`](rascomp/docs/ETAPAS_POS_PROJETO.md) — ponteiro para o roadmap canônico;
 - [`rascomp/docs/DOSSIE_PROJETO.md`](rascomp/docs/DOSSIE_PROJETO.md) — visão consolidada do projeto;
 - [`rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md`](rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md) — contrato das regras competitivas;
 - [`rascomp/docs/CLOUDFLARE_R2.md`](rascomp/docs/CLOUDFLARE_R2.md) — referência de object storage.
