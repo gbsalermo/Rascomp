@@ -1,6 +1,6 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **09/09/2026**
+Última atualização: **12/09/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
@@ -25,8 +25,9 @@ rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md
 
 ```text
 ETAPA 0  ✅ concluída / validada
-ETAPA 1  🚧 atual — lógica, integridade e testes de fluxo
-ETAPA 2+ ⏳ não iniciadas
+ETAPA 1  ✅ concluída / validada
+ETAPA 2   ⏭️ próxima / não iniciada
+ETAPA 3+ ⏳ não iniciadas
 ```
 
 Blocos concluídos da ETAPA 1:
@@ -36,7 +37,7 @@ Bloco 1 — Competition + Registration ✅
 Bloco 2 — Follow Line                 ✅
 Bloco 3 — Sumô                        ✅
 Bloco 4 — Chaves                      ✅
-Bloco 5 — Fluxos integrados           ⏭️ próximo / não iniciado
+Bloco 5 — Fluxos integrados           ✅
 ```
 
 O Bloco 1 consolidou ciclo da competição, inscrições, cancelamento/desistência, prorrogação/reabertura e compatibilidade física de robôs híbridos.
@@ -79,7 +80,20 @@ O Bloco 4 consolidou a integridade do chaveamento:
 - initializers/testdata alinhados à nova sequência;
 - Flyway V12.
 
-Este checkpoint **não encerra a ETAPA 1**. O próximo bloco é **Fluxos integrados completos**. A ETAPA 2 permanece não iniciada.
+O Bloco 5 fechou a validação integrada da ETAPA 1:
+
+- profile de teste `flowtest` com H2 em memória, services reais e repositories JPA reais;
+- `CompetitionLifecycleFlowTest`;
+- `RegistrationFlowTest`;
+- `FollowCompetitionFlowTest`;
+- `SumoCompetitionFlowTest`;
+- `CompetitionIntegrityFlowTest`;
+- verificação explícita de rollback: batalha com primeiro round válido e segundo inválido não persiste nenhum round nem alteração parcial;
+- verificação de operações inválidas preservando o estado anterior;
+- total da suíte: **109 testes / 0 falhas / 0 erros / 0 skipped**;
+- `demo-profile` verde contra MySQL real + Flyway V12.
+
+A **ETAPA 1 está concluída e validada**. A ETAPA 2 é a próxima, mas permanece não iniciada até autorização explícita.
 
 ---
 
@@ -116,10 +130,11 @@ PROFILE TESTDATA                         ✅
 Checkpoint automatizado atual confirmado no CI:
 
 ```text
-98 testes
+109 testes
 0 falhas
 0 erros
 0 skipped
+H2 flowtest integrado ✅
 MySQL + Flyway V12 + testdata ✅
 ```
 
@@ -720,13 +735,13 @@ Bloco 4 concluído com:
 
 # 12. Estratégia de testes da ETAPA 1
 
-O checkpoint atual possui **98 testes** no backend e smoke do profile `testdata` contra MySQL/Flyway V12.
+O checkpoint atual possui **109 testes** no backend e smoke do profile `testdata` contra MySQL/Flyway V12.
 
 A cobertura atual inclui regras de Competition/Registration, Follow, Sumô e, no Bloco 4, integridade de geração/regeneração, progressão, proteção da agenda e correção segura de dependências.
 
 O profile completo valida também que os initializers continuam inicializando contra MySQL real sob as mesmas invariantes usadas em produção.
 
-A camada integrada de competição completa ainda será adicionada no Bloco 5 para simular:
+A camada integrada de competição completa foi adicionada no Bloco 5 e cobre:
 
 ```text
 CompetitionLifecycleFlow
@@ -812,7 +827,7 @@ Nunca habilitar `testdata` em produção.
 
 # 16. Próximo passo / handoff
 
-Próximo bloco da ETAPA 1:
+A ETAPA 1 foi concluída. Próxima etapa do roadmap:
 
 ```text
 FLUXOS INTEGRADOS COMPLETOS
