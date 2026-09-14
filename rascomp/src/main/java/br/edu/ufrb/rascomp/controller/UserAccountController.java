@@ -54,4 +54,11 @@ public class UserAccountController {
             @RequestParam boolean ativo) {
         return ResponseEntity.ok(userAccountService.alterarAtivo(id, ativo));
     }
+
+    @PatchMapping("/{id}/role")
+    public ResponseEntity<UserAccountDTO> alterarRole(
+            @PathVariable Long id,
+            @RequestParam UserRole role) {
+        return ResponseEntity.ok(userAccountService.alterarRoleInterna(id, role));
+    }
 }

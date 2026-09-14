@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -91,6 +92,85 @@ class UserAccountServiceTest {
                 () -> service.criarInterno(request, UserRole.PARTICIPANTE));
 
         assertTrue(ex.getMessage().contains("cadastro comum"));
+    }
+
+    @Test
+    void alterarRoleInternaDevePermitirGestaoParaMidia() {
+        UserAccount usuario = new UserAccount();
+        usuario.setId(30L);
+        usuario.setEmail("gestao@rascomp.com");
+        usuario.setRole(UserRole.GESTAO);
+        usuario.setAtivo(true);
+
+        when(userAccountRepository.findById(30L)).thenReturn(java.util.Optional.of(usuario));
+        when(userAccountRepository.save(any(UserAccount.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var dto = service.alterarRoleInterna(30L, UserRole.MIDIA);
+
+        assertEquals(UserRole.MIDIA, dto.getRole());
+        verify(userAccountRepository).save(usuario);
+    }
+
+    @Test
+    void alterarRoleInternaDeveRejeitarConversaoDeParticipante() {
+        UserAccount usuario = new UserAccount();
+        usuario.setId(31L);
+        usuario.setEmail("participante@rascomp.com");
+        usuario.setRole(UserRole.PARTICIPANTE);
+        usuario.setAtivo(true);
+
+        when(userAccountRepository.findById(31L)).thenReturn(java.util.Optional.of(usuario));
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.alterarRoleInterna(31L, UserRole.GESTAO));
+
+        assertTrue(ex.getMessage().contains("identidade separada"));
+    }
+
+    @Test
+    void alterarRoleInternaDeveRejeitarRoleParticipante() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.alterarRoleInterna(32L, UserRole.PARTICIPANTE));
+
+        assertTrue(ex.getMessage().contains("DEV, GESTAO ou MIDIA"));
+    }
+
+    @Test
+    void alterarRoleInternaDeveProtegerUltimoDevAtivo() {
+        UserAccount usuario = new UserAccount();
+        usuario.setId(33L);
+        usuario.setEmail("outro.dev@rascomp.com");
+        usuario.setRole(UserRole.DEV);
+        usuario.setAtivo(true);
+
+        when(userAccountRepository.findById(33L)).thenReturn(java.util.Optional.of(usuario));
+        when(userAccountRepository.countByRoleAndAtivoTrue(UserRole.DEV)).thenReturn(1L);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.alterarRoleInterna(33L, UserRole.GESTAO));
+
+        assertTrue(ex.getMessage().contains("pelo menos um DEV ativo"));
+    }
+
+    @Test
+    void alterarAtivoDeveProtegerUltimoDevAtivo() {
+        UserAccount usuario = new UserAccount();
+        usuario.setId(34L);
+        usuario.setEmail("ultimo.dev@rascomp.com");
+        usuario.setRole(UserRole.DEV);
+        usuario.setAtivo(true);
+
+        when(userAccountRepository.findById(34L)).thenReturn(java.util.Optional.of(usuario));
+        when(userAccountRepository.countByRoleAndAtivoTrue(UserRole.DEV)).thenReturn(1L);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.alterarAtivo(34L, false));
+
+        assertTrue(ex.getMessage().contains("pelo menos um DEV ativo"));
     }
 
     @Test

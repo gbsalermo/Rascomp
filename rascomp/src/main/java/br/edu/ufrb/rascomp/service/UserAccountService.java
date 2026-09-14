@@ -79,8 +79,57 @@ public class UserAccountService {
     @Transactional
     public UserAccountDTO alterarAtivo(Long id, boolean ativo) {
         UserAccount usuario = buscarPorId(id);
+        if (!ativo && usuario.getRole() == UserRole.DEV && Boolean.TRUE.equals(usuario.getAtivo())) {
+            validarNaoEhUltimoDevAtivo();
+        }
         usuario.setAtivo(ativo);
         return new UserAccountDTO(userAccountRepository.save(usuario));
+    }
+
+    @Transactional
+    public UserAccountDTO alterarRoleInterna(Long id, UserRole novaRole) {
+        if (novaRole == null || novaRole == UserRole.PARTICIPANTE) {
+            throw new IllegalArgumentException(
+                    "Contas internas só podem usar as roles DEV, GESTAO ou MIDIA.");
+        }
+
+        UserAccount usuario = buscarPorId(id);
+        if (usuario.getRole() == UserRole.PARTICIPANTE) {
+            throw new IllegalArgumentException(
+                    "Conta PARTICIPANTE é uma identidade separada e não pode ser convertida em conta interna.");
+        }
+
+        String emailAutenticado = emailAutenticado();
+        if (emailAutenticado != null && usuario.getEmail().equalsIgnoreCase(emailAutenticado)) {
+            throw new IllegalArgumentException(
+                    "A conta atualmente autenticada não pode alterar a própria permissão.");
+        }
+
+        if (usuario.getRole() == novaRole) {
+            return new UserAccountDTO(usuario);
+        }
+
+        if (usuario.getRole() == UserRole.DEV
+                && novaRole != UserRole.DEV
+                && Boolean.TRUE.equals(usuario.getAtivo())) {
+            validarNaoEhUltimoDevAtivo();
+        }
+
+        usuario.setRole(novaRole);
+        return new UserAccountDTO(userAccountRepository.save(usuario));
+    }
+
+    private void validarNaoEhUltimoDevAtivo() {
+        if (userAccountRepository.countByRoleAndAtivoTrue(UserRole.DEV) <= 1) {
+            throw new IllegalArgumentException(
+                    "O RasComp deve manter pelo menos um DEV ativo.");
+        }
+    }
+
+    private String emailAutenticado() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) return null;
+        return authentication.getName();
     }
 
     private UserAccount criar(RegisterRequest request, UserRole role) {

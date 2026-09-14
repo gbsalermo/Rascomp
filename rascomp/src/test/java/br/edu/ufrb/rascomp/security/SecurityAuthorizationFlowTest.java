@@ -1,6 +1,7 @@
 package br.edu.ufrb.rascomp.security;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -100,6 +101,9 @@ class SecurityAuthorizationFlowTest {
                                   "senha": "Rascomp@2026"
                                 }
                                 """))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(patch("/api/v1/usuarios/999/role").param("role", "MIDIA"))
                 .andExpect(status().isForbidden());
     }
 
