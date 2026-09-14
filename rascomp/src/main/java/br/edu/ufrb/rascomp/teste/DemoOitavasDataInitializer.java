@@ -23,6 +23,7 @@ import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.MotivoResultadoRoundSumo;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.StatusRoundSumo;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
@@ -95,6 +96,13 @@ public class DemoOitavasDataInitializer {
         UserAccount organizacao = userAccountRepository.findByEmailIgnoreCase(ORGANIZATION_EMAIL)
                 .orElseThrow(() -> new IllegalStateException("Usuário de organização da demonstração não encontrado."));
 
+        Bracket bracket = chaveAtualComOitavas(competition.getId(), category.getId());
+        if (bracket == null && competition.getStatus() != StatusCompetition.INSCRICOES_ENCERRADAS) {
+            System.out.println("RASCOMP · DEMO SUMÔ: chave local anterior preservada; "
+                    + "não é permitido regenerar chave com a competição em " + competition.getStatus() + ".");
+            return;
+        }
+
         // O cenário principal já possui Titan + MiniBot 1..7 = 8 inscrições.
         // Acrescentamos MiniBot 8..15 para fechar 16 participantes sem BYE.
         for (int i = 8; i <= 15; i++) {
@@ -104,7 +112,6 @@ public class DemoOitavasDataInitializer {
             garantirInspecao(registration);
         }
 
-        Bracket bracket = chaveAtualComOitavas(competition.getId(), category.getId());
         if (bracket == null) {
             bracketGenerationService.gerar(competition.getId(), category.getId());
             bracket = chaveAtualComOitavas(competition.getId(), category.getId());
