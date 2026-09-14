@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 
+import br.edu.ufrb.rascomp.model.Competitor;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
@@ -43,6 +44,28 @@ class AccessPolicyServiceTest {
         when(teamRepository.findById(9L)).thenReturn(Optional.of(team));
 
         assertEquals(9L, service.exigirEquipeDoResponsavel(9L).getId());
+    }
+
+    @Test
+    void membroPodeAcessarEquipeSemSerResponsavel() {
+        UserAccount atual = usuario(5L);
+        UserAccount responsavel = usuario(6L);
+
+        Team team = new Team();
+        team.setId(9L);
+        team.setResponsibleUser(responsavel);
+
+        Competitor competitor = new Competitor();
+        competitor.setId(20L);
+        competitor.setUserAccount(atual);
+        competitor.setTeam(team);
+        competitor.setAtivo(true);
+
+        when(userAccountService.buscarAtual()).thenReturn(atual);
+        when(teamRepository.findById(9L)).thenReturn(Optional.of(team));
+        when(competitorRepository.findByUserAccountId(5L)).thenReturn(Optional.of(competitor));
+
+        assertEquals(9L, service.exigirEquipeDoParticipante(9L).getId());
     }
 
     @Test

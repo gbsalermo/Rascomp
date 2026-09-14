@@ -105,6 +105,16 @@ public class RegistrationService {
     }
 
     @Transactional(readOnly = true)
+    public List<RegistrationDTO> listarPorEquipeEParticipante(Long teamId, Long userAccountId) {
+        buscarTeam(teamId);
+        return registrationRepository
+                .findByTeamIdAndParticipantUserIdOrderByDataCadastroDesc(teamId, userAccountId)
+                .stream()
+                .map(RegistrationDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public RegistrationDTO buscarPorId(Long id) {
         return new RegistrationDTO(buscarRegistration(id));
     }

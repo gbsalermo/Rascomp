@@ -42,7 +42,7 @@ public class ParticipantPortalService {
     @Transactional(readOnly = true)
     public List<TeamDTO> minhasEquipes() {
         UserAccount usuario = accessPolicyService.usuarioAtual();
-        return teamService.listarPorResponsavel(usuario.getId());
+        return teamService.listarRelacionadasAoParticipante(usuario.getId());
     }
 
     @Transactional
@@ -60,7 +60,7 @@ public class ParticipantPortalService {
 
     @Transactional(readOnly = true)
     public List<CompetitorDTO> competidores(Long teamId) {
-        accessPolicyService.exigirEquipeDoResponsavel(teamId);
+        accessPolicyService.exigirEquipeDoParticipante(teamId);
         return competitorService.listarPorEquipe(teamId, false);
     }
 
@@ -102,8 +102,19 @@ public class ParticipantPortalService {
 
     @Transactional(readOnly = true)
     public List<RobotDTO> robos(Long teamId) {
-        accessPolicyService.exigirEquipeDoResponsavel(teamId);
-        return robotService.listarPorEquipe(teamId, false);
+        Team team = accessPolicyService.exigirEquipeDoParticipante(teamId);
+        UserAccount usuario = accessPolicyService.usuarioAtual();
+
+        if (accessPolicyService.ehResponsavel(team, usuario)) {
+            return robotService.listarPorEquipe(teamId, false);
+        }
+
+        return registrationService.listarPorEquipeEParticipante(teamId, usuario.getId())
+                .stream()
+                .map(RegistrationDTO::getRobotId)
+                .distinct()
+                .map(robotService::buscarPorId)
+                .toList();
     }
 
     @Transactional
@@ -128,7 +139,7 @@ public class ParticipantPortalService {
     }
 
     public List<RobotImageDTO> fotos(Long robotId) {
-        accessPolicyService.exigirRoboDaEquipe(robotId);
+        accessPolicyService.exigirRoboVisivelAoParticipante(robotId);
         return robotImageService.listar(robotId);
     }
 
@@ -149,19 +160,25 @@ public class ParticipantPortalService {
 
     @Transactional(readOnly = true)
     public List<RegistrationDTO> inscricoes(Long teamId) {
-        accessPolicyService.exigirEquipeDoResponsavel(teamId);
-        return registrationService.listarPorEquipe(teamId, false);
+        Team team = accessPolicyService.exigirEquipeDoParticipante(teamId);
+        UserAccount usuario = accessPolicyService.usuarioAtual();
+
+        if (accessPolicyService.ehResponsavel(team, usuario)) {
+            return registrationService.listarPorEquipe(teamId, false);
+        }
+
+        return registrationService.listarPorEquipeEParticipante(teamId, usuario.getId());
     }
 
     @Transactional(readOnly = true)
     public List<TentativaSeguidorLinhaDTO> tentativasFollow(Long registrationId) {
-        accessPolicyService.exigirInscricaoDaEquipe(registrationId);
+        accessPolicyService.exigirInscricaoVisivelAoParticipante(registrationId);
         return tentativaSeguidorLinhaService.listarPorInscricao(registrationId);
     }
 
     @Transactional(readOnly = true)
     public ConfigFollowDTO configFollow(Long registrationId) {
-        Registration registration = accessPolicyService.exigirInscricaoDaEquipe(registrationId);
+        Registration registration = accessPolicyService.exigirInscricaoVisivelAoParticipante(registrationId);
         return configFollowService.buscarPorCategoria(registration.getCategory().getId());
     }
 

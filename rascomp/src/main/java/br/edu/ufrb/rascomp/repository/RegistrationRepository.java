@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import br.edu.ufrb.rascomp.model.Registration;
@@ -17,6 +19,18 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     List<Registration> findByTeamIdOrderByDataCadastroDesc(Long teamId);
     List<Registration> findByTeamIdAndAtivoTrueOrderByDataCadastroDesc(Long teamId);
     List<Registration> findByRequestedByUserIdOrderByDataCadastroDesc(Long userId);
+
+    @Query("""
+            select distinct r
+            from Registration r
+            join r.competitors c
+            where r.team.id = :teamId
+              and c.userAccount.id = :userAccountId
+            order by r.dataCadastro desc
+            """)
+    List<Registration> findByTeamIdAndParticipantUserIdOrderByDataCadastroDesc(
+            @Param("teamId") Long teamId,
+            @Param("userAccountId") Long userAccountId);
     List<Registration> findByStatusOrderByDataCadastroDesc(StatusRegistration status);
     List<Registration> findByCompetitionIdAndRobotIdAndStatusIn(
             Long competitionId,

@@ -1,15 +1,18 @@
 package br.edu.ufrb.rascomp.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.ufrb.rascomp.dto.TeamDTO;
+import br.edu.ufrb.rascomp.model.Competitor;
 import br.edu.ufrb.rascomp.model.Institution;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
+import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.repository.InstitutionRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
 import br.edu.ufrb.rascomp.repository.UserAccountRepository;
@@ -21,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class TeamService {
 
     private final TeamRepository teamRepository;
+    private final CompetitorRepository competitorRepository;
     private final InstitutionRepository institutionRepository;
     private final UserAccountRepository userAccountRepository;
 
@@ -63,6 +67,24 @@ public class TeamService {
     public List<TeamDTO> listarPorResponsavel(Long userId) {
         return teamRepository.findByResponsibleUserIdAndAtivoTrueOrderByNomeAsc(userId)
                 .stream().map(TeamDTO::new).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TeamDTO> listarRelacionadasAoParticipante(Long userId) {
+        List<Team> relacionadas = new ArrayList<>(
+                teamRepository.findByResponsibleUserIdAndAtivoTrueOrderByNomeAsc(userId));
+
+        competitorRepository.findByUserAccountId(userId)
+                .filter(competitor -> Boolean.TRUE.equals(competitor.getAtivo()))
+                .map(Competitor::getTeam)
+                .filter(team -> Boolean.TRUE.equals(team.getAtivo()))
+                .filter(team -> relacionadas.stream().noneMatch(item -> item.getId().equals(team.getId())))
+                .ifPresent(relacionadas::add);
+
+        return relacionadas.stream()
+                .sorted(java.util.Comparator.comparing(Team::getNome, String.CASE_INSENSITIVE_ORDER))
+                .map(TeamDTO::new)
+                .toList();
     }
 
     @Transactional(readOnly = true)
