@@ -87,7 +87,8 @@ jobs:
                 "DEV: organizacao.demo@rascomp.local" \
                 "GESTAO: gestao.demo@rascomp.local" \
                 "MIDIA: midia.demo@rascomp.local" \
-                "PARTICIPANTE: lider.demo@rascomp.local"; do
+                "PARTICIPANTE: lider.demo@rascomp.local" \
+                "MEMBRO: membro.demo@rascomp.local"; do
                 if ! grep -q "$marker" demo-profile.log; then
                   echo "Demo profile missing expected role user: $marker"
                   cat demo-profile.log
@@ -100,7 +101,8 @@ jobs:
                 "organizacao.demo@rascomp.local|DEV" \
                 "gestao.demo@rascomp.local|GESTAO" \
                 "midia.demo@rascomp.local|MIDIA" \
-                "lider.demo@rascomp.local|PARTICIPANTE"; do
+                "lider.demo@rascomp.local|PARTICIPANTE" \
+                "membro.demo@rascomp.local|PARTICIPANTE"; do
                 email="${account%%|*}"
                 role="${account##*|}"
 

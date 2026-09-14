@@ -90,6 +90,7 @@ import lombok.RequiredArgsConstructor;
 public class DemoShowcaseDataInitializer implements CommandLineRunner {
 
     public static final String PARTICIPANT_EMAIL = "lider.demo@rascomp.local";
+    public static final String MEMBER_EMAIL = "membro.demo@rascomp.local";
     public static final String DEV_EMAIL = "organizacao.demo@rascomp.local";
     public static final String MANAGEMENT_EMAIL = "gestao.demo@rascomp.local";
     public static final String MEDIA_EMAIL = "midia.demo@rascomp.local";
@@ -131,6 +132,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         List<UserAccount> usuariosDemo = garantirUsuariosDeAcesso();
         UserAccount organizacao = usuariosDemo.get(0);
         UserAccount participante = usuariosDemo.get(3);
+        UserAccount membro = usuariosDemo.get(4);
 
         Institution ras = garantirInstituicao("RAS-DEMO", "Instituição Demo RAS UFRB");
         Institution visitante = garantirInstituicao("ROBODEMO", "Instituto de Robótica Demo");
@@ -138,6 +140,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         Team teamParticipante = garantirEquipe("Equipe Demo RAS", ras, participante);
         Competitor lider = garantirCompetidor("Líder Demo", PARTICIPANT_EMAIL, teamParticipante, participante);
         Competitor suporte = garantirCompetidor("Suporte Demo", "suporte.demo@rascomp.local", teamParticipante, null);
+        Competitor membroFollow = garantirCompetidor("Membro Demo", MEMBER_EMAIL, teamParticipante, membro);
 
         Robot chronos = garantirRobo("Chronos Demo", teamParticipante,
                 "Seguidor de linha para demonstrar tomadas, tentativas e ranking.");
@@ -162,7 +165,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         Competition history = garantirCompeticaoHistorica();
 
         Registration chronosFollow = garantirInscricao(
-                live, followCategory, teamParticipante, chronos, Set.of(lider, suporte),
+                live, followCategory, teamParticipante, chronos, Set.of(lider, suporte, membroFollow),
                 StatusRegistration.APROVADA, participante, organizacao,
                 "Duas tomadas concluídas; terceira ainda disponível.");
         Registration titanSumo = garantirInscricao(
@@ -189,6 +192,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         System.out.println("GESTAO: " + MANAGEMENT_EMAIL + " / " + DEMO_PASSWORD);
         System.out.println("MIDIA: " + MEDIA_EMAIL + " / " + DEMO_PASSWORD);
         System.out.println("PARTICIPANTE: " + PARTICIPANT_EMAIL + " / " + DEMO_PASSWORD);
+        System.out.println("MEMBRO: " + MEMBER_EMAIL + " / " + DEMO_PASSWORD);
         System.out.println("Destaques: Follow 2/3 tomadas, Sumô parcial, BYEs e chave completa de 32 robôs.");
         System.out.println("============================================================");
     }
@@ -198,7 +202,8 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
                 garantirUsuario(DEV_EMAIL, "DEV Demo RAS", UserRole.DEV),
                 garantirUsuario(MANAGEMENT_EMAIL, "Gestão Demo RAS", UserRole.GESTAO),
                 garantirUsuario(MEDIA_EMAIL, "Mídia Demo RAS", UserRole.MIDIA),
-                garantirUsuario(PARTICIPANT_EMAIL, "Líder Demo", UserRole.PARTICIPANTE));
+                garantirUsuario(PARTICIPANT_EMAIL, "Líder Demo", UserRole.PARTICIPANTE),
+                garantirUsuario(MEMBER_EMAIL, "Membro Demo", UserRole.PARTICIPANTE));
     }
 
     private UserAccount garantirUsuario(String email, String nome, UserRole role) {

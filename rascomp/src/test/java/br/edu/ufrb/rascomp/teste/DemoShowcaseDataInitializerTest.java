@@ -45,16 +45,17 @@ class DemoShowcaseDataInitializerTest {
     void deveCriarUsuariosDeDemonstracaoParaTodosOsPerfisDaEtapa3() {
         List<UserAccount> usuarios = initializer.garantirUsuariosDeAcesso();
 
-        assertEquals(4, usuarios.size());
+        assertEquals(5, usuarios.size());
 
         assertUsuario(usuarios.get(0), DemoShowcaseDataInitializer.DEV_EMAIL, UserRole.DEV);
         assertUsuario(usuarios.get(1), DemoShowcaseDataInitializer.MANAGEMENT_EMAIL, UserRole.GESTAO);
         assertUsuario(usuarios.get(2), DemoShowcaseDataInitializer.MEDIA_EMAIL, UserRole.MIDIA);
         assertUsuario(usuarios.get(3), DemoShowcaseDataInitializer.PARTICIPANT_EMAIL, UserRole.PARTICIPANTE);
+        assertUsuario(usuarios.get(4), DemoShowcaseDataInitializer.MEMBER_EMAIL, UserRole.PARTICIPANTE);
 
-        verify(passwordEncoder, org.mockito.Mockito.times(4))
+        verify(passwordEncoder, org.mockito.Mockito.times(5))
                 .encode(DemoShowcaseDataInitializer.DEMO_PASSWORD);
-        verify(userAccountRepository, org.mockito.Mockito.times(4)).save(any(UserAccount.class));
+        verify(userAccountRepository, org.mockito.Mockito.times(5)).save(any(UserAccount.class));
     }
 
     private void assertUsuario(UserAccount usuario, String email, UserRole role) {
