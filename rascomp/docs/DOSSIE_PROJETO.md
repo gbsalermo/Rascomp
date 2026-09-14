@@ -78,6 +78,10 @@ Validação adicional da ETAPA 3:
 - não existe promoção automática da conta pessoal para conta institucional nesta etapa;
 - a mesma pessoa pode ter conta pessoal de participante e conta institucional separada;
 - como `UserAccount.email` é único, as duas contas usam e-mails diferentes;
-- troca genérica de role continua reservada à ETAPA 5.
+- edição de permissão interna entre `DEV | GESTAO | MIDIA` é suportada na ETAPA 3;
+- `PARTICIPANTE` não pode ser convertido para conta interna nem o inverso;
+- a conta autenticada não altera a própria role durante a sessão;
+- o último DEV ativo não pode ser rebaixado ou desativado;
+- operações genéricas de identidade continuam reservadas aos Ajustes Gerais.
 
 Validação: Backend Tests #309 com 125 testes verdes e Frontend Checks #68 com typecheck + build verdes.
