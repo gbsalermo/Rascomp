@@ -256,7 +256,7 @@ institucional@... → GESTAO
 
 `UserAccount.email` continua único, portanto duas contas exigem e-mails distintos. Isso impede que a conta usada para competir herde automaticamente privilégios institucionais.
 
-Mudança genérica de role permanece fora da ETAPA 3 e reservada à ETAPA 5.
+A ETAPA 3 permite editar apenas a permissão de contas internas entre `DEV | GESTAO | MIDIA`. `PARTICIPANTE` permanece identidade separada e não participa dessa conversão. O backend também impede alterar a própria role durante a sessão e protege o último DEV ativo contra rebaixamento ou desativação. Operações administrativas genéricas de identidade continuam fora deste escopo.
 
 Checkpoint após a regra:
 
