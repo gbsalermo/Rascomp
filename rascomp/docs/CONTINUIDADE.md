@@ -131,7 +131,7 @@ PROFILE TESTDATA                         ✅
 Checkpoint automatizado atual confirmado no CI:
 
 ```text
-125 testes
+135 testes
 0 falhas
 0 erros
 0 skipped
@@ -262,7 +262,7 @@ Checkpoint após a regra:
 
 ```text
 Backend Tests #309
-125 testes
+135 testes
 0 falhas
 0 erros
 0 skipped
@@ -916,7 +916,7 @@ Validação:
 - `UserRoleTest` ✅
 - `SecurityAuthorizationFlowTest` ✅
 - `DemoShowcaseDataInitializerTest` ✅
-- 120 testes / 0 falhas / 0 erros / 0 skipped ✅
+- 135 testes / 0 falhas / 0 erros / 0 skipped ✅
 - MySQL + Flyway V13 + `testdata` ✅
 - Frontend Checks #64–#66 ✅
 - CI valida presença e login real dos quatro perfis `testdata`.
@@ -938,8 +938,12 @@ MIDIA
 midia.demo@rascomp.local
 Rascomp@2026
 
-PARTICIPANTE
+PARTICIPANTE — líder
 lider.demo@rascomp.local
+Rascomp@2026
+
+PARTICIPANTE — membro comum
+membro.demo@rascomp.local
 Rascomp@2026
 ```
 
@@ -980,3 +984,44 @@ A regra de `BracketIntegrityService` não foi afrouxada.
 
 Validação adicionada em `DemoOitavasDataInitializerTest`.
 Checkpoint da suíte: 126 testes, 0 falhas, 0 erros, 0 skipped.
+
+
+## Portal participante — liderança e participação
+
+A autorização distingue responsabilidade da equipe de participação competitiva:
+
+```text
+Team.responsibleUser
+→ líder
+→ acesso integral ao contexto da equipe no portal
+
+Competitor.userAccount
+→ membro
+→ acesso à equipe
+→ somente Registration que contém esse Competitor
+→ somente Robot dessas Registration
+```
+
+Leituras permitidas ao membro:
+- equipe à qual seu Competitor pertence;
+- roster da equipe;
+- próprias inscrições;
+- robôs das próprias inscrições;
+- fotos desses robôs;
+- tentativas/configuração Follow das próprias inscrições.
+
+Escritas administrativas continuam reservadas ao responsável da equipe, incluindo edição de equipe, competidores, robôs, fotos e ações de inscrição.
+
+Testes:
+- `AccessPolicyServiceTest` cobre acesso do membro à própria equipe;
+- `ParticipantPortalServiceTest` cobre visão integral do líder e filtro do membro;
+- Backend Tests #315: 135 testes verdes;
+- MySQL + Flyway V13 + profile `testdata` verdes.
+
+Conta prática adicional:
+
+```text
+membro.demo@rascomp.local / Rascomp@2026
+```
+
+Ela pertence à mesma Equipe Demo RAS do líder, mas está associada somente à inscrição do Chronos Demo.
