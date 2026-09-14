@@ -951,3 +951,32 @@ Validação automatizada da matriz:
 - `SecurityAuthorizationFlowTest` → autorização HTTP real;
 - `DemoShowcaseDataInitializerTest` → criação dos quatro perfis;
 - profile `testdata` → inicialização real contra MySQL + Flyway V13.
+
+
+## Correção de compatibilidade do `testdata` — banco local reaproveitado
+
+O `DemoOitavasDataInitializer` passou a preservar uma chave de demonstração já existente quando a competição local já está em `EM_ANDAMENTO`.
+
+Motivo: bancos locais reaproveitados de versões anteriores do seed podem conter uma chave com estrutura antiga. O initializer não deve contornar a regra real de domínio que só permite geração/regeneração em `INSCRICOES_ENCERRADAS`.
+
+Comportamento atual:
+
+```text
+chave demo esperada encontrada
+→ segue preparação normal
+
+chave demo esperada ausente
++ competição INSCRICOES_ENCERRADAS
+→ pode gerar
+
+chave demo esperada ausente
++ competição EM_ANDAMENTO/FINALIZADA/etc.
+→ preserva estado local
+→ não tenta regenerar
+→ aplicação continua subindo
+```
+
+A regra de `BracketIntegrityService` não foi afrouxada.
+
+Validação adicionada em `DemoOitavasDataInitializerTest`.
+Checkpoint da suíte: 126 testes, 0 falhas, 0 erros, 0 skipped.
