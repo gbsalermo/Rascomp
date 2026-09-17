@@ -1,6 +1,6 @@
 # RasComp — Etapas Pós-Projeto — Ponteiro do Backend
 
-Última revisão: **13/09/2026**
+Última revisão: **17/09/2026**
 
 O roadmap pós-aprovação é cross-repo e possui uma única fonte canônica:
 
@@ -17,7 +17,8 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
 ETAPA 3  🚧 em andamento
-ETAPA 4+ ⏳ não iniciadas
+ETAPA 4–14 ⏳ não iniciadas
+ETAPA 15 ⏳ não iniciada — Assinatura pessoal
 ```
 
 A ETAPA 1 foi concluída após Competition/Registration, Follow, Sumô, Chaves e Fluxos integrados. Checkpoint final: 111 testes verdes + MySQL/Flyway V12/testdata.
@@ -50,6 +51,14 @@ gbsalermo/Rascomp-FRONT/docs/README.md
 ```
 
 Avisos IN_APP e Telegram estão consolidados na ETAPA 4. Deploy permanece ETAPA 14, preservando o modo local.
+
+Após o deploy e a estabilização do ciclo, a ETAPA 15 fica reservada para **Assinatura pessoal — backend e frontend**, sem alteração funcional do produto.
+
+Detalhes locais do backend:
+
+```text
+rascomp/docs/ETAPA_15_ASSINATURA_PESSOAL.md
+```
 
 > Checkpoint 13/09/2026: ETAPA 2 concluída/validada no escopo técnico cross-repo. Smoke visual e testes práticos ficam para etapas funcionais posteriores. A fonte canônica detalhada continua em `Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`.
 
