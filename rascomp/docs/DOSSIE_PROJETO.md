@@ -105,6 +105,10 @@ O planejamento passa a priorizar maturidade do produto:
 
 ## Mobile no novo roadmap
 
-A otimização de interfaces para celular/tablet pertence à ETAPA 4, durante a consolidação do MVP. O login já possui tratamento responsivo dedicado; Gestão e Portal do Participante ainda precisam revisão sistemática.
+A otimização de interfaces para celular/tablet é um **checkpoint transversal da PRIORIDADE 1**.
 
-A ETAPA 14 permanece como validação física/hardening em aparelhos reais. Essa separação evita adiar problemas de UX mobile para o fim do ciclo.
+A ETAPA 4 pode corrigir problemas encontrados no sistema atual, mas o trabalho continua junto das interfaces alteradas nas ETAPAS 7, 8 e 9 e precisa estar consolidado antes da ETAPA 10.
+
+O login já possui tratamento responsivo dedicado; Gestão e Portal do Participante ainda precisam revisão sistemática.
+
+A ETAPA 14 permanece como validação física/hardening em aparelhos reais.

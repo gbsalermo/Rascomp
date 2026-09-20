@@ -343,7 +343,7 @@ fluxos integrados H2                      ✅
 MySQL + Flyway V13 + profile testdata     ✅
 ```
 
-As ETAPAS 1, 2 e 3 estão concluídas/validadas. O roadmap foi reorganizado por maturidade do produto. A próxima etapa é a **ETAPA 4 — Consolidação funcional e polimento do MVP**, ainda não iniciada; o deploy passa a ser a ETAPA 16, última etapa do ciclo. A ETAPA 4 também inclui a otimização das interfaces do frontend para celular/tablet, hoje ainda incompleta fora do login.
+As ETAPAS 1, 2 e 3 estão concluídas/validadas. O roadmap foi reorganizado por maturidade do produto. A próxima etapa é a **ETAPA 4 — Consolidação funcional e polimento do MVP**, ainda não iniciada; o deploy passa a ser a ETAPA 16, última etapa do ciclo. O roadmap também possui um **checkpoint transversal de Otimização Mobile do MVP** dentro da PRIORIDADE 1. Ele acompanha as interfaces revisadas/criadas nas ETAPAS 4, 7, 8 e 9 e deve estar concluído antes da ETAPA 10; hoje, apenas o login possui tratamento responsivo dedicado já revisado.
 
 <p align="right">(<a href="#readme-top">voltar ao topo ⬆</a>)</p>
 

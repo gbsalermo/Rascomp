@@ -1065,9 +1065,9 @@ O backend acompanha o novo planejamento cross-repo:
 A ordem detalhada continua canônica no frontend.
 
 
-## Otimização mobile prevista na ETAPA 4
+## Checkpoint transversal — Otimização Mobile do MVP
 
-A ETAPA 4 não é apenas smoke visual. Ela inclui a revisão sistemática das interfaces do MVP para uso em celular/tablet.
+A otimização mobile não redefine a ETAPA 4. Ela é um checkpoint transversal da PRIORIDADE 1, acompanhado ao longo das etapas que alteram interfaces.
 
 Estado conhecido:
 
@@ -1078,6 +1078,15 @@ Portal do Participante         ⏳ otimização mobile pendente
 Tabelas/filtros/diálogos       ⏳ otimização mobile pendente
 ```
 
-O backend deve permanecer estável durante esse trabalho, alterando contratos apenas se algum fluxo mobile revelar necessidade funcional real.
+Fluxo:
 
-A ETAPA 14 continua reservada aos testes físicos finais em aparelhos reais e hardening externo.
+```text
+ETAPA 4 → corrigir problemas mobile encontrados no sistema atual
+ETAPA 7 → Portal do Participante responsivo
+ETAPA 8 → CMS/Mídia considera telas menores
+ETAPA 9 → Landing/Galeria responsivas
+CHECKPOINT MOBILE → consolidar antes da ETAPA 10
+ETAPA 14 → testes físicos finais em aparelhos reais
+```
+
+O backend deve permanecer estável durante esse trabalho, alterando contratos apenas se algum fluxo mobile revelar necessidade funcional real.
