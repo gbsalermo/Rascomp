@@ -1063,3 +1063,21 @@ O backend acompanha o novo planejamento cross-repo:
 - ETAPA 16 — deploy.
 
 A ordem detalhada continua canônica no frontend.
+
+
+## Otimização mobile prevista na ETAPA 4
+
+A ETAPA 4 não é apenas smoke visual. Ela inclui a revisão sistemática das interfaces do MVP para uso em celular/tablet.
+
+Estado conhecido:
+
+```text
+Login                         ✅ responsividade dedicada já revisada
+Gestão autenticada             ⏳ otimização mobile pendente
+Portal do Participante         ⏳ otimização mobile pendente
+Tabelas/filtros/diálogos       ⏳ otimização mobile pendente
+```
+
+O backend deve permanecer estável durante esse trabalho, alterando contratos apenas se algum fluxo mobile revelar necessidade funcional real.
+
+A ETAPA 14 continua reservada aos testes físicos finais em aparelhos reais e hardening externo.

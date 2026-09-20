@@ -101,3 +101,10 @@ O planejamento passa a priorizar maturidade do produto:
 - **PRIORIDADE 1 / ETAPAS 4–10:** consolidação do MVP, Ajustes Gerais, Futebol, Portal do Participante, CMS, Landing/Galeria e validação do MVP;
 - **PRIORIDADE 2 / ETAPAS 11–15:** Avisos+Telegram, portabilidade, Regras/Ajuda/Segurança, hardening com testes físicos mobile e validação final;
 - **ETAPA 16:** deploy, última etapa.
+
+
+## Mobile no novo roadmap
+
+A otimização de interfaces para celular/tablet pertence à ETAPA 4, durante a consolidação do MVP. O login já possui tratamento responsivo dedicado; Gestão e Portal do Participante ainda precisam revisão sistemática.
+
+A ETAPA 14 permanece como validação física/hardening em aparelhos reais. Essa separação evita adiar problemas de UX mobile para o fim do ciclo.

@@ -18,7 +18,7 @@ Este arquivo existe apenas para impedir duplicação de planejamento no backend.
 
 ### PRIORIDADE 1 — Finalização e polimento do MVP
 
-- ETAPA 4 — Consolidação funcional e polimento do MVP;
+- ETAPA 4 — Consolidação funcional e polimento do MVP, incluindo otimização das interfaces para celular/tablet;
 - ETAPA 5 — Ajustes Gerais DEV + auditoria;
 - ETAPA 6 — Futebol de Robôs;
 - ETAPA 7 — Portal do Participante completo + identificação competitiva;
@@ -45,3 +45,9 @@ Regras de continuidade:
 - V1–V13 são migrations aplicadas e não devem ser reescritas;
 - próxima mudança estrutural usa V14+;
 - a ETAPA 4 ainda não está iniciada até autorização explícita.
+
+Observação mobile:
+
+- Na ETAPA 4, mobile é requisito do MVP: as interfaces autenticadas devem ser adaptadas para telas estreitas e uso por toque.
+- No checkpoint atual, apenas o login possui tratamento responsivo dedicado já revisado.
+- Na ETAPA 14, essa otimização é revalidada fisicamente em smartphones/tablets reais.
