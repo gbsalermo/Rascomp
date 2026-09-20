@@ -1,5 +1,7 @@
 # RasComp — Deploy Cloudflare
 
+No roadmap atual, o deploy corresponde à **ETAPA 16**, última etapa do ciclo, e só começa após a **ETAPA 15 — Validação final completa**.
+
 O guia canônico de deploy do projeto inteiro está no repositório de frontend:
 
 ```text
