@@ -26,8 +26,8 @@ Estado oficial em 13/09/2026:
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
-ETAPA 3  🚧 em andamento
-ETAPA 4+ ⏳ não iniciadas
+ETAPA 3  ✅ concluída / validada
+PRÓXIMA ETAPA FUNCIONAL ⏸ aguardando reorganização do roadmap
 ```
 
 A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 foi concluída/validada em 13/09/2026 no escopo técnico de limpeza e organização. A ETAPA 3 está em andamento com backend, frontend e validação automatizada integrados.
@@ -116,4 +116,4 @@ Esses itens foram executados na ETAPA 2 sem antecipação durante a ETAPA 1.
 
 ## Próximo trabalho
 
-Trabalho atual do roadmap: **ETAPA 3 — Nova matriz de permissões**. Backend e frontend integrados; autorização HTTP e usuários locais de `testdata` cobertos por testes.
+Checkpoint atual: **ETAPA 3 — Nova matriz de permissões ✅**. Backend, frontend, autorização HTTP e perfis `testdata` validados. Há uma validação final de permissões planejada imediatamente antes do deploy.

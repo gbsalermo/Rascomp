@@ -24,11 +24,11 @@ Estado oficial:
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
-ETAPA 3  🚧 em andamento
-ETAPA 4+ ⏳ não iniciadas
+ETAPA 3  ✅ concluída / validada
+PRÓXIMA ETAPA FUNCIONAL ⏸ aguardando reorganização do roadmap
 ```
 
-As ETAPAS 1 e 2 estão encerradas/validadas. A ETAPA 3 está em andamento com backend e frontend integrados à nova matriz de permissões, Flyway V13 e validação automatizada.
+As ETAPAS 1, 2 e 3 estão encerradas/validadas. A matriz de permissões está integrada e validada; a próxima etapa funcional aguardará a reorganização do roadmap.
 
 Checkpoint backend:
 
@@ -85,3 +85,10 @@ Validação adicional da ETAPA 3:
 - operações genéricas de identidade continuam reservadas aos Ajustes Gerais.
 
 Validação: Backend Tests #309 com 125 testes verdes e Frontend Checks #68 com typecheck + build verdes.
+
+
+## Fechamento da ETAPA 3 — 19/09/2026
+
+A matriz `DEV | GESTAO | MIDIA | PARTICIPANTE` foi validada em uso prático e a ETAPA 3 foi encerrada.
+
+Uma nova verificação global de permissões foi movida para o checkpoint imediatamente anterior ao deploy, quando todos os módulos futuros já estiverem consolidados. Até a reorganização do roadmap, nenhuma próxima etapa funcional deve ser assumida automaticamente.

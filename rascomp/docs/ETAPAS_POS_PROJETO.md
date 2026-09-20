@@ -16,8 +16,8 @@ Estado oficial:
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
-ETAPA 3  🚧 em andamento
-ETAPA 4–14 ⏳ não iniciadas
+ETAPA 3  ✅ concluída / validada
+PRÓXIMA ETAPA FUNCIONAL ⏸ aguardando reorganização do roadmap
 ETAPA 15 ⏳ não iniciada — Assinatura pessoal
 ```
 
@@ -35,7 +35,7 @@ ETAPA 3 — Nova matriz de permissões
 → validação automatizada da matriz em andamento
 ```
 
-A ETAPA 3 está em andamento. Backend e frontend já aplicam `DEV | GESTAO | MIDIA | PARTICIPANTE`; o próximo checkpoint é a validação consolidada da autorização antes do encerramento da etapa.
+A ETAPA 3 está concluída e validada. Backend e frontend aplicam `DEV | GESTAO | MIDIA | PARTICIPANTE`; a próxima etapa funcional aguardará a reorganização do roadmap. O planejamento canônico permanece no frontend.
 
 Referências:
 

@@ -1,6 +1,6 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **13/09/2026**
+Última atualização: **19/09/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
@@ -27,8 +27,8 @@ rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md
 ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2   ✅ concluída / validada
-ETAPA 3   🚧 em andamento
-ETAPA 4+ ⏳ não iniciadas
+ETAPA 3   ✅ concluída / validada
+PRÓXIMA ETAPA FUNCIONAL ⏸ aguardando reorganização do roadmap
 ```
 
 Blocos concluídos da ETAPA 1:
@@ -94,7 +94,7 @@ O Bloco 5 fechou a validação integrada da ETAPA 1:
 - total da suíte: **111 testes / 0 falhas / 0 erros / 0 skipped**;
 - `demo-profile` verde contra MySQL real + Flyway V12.
 
-As **ETAPAS 1 e 2 estão concluídas e validadas**. A **ETAPA 3 está em andamento** com backend, frontend e validação automatizada integrados.
+As **ETAPAS 1, 2 e 3 estão concluídas e validadas**. A próxima etapa funcional aguardará a reorganização do roadmap.
 
 ---
 
@@ -881,7 +881,7 @@ ETAPA 3 — matriz de permissões
 └─ checkpoint prático dos quatro perfis  🚧 PENDENTE DO USUÁRIO
 ```
 
-Não iniciar a ETAPA 4 antes do fechamento explícito da ETAPA 3.
+Não iniciar a próxima etapa funcional até o roadmap ser reorganizado e novamente autorizado.
 
 ## Checkpoint cross-repo da ETAPA 2 — 13/09/2026
 
@@ -1025,3 +1025,20 @@ membro.demo@rascomp.local / Rascomp@2026
 ```
 
 Ela pertence à mesma Equipe Demo RAS do líder, mas está associada somente à inscrição do Chronos Demo.
+
+
+## Fechamento da matriz de permissões — 19/09/2026
+
+A ETAPA 3 foi validada pelo usuário e encerrada.
+
+Estado preservado:
+
+```text
+DEV          ✅
+GESTAO       ✅
+MIDIA        ✅
+PARTICIPANTE ✅
+líder x membro comum ✅
+```
+
+Uma etapa extra de validação final de permissões foi posicionada imediatamente antes do deploy no roadmap canônico. Ela deve revalidar todos os módulos e perfis no estado final do produto.
