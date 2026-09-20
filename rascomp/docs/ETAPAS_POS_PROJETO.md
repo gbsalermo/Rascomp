@@ -1,65 +1,47 @@
-# RasComp — Etapas Pós-Projeto — Ponteiro do Backend
-
-Última revisão: **17/09/2026**
+# RasComp — Roadmap Pós-Projeto — Ponteiro do Backend
 
 O roadmap pós-aprovação é cross-repo e possui uma única fonte canônica:
 
-```text
-gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md
-```
+`gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`
 
-Este arquivo não duplica a sequência para evitar divergências.
+Este arquivo existe apenas para impedir duplicação de planejamento no backend.
 
-Estado oficial:
+## Estado atual
 
-```text
-ETAPA 0  ✅ concluída / validada
-ETAPA 1  ✅ concluída / validada
-ETAPA 2  ✅ concluída / validada
-ETAPA 3  ✅ concluída / validada
-PRÓXIMA ETAPA FUNCIONAL ⏸ aguardando reorganização do roadmap
-ETAPA 15 ⏳ não iniciada — Assinatura pessoal
-```
+- ETAPA 0 ✅ concluída / validada — baseline;
+- ETAPA 1 ✅ concluída / validada — lógica e integridade;
+- ETAPA 2 ✅ concluída / validada — limpeza técnica;
+- ETAPA 3 ✅ concluída / validada — matriz de permissões;
+- ETAPA 4 ⏳ próxima / não iniciada — Consolidação funcional e polimento do MVP.
 
-A ETAPA 1 foi concluída após Competition/Registration, Follow, Sumô, Chaves e Fluxos integrados. Checkpoint final: 111 testes verdes + MySQL/Flyway V12/testdata.
+## Ordem resumida atual
 
-Marco atual:
+### PRIORIDADE 1 — Finalização e polimento do MVP
 
-```text
-ETAPA 2 — Limpeza técnica e organização de código
-→ concluída / validada em 13/09/2026
+- ETAPA 4 — Consolidação funcional e polimento do MVP;
+- ETAPA 5 — Ajustes Gerais DEV + auditoria;
+- ETAPA 6 — Futebol de Robôs;
+- ETAPA 7 — Portal do Participante completo + identificação competitiva;
+- ETAPA 8 — Gestor de Mídia / CMS;
+- ETAPA 9 — Landing + Galeria + conteúdo público real;
+- ETAPA 10 — Validação e fechamento do MVP.
 
-ETAPA 3 — Nova matriz de permissões
-→ backend integrado
-→ frontend integrado por capacidades semânticas
-→ validação automatizada da matriz em andamento
-```
+### PRIORIDADE 2 — Adições, testes e portabilidade
 
-A ETAPA 3 está concluída e validada. Backend e frontend aplicam `DEV | GESTAO | MIDIA | PARTICIPANTE`; a próxima etapa funcional aguardará a reorganização do roadmap. O planejamento canônico permanece no frontend.
+- ETAPA 11 — Avisos IN_APP + Telegram;
+- ETAPA 12 — Portabilidade institucional;
+- ETAPA 13 — Regras, Ajuda e Segurança;
+- ETAPA 14 — Hardening + preparação para uso externo + testes físicos mobile;
+- ETAPA 15 — Validação final completa, incluindo permissões;
+- ETAPA 16 — Deploy em nuvem / Cloudflare.
 
-Referências:
+**Deploy é a última etapa do ciclo.**
 
-```text
-rascomp/docs/CONTINUIDADE.md
-→ checkpoint backend
+Regras de continuidade:
 
-gbsalermo/Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
-→ arquitetura e decisões
-
-gbsalermo/Rascomp-FRONT/docs/README.md
-→ índice documental
-```
-
-Avisos IN_APP e Telegram estão consolidados na ETAPA 4. Deploy permanece ETAPA 14, preservando o modo local.
-
-Após o deploy e a estabilização do ciclo, a ETAPA 15 fica reservada para **Assinatura pessoal — backend e frontend**, sem alteração funcional do produto.
-
-Detalhes locais do backend:
-
-```text
-rascomp/docs/ETAPA_15_ASSINATURA_PESSOAL.md
-```
-
-> Checkpoint 13/09/2026: ETAPA 2 concluída/validada no escopo técnico cross-repo. Smoke visual e testes práticos ficam para etapas funcionais posteriores. A fonte canônica detalhada continua em `Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`.
-
-> ETAPA 3 — checkpoint 13/09/2026: backend integrado com `DEV | GESTAO | MIDIA | PARTICIPANTE`; V13 migra ORGANIZACAO → DEV; Backend Tests #298/#299 verdes; frontend integrado por capacidades semânticas e Frontend Checks #64 verde. Validação HTTP explícita adicionada em seguida.
+- não criar roadmap paralelo neste repositório;
+- consultar o documento canônico antes de iniciar qualquer etapa;
+- business/security rule: backend primeiro;
+- V1–V13 são migrations aplicadas e não devem ser reescritas;
+- próxima mudança estrutural usa V14+;
+- a ETAPA 4 ainda não está iniciada até autorização explícita.

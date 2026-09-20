@@ -28,7 +28,7 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2   ✅ concluída / validada
 ETAPA 3   ✅ concluída / validada
-PRÓXIMA ETAPA FUNCIONAL ⏸ aguardando reorganização do roadmap
+ETAPA 4   ⏳ próxima / não iniciada — Consolidação funcional e polimento do MVP
 ```
 
 Blocos concluídos da ETAPA 1:
@@ -94,7 +94,7 @@ O Bloco 5 fechou a validação integrada da ETAPA 1:
 - total da suíte: **111 testes / 0 falhas / 0 erros / 0 skipped**;
 - `demo-profile` verde contra MySQL real + Flyway V12.
 
-As **ETAPAS 1, 2 e 3 estão concluídas e validadas**. A próxima etapa funcional aguardará a reorganização do roadmap.
+As **ETAPAS 1, 2 e 3 estão concluídas e validadas**. O novo roadmap coloca a **ETAPA 4 — Consolidação funcional e polimento do MVP** como próxima etapa, ainda não iniciada.
 
 ---
 
@@ -804,9 +804,9 @@ nenhuma persistência parcial
 
 ---
 
-# 13. ETAPA 4 — Avisos + Telegram
+# 13. ETAPA 11 — Avisos + Telegram
 
-Planejamento futuro permanece separado da ETAPA 1:
+Planejamento futuro permanece separado das etapas já concluídas:
 
 ```text
 GESTAO/DEV
@@ -881,7 +881,7 @@ ETAPA 3 — matriz de permissões
 └─ checkpoint prático dos quatro perfis  🚧 PENDENTE DO USUÁRIO
 ```
 
-Não iniciar a próxima etapa funcional até o roadmap ser reorganizado e novamente autorizado.
+A ETAPA 4 é a próxima etapa, mas só deve ser iniciada após autorização explícita.
 
 ## Checkpoint cross-repo da ETAPA 2 — 13/09/2026
 
@@ -1041,4 +1041,25 @@ PARTICIPANTE ✅
 líder x membro comum ✅
 ```
 
-Uma etapa extra de validação final de permissões foi posicionada imediatamente antes do deploy no roadmap canônico. Ela deve revalidar todos os módulos e perfis no estado final do produto.
+A validação final de permissões foi incorporada à **ETAPA 15 — Validação final completa**, imediatamente antes do deploy da ETAPA 16.
+
+
+## Roadmap reorganizado — 19/09/2026
+
+O backend acompanha o novo planejamento cross-repo:
+
+- ETAPA 4 — consolidação funcional e polimento do MVP;
+- ETAPA 5 — Ajustes Gerais DEV + auditoria;
+- ETAPA 6 — Futebol de Robôs;
+- ETAPA 7 — Portal do Participante completo;
+- ETAPA 8 — CMS/Mídia;
+- ETAPA 9 — Landing/Galeria;
+- ETAPA 10 — fechamento do MVP;
+- ETAPA 11 — Avisos IN_APP + Telegram;
+- ETAPA 12 — portabilidade institucional;
+- ETAPA 13 — Regras, Ajuda e Segurança;
+- ETAPA 14 — hardening + testes físicos mobile;
+- ETAPA 15 — validação final completa + permissões;
+- ETAPA 16 — deploy.
+
+A ordem detalhada continua canônica no frontend.

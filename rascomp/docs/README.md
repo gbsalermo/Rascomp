@@ -27,7 +27,7 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
 ETAPA 3  ✅ concluída / validada
-PRÓXIMA ETAPA FUNCIONAL ⏸ aguardando reorganização do roadmap
+ETAPA 4  ⏳ próxima / não iniciada — Consolidação funcional e polimento do MVP
 ```
 
 A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 foi concluída/validada em 13/09/2026. A ETAPA 3 foi concluída/validada em 19/09/2026 após integração, testes automatizados e validação prática da matriz de permissões.
@@ -54,7 +54,7 @@ Referência técnica da abstração R2 preparada para mídia futura.
 
 ### `DECISAO_DEPLOY_CLOUD.md` / `DEPLOY_CLOUDFLARE.md`
 
-Referências da ETAPA 14. O modo local continuará existindo.
+Referências da ETAPA 16. O modo local continuará existindo.
 
 ---
 
@@ -116,4 +116,12 @@ Esses itens foram executados na ETAPA 2 sem antecipação durante a ETAPA 1.
 
 ## Próximo trabalho
 
-Checkpoint atual: **ETAPA 3 — Nova matriz de permissões ✅**. Backend, frontend, autorização HTTP e perfis `testdata` validados. Há uma validação final de permissões planejada imediatamente antes do deploy.
+Checkpoint atual: **ETAPA 3 — Nova matriz de permissões ✅** encerrada. A próxima etapa é a **ETAPA 4 — Consolidação funcional e polimento do MVP**, ainda não iniciada. A validação final de permissões foi incorporada à ETAPA 15.
+
+## Roadmap reorganizado — 19/09/2026
+
+- PRIORIDADE 1 / ETAPAS 4–10: finalizar e polir o MVP;
+- PRIORIDADE 2 / ETAPAS 11–15: adições, portabilidade, hardening e validação;
+- ETAPA 16: deploy, última etapa.
+
+A fonte canônica detalhada permanece em `gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`.

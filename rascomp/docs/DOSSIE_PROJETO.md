@@ -25,10 +25,10 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
 ETAPA 3  ✅ concluída / validada
-PRÓXIMA ETAPA FUNCIONAL ⏸ aguardando reorganização do roadmap
+ETAPA 4  ⏳ próxima / não iniciada — Consolidação funcional e polimento do MVP
 ```
 
-As ETAPAS 1, 2 e 3 estão encerradas/validadas. A matriz de permissões está integrada e validada; a próxima etapa funcional aguardará a reorganização do roadmap.
+As ETAPAS 1, 2 e 3 estão encerradas/validadas. O roadmap foi reorganizado por maturidade do produto e a ETAPA 4 — Consolidação funcional e polimento do MVP — é a próxima etapa, ainda não iniciada.
 
 Checkpoint backend:
 
@@ -91,4 +91,13 @@ Validação: Backend Tests #309 com 125 testes verdes e Frontend Checks #68 com 
 
 A matriz `DEV | GESTAO | MIDIA | PARTICIPANTE` foi validada em uso prático e a ETAPA 3 foi encerrada.
 
-Uma nova verificação global de permissões foi movida para o checkpoint imediatamente anterior ao deploy, quando todos os módulos futuros já estiverem consolidados. Até a reorganização do roadmap, nenhuma próxima etapa funcional deve ser assumida automaticamente.
+A verificação global de permissões foi incorporada à ETAPA 15 — Validação final completa, imediatamente antes do deploy da ETAPA 16.
+
+
+## Roadmap reorganizado — 19/09/2026
+
+O planejamento passa a priorizar maturidade do produto:
+
+- **PRIORIDADE 1 / ETAPAS 4–10:** consolidação do MVP, Ajustes Gerais, Futebol, Portal do Participante, CMS, Landing/Galeria e validação do MVP;
+- **PRIORIDADE 2 / ETAPAS 11–15:** Avisos+Telegram, portabilidade, Regras/Ajuda/Segurança, hardening com testes físicos mobile e validação final;
+- **ETAPA 16:** deploy, última etapa.
