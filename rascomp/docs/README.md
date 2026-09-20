@@ -30,7 +30,7 @@ ETAPA 3  ✅ concluída / validada
 PRÓXIMA ETAPA FUNCIONAL ⏸ aguardando reorganização do roadmap
 ```
 
-A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 foi concluída/validada em 13/09/2026 no escopo técnico de limpeza e organização. A ETAPA 3 está em andamento com backend, frontend e validação automatizada integrados.
+A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 foi concluída/validada em 13/09/2026. A ETAPA 3 foi concluída/validada em 19/09/2026 após integração, testes automatizados e validação prática da matriz de permissões.
 
 ---
 
