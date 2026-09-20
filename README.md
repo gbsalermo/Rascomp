@@ -338,9 +338,9 @@ http://localhost:8080/swagger-ui/index.html
 Checkpoint atual de qualidade:
 
 ```text
-111 testes / 0 falhas / 0 erros / 0 skipped
+135 testes / 0 falhas / 0 erros / 0 skipped
 fluxos integrados H2                      ✅
-MySQL + Flyway V12 + profile testdata     ✅
+MySQL + Flyway V13 + profile testdata     ✅
 ```
 
 As ETAPAS 1, 2 e 3 estão concluídas/validadas. O roadmap foi reorganizado por maturidade do produto. A próxima etapa é a **ETAPA 4 — Consolidação funcional e polimento do MVP**, ainda não iniciada; o deploy passa a ser a ETAPA 16, última etapa do ciclo.

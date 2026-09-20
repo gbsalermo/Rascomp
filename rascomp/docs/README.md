@@ -125,3 +125,8 @@ Checkpoint atual: **ETAPA 3 — Nova matriz de permissões ✅** encerrada. A pr
 - ETAPA 16: deploy, última etapa.
 
 A fonte canônica detalhada permanece em `gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`.
+
+
+### `CHECKPOINT_ASSINATURA_PESSOAL.md`
+
+Acabamento autoral opcional do backend. Não é etapa própria; se adotado, deve ser preparado no fechamento da ETAPA 15 antes do deploy final da ETAPA 16.

@@ -1,6 +1,6 @@
 # Dossiê do Projeto RasComp — Ponteiro
 
-Última revisão: **13/09/2026**
+Última revisão: **19/09/2026**
 
 O Dossiê Mestre canônico e cross-repo está em:
 
