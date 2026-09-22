@@ -28,7 +28,7 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2   ✅ concluída / validada
 ETAPA 3   ✅ concluída / validada
-ETAPA 4   ⏳ próxima / não iniciada — Consolidação funcional e polimento do MVP
+ETAPA 4   🚧 EM ANDAMENTO — Consolidação funcional e polimento do MVP — BLOCO 1
 ```
 
 Blocos concluídos da ETAPA 1:
@@ -878,10 +878,10 @@ ETAPA 3 — matriz de permissões
 ├─ frontend                              ✅
 ├─ testes automatizados                  ✅
 ├─ MySQL/Flyway V13 + testdata           ✅
-└─ checkpoint prático dos quatro perfis  🚧 PENDENTE DO USUÁRIO
+└─ checkpoint prático dos quatro perfis  ✅ validado em 19/09/2026
 ```
 
-A ETAPA 4 é a próxima etapa, mas só deve ser iniciada após autorização explícita.
+A ETAPA 4 está em andamento desde 22/09/2026. O bloco atual é o BLOCO 1 — Baseline + autenticação + Shell + UX global.
 
 ## Checkpoint cross-repo da ETAPA 2 — 13/09/2026
 
@@ -1090,3 +1090,20 @@ ETAPA 14 → testes físicos finais em aparelhos reais
 ```
 
 O backend deve permanecer estável durante esse trabalho, alterando contratos apenas se algum fluxo mobile revelar necessidade funcional real.
+
+
+## Checkpoint de início da ETAPA 4 — 22/09/2026
+
+Branch de trabalho:
+
+```text
+etapa-4-consolidacao-mvp
+```
+
+Estado:
+
+- ETAPA 4 autorizada e iniciada;
+- BLOCO 1 em andamento;
+- baseline técnico, autenticação, Shell e UX global são o escopo atual;
+- ETAPA 5 permanece bloqueada;
+- nenhuma nova funcionalidade estrutural deve ser antecipada.
