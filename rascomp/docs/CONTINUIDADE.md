@@ -1133,3 +1133,12 @@ Foram adicionados testes de autenticação para:
 - invalidação do token quando o usuário é desativado.
 
 Nenhuma migration nova foi necessária. V1–V13 permanecem imutáveis; próxima migration estrutural continua V14+.
+
+
+## Decisão — recuperação e redefinição de senha
+
+O backend ainda não possui endpoint definitivo de recuperação de senha. A ETAPA 4 não deve introduzir uma solução parcial ou insegura.
+
+A implementação foi planejada para a **ETAPA 13 — Regras, Ajuda e Segurança**, incluindo solicitação não enumerável, token/código de uso único e expiração curta, invalidação segura, redefinição de senha, proteção contra abuso, política de sessão pós-reset, canal configurável de entrega e testes dos casos de token inválido/expirado/reutilizado e conta inativa.
+
+A ETAPA 14 fará a revisão de hardening e a ETAPA 15 repetirá os cenários na validação final.
