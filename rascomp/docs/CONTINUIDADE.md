@@ -1107,3 +1107,29 @@ Estado:
 - baseline técnico, autenticação, Shell e UX global são o escopo atual;
 - ETAPA 5 permanece bloqueada;
 - nenhuma nova funcionalidade estrutural deve ser antecipada.
+
+
+## ETAPA 4 — BLOCO 1 — baseline 22/09/2026
+
+Branch: `etapa-4-consolidacao-mvp`.
+
+Checkpoint automatizado real:
+
+```text
+Backend Tests #316
+139 testes
+0 falhas
+0 erros
+0 skipped
+MySQL + Flyway V13 + testdata ✅
+Logins reais dos perfis testdata ✅
+```
+
+Foram adicionados testes de autenticação para:
+
+- normalização de e-mail no login;
+- persistência solicitada por `lembrarDeMim`;
+- validade maior do JWT quando `lembrarDeMim=true`;
+- invalidação do token quando o usuário é desativado.
+
+Nenhuma migration nova foi necessária. V1–V13 permanecem imutáveis; próxima migration estrutural continua V14+.
