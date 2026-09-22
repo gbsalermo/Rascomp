@@ -25,7 +25,7 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
 ETAPA 3  ✅ concluída / validada
-ETAPA 4  ⏳ próxima / não iniciada — Consolidação funcional e polimento do MVP
+ETAPA 4   🚧 EM ANDAMENTO — Consolidação funcional e polimento do MVP — BLOCO 1
 ```
 
 As ETAPAS 1, 2 e 3 estão encerradas/validadas. O roadmap foi reorganizado por maturidade do produto e a ETAPA 4 — Consolidação funcional e polimento do MVP — é a próxima etapa, ainda não iniciada.
@@ -112,3 +112,20 @@ A ETAPA 4 pode corrigir problemas encontrados no sistema atual, mas o trabalho c
 O login já possui tratamento responsivo dedicado; Gestão e Portal do Participante ainda precisam revisão sistemática.
 
 A ETAPA 14 permanece como validação física/hardening em aparelhos reais.
+
+
+## Checkpoint de início da ETAPA 4 — 22/09/2026
+
+Branch de trabalho:
+
+```text
+etapa-4-consolidacao-mvp
+```
+
+Estado:
+
+- ETAPA 4 autorizada e iniciada;
+- BLOCO 1 em andamento;
+- baseline técnico, autenticação, Shell e UX global são o escopo atual;
+- ETAPA 5 permanece bloqueada;
+- nenhuma nova funcionalidade estrutural deve ser antecipada.
