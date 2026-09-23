@@ -13,6 +13,7 @@ import br.edu.ufrb.rascomp.model.Enum.UserRole;
 public interface UserAccountRepository extends JpaRepository<UserAccount, Long> {
     Optional<UserAccount> findByEmailIgnoreCase(String email);
     boolean existsByEmailIgnoreCase(String email);
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
     List<UserAccount> findByRoleOrderByNomeAsc(UserRole role);
     long countByRole(UserRole role);
     long countByRoleAndAtivoTrue(UserRole role);
