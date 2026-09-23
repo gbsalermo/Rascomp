@@ -47,6 +47,19 @@ class JwtServiceTest {
     }
 
     @Test
+    void tokenAnteriorDeveSerInvalidoQuandoVersaoDaSessaoMudar() {
+        UserAccount usuario = usuario();
+        usuario.setSessionVersion(3L);
+        String token = jwtService.gerarToken(usuario, false);
+
+        assertTrue(jwtService.tokenValido(token, usuario));
+
+        usuario.setSessionVersion(4L);
+
+        assertFalse(jwtService.tokenValido(token, usuario));
+    }
+
+    @Test
     void tokenDeveSerInvalidoQuandoUsuarioForDesativado() {
         UserAccount usuario = usuario();
         String token = jwtService.gerarToken(usuario, false);
@@ -79,6 +92,7 @@ class JwtServiceTest {
         usuario.setEmail("usuario@exemplo.com");
         usuario.setRole(UserRole.PARTICIPANTE);
         usuario.setAtivo(true);
+        usuario.setSessionVersion(1L);
         return usuario;
     }
 }
