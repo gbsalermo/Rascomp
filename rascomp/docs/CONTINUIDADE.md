@@ -881,7 +881,7 @@ ETAPA 3 — matriz de permissões
 └─ checkpoint prático dos quatro perfis  ✅ validado em 19/09/2026
 ```
 
-A ETAPA 4 está em andamento desde 22/09/2026. O bloco atual é o BLOCO 1 — Baseline + autenticação + Shell + UX global.
+A ETAPA 4 está em andamento desde 22/09/2026. O BLOCO 1 foi concluído e validado; o próximo é o BLOCO 2 — Gestão administrativa.
 
 ## Checkpoint cross-repo da ETAPA 2 — 13/09/2026
 
@@ -1192,3 +1192,29 @@ Fallback assistido:
 - redefinição invalida sessões anteriores conforme política de segurança.
 
 Não permitir reset silencioso para uma senha permanente conhecida pelo DEV.
+
+
+## Fechamento do BLOCO 1 da ETAPA 4 — 22/09/2026
+
+BLOCO 1 concluído e validado pelo usuário.
+
+Checkpoint final:
+
+```text
+Backend Tests #329
+142 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V14 + testdata ✅
+Frontend Checks #97 ✅
+```
+
+Consolidações backend do bloco:
+
+- autenticação revalidada;
+- sessão única por conta;
+- V14 adiciona `user_accounts.session_version`;
+- novo login invalida sessão anterior;
+- logout invalida sessão no servidor;
+- recuperação definitiva de senha permanece na ETAPA 13;
+- fluxo assistido por DEV será fallback auditável com credencial temporária e troca obrigatória.
+
+Próximo: BLOCO 2 — Gestão administrativa.
