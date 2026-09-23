@@ -58,6 +58,9 @@ public class Competition implements Serializable {
     @Column(nullable = false)
     private Boolean ativo = true;
 
+    @Column(nullable = false)
+    private Boolean vigente = false;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime dataCadastro;
