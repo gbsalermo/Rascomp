@@ -39,6 +39,7 @@ public class CompetitorController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<CompetitorDTO>> listar(
             @RequestParam(defaultValue = "false") boolean apenasAtivos) {
 
@@ -50,6 +51,7 @@ public class CompetitorController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<CompetitorDTO> buscarPorId(
             @PathVariable Long id) {
 
@@ -59,6 +61,7 @@ public class CompetitorController {
     }
 
     @GetMapping("/por-email")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<CompetitorDTO> buscarPorEmail(
             @RequestParam String email) {
 
@@ -68,6 +71,7 @@ public class CompetitorController {
     }
 
     @GetMapping("/por-equipe")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<CompetitorDTO>> listarPorEquipe(
             @RequestParam Long teamId,
             @RequestParam(defaultValue = "false") boolean apenasAtivos) {
