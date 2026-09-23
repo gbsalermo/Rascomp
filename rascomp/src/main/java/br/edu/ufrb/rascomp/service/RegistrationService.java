@@ -38,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RegistrationService {
     private final RegistrationRepository registrationRepository;
+    private final CompetitionContextService competitionContextService;
     private final CompetitionRepository competitionRepository;
     private final CompetitionCategoryRepository categoryRepository;
     private final TeamRepository teamRepository;
@@ -51,6 +52,7 @@ public class RegistrationService {
 
     @Transactional
     public RegistrationDTO criar(RegistrationDTO dto) {
+        competitionContextService.exigirOperavel(dto.getCompetitionId());
         return criarInterno(dto, null, false);
     }
 
@@ -116,11 +118,14 @@ public class RegistrationService {
 
     @Transactional(readOnly = true)
     public RegistrationDTO buscarPorId(Long id) {
-        return new RegistrationDTO(buscarRegistration(id));
+        Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
+        return new RegistrationDTO(registration);
     }
 
     @Transactional(readOnly = true)
     public List<RegistrationDTO> listarPorCompeticao(Long competitionId) {
+        competitionContextService.exigirOperavel(competitionId);
         buscarCompetition(competitionId);
         return registrationRepository.findByCompetitionIdOrderByDataCadastroDesc(competitionId)
                 .stream().map(RegistrationDTO::new).toList();
@@ -135,6 +140,7 @@ public class RegistrationService {
     @Transactional
     public RegistrationDTO atualizar(Long id, RegistrationDTO dto) {
         Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
         validarEdicaoComum(registration, dto);
 
         Competition competition = buscarCompetition(dto.getCompetitionId());
@@ -163,6 +169,7 @@ public class RegistrationService {
     @Transactional
     public void deletar(Long id) {
         Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
         StatusRegistration status = registration.getStatus();
 
         if (status == StatusRegistration.PENDENTE) {
@@ -209,6 +216,7 @@ public class RegistrationService {
     @Transactional
     public RegistrationDTO reativar(Long id) {
         Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
         if (registration.getStatus() != StatusRegistration.CANCELADA
                 && registration.getStatus() != StatusRegistration.REJEITADA) {
             throw new IllegalArgumentException(
