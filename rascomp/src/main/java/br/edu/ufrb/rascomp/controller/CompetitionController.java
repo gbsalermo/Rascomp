@@ -20,6 +20,7 @@ import br.edu.ufrb.rascomp.dto.CompetitionAdminCatalogDTO;
 import br.edu.ufrb.rascomp.dto.CompetitionDTO;
 import br.edu.ufrb.rascomp.dto.CompetitionRegistrationWindowChangeDTO;
 import br.edu.ufrb.rascomp.dto.CompetitionRegistrationWindowChangeRequest;
+import br.edu.ufrb.rascomp.dto.RobotImageDTO;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.service.CompetitionAdminCatalogService;
 import br.edu.ufrb.rascomp.service.CompetitionContextService;
@@ -70,6 +71,13 @@ public class CompetitionController {
     @GetMapping("/{id}/catalogo-administrativo")
     public ResponseEntity<CompetitionAdminCatalogDTO> catalogoAdministrativo(@PathVariable Long id) {
         return ResponseEntity.ok(competitionAdminCatalogService.buscar(id));
+    }
+
+    @GetMapping("/{id}/robos/{robotId}/fotos")
+    public ResponseEntity<List<RobotImageDTO>> fotosRobo(
+            @PathVariable Long id,
+            @PathVariable Long robotId) {
+        return ResponseEntity.ok(competitionAdminCatalogService.fotosRobo(id, robotId));
     }
 
     @GetMapping("/{id}")
