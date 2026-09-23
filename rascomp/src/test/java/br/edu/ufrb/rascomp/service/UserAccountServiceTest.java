@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import br.edu.ufrb.rascomp.dto.RegisterRequest;
+import br.edu.ufrb.rascomp.dto.UserAccountUpdateRequest;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.UserAccountRepository;
@@ -156,6 +157,30 @@ class UserAccountServiceTest {
     }
 
     @Test
+    void alterarAtivoDeveImpedirDesativarContaAtual() {
+        UserAccount usuario = new UserAccount();
+        usuario.setId(35L);
+        usuario.setEmail("atual@rascomp.com");
+        usuario.setRole(UserRole.DEV);
+        usuario.setAtivo(true);
+
+        when(userAccountRepository.findById(35L)).thenReturn(java.util.Optional.of(usuario));
+
+        var authentication = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                "atual@rascomp.com", null, java.util.List.of());
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        try {
+            IllegalArgumentException ex = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> service.alterarAtivo(35L, false));
+            assertTrue(ex.getMessage().contains("atualmente autenticada"));
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Test
     void alterarAtivoDeveProtegerUltimoDevAtivo() {
         UserAccount usuario = new UserAccount();
         usuario.setId(34L);
@@ -171,6 +196,52 @@ class UserAccountServiceTest {
                 () -> service.alterarAtivo(34L, false));
 
         assertTrue(ex.getMessage().contains("pelo menos um DEV ativo"));
+    }
+
+    @Test
+    void atualizarDadosDeveEditarParticipanteSemAlterarRole() {
+        UserAccount usuario = new UserAccount();
+        usuario.setId(41L);
+        usuario.setNome("Nome antigo");
+        usuario.setEmail("antigo@rascomp.com");
+        usuario.setTelefone("111");
+        usuario.setRole(UserRole.PARTICIPANTE);
+        usuario.setAtivo(true);
+        usuario.setSessionVersion(2L);
+
+        UserAccountUpdateRequest request = new UserAccountUpdateRequest();
+        request.setNome(" Participante Atualizado ");
+        request.setEmail("NOVO@RASCOMP.COM");
+        request.setTelefone(" 75999990000 ");
+
+        when(userAccountRepository.findById(41L)).thenReturn(java.util.Optional.of(usuario));
+        when(userAccountRepository.existsByEmailIgnoreCaseAndIdNot("novo@rascomp.com", 41L)).thenReturn(false);
+        when(userAccountRepository.save(usuario)).thenReturn(usuario);
+
+        var dto = service.atualizarDados(41L, request);
+
+        assertEquals("Participante Atualizado", dto.getNome());
+        assertEquals("novo@rascomp.com", dto.getEmail());
+        assertEquals("75999990000", dto.getTelefone());
+        assertEquals(UserRole.PARTICIPANTE, dto.getRole());
+        assertEquals(3L, usuario.getSessionVersion());
+    }
+
+    @Test
+    void atualizarDadosDeveRejeitarEmailJaUsadoPorOutraConta() {
+        UserAccount usuario = new UserAccount();
+        usuario.setId(42L);
+        usuario.setEmail("atual@rascomp.com");
+        usuario.setRole(UserRole.GESTAO);
+
+        UserAccountUpdateRequest request = new UserAccountUpdateRequest();
+        request.setNome("Gestão");
+        request.setEmail("duplicado@rascomp.com");
+
+        when(userAccountRepository.findById(42L)).thenReturn(java.util.Optional.of(usuario));
+        when(userAccountRepository.existsByEmailIgnoreCaseAndIdNot("duplicado@rascomp.com", 42L)).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> service.atualizarDados(42L, request));
     }
 
     @Test
