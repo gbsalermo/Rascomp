@@ -1142,3 +1142,28 @@ O backend ainda não possui endpoint definitivo de recuperação de senha. A ETA
 A implementação foi planejada para a **ETAPA 13 — Regras, Ajuda e Segurança**, incluindo solicitação não enumerável, token/código de uso único e expiração curta, invalidação segura, redefinição de senha, proteção contra abuso, política de sessão pós-reset, canal configurável de entrega e testes dos casos de token inválido/expirado/reutilizado e conta inativa.
 
 A ETAPA 14 fará a revisão de hardening e a ETAPA 15 repetirá os cenários na validação final.
+
+
+## ETAPA 4 — BLOCO 1 — política de sessão única
+
+Durante a validação prática foi identificado que a mesma conta permanecia autenticada simultaneamente em aparelhos diferentes.
+
+Decisão aplicada no BLOCO 1:
+
+```text
+uma conta → uma sessão ativa
+novo login → invalida token anterior
+logout → invalida a sessão ativa no servidor
+```
+
+Implementação:
+
+- V14 adiciona `user_accounts.session_version`;
+- cada novo login incrementa `session_version`;
+- o JWT carrega a versão da sessão;
+- o filtro só aceita token cuja versão coincida com a versão atual da conta;
+- logout incrementa novamente a versão;
+- novo login em outro aparelho faz o aparelho anterior receber 401 na próxima requisição;
+- frontend já trata 401 limpando estado e retornando ao login.
+
+V1–V13 permanecem imutáveis.
