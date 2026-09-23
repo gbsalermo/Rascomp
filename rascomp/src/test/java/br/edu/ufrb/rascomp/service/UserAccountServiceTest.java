@@ -174,6 +174,24 @@ class UserAccountServiceTest {
     }
 
     @Test
+    void iniciarNovaSessaoDeveIncrementarVersaoERegistrarLogin() {
+        UserAccount usuario = new UserAccount();
+        usuario.setId(40L);
+        usuario.setEmail("sessao@rascomp.com");
+        usuario.setRole(UserRole.GESTAO);
+        usuario.setAtivo(true);
+        usuario.setSessionVersion(7L);
+
+        when(userAccountRepository.save(usuario)).thenReturn(usuario);
+
+        UserAccount atualizado = service.iniciarNovaSessao(usuario);
+
+        assertEquals(8L, atualizado.getSessionVersion());
+        assertTrue(atualizado.getUltimoLogin() != null);
+        verify(userAccountRepository).save(usuario);
+    }
+
+    @Test
     void criarDevDeveUsarRoleDevEHash() {
         RegisterRequest request = request("Organização", "org@rascomp.com", "OutraSenha123");
 
