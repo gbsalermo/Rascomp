@@ -49,6 +49,7 @@ class RegistrationHybridRobotServiceTest {
     @Mock private RobotRepository robotRepository;
     @Mock private CompetitorRepository competitorRepository;
     @Mock private UserAccountService userAccountService;
+    @Mock private CompetitionContextService competitionContextService;
     @Mock private TentativaSeguidorLinhaRepository tentativaRepository;
     @Mock private InspecaoSumoRepository inspecaoSumoRepository;
     @Mock private MatchRepository matchRepository;
