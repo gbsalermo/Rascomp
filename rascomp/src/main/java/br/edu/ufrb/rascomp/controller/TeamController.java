@@ -39,6 +39,7 @@ public class TeamController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<TeamDTO>> listar(
             @RequestParam(
                 defaultValue = "false"
@@ -56,6 +57,7 @@ public class TeamController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<TeamDTO> buscarPorId(
             @PathVariable Long id) {
 
@@ -65,6 +67,7 @@ public class TeamController {
     }
 
     @GetMapping("/por-instituicao")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<TeamDTO>> listarPorInstituicao(
             @RequestParam Long institutionId,
             @RequestParam(
