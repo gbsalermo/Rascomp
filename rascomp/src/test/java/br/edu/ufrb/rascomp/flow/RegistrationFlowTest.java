@@ -41,6 +41,7 @@ class RegistrationFlowTest extends IntegrationFlowTestSupport {
 
     @Test
     void deveCriarAprovarECancelarSemHistoricoComoCancelada() {
+        var organizacao = organizacaoAutenticada();
         Competition competition = competition(StatusCompetition.INSCRICOES_ABERTAS);
         CompetitionCategory category = followCategory();
         Team team = team();
@@ -50,7 +51,6 @@ class RegistrationFlowTest extends IntegrationFlowTestSupport {
         assertEquals(StatusRegistration.PENDENTE, criada.getStatus());
         assertTrue(criada.getAtivo());
 
-        var organizacao = organizacaoAutenticada();
         RegistrationDTO revisao = registrationService.buscarPorId(criada.getId());
         revisao.setStatus(StatusRegistration.APROVADA);
         RegistrationDTO aprovada = registrationService.atualizar(criada.getId(), revisao);
