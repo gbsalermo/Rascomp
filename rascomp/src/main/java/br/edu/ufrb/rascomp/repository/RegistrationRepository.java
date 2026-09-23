@@ -68,6 +68,7 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
             Long competitionId,
             Long categoryId,
             StatusRegistration status);
+    boolean existsByCompetitionIdAndRobotId(Long competitionId, Long robotId);
     boolean existsByCompetitionIdAndCategoryIdAndRobotId(Long competitionId, Long categoryId, Long robotId);
     boolean existsByCompetitionIdAndCategoryIdAndRobotIdAndIdNot(Long competitionId, Long categoryId, Long robotId, Long id);
 }
