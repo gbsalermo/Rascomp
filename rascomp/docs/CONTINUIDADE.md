@@ -1282,3 +1282,45 @@ Match + dataHora + pista/dohyo + ordemExecucao + statusConvocacao
 ```
 
 A tela unificada de Agenda será a visão organizacional principal; Follow e Sumô manterão edição contextual de suas próprias atividades.
+
+
+## ETAPA 4 — BLOCO 2.2 — contexto da competição
+
+Foi introduzido `CompetitionContextService` para centralizar a edição operável.
+
+Política:
+
+```text
+DEV    → qualquer edição
+GESTAO → somente competição vigente
+```
+
+Prioridade da vigente:
+
+```text
+EM_ANDAMENTO
+INSCRICOES_ABERTAS
+INSCRICOES_ENCERRADAS
+PLANEJADA
+```
+
+Edições FINALIZADAS/CANCELADAS não são escolhidas como vigentes.
+
+Proteções aplicadas:
+
+- listagem de competições filtrada para GESTAO;
+- busca por id fora da vigente bloqueada para GESTAO;
+- criação, PUT estrutural, desativação e reativação DEV-only;
+- transição de status separada em endpoint explícito;
+- prorrogação/reabertura e histórico de janela passam pelo contexto operável.
+
+A identificação de DEV/GESTAO no `CompetitionContextService` usa authorities do Spring Security, compatível com JWT real e testes de segurança.
+
+Cobertura adicionada:
+- DEV vê todas as edições;
+- GESTAO vê somente vigente;
+- GESTAO não opera histórica;
+- DEV pode operar histórica;
+- prioridade da resolução de vigente;
+- transição explícita de status;
+- GESTAO não cria nova edição.
