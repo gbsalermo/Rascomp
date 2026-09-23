@@ -1312,7 +1312,6 @@ Cobertura adicionada:
 - GESTAO vê somente vigente;
 - GESTAO não opera histórica;
 - DEV pode operar histórica;
-- prioridade da resolução de vigente;
 - transição explícita de status;
 - GESTAO não cria nova edição.
 
@@ -1350,3 +1349,25 @@ Regras:
 - criação de competição não altera a vigente automaticamente.
 
 Próxima migration estrutural: V16+.
+
+
+### Semântica de contexto — foco DEV x vigente global
+
+O backend persiste somente o conceito global de **competição vigente**.
+
+O conceito de **competição em foco** é local ao frontend do DEV e não é uma decisão de domínio.
+
+```text
+DEV troca foco local     → nenhum efeito global
+DEV define vigente       → atualiza competitions.vigente
+GESTAO                    → opera somente competitions.vigente = true
+```
+
+Permissões do ciclo:
+
+- criar competição: DEV;
+- abrir inscrições: DEV | GESTAO;
+- encerrar inscrições: DEV | GESTAO;
+- iniciar competição: DEV | GESTAO;
+- finalizar competição: DEV;
+- definir competição vigente: DEV.
