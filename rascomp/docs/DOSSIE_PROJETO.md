@@ -25,10 +25,10 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
 ETAPA 3  ✅ concluída / validada
-ETAPA 4   🚧 EM ANDAMENTO — Consolidação funcional e polimento do MVP — BLOCO 1
+ETAPA 4   🚧 EM ANDAMENTO — BLOCO 2 implementado / aguardando validação
 ```
 
-As ETAPAS 1, 2 e 3 estão encerradas/validadas. O roadmap foi reorganizado por maturidade do produto e a ETAPA 4 — Consolidação funcional e polimento do MVP — é a próxima etapa, ainda não iniciada.
+As ETAPAS 1, 2 e 3 estão encerradas/validadas. A ETAPA 4 está em andamento e o BLOCO 2 administrativo está implementado, aguardando validação prática.
 
 Checkpoint backend:
 
@@ -146,3 +146,23 @@ Mudanças estruturais relevantes:
 Validação final do bloco: Backend Tests #329, 142 testes verdes, MySQL/Flyway V14/testdata verdes e Frontend Checks #97 verde.
 
 Próximo: BLOCO 2 — Gestão administrativa.
+
+
+## ETAPA 4 — BLOCO 2 — checkpoint administrativo
+
+Implementação concluída, ainda não validada para fechamento.
+
+Principais decisões técnicas:
+
+- V15 persiste a competição vigente;
+- DEV focus local não altera a vigente;
+- GESTAO opera somente a vigente;
+- edição cadastral de UserAccount é DEV-only e não converte PARTICIPANTE;
+- catálogos administrativos históricos/globais de equipe, robô e competidor são DEV-only;
+- GESTAO consome catálogo derivado das inscrições da vigente;
+- mutações estruturais administrativas são DEV-only;
+- inscrição/cancelamento/reativação aplicam contexto da competição no backend.
+
+Validação automatizada: Backend Tests #371 com 155 testes verdes + MySQL/Flyway V15/testdata; Frontend Checks #137 verde.
+
+Pendências de produto: associação explícita Competition ↔ Category e semântica de impacto da desativação de conta PARTICIPANTE sobre Competitor.
