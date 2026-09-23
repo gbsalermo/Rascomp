@@ -38,6 +38,7 @@ public class CompetitionDTO {
 
     private StatusCompetition status;
     private Boolean ativo;
+    private Boolean vigente;
     private LocalDateTime dataCadastro;
 
     public CompetitionDTO(Competition entity) {
@@ -50,6 +51,7 @@ public class CompetitionDTO {
         this.dataFim = entity.getDataFim();
         this.status = entity.getStatus();
         this.ativo = entity.getAtivo();
+        this.vigente = entity.getVigente();
         this.dataCadastro = entity.getDataCadastro();
     }
 }
