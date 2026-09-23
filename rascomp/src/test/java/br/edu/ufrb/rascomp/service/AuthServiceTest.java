@@ -44,6 +44,7 @@ class AuthServiceTest {
 
         UserAccount usuario = usuario();
         when(userAccountService.buscarPorEmail("usuario@exemplo.com")).thenReturn(usuario);
+        when(userAccountService.iniciarNovaSessao(usuario)).thenReturn(usuario);
         when(jwtService.gerarToken(usuario, true)).thenReturn("token-longo");
 
         AuthResponse response = authService.login(request);
@@ -54,7 +55,7 @@ class AuthServiceTest {
 
         assertEquals("usuario@exemplo.com", captor.getValue().getPrincipal());
         assertEquals("Rascomp@2026", captor.getValue().getCredentials());
-        verify(userAccountService).registrarLogin(usuario);
+        verify(userAccountService).iniciarNovaSessao(usuario);
         verify(jwtService).gerarToken(usuario, true);
         assertEquals("token-longo", response.getToken());
         assertEquals("usuario@exemplo.com", response.getUsuario().getEmail());
@@ -70,13 +71,22 @@ class AuthServiceTest {
 
         UserAccount usuario = usuario();
         when(userAccountService.cadastrarParticipante(request)).thenReturn(usuario);
+        when(userAccountService.iniciarNovaSessao(usuario)).thenReturn(usuario);
         when(jwtService.gerarToken(usuario, false)).thenReturn("token-sessao");
 
         AuthResponse response = authService.cadastrarParticipante(request);
 
         verify(userAccountService).cadastrarParticipante(request);
+        verify(userAccountService).iniciarNovaSessao(usuario);
         verify(jwtService).gerarToken(usuario, false);
         assertEquals("token-sessao", response.getToken());
+    }
+
+    @Test
+    void logoutDeveInvalidarSessaoAtual() {
+        authService.logout();
+
+        verify(userAccountService).encerrarSessaoAtual();
     }
 
     private UserAccount usuario() {
