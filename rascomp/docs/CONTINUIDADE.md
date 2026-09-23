@@ -28,7 +28,7 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2   ✅ concluída / validada
 ETAPA 3   ✅ concluída / validada
-ETAPA 4   🚧 EM ANDAMENTO — Consolidação funcional e polimento do MVP — BLOCO 1
+ETAPA 4   🚧 EM ANDAMENTO — BLOCO 2 IMPLEMENTADO / AGUARDANDO VALIDAÇÃO
 ```
 
 Blocos concluídos da ETAPA 1:
@@ -881,7 +881,7 @@ ETAPA 3 — matriz de permissões
 └─ checkpoint prático dos quatro perfis  ✅ validado em 19/09/2026
 ```
 
-A ETAPA 4 está em andamento desde 22/09/2026. O BLOCO 1 foi concluído e validado; o próximo é o BLOCO 2 — Gestão administrativa.
+A ETAPA 4 está em andamento. O BLOCO 1 está concluído; o BLOCO 2 teve a implementação concluída e aguarda validação manual/decisões finais.
 
 ## Checkpoint cross-repo da ETAPA 2 — 13/09/2026
 
@@ -1371,3 +1371,72 @@ Permissões do ciclo:
 - iniciar competição: DEV | GESTAO;
 - finalizar competição: DEV;
 - definir competição vigente: DEV.
+
+
+## ETAPA 4 — BLOCO 2 — implementação administrativa concluída
+
+O escopo implementado está pronto para validação manual, mas o bloco ainda não está encerrado.
+
+### Identidades / usuários
+
+- `PUT /api/v1/usuarios/{id}` permite DEV editar nome, e-mail e telefone;
+- PARTICIPANTE permanece PARTICIPANTE;
+- e-mail duplicado é bloqueado;
+- alterar e-mail incrementa `session_version`;
+- desativar conta incrementa `session_version`;
+- conta autenticada não pode se desativar;
+- último DEV ativo continua protegido.
+
+### Catálogo administrativo contextual
+
+Foi criado `CompetitionAdminCatalogService` e:
+
+```text
+GET /api/v1/competicoes/{id}/catalogo-administrativo
+GET /api/v1/competicoes/{id}/robos/{robotId}/fotos
+```
+
+O catálogo deriva Teams, Competitors e Robots das Registration da edição.
+
+Regras:
+
+- DEV pode consultar catálogos globais;
+- GESTAO usa apenas a vigente;
+- GETs administrativos globais de Team/Robot/Competitor são DEV-only;
+- POST/PUT/DELETE/reactivação administrativa de Team/Robot/Competitor são DEV-only;
+- mutações de CompetitionCategory e RobotImage no namespace administrativo são DEV-only;
+- Portal do Participante mantém endpoints próprios para ações autorizadas do líder.
+
+### Inscrições
+
+`RegistrationService` passou a exigir `CompetitionContextService` nas operações administrativas:
+
+- criar administrativamente;
+- buscar por id;
+- listar por competição;
+- atualizar/revisar;
+- cancelar;
+- reativar.
+
+Listagens globais e por status são DEV-only.
+
+`RegistrationCancellationRequestService` também restringe GESTAO à competição vigente para listar, aprovar e rejeitar solicitações.
+
+### Checkpoint
+
+```text
+Backend Tests #371 ✅
+155 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V15 + testdata ✅
+Frontend Checks #137 ✅
+```
+
+V1–V15 permanecem imutáveis. Próxima migration estrutural: V16+.
+
+### Decisões ainda não fechadas
+
+- `CompetitionCategory` continua global; decidir se será criada associação explícita Competition ↔ Category;
+- UserAccount PARTICIPANTE e Competitor continuam identidades separadas: desativar a conta não altera automaticamente Competitor/Registration;
+- se houver associação Competition ↔ Category, decidir se GESTAO poderá habilitar categorias globais na vigente ou se continuará DEV-only.
+
+Não iniciar BLOCO 3 antes da validação prática/decisões finais do BLOCO 2.
