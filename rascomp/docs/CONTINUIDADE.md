@@ -1218,3 +1218,49 @@ Consolidações backend do bloco:
 - fluxo assistido por DEV será fallback auditável com credencial temporária e troca obrigatória.
 
 Próximo: BLOCO 2 — Gestão administrativa.
+
+
+## ETAPA 4 — Agenda competitiva e gestão de competidores
+
+Achados do BLOCO 2:
+
+### Agenda
+
+O backend atual possui agenda operacional para partidas de Sumô via `Match`:
+
+```text
+dataHora
+pista
+ordemExecucao
+statusConvocacao
+```
+
+Não existe equivalente de agendamento para uma tomada de Follow Line.
+
+A agenda futura deve ser multimodal e será modelada no BLOCO 3C:
+
+- Sumô → partidas/batalhas;
+- Follow Line → tomadas de tempo por categoria;
+- Dashboard deve consumir visão unificada, não usar Match como sinônimo de agenda.
+
+### Competidores
+
+O backend já possui `CompetitorController` e `CompetitorService` com:
+
+- listar todos/ativos;
+- buscar por id/e-mail;
+- listar por equipe;
+- criar/atualizar;
+- desativar/reativar.
+
+A lacuna é principalmente no frontend administrativo e foi alocada no BLOCO 2.4.
+
+Relacionamento atual:
+
+```text
+Competitor → Team
+Robot      → Team
+Registration → Robot + Competitor(s)
+```
+
+Portanto, detalhes de "robôs do competidor" devem ser derivados das Registration em que ele participa, e não por vínculo direto Competitor → Robot.
