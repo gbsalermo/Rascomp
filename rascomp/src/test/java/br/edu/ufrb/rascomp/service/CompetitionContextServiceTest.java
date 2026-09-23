@@ -8,15 +8,18 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import br.edu.ufrb.rascomp.model.Competition;
-import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
@@ -27,15 +30,17 @@ class CompetitionContextServiceTest {
     @Mock
     private CompetitionRepository competitionRepository;
 
-    @Mock
-    private UserAccountService userAccountService;
-
     @InjectMocks
     private CompetitionContextService service;
 
+    @AfterEach
+    void limparContexto() {
+        SecurityContextHolder.clearContext();
+    }
+
     @Test
     void devDeveVerTodasAsEdicoes() {
-        when(userAccountService.buscarAtual()).thenReturn(usuario(UserRole.DEV));
+        autenticar(UserRole.DEV);
         when(competitionRepository.findAllByOrderByDataInicioDesc()).thenReturn(List.of(
                 competition(1L, StatusCompetition.FINALIZADA),
                 competition(2L, StatusCompetition.EM_ANDAMENTO)));
@@ -47,7 +52,7 @@ class CompetitionContextServiceTest {
 
     @Test
     void gestaoDeveVerSomenteACompeticaoVigente() {
-        when(userAccountService.buscarAtual()).thenReturn(usuario(UserRole.GESTAO));
+        autenticar(UserRole.GESTAO);
         when(competitionRepository.findByAtivoTrueOrderByDataInicioDesc()).thenReturn(List.of(
                 competition(1L, StatusCompetition.PLANEJADA),
                 competition(2L, StatusCompetition.INSCRICOES_ENCERRADAS),
@@ -64,7 +69,7 @@ class CompetitionContextServiceTest {
         Competition antiga = competition(1L, StatusCompetition.FINALIZADA);
         Competition vigente = competition(2L, StatusCompetition.EM_ANDAMENTO);
 
-        when(userAccountService.buscarAtual()).thenReturn(usuario(UserRole.GESTAO));
+        autenticar(UserRole.GESTAO);
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(antiga));
         when(competitionRepository.findByAtivoTrueOrderByDataInicioDesc()).thenReturn(List.of(vigente));
 
@@ -75,7 +80,7 @@ class CompetitionContextServiceTest {
     void devPodeOperarEdicaoHistorica() {
         Competition antiga = competition(1L, StatusCompetition.FINALIZADA);
 
-        when(userAccountService.buscarAtual()).thenReturn(usuario(UserRole.DEV));
+        autenticar(UserRole.DEV);
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(antiga));
 
         assertEquals(1L, service.exigirOperavel(1L).getId());
@@ -83,7 +88,7 @@ class CompetitionContextServiceTest {
 
     @Test
     void prioridadeDaVigenteDeveSerAndamentoDepoisInscricoesAbertasEncerradasEPlanejada() {
-        when(userAccountService.buscarAtual()).thenReturn(usuario(UserRole.GESTAO));
+        autenticar(UserRole.GESTAO);
         when(competitionRepository.findByAtivoTrueOrderByDataInicioDesc()).thenReturn(List.of(
                 competition(10L, StatusCompetition.PLANEJADA),
                 competition(11L, StatusCompetition.INSCRICOES_ENCERRADAS),
@@ -94,14 +99,12 @@ class CompetitionContextServiceTest {
         assertEquals(12L, result.getId());
     }
 
-    private UserAccount usuario(UserRole role) {
-        UserAccount user = new UserAccount();
-        user.setId(99L);
-        user.setNome("Operador");
-        user.setEmail("operador@rascomp.local");
-        user.setRole(role);
-        user.setAtivo(true);
-        return user;
+    private void autenticar(UserRole role) {
+        var authentication = new UsernamePasswordAuthenticationToken(
+                "operador@rascomp.local",
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_" + role.name())));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     private Competition competition(Long id, StatusCompetition status) {
