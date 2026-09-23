@@ -387,3 +387,15 @@ ETAPA 4 — BLOCO 1 concluído e validado em 22/09/2026.
 - próximo passo: BLOCO 2 — Gestão administrativa.
 
 A ordem canônica das etapas permanece em `Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`.
+
+
+### Estado atual — ETAPA 4
+
+BLOCO 2 implementado e aguardando validação manual/decisões finais.
+
+- Frontend Checks #137 ✅
+- Backend Tests #371 ✅ — 155 testes verdes
+- MySQL + Flyway V15 + testdata ✅
+- próxima migration estrutural: V16+
+
+O próximo trabalho só começa após o fechamento explícito do BLOCO 2.
