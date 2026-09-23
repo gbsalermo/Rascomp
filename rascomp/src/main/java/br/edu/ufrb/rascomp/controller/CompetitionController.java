@@ -16,10 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.edu.ufrb.rascomp.dto.CompetitionAdminCatalogDTO;
 import br.edu.ufrb.rascomp.dto.CompetitionDTO;
 import br.edu.ufrb.rascomp.dto.CompetitionRegistrationWindowChangeDTO;
 import br.edu.ufrb.rascomp.dto.CompetitionRegistrationWindowChangeRequest;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
+import br.edu.ufrb.rascomp.service.CompetitionAdminCatalogService;
 import br.edu.ufrb.rascomp.service.CompetitionContextService;
 import br.edu.ufrb.rascomp.service.CompetitionRegistrationWindowService;
 import br.edu.ufrb.rascomp.service.CompetitionService;
@@ -32,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 public class CompetitionController {
     private final CompetitionService competitionService;
     private final CompetitionContextService competitionContextService;
+    private final CompetitionAdminCatalogService competitionAdminCatalogService;
     private final CompetitionRegistrationWindowService registrationWindowService;
 
     @PostMapping
@@ -62,6 +65,11 @@ public class CompetitionController {
     @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<CompetitionDTO> definirVigente(@PathVariable Long id) {
         return ResponseEntity.ok(competitionContextService.definirVigente(id));
+    }
+
+    @GetMapping("/{id}/catalogo-administrativo")
+    public ResponseEntity<CompetitionAdminCatalogDTO> catalogoAdministrativo(@PathVariable Long id) {
+        return ResponseEntity.ok(competitionAdminCatalogService.buscar(id));
     }
 
     @GetMapping("/{id}")
