@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,6 +34,7 @@ public class RegistrationController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<RegistrationDTO>> listar(@RequestParam(defaultValue = "false") boolean apenasAtivas) {
         return ResponseEntity.ok(registrationService.listar(apenasAtivas));
     }
@@ -48,6 +50,7 @@ public class RegistrationController {
     }
 
     @GetMapping("/por-status")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<RegistrationDTO>> listarPorStatus(@RequestParam StatusRegistration status) {
         return ResponseEntity.ok(registrationService.listarPorStatus(status));
     }
