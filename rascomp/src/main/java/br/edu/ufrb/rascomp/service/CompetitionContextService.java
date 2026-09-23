@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.ufrb.rascomp.dto.CompetitionDTO;
 import br.edu.ufrb.rascomp.model.Competition;
-import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -43,6 +42,35 @@ public class CompetitionContextService {
         exigirOperador();
         Competition vigente = buscarVigenteEntidade();
         return vigente == null ? null : new CompetitionDTO(vigente);
+    }
+
+    @Transactional
+    public CompetitionDTO definirVigente(Long competitionId) {
+        exigirDev();
+        Competition target = competitionRepository.findByIdForUpdate(competitionId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Competição não encontrada com o id: " + competitionId));
+
+        if (!Boolean.TRUE.equals(target.getAtivo())) {
+            throw new IllegalArgumentException("Competição inativa não pode ser definida como vigente.");
+        }
+
+        competitionRepository.limparVigente();
+        target.setVigente(true);
+        return new CompetitionDTO(competitionRepository.save(target));
+    }
+
+    @Transactional(readOnly = true)
+    public Competition exigirPodeAlterarStatus(Long competitionId, br.edu.ufrb.rascomp.model.Enum.StatusCompetition novoStatus) {
+        UserRole role = exigirOperador();
+        Competition competition = exigirOperavel(competitionId);
+
+        if (novoStatus == br.edu.ufrb.rascomp.model.Enum.StatusCompetition.FINALIZADA
+                && role != UserRole.DEV) {
+            throw new AccessDeniedException("Somente DEV pode finalizar oficialmente a competição.");
+        }
+
+        return competition;
     }
 
     @Transactional(readOnly = true)
@@ -88,20 +116,12 @@ public class CompetitionContextService {
     }
 
     private Competition buscarVigenteEntidade() {
-        List<Competition> ativas = competitionRepository.findByAtivoTrueOrderByDataInicioDesc();
+        return competitionRepository.findFirstByVigenteTrueAndAtivoTrue().orElse(null);
+    }
 
-        for (StatusCompetition status : List.of(
-                StatusCompetition.EM_ANDAMENTO,
-                StatusCompetition.INSCRICOES_ABERTAS,
-                StatusCompetition.INSCRICOES_ENCERRADAS,
-                StatusCompetition.PLANEJADA)) {
-            Competition encontrada = ativas.stream()
-                    .filter(item -> item.getStatus() == status)
-                    .findFirst()
-                    .orElse(null);
-            if (encontrada != null) return encontrada;
+    private void exigirDev() {
+        if (exigirOperador() != UserRole.DEV) {
+            throw new AccessDeniedException("Somente DEV pode definir a competição vigente.");
         }
-
-        return null;
     }
 }
