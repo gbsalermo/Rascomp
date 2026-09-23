@@ -138,7 +138,7 @@ Checkpoint automatizado atual confirmado no CI:
 H2 flowtest integrado ✅
 SecurityAuthorizationFlowTest ✅
 DemoShowcaseDataInitializerTest ✅
-MySQL + Flyway V13 + testdata ✅
+MySQL + Flyway V14 + testdata ✅
 ```
 
 O workflow também compilou a aplicação e inicializou o cenário completo `testdata` contra MySQL real.
@@ -266,7 +266,7 @@ Backend Tests #309
 0 falhas
 0 erros
 0 skipped
-MySQL + Flyway V13 + testdata ✅
+MySQL + Flyway V14 + testdata ✅
 ```
 
 # 6. Distinções de domínio
@@ -1116,12 +1116,12 @@ Branch: `etapa-4-consolidacao-mvp`.
 Checkpoint automatizado real:
 
 ```text
-Backend Tests #316
+Backend Tests #325
 139 testes
 0 falhas
 0 erros
 0 skipped
-MySQL + Flyway V13 + testdata ✅
+MySQL + Flyway V14 + testdata ✅
 Logins reais dos perfis testdata ✅
 ```
 
@@ -1132,7 +1132,7 @@ Foram adicionados testes de autenticação para:
 - validade maior do JWT quando `lembrarDeMim=true`;
 - invalidação do token quando o usuário é desativado.
 
-Nenhuma migration nova foi necessária. V1–V13 permanecem imutáveis; próxima migration estrutural continua V14+.
+Nenhuma migration nova foi necessária. V1–V13 permanecem imutáveis; a V14 foi criada na ETAPA 4 para controle de sessão única. Próxima migration estrutural: V15+.
 
 
 ## Decisão — recuperação e redefinição de senha
