@@ -117,7 +117,7 @@ Esses itens foram executados na ETAPA 2 sem antecipação durante a ETAPA 1.
 
 ## Próximo trabalho
 
-Checkpoint atual: **ETAPA 4 — Consolidação funcional e polimento do MVP 🚧**, em andamento no **BLOCO 1 — Baseline + autenticação + Shell + UX global**. A validação final de permissões foi incorporada à ETAPA 15.
+Checkpoint atual: **ETAPA 4 — Consolidação funcional e polimento do MVP 🚧**. **BLOCO 1 concluído**; próximo: **BLOCO 2 — Gestão administrativa**. A validação final de permissões foi incorporada à ETAPA 15.
 
 ## Roadmap reorganizado — 19/09/2026
 
