@@ -71,8 +71,16 @@ public class UserAccountService {
     }
 
     @Transactional
-    public void registrarLogin(UserAccount usuario) {
+    public UserAccount iniciarNovaSessao(UserAccount usuario) {
         usuario.setUltimoLogin(java.time.LocalDateTime.now());
+        usuario.setSessionVersion(usuario.getSessionVersion() == null ? 1L : usuario.getSessionVersion() + 1L);
+        return userAccountRepository.save(usuario);
+    }
+
+    @Transactional
+    public void encerrarSessaoAtual() {
+        UserAccount usuario = buscarAtual();
+        usuario.setSessionVersion(usuario.getSessionVersion() == null ? 1L : usuario.getSessionVersion() + 1L);
         userAccountRepository.save(usuario);
     }
 
