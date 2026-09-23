@@ -108,6 +108,25 @@ class SecurityAuthorizationFlowTest {
     }
 
     @Test
+    @WithMockUser(username = "gestao@rascomp.local", roles = "GESTAO")
+    void gestaoNaoDeveCriarNovaEdicao() throws Exception {
+        mockMvc.perform(post("/api/v1/competicoes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nome": "Edição indevida",
+                                  "inicioInscricoes": "2026-10-01",
+                                  "fimInscricoes": "2026-10-10",
+                                  "dataInicio": "2026-10-11",
+                                  "dataFim": "2026-10-12",
+                                  "status": "PLANEJADA",
+                                  "ativo": true
+                                }
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(username = "midia@rascomp.local", roles = "MIDIA")
     void midiaNaoDeveHerdarOperacaoCompetitivaNemAdministracaoDeUsuarios() throws Exception {
         mockMvc.perform(get("/api/v1/competicoes"))
