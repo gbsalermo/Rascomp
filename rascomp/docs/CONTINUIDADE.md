@@ -1324,3 +1324,15 @@ Cobertura adicionada:
 - prioridade da resolução de vigente;
 - transição explícita de status;
 - GESTAO não cria nova edição.
+
+
+### Checkpoint técnico — BLOCO 2.2
+
+```text
+Backend Tests #342 ✅
+149 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V14 + testdata ✅
+Frontend Checks #114 ✅
+```
+
+A regra de competição vigente está pronta para validação prática com DEV e GESTAO.
