@@ -1264,3 +1264,21 @@ Registration → Robot + Competitor(s)
 ```
 
 Portanto, detalhes de "robôs do competidor" devem ser derivados das Registration em que ele participa, e não por vínculo direto Competitor → Robot.
+
+
+### Agenda Follow — chamada geral da tomada
+
+Contrato funcional aprovado para implementação futura no BLOCO 3C:
+
+```text
+Follow:
+Category + tomada + dataHora + pista + ordem + estado da chamada
+→ contém/coordena convocações individuais das Registration da categoria
+→ ausência de uma inscrição na sua vez registra AusenciaTomadaSeguidorLinha
+
+Sumô:
+Match + dataHora + pista/dohyo + ordemExecucao + statusConvocacao
+→ rounds permanecem internos ao Match
+```
+
+A tela unificada de Agenda será a visão organizacional principal; Follow e Sumô manterão edição contextual de suas próprias atividades.
