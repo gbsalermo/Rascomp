@@ -1117,7 +1117,7 @@ Checkpoint automatizado real:
 
 ```text
 Backend Tests #325
-139 testes
+142 testes
 0 falhas
 0 erros
 0 skipped
@@ -1167,3 +1167,28 @@ Implementação:
 - frontend já trata 401 limpando estado e retornando ao login.
 
 V1–V13 permanecem imutáveis.
+
+
+### Recuperação assistida pelo DEV
+
+A ETAPA 13 deverá implementar recuperação de senha com dois caminhos complementares.
+
+Fluxo preferencial:
+
+- usuário solicita recuperação diretamente;
+- backend emite token/código de uso único e curta duração;
+- entrega por canal configurável, preferencialmente e-mail;
+- usuário define a nova senha sem intervenção humana.
+
+Fallback assistido:
+
+- usuário informa perda de acesso à organização;
+- DEV recebe/abre a ação administrativa após verificar a identidade por procedimento definido;
+- sistema emite ou registra uma credencial temporária;
+- credencial possui expiração curta e uso único;
+- primeiro login com credencial temporária força cadastro + confirmação de nova senha;
+- senha definitiva é conhecida somente pelo usuário;
+- emissão da credencial temporária é auditada;
+- redefinição invalida sessões anteriores conforme política de segurança.
+
+Não permitir reset silencioso para uma senha permanente conhecida pelo DEV.
