@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.ufrb.rascomp.dto.RegisterRequest;
 import br.edu.ufrb.rascomp.dto.UserAccountDTO;
+import br.edu.ufrb.rascomp.dto.UserAccountUpdateRequest;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.UserAccountRepository;
@@ -85,12 +86,42 @@ public class UserAccountService {
     }
 
     @Transactional
+    public UserAccountDTO atualizarDados(Long id, UserAccountUpdateRequest request) {
+        UserAccount usuario = buscarPorId(id);
+        String email = normalizarEmail(request.getEmail());
+
+        if (userAccountRepository.existsByEmailIgnoreCaseAndIdNot(email, id)) {
+            throw new IllegalArgumentException("Já existe uma conta cadastrada com este e-mail.");
+        }
+
+        boolean alterouEmail = !usuario.getEmail().equalsIgnoreCase(email);
+        usuario.setNome(request.getNome().trim());
+        usuario.setEmail(email);
+        usuario.setTelefone(normalizarOpcional(request.getTelefone()));
+
+        if (alterouEmail) {
+            usuario.setSessionVersion(usuario.getSessionVersion() == null ? 1L : usuario.getSessionVersion() + 1L);
+        }
+
+        return new UserAccountDTO(userAccountRepository.save(usuario));
+    }
+
+    @Transactional
     public UserAccountDTO alterarAtivo(Long id, boolean ativo) {
         UserAccount usuario = buscarPorId(id);
+
+        if (!ativo && ehUsuarioAtual(usuario)) {
+            throw new IllegalArgumentException("A conta atualmente autenticada não pode ser desativada.");
+        }
+
         if (!ativo && usuario.getRole() == UserRole.DEV && Boolean.TRUE.equals(usuario.getAtivo())) {
             validarNaoEhUltimoDevAtivo();
         }
+
         usuario.setAtivo(ativo);
+        if (!ativo) {
+            usuario.setSessionVersion(usuario.getSessionVersion() == null ? 1L : usuario.getSessionVersion() + 1L);
+        }
         return new UserAccountDTO(userAccountRepository.save(usuario));
     }
 
@@ -107,8 +138,7 @@ public class UserAccountService {
                     "Conta PARTICIPANTE é uma identidade separada e não pode ser convertida em conta interna.");
         }
 
-        String emailAutenticado = emailAutenticado();
-        if (emailAutenticado != null && usuario.getEmail().equalsIgnoreCase(emailAutenticado)) {
+        if (ehUsuarioAtual(usuario)) {
             throw new IllegalArgumentException(
                     "A conta atualmente autenticada não pode alterar a própria permissão.");
         }
@@ -132,6 +162,11 @@ public class UserAccountService {
             throw new IllegalArgumentException(
                     "O RasComp deve manter pelo menos um DEV ativo.");
         }
+    }
+
+    private boolean ehUsuarioAtual(UserAccount usuario) {
+        String emailAutenticado = emailAutenticado();
+        return emailAutenticado != null && usuario.getEmail().equalsIgnoreCase(emailAutenticado);
     }
 
     private String emailAutenticado() {
