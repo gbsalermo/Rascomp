@@ -53,10 +53,9 @@ class CompetitionContextServiceTest {
     @Test
     void gestaoDeveVerSomenteACompeticaoVigente() {
         autenticar(UserRole.GESTAO);
-        when(competitionRepository.findByAtivoTrueOrderByDataInicioDesc()).thenReturn(List.of(
-                competition(1L, StatusCompetition.PLANEJADA),
-                competition(2L, StatusCompetition.INSCRICOES_ENCERRADAS),
-                competition(3L, StatusCompetition.EM_ANDAMENTO)));
+        Competition vigente = competition(3L, StatusCompetition.PLANEJADA);
+        vigente.setVigente(true);
+        when(competitionRepository.findFirstByVigenteTrueAndAtivoTrue()).thenReturn(Optional.of(vigente));
 
         var result = service.listarVisiveis(false);
 
@@ -71,7 +70,8 @@ class CompetitionContextServiceTest {
 
         autenticar(UserRole.GESTAO);
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(antiga));
-        when(competitionRepository.findByAtivoTrueOrderByDataInicioDesc()).thenReturn(List.of(vigente));
+        vigente.setVigente(true);
+        when(competitionRepository.findFirstByVigenteTrueAndAtivoTrue()).thenReturn(Optional.of(vigente));
 
         assertThrows(AccessDeniedException.class, () -> service.exigirOperavel(1L));
     }
@@ -87,16 +87,40 @@ class CompetitionContextServiceTest {
     }
 
     @Test
-    void prioridadeDaVigenteDeveSerAndamentoDepoisInscricoesAbertasEncerradasEPlanejada() {
+    void vigenteDeveSerAEdicaoMarcadaExplicitamenteMesmoSePlanejada() {
         autenticar(UserRole.GESTAO);
-        when(competitionRepository.findByAtivoTrueOrderByDataInicioDesc()).thenReturn(List.of(
-                competition(10L, StatusCompetition.PLANEJADA),
-                competition(11L, StatusCompetition.INSCRICOES_ENCERRADAS),
-                competition(12L, StatusCompetition.INSCRICOES_ABERTAS)));
+        Competition vigente = competition(12L, StatusCompetition.PLANEJADA);
+        vigente.setVigente(true);
+        when(competitionRepository.findFirstByVigenteTrueAndAtivoTrue()).thenReturn(Optional.of(vigente));
 
         var result = service.buscarVigente();
 
         assertEquals(12L, result.getId());
+    }
+
+    @Test
+    void devDeveDefinirNovaCompeticaoVigente() {
+        autenticar(UserRole.DEV);
+        Competition target = competition(20L, StatusCompetition.PLANEJADA);
+        when(competitionRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(target));
+        when(competitionRepository.save(target)).thenReturn(target);
+
+        var result = service.definirVigente(20L);
+
+        assertEquals(20L, result.getId());
+        assertEquals(true, result.getVigente());
+    }
+
+    @Test
+    void gestaoNaoPodeFinalizarCompeticao() {
+        autenticar(UserRole.GESTAO);
+        Competition vigente = competition(30L, StatusCompetition.EM_ANDAMENTO);
+        vigente.setVigente(true);
+        when(competitionRepository.findById(30L)).thenReturn(Optional.of(vigente));
+        when(competitionRepository.findFirstByVigenteTrueAndAtivoTrue()).thenReturn(Optional.of(vigente));
+
+        assertThrows(AccessDeniedException.class,
+                () -> service.exigirPodeAlterarStatus(30L, StatusCompetition.FINALIZADA));
     }
 
     private void autenticar(UserRole role) {
