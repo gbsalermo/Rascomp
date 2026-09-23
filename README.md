@@ -375,3 +375,15 @@ A documentação técnica detalhada permanece separada da apresentação do proj
   <strong>RasComp</strong><br>
   Gestão de competições de robótica — IEEE RAS UFRB
 </div>
+
+
+### Estado pós-projeto
+
+ETAPA 4 — BLOCO 1 concluído e validado em 22/09/2026.
+
+- Backend Tests #329: 142 testes verdes;
+- MySQL + Flyway V14 + testdata: verde;
+- sessão única e logout remoto consolidados;
+- próximo passo: BLOCO 2 — Gestão administrativa.
+
+A ordem canônica das etapas permanece em `Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`.
