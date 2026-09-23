@@ -91,10 +91,10 @@ ETAPA 2 = concluída / validada
 Checkpoint automatizado atual da branch da ETAPA 4:
 
 ```text
-139 testes / 0 falhas / 0 erros / 0 skipped
+142 testes / 0 falhas / 0 erros / 0 skipped
 H2 flowtest integrado ✅
-MySQL + Flyway V13 + testdata ✅
-Backend Tests #316 ✅
+MySQL + Flyway V14 + testdata ✅
+Backend Tests #325 ✅
 ```
 
 Não atualizar a contagem por inferência.
