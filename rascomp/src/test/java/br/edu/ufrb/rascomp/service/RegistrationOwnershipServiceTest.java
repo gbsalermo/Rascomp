@@ -46,6 +46,7 @@ class RegistrationOwnershipServiceTest {
     @Mock private RobotRepository robotRepository;
     @Mock private CompetitorRepository competitorRepository;
     @Mock private UserAccountService userAccountService;
+    @Mock private CompetitionContextService competitionContextService;
 
     @InjectMocks
     private RegistrationService service;
