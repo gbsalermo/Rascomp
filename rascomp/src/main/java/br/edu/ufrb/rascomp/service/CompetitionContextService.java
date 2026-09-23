@@ -3,12 +3,12 @@ package br.edu.ufrb.rascomp.service;
 import java.util.List;
 
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.ufrb.rascomp.dto.CompetitionDTO;
 import br.edu.ufrb.rascomp.model.Competition;
-import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
@@ -20,13 +20,12 @@ import lombok.RequiredArgsConstructor;
 public class CompetitionContextService {
 
     private final CompetitionRepository competitionRepository;
-    private final UserAccountService userAccountService;
 
     @Transactional(readOnly = true)
     public List<CompetitionDTO> listarVisiveis(boolean apenasAtivas) {
-        UserAccount atual = exigirOperador();
+        UserRole role = exigirOperador();
 
-        if (atual.getRole() == UserRole.DEV) {
+        if (role == UserRole.DEV) {
             return (apenasAtivas
                     ? competitionRepository.findByAtivoTrueOrderByDataInicioDesc()
                     : competitionRepository.findAllByOrderByDataInicioDesc())
@@ -48,12 +47,12 @@ public class CompetitionContextService {
 
     @Transactional(readOnly = true)
     public Competition exigirOperavel(Long competitionId) {
-        UserAccount atual = exigirOperador();
+        UserRole role = exigirOperador();
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Competição não encontrada com o id: " + competitionId));
 
-        if (atual.getRole() == UserRole.DEV) {
+        if (role == UserRole.DEV) {
             return competition;
         }
 
@@ -71,12 +70,21 @@ public class CompetitionContextService {
         return new CompetitionDTO(exigirOperavel(competitionId));
     }
 
-    private UserAccount exigirOperador() {
-        UserAccount atual = userAccountService.buscarAtual();
-        if (!atual.getRole().podeOperarCompeticao()) {
-            throw new AccessDeniedException("Este perfil não pode operar competições.");
+    private UserRole exigirOperador() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("Usuário não autenticado.");
         }
-        return atual;
+
+        boolean dev = authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_DEV".equals(authority.getAuthority()));
+        if (dev) return UserRole.DEV;
+
+        boolean gestao = authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_GESTAO".equals(authority.getAuthority()));
+        if (gestao) return UserRole.GESTAO;
+
+        throw new AccessDeniedException("Este perfil não pode operar competições.");
     }
 
     private Competition buscarVigenteEntidade() {
