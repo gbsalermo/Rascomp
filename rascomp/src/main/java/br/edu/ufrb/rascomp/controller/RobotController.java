@@ -39,6 +39,7 @@ public class RobotController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<RobotDTO>> listar(
             @RequestParam(defaultValue = "false") boolean apenasAtivos) {
 
@@ -50,6 +51,7 @@ public class RobotController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<RobotDTO> buscarPorId(
             @PathVariable Long id) {
 
@@ -59,6 +61,7 @@ public class RobotController {
     }
 
     @GetMapping("/por-equipe")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<RobotDTO>> listarPorEquipe(
             @RequestParam Long teamId,
             @RequestParam(defaultValue = "false") boolean apenasAtivos) {
