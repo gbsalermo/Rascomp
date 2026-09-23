@@ -58,6 +58,12 @@ public class CompetitionController {
         return vigente == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(vigente);
     }
 
+    @PatchMapping("/{id}/vigente")
+    @PreAuthorize("hasRole('DEV')")
+    public ResponseEntity<CompetitionDTO> definirVigente(@PathVariable Long id) {
+        return ResponseEntity.ok(competitionContextService.definirVigente(id));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<CompetitionDTO> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(competitionContextService.buscarVisivel(id));
@@ -74,7 +80,7 @@ public class CompetitionController {
     public ResponseEntity<CompetitionDTO> alterarStatus(
             @PathVariable Long id,
             @RequestParam StatusCompetition status) {
-        competitionContextService.exigirOperavel(id);
+        competitionContextService.exigirPodeAlterarStatus(id, status);
         return ResponseEntity.ok(competitionService.alterarStatus(id, status));
     }
 
