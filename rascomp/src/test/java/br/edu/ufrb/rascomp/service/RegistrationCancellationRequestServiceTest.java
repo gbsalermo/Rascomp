@@ -37,6 +37,7 @@ class RegistrationCancellationRequestServiceTest {
     @Mock private RegistrationRepository registrationRepository;
     @Mock private RegistrationService registrationService;
     @Mock private UserAccountService userAccountService;
+    @Mock private CompetitionContextService competitionContextService;
 
     @InjectMocks
     private RegistrationCancellationRequestService service;
