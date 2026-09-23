@@ -1295,16 +1295,7 @@ DEV    → qualquer edição
 GESTAO → somente competição vigente
 ```
 
-Prioridade da vigente:
-
-```text
-EM_ANDAMENTO
-INSCRICOES_ABERTAS
-INSCRICOES_ENCERRADAS
-PLANEJADA
-```
-
-Edições FINALIZADAS/CANCELADAS não são escolhidas como vigentes.
+A vigente não é mais inferida por status. O DEV a define explicitamente e o backend persiste essa escolha.
 
 Proteções aplicadas:
 
@@ -1336,3 +1327,26 @@ Frontend Checks #114 ✅
 ```
 
 A regra de competição vigente está pronta para validação prática com DEV e GESTAO.
+
+
+### Ajuste pós-validação — V15
+
+A validação prática da 2.2 mostrou que a competição vigente precisa ser uma escolha explícita do DEV.
+
+V15 adiciona:
+
+```text
+competitions.vigente BOOLEAN NOT NULL DEFAULT FALSE
+```
+
+Regras:
+
+- apenas DEV define a competição vigente;
+- a troca limpa a flag anterior e marca a nova edição;
+- GESTAO lista e opera somente a edição marcada;
+- status não troca a vigente automaticamente;
+- finalização oficial (`FINALIZADA`) é DEV-only;
+- GESTAO pode operar transições anteriores permitidas;
+- criação de competição não altera a vigente automaticamente.
+
+Próxima migration estrutural: V16+.
