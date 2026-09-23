@@ -1,0 +1,99 @@
+package br.edu.ufrb.rascomp.service;
+
+import java.util.List;
+
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.edu.ufrb.rascomp.dto.CompetitionDTO;
+import br.edu.ufrb.rascomp.model.Competition;
+import br.edu.ufrb.rascomp.model.UserAccount;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
+import br.edu.ufrb.rascomp.model.Enum.UserRole;
+import br.edu.ufrb.rascomp.repository.CompetitionRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class CompetitionContextService {
+
+    private final CompetitionRepository competitionRepository;
+    private final UserAccountService userAccountService;
+
+    @Transactional(readOnly = true)
+    public List<CompetitionDTO> listarVisiveis(boolean apenasAtivas) {
+        UserAccount atual = exigirOperador();
+
+        if (atual.getRole() == UserRole.DEV) {
+            return (apenasAtivas
+                    ? competitionRepository.findByAtivoTrueOrderByDataInicioDesc()
+                    : competitionRepository.findAllByOrderByDataInicioDesc())
+                    .stream()
+                    .map(CompetitionDTO::new)
+                    .toList();
+        }
+
+        Competition vigente = buscarVigenteEntidade();
+        return vigente == null ? List.of() : List.of(new CompetitionDTO(vigente));
+    }
+
+    @Transactional(readOnly = true)
+    public CompetitionDTO buscarVigente() {
+        exigirOperador();
+        Competition vigente = buscarVigenteEntidade();
+        return vigente == null ? null : new CompetitionDTO(vigente);
+    }
+
+    @Transactional(readOnly = true)
+    public Competition exigirOperavel(Long competitionId) {
+        UserAccount atual = exigirOperador();
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Competição não encontrada com o id: " + competitionId));
+
+        if (atual.getRole() == UserRole.DEV) {
+            return competition;
+        }
+
+        Competition vigente = buscarVigenteEntidade();
+        if (vigente == null || !vigente.getId().equals(competitionId)) {
+            throw new AccessDeniedException(
+                    "A GESTÃO só pode operar a competição vigente.");
+        }
+
+        return competition;
+    }
+
+    @Transactional(readOnly = true)
+    public CompetitionDTO buscarVisivel(Long competitionId) {
+        return new CompetitionDTO(exigirOperavel(competitionId));
+    }
+
+    private UserAccount exigirOperador() {
+        UserAccount atual = userAccountService.buscarAtual();
+        if (!atual.getRole().podeOperarCompeticao()) {
+            throw new AccessDeniedException("Este perfil não pode operar competições.");
+        }
+        return atual;
+    }
+
+    private Competition buscarVigenteEntidade() {
+        List<Competition> ativas = competitionRepository.findByAtivoTrueOrderByDataInicioDesc();
+
+        for (StatusCompetition status : List.of(
+                StatusCompetition.EM_ANDAMENTO,
+                StatusCompetition.INSCRICOES_ABERTAS,
+                StatusCompetition.INSCRICOES_ENCERRADAS,
+                StatusCompetition.PLANEJADA)) {
+            Competition encontrada = ativas.stream()
+                    .filter(item -> item.getStatus() == status)
+                    .findFirst()
+                    .orElse(null);
+            if (encontrada != null) return encontrada;
+        }
+
+        return null;
+    }
+}
