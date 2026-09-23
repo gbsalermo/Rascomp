@@ -129,3 +129,20 @@ Estado:
 - baseline técnico, autenticação, Shell e UX global são o escopo atual;
 - ETAPA 5 permanece bloqueada;
 - nenhuma nova funcionalidade estrutural deve ser antecipada.
+
+
+## ETAPA 4 — checkpoint 22/09/2026
+
+BLOCO 1 da ETAPA 4 concluído em 22/09/2026.
+
+Mudanças estruturais relevantes:
+
+- V14 adiciona versão de sessão à conta;
+- JWT é validado também contra a versão de sessão;
+- política atual: uma sessão ativa por conta;
+- logout invalida a sessão do servidor;
+- fluxo definitivo de recuperação de senha permanece reservado à ETAPA 13.
+
+Validação final do bloco: Backend Tests #329, 142 testes verdes, MySQL/Flyway V14/testdata verdes e Frontend Checks #97 verde.
+
+Próximo: BLOCO 2 — Gestão administrativa.
