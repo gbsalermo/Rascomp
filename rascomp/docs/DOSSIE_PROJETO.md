@@ -25,10 +25,10 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
 ETAPA 3  ✅ concluída / validada
-ETAPA 4   🚧 EM ANDAMENTO — BLOCO 2 implementado / aguardando validação
+ETAPA 4   🚧 EM ANDAMENTO — BLOCO 2 concluído / BLOCO 3 próximo
 ```
 
-As ETAPAS 1, 2 e 3 estão encerradas/validadas. A ETAPA 4 está em andamento e o BLOCO 2 administrativo está implementado, aguardando validação prática.
+As ETAPAS 1, 2 e 3 estão encerradas/validadas. A ETAPA 4 está em andamento; BLOCO 2 administrativo concluído/validado e BLOCO 3 é o próximo.
 
 Checkpoint backend:
 
@@ -166,3 +166,15 @@ Principais decisões técnicas:
 Validação automatizada: Backend Tests #371 com 155 testes verdes + MySQL/Flyway V15/testdata; Frontend Checks #137 verde.
 
 Pendências de produto: associação explícita Competition ↔ Category e semântica de impacto da desativação de conta PARTICIPANTE sobre Competitor.
+
+
+## ETAPA 4 — BLOCO 2 encerrado
+
+BLOCO 2 validado pelo usuário em 23/09/2026.
+
+- Backend Tests #415 ✅;
+- 161 testes verdes;
+- MySQL/Flyway V17/testdata ✅;
+- Frontend Checks #170 ✅.
+
+Próximo: BLOCO 3 — Operação competitiva.
