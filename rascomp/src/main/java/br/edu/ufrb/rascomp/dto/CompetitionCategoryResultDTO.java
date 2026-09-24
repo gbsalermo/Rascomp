@@ -1,6 +1,7 @@
 package br.edu.ufrb.rascomp.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import lombok.AllArgsConstructor;
@@ -27,4 +28,14 @@ public class CompetitionCategoryResultDTO {
     private Integer pontosA;
     private Integer pontosB;
     private Long finalMatchId;
+
+    private String resolutionType;
+    private String resolutionReason;
+    private String resolutionActorNome;
+    private LocalDateTime resolutionAt;
+
+    private Boolean extraTakeAvailable;
+    private Boolean extraTakeActive;
+    private Boolean manualDecisionAvailable;
+    private Integer extraTakeNumber;
 }
