@@ -42,6 +42,13 @@ public class InspecaoSumoController {
         return ResponseEntity.ok(inspecaoSumoService.listarPorInscricao(registrationId));
     }
 
+    @GetMapping("/por-contexto")
+    public ResponseEntity<List<InspecaoSumoDTO>> listarPorContexto(
+            @RequestParam Long competitionId,
+            @RequestParam Long categoryId) {
+        return ResponseEntity.ok(inspecaoSumoService.listarPorContexto(competitionId, categoryId));
+    }
+
     @GetMapping("/ultima")
     public ResponseEntity<InspecaoSumoDTO> buscarUltimaPorInscricao(
             @RequestParam Long registrationId) {
