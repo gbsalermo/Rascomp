@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
+import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.ConfigFollow;
 import br.edu.ufrb.rascomp.model.Registration;
@@ -34,6 +35,7 @@ class TentativaSeguidorLinhaServiceTest {
     @Mock private RegistrationRepository registrationRepository;
     @Mock private ConfigFollowRepository configFollowRepository;
     @Mock private AusenciaTomadaSeguidorLinhaRepository ausenciaRepository;
+    @Mock private CompetitionContextService competitionContextService;
 
     @InjectMocks
     private TentativaSeguidorLinhaService service;
@@ -49,8 +51,13 @@ class TentativaSeguidorLinhaServiceTest {
                 .ativo(true)
                 .build();
 
+        Competition competition = new Competition();
+        competition.setId(9L);
+        competition.setAtivo(true);
+
         registration = new Registration();
         registration.setId(1L);
+        registration.setCompetition(competition);
         registration.setCategory(category);
         registration.setStatus(StatusRegistration.APROVADA);
         registration.setAtivo(true);
