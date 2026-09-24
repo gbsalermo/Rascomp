@@ -29,6 +29,7 @@ public class TentativaSeguidorLinhaService {
     private final AusenciaTomadaSeguidorLinhaRepository ausenciaRepository;
     private final CompetitionContextService competitionContextService;
     private final FollowTakeScheduleService followTakeScheduleService;
+    private final FollowResolutionService followResolutionService;
 
     @Transactional
     public TentativaSeguidorLinhaDTO criar(TentativaSeguidorLinhaDTO dto) {
@@ -37,7 +38,7 @@ public class TentativaSeguidorLinhaService {
         validarRegistration(registration);
 
         ConfigFollow config = buscarConfigFollow(registration);
-        validarLimites(dto, config);
+        validarLimites(dto, config, registration);
         validarEstadoCompetitivo(dto);
         validarTomadaDisponivel(dto);
         validarDuplicidade(dto, null);
@@ -102,7 +103,7 @@ public class TentativaSeguidorLinhaService {
         validarRegistration(registration);
 
         ConfigFollow config = buscarConfigFollow(registration);
-        validarLimites(dto, config);
+        validarLimites(dto, config, registration);
         validarEstadoCompetitivo(dto);
         validarTomadaDisponivel(dto);
         validarDuplicidade(dto, id);
@@ -147,10 +148,17 @@ public class TentativaSeguidorLinhaService {
                         "Configuração de Seguidor de Linha não encontrada para a categoria: " + categoryId));
     }
 
-    private void validarLimites(TentativaSeguidorLinhaDTO dto, ConfigFollow config) {
-        if (dto.getTomada() == null || dto.getTomada() < 1 || dto.getTomada() > config.getNumeroTomadas()) {
+    private void validarLimites(
+            TentativaSeguidorLinhaDTO dto,
+            ConfigFollow config,
+            Registration registration) {
+
+        if (!followResolutionService.tomadaPermitida(
+                registration.getCompetition().getId(),
+                registration.getCategory().getId(),
+                dto.getTomada())) {
             throw new IllegalArgumentException(
-                    "Tomada inválida. Esta categoria permite tomadas de 1 até " + config.getNumeroTomadas() + ".");
+                    "Tomada inválida. Use uma tomada normal ou uma Tomada Extra previamente autorizada.");
         }
 
         if (dto.getNumeroTentativa() == null
