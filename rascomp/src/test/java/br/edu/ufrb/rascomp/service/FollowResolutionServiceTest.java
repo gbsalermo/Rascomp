@@ -2,6 +2,7 @@ package br.edu.ufrb.rascomp.service;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -99,7 +100,7 @@ class FollowResolutionServiceTest {
                 .thenReturn(Optional.of(extra));
         when(ausenciaRepository.existsByRegistrationIdAndTomada(10L, 4))
                 .thenReturn(false);
-        when(tentativaRepository.countByRegistrationIdAndTomada(10L, 4))
+        lenient().when(tentativaRepository.countByRegistrationIdAndTomada(10L, 4))
                 .thenReturn(0L);
 
         assertTrue(service.tomadaExtraAtiva(1L, 2L));
