@@ -38,6 +38,7 @@ public class FollowTakeScheduleService {
     private final ConfigFollowRepository configFollowRepository;
     private final RegistrationRepository registrationRepository;
     private final CompetitionContextService competitionContextService;
+    private final FollowResolutionService followResolutionService;
 
     @Transactional
     public FollowTakeScheduleDTO criar(FollowTakeScheduleDTO dto) {
@@ -52,6 +53,52 @@ public class FollowTakeScheduleService {
             throw new IllegalArgumentException(
                     "Já existe uma chamada de agenda para esta categoria e tomada.");
         }
+
+        FollowTakeSchedule schedule = new FollowTakeSchedule();
+        preencher(schedule, dto, competition, category);
+        schedule.setStatus(dto.getStatus() != null ? dto.getStatus() : StatusChamadaFollow.AGENDADA);
+        schedule.setAtivo(true);
+
+        FollowTakeSchedule salva = scheduleRepository.save(schedule);
+        if (salva.getStatus() != StatusChamadaFollow.FINALIZADA
+                && salva.getStatus() != StatusChamadaFollow.CANCELADA) {
+            sincronizarFilaInterno(salva);
+        }
+        return montarDTO(salva);
+    }
+
+    @Transactional
+    public FollowTakeScheduleDTO criarTomadaExtra(FollowTakeScheduleDTO dto) {
+        competitionContextService.exigirOperavel(dto.getCompetitionId());
+
+        Competition competition = buscarCompetition(dto.getCompetitionId());
+        CompetitionCategory category = buscarCategory(dto.getCategoryId());
+
+        if (!Boolean.TRUE.equals(competition.getAtivo())) {
+            throw new IllegalArgumentException("Competição inativa não pode receber agenda.");
+        }
+        if (!Boolean.TRUE.equals(category.getAtivo())
+                || category.getModalidade() != Modalidade.FOLLOW_LINE) {
+            throw new IllegalArgumentException(
+                    "A Tomada Extra só pode usar categoria FOLLOW_LINE ativa.");
+        }
+
+        followResolutionService.exigirPodeCriarTomadaExtra(
+                competition.getId(), category.getId());
+
+        int tomadaExtra = followResolutionService.numeroTomadaExtra(category.getId());
+        if (dto.getTomada() != null && dto.getTomada() != tomadaExtra) {
+            throw new IllegalArgumentException(
+                    "A Tomada Extra esperada para esta categoria é a tomada " + tomadaExtra + ".");
+        }
+
+        if (scheduleRepository.existsByCompetitionIdAndCategoryIdAndTomada(
+                competition.getId(), category.getId(), tomadaExtra)) {
+            throw new IllegalArgumentException(
+                    "A Tomada Extra desta categoria já foi criada.");
+        }
+
+        dto.setTomada(tomadaExtra);
 
         FollowTakeSchedule schedule = new FollowTakeSchedule();
         preencher(schedule, dto, competition, category);
@@ -84,7 +131,18 @@ public class FollowTakeScheduleService {
                     "Chamada finalizada ou cancelada é somente leitura no fluxo comum.");
         }
 
-        validarContexto(schedule.getCompetition(), schedule.getCategory(), schedule.getTomada());
+        if (schedule.getTomada() != null
+                && schedule.getTomada() > validarContextoBase(
+                        schedule.getCompetition(), schedule.getCategory()).getNumeroTomadas()) {
+            if (!followResolutionService.tomadaPermitida(
+                    schedule.getCompetition().getId(),
+                    schedule.getCategory().getId(),
+                    schedule.getTomada())) {
+                throw new IllegalArgumentException("A Tomada Extra não está autorizada.");
+            }
+        } else {
+            validarContexto(schedule.getCompetition(), schedule.getCategory(), schedule.getTomada());
+        }
         preencher(schedule, dto, schedule.getCompetition(), schedule.getCategory());
         if (dto.getStatus() != null) schedule.setStatus(dto.getStatus());
 
@@ -319,6 +377,20 @@ public class FollowTakeScheduleService {
             CompetitionCategory category,
             Integer tomada) {
 
+        ConfigFollow config = validarContextoBase(competition, category);
+
+        if (tomada == null || tomada < 1 || tomada > config.getNumeroTomadas()) {
+            throw new IllegalArgumentException(
+                    "Tomada inválida para a configuração normal desta categoria.");
+        }
+
+        return config;
+    }
+
+    private ConfigFollow validarContextoBase(
+            Competition competition,
+            CompetitionCategory category) {
+
         if (!Boolean.TRUE.equals(competition.getAtivo())) {
             throw new IllegalArgumentException("Competição inativa não pode receber agenda.");
         }
@@ -328,16 +400,9 @@ public class FollowTakeScheduleService {
                     "A agenda de tomada só pode usar categoria FOLLOW_LINE ativa.");
         }
 
-        ConfigFollow config = configFollowRepository.findByCompetitionCategoryId(category.getId())
+        return configFollowRepository.findByCompetitionCategoryId(category.getId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Configuração Follow não encontrada para a categoria: " + category.getId()));
-
-        if (tomada == null || tomada < 1 || tomada > config.getNumeroTomadas()) {
-            throw new IllegalArgumentException(
-                    "Tomada inválida para a configuração desta categoria.");
-        }
-
-        return config;
     }
 
     private FollowTakeScheduleDTO montarDTO(FollowTakeSchedule schedule) {
