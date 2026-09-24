@@ -20,4 +20,5 @@ public interface TentativaSeguidorLinhaRepository extends JpaRepository<Tentativ
     boolean existsByRegistrationIdAndTomada(Long registrationId, Integer tomada);
     boolean existsByRegistrationIdAndTomadaAndNumeroTentativa(Long registrationId, Integer tomada, Integer numeroTentativa);
     boolean existsByRegistrationIdAndTomadaAndNumeroTentativaAndIdNot(Long registrationId, Integer tomada, Integer numeroTentativa, Long id);
+    long countByRegistrationIdAndTomada(Long registrationId, Integer tomada);
 }
