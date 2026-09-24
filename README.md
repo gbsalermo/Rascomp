@@ -343,7 +343,7 @@ fluxos integrados H2                      ✅
 MySQL + Flyway V13 + profile testdata     ✅
 ```
 
-As ETAPAS 1, 2 e 3 estão concluídas/validadas. O roadmap foi reorganizado por maturidade do produto. A próxima etapa é a **ETAPA 4 — Consolidação funcional e polimento do MVP**, ainda não iniciada; o deploy passa a ser a ETAPA 16, última etapa do ciclo. O roadmap também possui um **checkpoint transversal de Otimização Mobile do MVP** dentro da PRIORIDADE 1. Ele acompanha as interfaces revisadas/criadas nas ETAPAS 4, 7, 8 e 9 e deve estar concluído antes da ETAPA 10; hoje, apenas o login possui tratamento responsivo dedicado já revisado.
+As ETAPAS 1, 2 e 3 estão concluídas/validadas. O roadmap foi reorganizado por maturidade do produto. A **ETAPA 4 — Consolidação funcional e polimento do MVP** está em andamento, com BLOCOS 1 e 2 validados e BLOCO 3 implementado aguardando validação; o deploy passa a ser a ETAPA 16, última etapa do ciclo. O roadmap também possui um **checkpoint transversal de Otimização Mobile do MVP** dentro da PRIORIDADE 1. Ele acompanha as interfaces revisadas/criadas nas ETAPAS 4, 7, 8 e 9 e deve estar concluído antes da ETAPA 10; hoje, apenas o login possui tratamento responsivo dedicado já revisado.
 
 <p align="right">(<a href="#readme-top">voltar ao topo ⬆</a>)</p>
 
@@ -398,4 +398,20 @@ BLOCO 2 concluído e validado em 23/09/2026.
 - MySQL + Flyway V15 + testdata ✅
 - próxima migration estrutural: V16+
 
-Próximo trabalho: BLOCO 3 — Operação competitiva, ainda não iniciado.
+Estado atual: BLOCO 3 — Operação competitiva implementado e aguardando validação manual final.
+
+
+### BLOCO 3 — Operação competitiva implementada
+
+Follow Line, Sumô e Chaves/Agenda/Resultados foram consolidados na ETAPA 4.
+
+- Agenda unificada Follow + Sumô;
+- chamadas e filas Follow;
+- V18 aplicada;
+- desclassificação auditada;
+- Resultados por categoria;
+- Dashboard integrado à Agenda.
+
+Checkpoint: Backend Tests #493 ✅ (166 testes), MySQL/Flyway V18/testdata ✅ e Frontend Checks #213 ✅.
+
+Aguardando validação manual do BLOCO 3 antes de seguir na ETAPA 4.
