@@ -69,12 +69,12 @@ class FollowResolutionServiceTest {
                     .thenReturn(true);
         }
 
-        when(tentativaRepository
+        lenient().when(tentativaRepository
                 .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
                         1L, 2L))
                 .thenReturn(List.of());
 
-        when(manualResultRepository.existsByCompetitionIdAndCategoryId(1L, 2L))
+        lenient().when(manualResultRepository.existsByCompetitionIdAndCategoryId(1L, 2L))
                 .thenReturn(false);
     }
 
