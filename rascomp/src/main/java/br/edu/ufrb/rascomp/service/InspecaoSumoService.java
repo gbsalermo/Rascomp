@@ -95,6 +95,18 @@ public class InspecaoSumoService {
     }
 
     @Transactional(readOnly = true)
+    public List<InspecaoSumoDTO> listarPorContexto(Long competitionId, Long categoryId) {
+        competitionContextService.exigirOperavel(competitionId);
+        return inspecaoRepository
+                .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
+                        competitionId,
+                        categoryId)
+                .stream()
+                .map(InspecaoSumoDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public InspecaoSumoDTO buscarUltimaPorInscricao(Long registrationId) {
         Registration registration = buscarRegistration(registrationId);
         exigirContexto(registration);
