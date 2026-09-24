@@ -17,8 +17,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
+import br.edu.ufrb.rascomp.dto.RegistrationStatusHistoryDTO;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.service.RegistrationService;
+import br.edu.ufrb.rascomp.service.RegistrationStatusHistoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -27,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RegistrationController {
     private final RegistrationService registrationService;
+    private final RegistrationStatusHistoryService statusHistoryService;
 
     @PostMapping
     public ResponseEntity<RegistrationDTO> criar(@Valid @RequestBody RegistrationDTO dto) {
@@ -37,6 +40,11 @@ public class RegistrationController {
     @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<RegistrationDTO>> listar(@RequestParam(defaultValue = "false") boolean apenasAtivas) {
         return ResponseEntity.ok(registrationService.listar(apenasAtivas));
+    }
+
+    @GetMapping("/{id}/historico-status")
+    public ResponseEntity<List<RegistrationStatusHistoryDTO>> historicoStatus(@PathVariable Long id) {
+        return ResponseEntity.ok(statusHistoryService.listar(id));
     }
 
     @GetMapping("/{id}")
