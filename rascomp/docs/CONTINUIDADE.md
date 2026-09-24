@@ -28,7 +28,7 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2   ✅ concluída / validada
 ETAPA 3   ✅ concluída / validada
-ETAPA 4   🚧 EM ANDAMENTO — BLOCO 2 IMPLEMENTADO / AGUARDANDO VALIDAÇÃO
+ETAPA 4   🚧 EM ANDAMENTO — BLOCO 2 ✅ CONCLUÍDO / BLOCO 3 PRÓXIMO
 ```
 
 Blocos concluídos da ETAPA 1:
@@ -881,7 +881,7 @@ ETAPA 3 — matriz de permissões
 └─ checkpoint prático dos quatro perfis  ✅ validado em 19/09/2026
 ```
 
-A ETAPA 4 está em andamento. O BLOCO 1 está concluído; o BLOCO 2 teve a implementação concluída e aguarda validação manual/decisões finais.
+A ETAPA 4 está em andamento. BLOCO 1 e BLOCO 2 estão concluídos e validados; BLOCO 3 — Operação competitiva é o próximo e ainda não foi iniciado.
 
 ## Checkpoint cross-repo da ETAPA 2 — 13/09/2026
 
@@ -1440,7 +1440,7 @@ V1–V15 permanecem imutáveis. Próxima migration estrutural: V16+.
 - Team/Robot/Registration não sofrem cascata automática;
 - catálogo de categorias permanece DEV-only.
 
-Não iniciar BLOCO 3 antes da validação prática/decisões finais do BLOCO 2.
+BLOCO 2 validado e encerrado. BLOCO 3 é o próximo checkpoint e ainda não foi iniciado.
 
 
 ## ETAPA 4 — BLOCO 2 — correções finais pós-validação
@@ -1530,3 +1530,40 @@ Frontend Checks #164 ✅
 ```
 
 V1–V17 imutáveis. Próxima migration estrutural: V18+.
+
+
+## Fechamento formal do BLOCO 2 — 23/09/2026
+
+Validação manual final aprovada pelo usuário.
+
+Resultado:
+
+```text
+BLOCO 2 — Gestão administrativa
+✅ CONCLUÍDO
+✅ VALIDADO
+```
+
+Backend consolidado:
+
+- competição vigente persistida;
+- contexto DEV/GESTAO protegido no backend;
+- usuários/participantes com regras de identidade consolidadas;
+- catálogos administrativos contextualizados;
+- inscrições, cancelamentos, reativações e auditoria V17;
+- UserAccount PARTICIPANTE sincronizado com Competitor vinculado;
+- categorias globais DEV-only;
+- histórico de status e solicitações de cancelamento preservados.
+
+Checkpoint final:
+
+```text
+Backend Tests #415 ✅
+161 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V17 + testdata ✅
+Frontend Checks #170 ✅
+```
+
+V1–V17 permanecem imutáveis. Próxima migration estrutural: V18+.
+
+Próximo: BLOCO 3 — Operação competitiva, ainda não iniciado.
