@@ -26,6 +26,7 @@ import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
@@ -125,6 +126,12 @@ class RegistrationIntegrityServiceTest {
 
         assertEquals(StatusRegistration.PENDENTE, result.getStatus());
         assertEquals(true, result.getAtivo());
+        verify(statusHistoryService).registrar(
+                registration,
+                StatusRegistration.CANCELADA,
+                StatusRegistration.PENDENTE,
+                RegistrationStatusChangeType.REATIVACAO,
+                "Reativação administrativa da inscrição.");
     }
 
     @Test
@@ -169,6 +176,12 @@ class RegistrationIntegrityServiceTest {
 
         assertEquals(StatusRegistration.CANCELADA, registration.getStatus());
         assertEquals(false, registration.getAtivo());
+        verify(statusHistoryService).registrar(
+                registration,
+                StatusRegistration.APROVADA,
+                StatusRegistration.CANCELADA,
+                RegistrationStatusChangeType.CANCELAMENTO,
+                null);
     }
 
     @Test
@@ -180,6 +193,12 @@ class RegistrationIntegrityServiceTest {
 
         assertEquals(StatusRegistration.DESISTENTE, registration.getStatus());
         assertEquals(false, registration.getAtivo());
+        verify(statusHistoryService).registrar(
+                registration,
+                StatusRegistration.APROVADA,
+                StatusRegistration.DESISTENTE,
+                RegistrationStatusChangeType.DESISTENCIA,
+                "Saída após atividade competitiva registrada.");
     }
 
     @Test
