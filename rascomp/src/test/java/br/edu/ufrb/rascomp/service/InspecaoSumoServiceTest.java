@@ -72,8 +72,6 @@ class InspecaoSumoServiceTest {
                 .build();
 
         when(registrationRepository.findById(10L)).thenReturn(Optional.of(registration));
-        when(registrationRepository.save(any(Registration.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
         when(configSumoRepository.findByCompetitionCategoryId(1L)).thenReturn(Optional.of(config));
     }
 
@@ -102,6 +100,8 @@ class InspecaoSumoServiceTest {
         when(inspecaoRepository.existsByRegistrationIdAndAprovadaTrue(10L)).thenReturn(false);
         when(inspecaoRepository.countByRegistrationId(10L)).thenReturn(2L);
         when(inspecaoRepository.save(any(InspecaoSumo.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(registrationRepository.save(any(Registration.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         InspecaoSumoDTO resultado = service.registrar(novaInspecao(new BigDecimal("0.450"), false));
