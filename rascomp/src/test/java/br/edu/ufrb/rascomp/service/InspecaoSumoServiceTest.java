@@ -36,7 +36,9 @@ class InspecaoSumoServiceTest {
     @Mock private RegistrationRepository registrationRepository;
     @Mock private ConfigSumoRepository configSumoRepository;
 
-    @InjectMocks
+        @Mock private RegistrationStatusHistoryService statusHistoryService;
+
+@InjectMocks
     private InspecaoSumoService service;
 
     private CompetitionCategory category;
