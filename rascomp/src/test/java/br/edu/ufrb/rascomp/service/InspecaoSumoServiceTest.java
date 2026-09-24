@@ -39,7 +39,9 @@ class InspecaoSumoServiceTest {
 
     @Mock private RegistrationStatusHistoryService statusHistoryService;
 
-    @InjectMocks
+        @Mock private CompetitionContextService competitionContextService;
+
+@InjectMocks
     private InspecaoSumoService service;
 
     private CompetitionCategory category;
@@ -55,8 +57,12 @@ class InspecaoSumoServiceTest {
                 .ativo(true)
                 .build();
 
+        br.edu.ufrb.rascomp.model.Competition competition = new br.edu.ufrb.rascomp.model.Competition();
+        competition.setId(99L);
+
         registration = new Registration();
         registration.setId(10L);
+        registration.setCompetition(competition);
         registration.setCategory(category);
         registration.setStatus(StatusRegistration.APROVADA);
         registration.setAtivo(true);
