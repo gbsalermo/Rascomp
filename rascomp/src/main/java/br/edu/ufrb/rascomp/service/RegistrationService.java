@@ -253,6 +253,41 @@ public class RegistrationService {
     }
 
     @Transactional
+    public RegistrationDTO desclassificar(Long id, String motivo) {
+        Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
+
+        if (registration.getStatus() != StatusRegistration.APROVADA
+                || !Boolean.TRUE.equals(registration.getAtivo())) {
+            throw new IllegalArgumentException(
+                    "Somente inscrição APROVADA e ativa pode ser desclassificada.");
+        }
+
+        if (registration.getCompetition().getStatus() == StatusCompetition.FINALIZADA
+                || registration.getCompetition().getStatus() == StatusCompetition.CANCELADA) {
+            throw new IllegalArgumentException(
+                    "Não é possível desclassificar inscrição de competição encerrada ou cancelada pelo fluxo comum.");
+        }
+
+        String justificativa = normalizarObrigatorio(
+                motivo,
+                "Informe o motivo da desclassificação.");
+
+        StatusRegistration anterior = registration.getStatus();
+        registration.setStatus(StatusRegistration.DESCLASSIFICADA);
+        Registration salva = registrationRepository.save(registration);
+
+        statusHistoryService.registrar(
+                salva,
+                anterior,
+                StatusRegistration.DESCLASSIFICADA,
+                RegistrationStatusChangeType.DESCLASSIFICACAO,
+                justificativa);
+
+        return new RegistrationDTO(salva);
+    }
+
+    @Transactional
     public RegistrationDTO reativar(Long id) {
         Registration registration = buscarRegistration(id);
         competitionContextService.exigirOperavel(registration.getCompetition().getId());
