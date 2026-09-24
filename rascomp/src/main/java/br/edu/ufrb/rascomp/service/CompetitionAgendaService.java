@@ -98,9 +98,13 @@ public class CompetitionAgendaService {
         dto.setDataHora(match.getDataHora());
         dto.setPista(match.getPista());
         dto.setOrdemExecucao(match.getOrdemExecucao());
-        dto.setStatus(match.getStatusConvocacao() != null
-                ? match.getStatusConvocacao().name()
-                : match.getStatus().name());
+        dto.setStatus(
+                match.getStatus() == StatusMatch.EM_ANDAMENTO
+                        || match.getStatus() == StatusMatch.FINALIZADA
+                        ? match.getStatus().name()
+                        : (match.getStatusConvocacao() != null
+                                ? match.getStatusConvocacao().name()
+                                : match.getStatus().name()));
         dto.setBracketId(match.getBracket().getId());
         dto.setMatchId(match.getId());
         return dto;
