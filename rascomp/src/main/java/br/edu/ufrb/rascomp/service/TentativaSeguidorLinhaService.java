@@ -27,10 +27,12 @@ public class TentativaSeguidorLinhaService {
     private final RegistrationRepository registrationRepository;
     private final ConfigFollowRepository configFollowRepository;
     private final AusenciaTomadaSeguidorLinhaRepository ausenciaRepository;
+    private final CompetitionContextService competitionContextService;
 
     @Transactional
     public TentativaSeguidorLinhaDTO criar(TentativaSeguidorLinhaDTO dto) {
         Registration registration = buscarRegistration(dto.getRegistrationId());
+        exigirContexto(registration);
         validarRegistration(registration);
 
         ConfigFollow config = buscarConfigFollow(registration);
@@ -46,7 +48,8 @@ public class TentativaSeguidorLinhaService {
 
     @Transactional(readOnly = true)
     public List<TentativaSeguidorLinhaDTO> listarPorInscricao(Long registrationId) {
-        buscarRegistration(registrationId);
+        Registration registration = buscarRegistration(registrationId);
+        exigirContexto(registration);
         return tentativaRepository
                 .findByRegistrationIdOrderByTomadaAscNumeroTentativaAsc(registrationId)
                 .stream()
@@ -56,6 +59,7 @@ public class TentativaSeguidorLinhaService {
 
     @Transactional(readOnly = true)
     public List<TentativaSeguidorLinhaDTO> listarPorContexto(Long competitionId, Long categoryId) {
+        competitionContextService.exigirOperavel(competitionId);
         return tentativaRepository
                 .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
                         competitionId,
@@ -67,13 +71,24 @@ public class TentativaSeguidorLinhaService {
 
     @Transactional(readOnly = true)
     public TentativaSeguidorLinhaDTO buscarPorId(Long id) {
-        return new TentativaSeguidorLinhaDTO(buscarTentativa(id));
+        TentativaSeguidorLinha tentativa = buscarTentativa(id);
+        exigirContexto(tentativa.getRegistration());
+        return new TentativaSeguidorLinhaDTO(tentativa);
     }
 
     @Transactional
     public TentativaSeguidorLinhaDTO atualizar(Long id, TentativaSeguidorLinhaDTO dto) {
         TentativaSeguidorLinha tentativa = buscarTentativa(id);
+        exigirContexto(tentativa.getRegistration());
+
         Registration registration = buscarRegistration(dto.getRegistrationId());
+        exigirContexto(registration);
+
+        if (!tentativa.getRegistration().getId().equals(registration.getId())) {
+            throw new IllegalArgumentException(
+                    "Uma tentativa existente não pode ser transferida para outra inscrição.");
+        }
+
         validarRegistration(registration);
 
         ConfigFollow config = buscarConfigFollow(registration);
@@ -88,7 +103,13 @@ public class TentativaSeguidorLinhaService {
 
     @Transactional
     public void deletar(Long id) {
-        tentativaRepository.delete(buscarTentativa(id));
+        TentativaSeguidorLinha tentativa = buscarTentativa(id);
+        exigirContexto(tentativa.getRegistration());
+        tentativaRepository.delete(tentativa);
+    }
+
+    private void exigirContexto(Registration registration) {
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
     }
 
     private void validarRegistration(Registration registration) {
