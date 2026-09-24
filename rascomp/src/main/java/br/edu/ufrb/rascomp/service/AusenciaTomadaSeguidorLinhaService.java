@@ -30,11 +30,13 @@ public class AusenciaTomadaSeguidorLinhaService {
     private final RegistrationRepository registrationRepository;
     private final ConfigFollowRepository configFollowRepository;
     private final UserAccountService userAccountService;
+    private final CompetitionContextService competitionContextService;
 
     @Transactional
     public AusenciaTomadaSeguidorLinhaDTO marcar(AusenciaTomadaSeguidorLinhaDTO dto) {
         UserAccount organizacao = exigirOperadorCompeticao();
         Registration registration = buscarRegistration(dto.getRegistrationId());
+        exigirContexto(registration);
         validarRegistration(registration);
 
         ConfigFollow config = buscarConfigFollow(registration);
@@ -62,7 +64,8 @@ public class AusenciaTomadaSeguidorLinhaService {
 
     @Transactional(readOnly = true)
     public List<AusenciaTomadaSeguidorLinhaDTO> listarPorInscricao(Long registrationId) {
-        buscarRegistration(registrationId);
+        Registration registration = buscarRegistration(registrationId);
+        exigirContexto(registration);
         return ausenciaRepository.findByRegistrationIdOrderByTomadaAsc(registrationId)
                 .stream()
                 .map(AusenciaTomadaSeguidorLinhaDTO::new)
@@ -71,6 +74,7 @@ public class AusenciaTomadaSeguidorLinhaService {
 
     @Transactional(readOnly = true)
     public List<AusenciaTomadaSeguidorLinhaDTO> listarPorContexto(Long competitionId, Long categoryId) {
+        competitionContextService.exigirOperavel(competitionId);
         return ausenciaRepository
                 .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
                         competitionId,
@@ -78,6 +82,10 @@ public class AusenciaTomadaSeguidorLinhaService {
                 .stream()
                 .map(AusenciaTomadaSeguidorLinhaDTO::new)
                 .toList();
+    }
+
+    private void exigirContexto(Registration registration) {
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
     }
 
     private UserAccount exigirOperadorCompeticao() {
