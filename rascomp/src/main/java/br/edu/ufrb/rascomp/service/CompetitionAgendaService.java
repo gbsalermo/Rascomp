@@ -42,7 +42,8 @@ public class CompetitionAgendaService {
         matchRepository.findAgendaAtualByCompetitionId(competitionId)
                 .stream()
                 .filter(match -> match.getStatus() != StatusMatch.BYE
-                        && match.getStatus() != StatusMatch.CANCELADA)
+                        && match.getStatus() != StatusMatch.CANCELADA
+                        && match.getStatus() != StatusMatch.AGUARDANDO_PARTICIPANTES)
                 .map(this::fromMatch)
                 .forEach(items::add);
 
@@ -94,7 +95,13 @@ public class CompetitionAgendaService {
         dto.setCategoryId(match.getBracket().getCategory().getId());
         dto.setCategoryNome(match.getBracket().getCategory().getNome());
         dto.setModalidade(Modalidade.SUMO);
-        dto.setTitulo("Partida #" + match.getId() + " · " + match.getBracket().getCategory().getNome());
+        String robotA = match.getRegistrationA() != null
+                ? match.getRegistrationA().getRobot().getNome()
+                : "A definir";
+        String robotB = match.getRegistrationB() != null
+                ? match.getRegistrationB().getRobot().getNome()
+                : "A definir";
+        dto.setTitulo(robotA + " × " + robotB);
         dto.setDataHora(match.getDataHora());
         dto.setPista(match.getPista());
         dto.setOrdemExecucao(match.getOrdemExecucao());
