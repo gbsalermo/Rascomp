@@ -125,7 +125,7 @@ class RegistrationCancellationRequestServiceTest {
 
         var result = service.aprovar(60L, "Deferido");
 
-        verify(registrationService).cancelarAprovadaPorSolicitacao(20L);
+        verify(registrationService).cancelarAprovadaPorSolicitacao(20L, "Não poderemos comparecer");
         assertEquals(StatusCancellationRequest.APROVADA, result.getStatus());
         assertEquals("Deferido", result.getResposta());
     }
@@ -139,7 +139,7 @@ class RegistrationCancellationRequestServiceTest {
 
         var result = service.rejeitar(60L, "Inscrição já comprometida com a programação");
 
-        verify(registrationService, never()).cancelarAprovadaPorSolicitacao(any());
+        verify(registrationService, never()).cancelarAprovadaPorSolicitacao(any(), any());
         assertEquals(StatusCancellationRequest.REJEITADA, result.getStatus());
     }
 
