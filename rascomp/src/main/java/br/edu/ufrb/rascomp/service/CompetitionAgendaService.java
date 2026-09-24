@@ -13,6 +13,7 @@ import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoFollow;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
+import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
 import br.edu.ufrb.rascomp.repository.FollowTakeScheduleEntryRepository;
 import br.edu.ufrb.rascomp.repository.FollowTakeScheduleRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
@@ -24,6 +25,7 @@ public class CompetitionAgendaService {
 
     private final FollowTakeScheduleRepository followScheduleRepository;
     private final FollowTakeScheduleEntryRepository followEntryRepository;
+    private final ConfigFollowRepository configFollowRepository;
     private final MatchRepository matchRepository;
     private final CompetitionContextService competitionContextService;
 
@@ -69,7 +71,16 @@ public class CompetitionAgendaService {
         dto.setCategoryId(schedule.getCategory().getId());
         dto.setCategoryNome(schedule.getCategory().getNome());
         dto.setModalidade(Modalidade.FOLLOW_LINE);
-        dto.setTitulo("Tomada " + schedule.getTomada() + " · " + schedule.getCategory().getNome());
+        Integer numeroTomadas = configFollowRepository
+                .findByCompetitionCategoryId(schedule.getCategory().getId())
+                .map(config -> config.getNumeroTomadas())
+                .orElse(0);
+        boolean extra = schedule.getTomada() != null && schedule.getTomada() > numeroTomadas;
+        dto.setTitulo(
+                (extra ? "Tomada Extra " : "Tomada ")
+                        + schedule.getTomada()
+                        + " · "
+                        + schedule.getCategory().getNome());
         dto.setDataHora(schedule.getDataHora());
         dto.setPista(schedule.getPista());
         dto.setOrdemExecucao(schedule.getOrdemExecucao());
