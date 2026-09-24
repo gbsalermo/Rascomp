@@ -144,11 +144,25 @@ class RegistrationReviewServiceTest {
         UserAccount organizacao = user(92L, UserRole.DEV);
         when(userAccountService.buscarAtual()).thenReturn(organizacao);
 
-        service.atualizar(6L, dto(StatusRegistration.REJEITADA));
+        RegistrationDTO rejeicao = dto(StatusRegistration.REJEITADA);
+        rejeicao.setReviewReason("Documentação competitiva incompleta");
+        service.atualizar(6L, rejeicao);
 
         assertEquals(StatusRegistration.REJEITADA, registration.getStatus());
+        assertEquals("Documentação competitiva incompleta", registration.getReviewReason());
         assertEquals(92L, registration.getReviewedByUser().getId());
         assertNotNull(registration.getReviewedAt());
+    }
+
+    @Test
+    void rejeicaoDeveExigirMotivo() {
+        when(userAccountService.buscarAtual()).thenReturn(user(93L, UserRole.DEV));
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.atualizar(6L, dto(StatusRegistration.REJEITADA)));
+
+        assertEquals("Informe o motivo da rejeição da inscrição.", ex.getMessage());
     }
 
     private RegistrationDTO dto(StatusRegistration status) {
