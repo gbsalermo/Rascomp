@@ -24,6 +24,7 @@ import br.edu.ufrb.rascomp.model.ConfigSumo;
 import br.edu.ufrb.rascomp.model.InspecaoSumo;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.ConfigSumoRepository;
 import br.edu.ufrb.rascomp.repository.InspecaoSumoRepository;
@@ -36,9 +37,9 @@ class InspecaoSumoServiceTest {
     @Mock private RegistrationRepository registrationRepository;
     @Mock private ConfigSumoRepository configSumoRepository;
 
-        @Mock private RegistrationStatusHistoryService statusHistoryService;
+    @Mock private RegistrationStatusHistoryService statusHistoryService;
 
-@InjectMocks
+    @InjectMocks
     private InspecaoSumoService service;
 
     private CompetitionCategory category;
@@ -107,6 +108,12 @@ class InspecaoSumoServiceTest {
         assertEquals(3, resultado.getNumeroTentativa());
         assertEquals(StatusRegistration.DESCLASSIFICADA, registration.getStatus());
         verify(registrationRepository).save(registration);
+        verify(statusHistoryService).registrar(
+                registration,
+                StatusRegistration.APROVADA,
+                StatusRegistration.DESCLASSIFICADA,
+                RegistrationStatusChangeType.DESCLASSIFICACAO,
+                "Limite máximo de tentativas de inspeção de Sumô atingido sem aprovação.");
     }
 
     @Test
