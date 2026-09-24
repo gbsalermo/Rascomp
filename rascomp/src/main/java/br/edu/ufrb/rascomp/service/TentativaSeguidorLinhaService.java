@@ -28,6 +28,7 @@ public class TentativaSeguidorLinhaService {
     private final ConfigFollowRepository configFollowRepository;
     private final AusenciaTomadaSeguidorLinhaRepository ausenciaRepository;
     private final CompetitionContextService competitionContextService;
+    private final FollowTakeScheduleService followTakeScheduleService;
 
     @Transactional
     public TentativaSeguidorLinhaDTO criar(TentativaSeguidorLinhaDTO dto) {
@@ -43,7 +44,16 @@ public class TentativaSeguidorLinhaService {
 
         TentativaSeguidorLinha tentativa = new TentativaSeguidorLinha();
         preencher(tentativa, dto, registration, determinarValidade(dto, config));
-        return new TentativaSeguidorLinhaDTO(tentativaRepository.save(tentativa));
+        TentativaSeguidorLinha salva = tentativaRepository.save(tentativa);
+
+        long totalTomada = tentativaRepository.countByRegistrationIdAndTomada(
+                registration.getId(), dto.getTomada());
+        followTakeScheduleService.registrarTentativa(
+                registration,
+                dto.getTomada(),
+                totalTomada >= config.getTentativasPorTomada());
+
+        return new TentativaSeguidorLinhaDTO(salva);
     }
 
     @Transactional(readOnly = true)
@@ -98,7 +108,16 @@ public class TentativaSeguidorLinhaService {
         validarDuplicidade(dto, id);
 
         preencher(tentativa, dto, registration, determinarValidade(dto, config));
-        return new TentativaSeguidorLinhaDTO(tentativaRepository.save(tentativa));
+        TentativaSeguidorLinha salva = tentativaRepository.save(tentativa);
+
+        long totalTomada = tentativaRepository.countByRegistrationIdAndTomada(
+                registration.getId(), dto.getTomada());
+        followTakeScheduleService.registrarTentativa(
+                registration,
+                dto.getTomada(),
+                totalTomada >= config.getTentativasPorTomada());
+
+        return new TentativaSeguidorLinhaDTO(salva);
     }
 
     @Transactional
