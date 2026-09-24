@@ -28,7 +28,7 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2   ✅ concluída / validada
 ETAPA 3   ✅ concluída / validada
-ETAPA 4   🚧 EM ANDAMENTO — BLOCO 3 / 3A FOLLOW LINE
+ETAPA 4   🚧 EM ANDAMENTO — BLOCO 3 IMPLEMENTADO / AGUARDANDO VALIDAÇÃO
 ```
 
 Blocos concluídos da ETAPA 1:
@@ -1471,7 +1471,7 @@ DESCLASSIFICADA:
 - Sumô já aplica automaticamente após esgotar tentativas de inspeção sem aprovação;
 - demais regras/manualização ficam no BLOCO 3.
 
-V1–V17 imutáveis. Próxima migration estrutural: V18+.
+V1–V18 imutáveis. Próxima migration estrutural: V19+.
 
 
 ### Checkpoint pós-correções
@@ -1529,7 +1529,7 @@ MySQL + Flyway V17 + testdata ✅
 Frontend Checks #164 ✅
 ```
 
-V1–V17 imutáveis. Próxima migration estrutural: V18+.
+V1–V18 imutáveis. Próxima migration estrutural: V19+.
 
 
 ## Fechamento formal do BLOCO 2 — 23/09/2026
@@ -1564,7 +1564,7 @@ MySQL + Flyway V17 + testdata ✅
 Frontend Checks #170 ✅
 ```
 
-V1–V17 permanecem imutáveis. Próxima migration estrutural: V18+.
+V1–V18 permanecem imutáveis. Próxima migration estrutural: V19+.
 
 Próximo: BLOCO 3 — Operação competitiva, ainda não iniciado.
 
@@ -1595,3 +1595,87 @@ Frontend Checks #177 ✅
 Nenhuma migration nova foi necessária. V1–V17 permanecem imutáveis; próxima migration estrutural V18+.
 
 Agenda Follow continua na 3C.
+
+
+## ETAPA 4 — BLOCO 3 implementado
+
+As frentes Follow, Sumô e Chaves/Agenda/Resultados estão implementadas e aguardam validação manual final.
+
+### Agenda competitiva V18
+
+V18 cria:
+
+```text
+follow_take_schedules
+follow_take_schedule_entries
+```
+
+Contrato:
+
+```text
+FOLLOW_LINE
+Competition + Category + Tomada
+→ chamada geral
+→ data/hora
+→ pista
+→ ordem
+→ status
+→ fila de Registration
+
+SUMO
+Match
+→ dataHora
+→ pista
+→ ordemExecucao
+→ statusConvocacao
+```
+
+`CompetitionAgendaService` unifica os dois tipos.
+
+Regras protegidas:
+
+- CompetitionContextService em toda operação administrativa do BLOCO 3;
+- chamada Follow única por competição/categoria/tomada;
+- fila criada/sincronizada a partir de inscrições APROVADAS e ativas;
+- registro histórico de fila não é apagado quando inscrição fica indisponível;
+- inscrição indisponível não pode receber nova convocação;
+- CONCLUIDA/AUSENTE/EM_EXECUCAO não podem ser forjados pelo endpoint genérico de convocação;
+- conclusão e ausência vêm do domínio competitivo;
+- chamada FINALIZADA/CANCELADA é somente leitura;
+- tentativa e ausência sincronizam automaticamente a fila;
+- partida futura AGUARDANDO_PARTICIPANTES não aparece como batalha real na Agenda;
+- Match EM_ANDAMENTO/FINALIZADA prevalece sobre status de convocação na Agenda.
+
+### Resultados
+
+- Follow: vencedor somente quando todas as tomadas dos participantes ativos/aprovados estiverem encerradas por tentativas ou ausência;
+- ranking parcial não é apresentado como campeão;
+- Sumô: vencedor da final da chave atual;
+- desclassificação/desistência podem resolver administrativamente uma partida quando exatamente um lado está indisponível;
+- resolução administrativa preserva a árvore e não cria round fictício.
+
+### Desclassificação
+
+- automática ao esgotar inspeções quando aplicável;
+- manual por DEV/GESTAO com motivo obrigatório;
+- auditada em `registration_status_history`;
+- inscrição permanece no histórico;
+- partidas comprometidas usam resolução administrativa específica.
+
+### Checkpoint
+
+```text
+Backend Tests #493 ✅
+166 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V18 + testdata ✅
+Frontend Checks #213 ✅
+```
+
+V1–V18 imutáveis. Próxima migration estrutural: V19+.
+
+Decisões ainda abertas para o fechamento manual:
+
+1. restringir ou não tentativa/ausência Follow exclusivamente a Competition EM_ANDAMENTO;
+2. definir representação de categoria Follow encerrada sem qualquer tentativa classificável.
+
+BLOCO 3 não deve ser marcado como validado antes do reteste manual.
