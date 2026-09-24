@@ -12,14 +12,18 @@ import br.edu.ufrb.rascomp.dto.CompetitionCategoryResultDTO;
 import br.edu.ufrb.rascomp.dto.RankingFollowDTO;
 import br.edu.ufrb.rascomp.model.Bracket;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
+import br.edu.ufrb.rascomp.model.ConfigFollow;
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.MatchResult;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
+import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.MatchResultRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
+import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -31,6 +35,9 @@ public class CompetitionResultsService {
     private final MatchRepository matchRepository;
     private final MatchResultRepository matchResultRepository;
     private final RankingFollowService rankingFollowService;
+    private final ConfigFollowRepository configFollowRepository;
+    private final TentativaSeguidorLinhaRepository tentativaFollowRepository;
+    private final AusenciaTomadaSeguidorLinhaRepository ausenciaFollowRepository;
     private final CompetitionContextService competitionContextService;
 
     @Transactional(readOnly = true)
@@ -62,7 +69,9 @@ public class CompetitionResultsService {
         List<RankingFollowDTO> ranking =
                 rankingFollowService.gerarRanking(competitionId, category.getId());
 
-        if (ranking.isEmpty()) return dto;
+        if (ranking.isEmpty() || !programaFollowConcluido(competitionId, category.getId())) {
+            return dto;
+        }
 
         RankingFollowDTO winner = ranking.get(0);
         dto.setStatus("CONCLUIDO");
@@ -71,6 +80,35 @@ public class CompetitionResultsService {
         dto.setWinnerTeamNome(winner.getTeamNome());
         dto.setTempoFinalSegundos(winner.getTempoFinalSegundos());
         return dto;
+    }
+
+    private boolean programaFollowConcluido(Long competitionId, Long categoryId) {
+        ConfigFollow config = configFollowRepository.findByCompetitionCategoryId(categoryId)
+                .orElse(null);
+        if (config == null) return false;
+
+        List<Registration> participantes = registrationRepository
+                .findByCompetitionIdAndCategoryIdAndStatusAndAtivoTrueOrderByIdAsc(
+                        competitionId,
+                        categoryId,
+                        br.edu.ufrb.rascomp.model.Enum.StatusRegistration.APROVADA);
+
+        if (participantes.isEmpty()) return false;
+
+        for (Registration registration : participantes) {
+            for (int tomada = 1; tomada <= config.getNumeroTomadas(); tomada++) {
+                boolean ausente = ausenciaFollowRepository
+                        .existsByRegistrationIdAndTomada(registration.getId(), tomada);
+                long tentativas = tentativaFollowRepository
+                        .countByRegistrationIdAndTomada(registration.getId(), tomada);
+
+                if (!ausente && tentativas < config.getTentativasPorTomada()) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private CompetitionCategoryResultDTO sumoResult(
