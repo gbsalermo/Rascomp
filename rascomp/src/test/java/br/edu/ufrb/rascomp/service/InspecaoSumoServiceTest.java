@@ -72,6 +72,8 @@ class InspecaoSumoServiceTest {
                 .build();
 
         when(registrationRepository.findById(10L)).thenReturn(Optional.of(registration));
+        when(registrationRepository.save(any(Registration.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
         when(configSumoRepository.findByCompetitionCategoryId(1L)).thenReturn(Optional.of(config));
     }
 
