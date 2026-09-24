@@ -1676,6 +1676,71 @@ V1–V18 imutáveis. Próxima migration estrutural: V19+.
 Decisões ainda abertas para o fechamento manual:
 
 1. restringir ou não tentativa/ausência Follow exclusivamente a Competition EM_ANDAMENTO;
-2. definir representação de categoria Follow encerrada sem qualquer tentativa classificável.
+2. ✅ RESOLVIDO — categoria Follow sem tentativa classificável oferece Tomada Extra ou decisão administrativa auditada.
 
 BLOCO 3 não deve ser marcado como validado antes do reteste manual.
+
+
+## ETAPA 4 — BLOCO 3 — resolução Follow sem classificação
+
+Regra fechada em 24/09/2026.
+
+Quando o programa normal do Follow termina sem qualquer tentativa válida/classificável:
+
+- nenhum vencedor é inferido automaticamente;
+- a organização pode criar uma Tomada Extra;
+- ou pode registrar decisão administrativa do vencedor.
+
+### Tomada Extra
+
+- número excepcional = `ConfigFollow.numeroTomadas + 1`;
+- não altera `ConfigFollow.numeroTomadas`;
+- é criada explicitamente em `POST /api/v1/agenda-follow/tomada-extra`;
+- reutiliza `FollowTakeSchedule`/fila/convocação da V18;
+- tentativas e ausências só aceitam a tomada extra se a chamada excepcional estiver autorizada/ativa;
+- Agenda identifica explicitamente `Tomada Extra N`;
+- ranking usa normalmente uma tentativa classificável feita na extra.
+
+### Decisão administrativa
+
+V19 cria `follow_manual_results`:
+
+- competition;
+- category;
+- winnerRegistration;
+- decidedByUser;
+- justificativa;
+- dataCadastro;
+- unique por Competition + Category.
+
+Endpoint:
+
+```text
+POST /api/v1/resultados-competicao/follow/decisao-organizacao
+```
+
+Regras:
+
+- somente DEV/GESTAO;
+- mesma competição/categoria;
+- Registration ativa e APROVADA;
+- justificativa obrigatória;
+- só após programa encerrado sem tentativa classificável;
+- se existir Tomada Extra ativa, a decisão espera a extra encerrar/cancelar;
+- checkpoints são evidência operacional, nunca cálculo automático de vencedor;
+- não é criado tempo fictício.
+
+`CompetitionResultsService` devolve metadados de resolução e trata resultado manual como oficial da categoria.
+
+Checkpoint:
+
+```text
+Backend Tests #517 ✅
+169 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V19 + testdata ✅
+Frontend Checks #224 ✅
+```
+
+V1–V19 imutáveis. Próxima migration estrutural: V20+.
+
+Única decisão restante para o fechamento manual do BLOCO 3: bloquear ou não tentativa/ausência Follow fora de Competition `EM_ANDAMENTO`.
