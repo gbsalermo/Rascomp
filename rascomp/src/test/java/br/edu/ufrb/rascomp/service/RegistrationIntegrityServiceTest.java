@@ -114,12 +114,25 @@ class RegistrationIntegrityServiceTest {
     }
 
     @Test
-    void reativacaoDeveRespeitarJanelaDeInscricoes() {
+    void organizacaoPodeReativarQuandoStatusEstaAbertoMesmoComDataCalendarioAntiga() {
+        registration.setStatus(StatusRegistration.CANCELADA);
+        registration.setAtivo(false);
+        competition.setFimInscricoes(LocalDate.now().minusDays(1));
+        when(registrationRepository.save(any(Registration.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        RegistrationDTO result = service.reativar(1L);
+
+        assertEquals(StatusRegistration.PENDENTE, result.getStatus());
+        assertEquals(true, result.getAtivo());
+    }
+
+    @Test
+    void participanteContinuaRespeitandoPeriodoCalendarioNaReativacao() {
         registration.setStatus(StatusRegistration.CANCELADA);
         registration.setAtivo(false);
         competition.setFimInscricoes(LocalDate.now().minusDays(1));
 
-        assertThrows(IllegalArgumentException.class, () -> service.reativar(1L));
+        assertThrows(IllegalArgumentException.class, () -> service.reativarPorParticipante(1L));
 
         assertEquals(StatusRegistration.CANCELADA, registration.getStatus());
         verify(registrationRepository, never()).save(any());
