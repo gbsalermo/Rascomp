@@ -27,7 +27,7 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
 ETAPA 3  ✅ concluída / validada
-ETAPA 4  🚧 em andamento — BLOCO 2 implementado / aguardando validação
+ETAPA 4  🚧 em andamento — BLOCO 2 concluído / BLOCO 3 próximo
 ```
 
 A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 foi concluída/validada em 13/09/2026. A ETAPA 3 foi concluída/validada em 19/09/2026 após integração, testes automatizados e validação prática da matriz de permissões.
@@ -117,7 +117,7 @@ Esses itens foram executados na ETAPA 2 sem antecipação durante a ETAPA 1.
 
 ## Próximo trabalho
 
-Checkpoint atual: **ETAPA 4 — Consolidação funcional e polimento do MVP 🚧**. **BLOCO 2 implementado e aguardando validação manual/decisões finais**. A validação final de permissões permanece incorporada à ETAPA 15.
+Checkpoint atual: **ETAPA 4 — Consolidação funcional e polimento do MVP 🚧**. **BLOCO 2 concluído e validado**; próximo: **BLOCO 3 — Operação competitiva**, ainda não iniciado. A validação final de permissões permanece incorporada à ETAPA 15.
 
 ## Roadmap reorganizado — 19/09/2026
 
