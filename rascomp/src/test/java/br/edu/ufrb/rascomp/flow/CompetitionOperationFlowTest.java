@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import br.edu.ufrb.rascomp.dto.AusenciaTomadaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.dto.FollowTakeScheduleDTO;
 import br.edu.ufrb.rascomp.dto.FollowTakeScheduleEntryDTO;
 import br.edu.ufrb.rascomp.dto.InspecaoSumoDTO;
@@ -30,6 +31,7 @@ import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoPartida;
 import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoFollow;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.service.AusenciaTomadaSeguidorLinhaService;
 import br.edu.ufrb.rascomp.service.BracketGenerationService;
 import br.edu.ufrb.rascomp.service.CompetitionAgendaService;
 import br.edu.ufrb.rascomp.service.CompetitionResultsService;
@@ -46,6 +48,7 @@ import br.edu.ufrb.rascomp.service.TentativaSeguidorLinhaService;
 class CompetitionOperationFlowTest extends IntegrationFlowTestSupport {
 
     @Autowired private FollowTakeScheduleService followScheduleService;
+    @Autowired private AusenciaTomadaSeguidorLinhaService ausenciaService;
     @Autowired private TentativaSeguidorLinhaService tentativaService;
     @Autowired private CompetitionAgendaService agendaService;
     @Autowired private CompetitionResultsService resultsService;
@@ -140,6 +143,43 @@ class CompetitionOperationFlowTest extends IntegrationFlowTestSupport {
         assertEquals(1, resultado.size());
         assertEquals("CONCLUIDO", resultado.get(0).getStatus());
         assertEquals(registration.getId(), resultado.get(0).getWinnerRegistrationId());
+    }
+
+    @Test
+    void ausenciaFollowDeveEncerrarConvocacaoSemTentativaFicticia() {
+        organizacaoAutenticada();
+
+        Competition competition = competition(StatusCompetition.EM_ANDAMENTO);
+        CompetitionCategory category = followCategory();
+        Team team = team();
+        Registration registration = approvedRegistration(
+                competition, category, team, robot(team));
+
+        FollowTakeScheduleDTO schedule = new FollowTakeScheduleDTO();
+        schedule.setCompetitionId(competition.getId());
+        schedule.setCategoryId(category.getId());
+        schedule.setTomada(2);
+        schedule.setDataHora(LocalDateTime.now().plusHours(1));
+        schedule.setPista("Pista B");
+        schedule.setOrdemExecucao(2);
+        schedule.setStatus(StatusChamadaFollow.AGENDADA);
+
+        FollowTakeScheduleDTO criada = followScheduleService.criar(schedule);
+        long tentativasAntes = tentativaRepository.count();
+
+        AusenciaTomadaSeguidorLinhaDTO ausencia = new AusenciaTomadaSeguidorLinhaDTO();
+        ausencia.setRegistrationId(registration.getId());
+        ausencia.setTomada(2);
+        ausencia.setObservacao("Não compareceu à convocação.");
+        ausenciaService.marcar(ausencia);
+
+        assertEquals(tentativasAntes, tentativaRepository.count());
+        var fila = followScheduleService.listarFila(criada.getId());
+        assertEquals(1, fila.size());
+        assertEquals(StatusConvocacaoFollow.AUSENTE, fila.get(0).getStatus());
+        assertEquals(
+                StatusChamadaFollow.FINALIZADA,
+                followScheduleService.buscarPorId(criada.getId()).getStatus());
     }
 
     @Test
