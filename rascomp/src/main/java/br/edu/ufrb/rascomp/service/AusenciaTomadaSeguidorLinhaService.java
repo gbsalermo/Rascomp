@@ -32,6 +32,7 @@ public class AusenciaTomadaSeguidorLinhaService {
     private final UserAccountService userAccountService;
     private final CompetitionContextService competitionContextService;
     private final FollowTakeScheduleService followTakeScheduleService;
+    private final FollowResolutionService followResolutionService;
 
     @Transactional
     public AusenciaTomadaSeguidorLinhaDTO marcar(AusenciaTomadaSeguidorLinhaDTO dto) {
@@ -41,7 +42,7 @@ public class AusenciaTomadaSeguidorLinhaService {
         validarRegistration(registration);
 
         ConfigFollow config = buscarConfigFollow(registration);
-        validarTomada(dto.getTomada(), config);
+        validarTomada(dto.getTomada(), config, registration);
 
         if (tentativaRepository.existsByRegistrationIdAndTomada(registration.getId(), dto.getTomada())) {
             throw new IllegalArgumentException(
@@ -120,10 +121,17 @@ public class AusenciaTomadaSeguidorLinhaService {
                         "Configuração de Seguidor de Linha não encontrada para a categoria: " + categoryId));
     }
 
-    private void validarTomada(Integer tomada, ConfigFollow config) {
-        if (tomada == null || tomada < 1 || tomada > config.getNumeroTomadas()) {
+    private void validarTomada(
+            Integer tomada,
+            ConfigFollow config,
+            Registration registration) {
+
+        if (!followResolutionService.tomadaPermitida(
+                registration.getCompetition().getId(),
+                registration.getCategory().getId(),
+                tomada)) {
             throw new IllegalArgumentException(
-                    "Tomada inválida. Esta categoria permite tomadas de 1 até " + config.getNumeroTomadas() + ".");
+                    "Tomada inválida. Use uma tomada normal ou uma Tomada Extra previamente autorizada.");
         }
     }
 }
