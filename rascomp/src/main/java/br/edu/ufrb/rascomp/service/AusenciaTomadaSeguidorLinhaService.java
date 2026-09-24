@@ -31,6 +31,7 @@ public class AusenciaTomadaSeguidorLinhaService {
     private final ConfigFollowRepository configFollowRepository;
     private final UserAccountService userAccountService;
     private final CompetitionContextService competitionContextService;
+    private final FollowTakeScheduleService followTakeScheduleService;
 
     @Transactional
     public AusenciaTomadaSeguidorLinhaDTO marcar(AusenciaTomadaSeguidorLinhaDTO dto) {
@@ -59,7 +60,9 @@ public class AusenciaTomadaSeguidorLinhaService {
                 : dto.getObservacao().trim());
         ausencia.setRegistradoPor(organizacao);
 
-        return new AusenciaTomadaSeguidorLinhaDTO(ausenciaRepository.save(ausencia));
+        AusenciaTomadaSeguidorLinha salva = ausenciaRepository.save(ausencia);
+        followTakeScheduleService.registrarAusencia(registration, dto.getTomada());
+        return new AusenciaTomadaSeguidorLinhaDTO(salva);
     }
 
     @Transactional(readOnly = true)
