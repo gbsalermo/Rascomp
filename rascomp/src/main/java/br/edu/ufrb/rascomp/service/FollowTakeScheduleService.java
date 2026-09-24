@@ -150,6 +150,7 @@ public class FollowTakeScheduleService {
         competitionContextService.exigirOperavel(entry.getSchedule().getCompetition().getId());
 
         validarChamadaEditavel(entry.getSchedule());
+        validarInscricaoDisponivel(entry.getRegistration());
 
         if (entry.getStatus() == StatusConvocacaoFollow.AUSENTE
                 || entry.getStatus() == StatusConvocacaoFollow.CONCLUIDA) {
@@ -205,6 +206,14 @@ public class FollowTakeScheduleService {
                         registration.getCategory().getId(),
                         tomada,
                         registration.getId());
+    }
+
+    private void validarInscricaoDisponivel(Registration registration) {
+        if (!Boolean.TRUE.equals(registration.getAtivo())
+                || registration.getStatus() != StatusRegistration.APROVADA) {
+            throw new IllegalArgumentException(
+                    "A inscrição não está mais apta para esta chamada.");
+        }
     }
 
     private void validarChamadaEditavel(FollowTakeSchedule schedule) {
