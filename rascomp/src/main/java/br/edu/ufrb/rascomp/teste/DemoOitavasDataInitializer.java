@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -141,7 +142,7 @@ public class DemoOitavasDataInitializer {
                 new UsernamePasswordAuthenticationToken(
                         user,
                         user.getPassword(),
-                        user.getAuthorities()));
+                        java.util.List.of(new SimpleGrantedAuthority("ROLE_DEV"))));
     }
 
     private Team garantirEquipe(int indice, Institution institution) {
