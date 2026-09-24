@@ -236,6 +236,11 @@ public class RegistrationService {
 
     @Transactional
     public RegistrationDTO cancelarAprovadaPorSolicitacao(Long id) {
+        return cancelarAprovadaPorSolicitacao(id, null);
+    }
+
+    @Transactional
+    public RegistrationDTO cancelarAprovadaPorSolicitacao(Long id, String motivo) {
         Registration registration = buscarRegistration(id);
         if (registration.getStatus() != StatusRegistration.APROVADA || !Boolean.TRUE.equals(registration.getAtivo())) {
             throw new IllegalArgumentException("A inscrição precisa estar APROVADA e ativa para concluir a solicitação.");
@@ -243,7 +248,7 @@ public class RegistrationService {
         StatusRegistration destino = possuiAtividadeCompetitiva(registration.getId())
                 ? StatusRegistration.DESISTENTE
                 : StatusRegistration.CANCELADA;
-        cancelar(registration, destino);
+        cancelar(registration, destino, motivo);
         return new RegistrationDTO(registration);
     }
 
@@ -322,6 +327,13 @@ public class RegistrationService {
     }
 
     private void cancelar(Registration registration, StatusRegistration statusDestino) {
+        cancelar(registration, statusDestino, null);
+    }
+
+    private void cancelar(
+            Registration registration,
+            StatusRegistration statusDestino,
+            String motivo) {
         StatusRegistration statusAnterior = registration.getStatus();
         registration.setAtivo(false);
         registration.setStatus(statusDestino);
@@ -334,9 +346,11 @@ public class RegistrationService {
                 statusDestino == StatusRegistration.DESISTENTE
                         ? RegistrationStatusChangeType.DESISTENCIA
                         : RegistrationStatusChangeType.CANCELAMENTO,
-                statusDestino == StatusRegistration.DESISTENTE
-                        ? "Saída após atividade competitiva registrada."
-                        : null);
+                motivo != null && !motivo.isBlank()
+                        ? motivo
+                        : (statusDestino == StatusRegistration.DESISTENTE
+                                ? "Saída após atividade competitiva registrada."
+                                : null));
     }
 
     private boolean possuiAtividadeCompetitiva(Long registrationId) {
