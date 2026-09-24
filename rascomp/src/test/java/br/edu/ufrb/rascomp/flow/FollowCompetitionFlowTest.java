@@ -9,6 +9,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ActiveProfiles;
 
 import br.edu.ufrb.rascomp.dto.AusenciaTomadaSeguidorLinhaDTO;
@@ -19,6 +20,7 @@ import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.service.AusenciaTomadaSeguidorLinhaService;
+import br.edu.ufrb.rascomp.service.CompetitionContextService;
 import br.edu.ufrb.rascomp.service.RankingFollowService;
 import br.edu.ufrb.rascomp.service.TentativaSeguidorLinhaService;
 
@@ -29,6 +31,7 @@ class FollowCompetitionFlowTest extends IntegrationFlowTestSupport {
     @Autowired private TentativaSeguidorLinhaService tentativaService;
     @Autowired private AusenciaTomadaSeguidorLinhaService ausenciaService;
     @Autowired private RankingFollowService rankingService;
+    @Autowired private CompetitionContextService competitionContextService;
 
     @AfterEach
     void clearSecurity() {
@@ -64,6 +67,30 @@ class FollowCompetitionFlowTest extends IntegrationFlowTestSupport {
         assertEquals(new BigDecimal("42.000"), ranking.get(0).getTempoFinalSegundos());
         assertEquals(1, ranking.get(0).getTomada());
         assertEquals(2, ranking.get(0).getNumeroTentativa());
+    }
+
+    @Test
+    void gestaoNaoPodeOperarFollowForaDaCompeticaoVigente() {
+        organizacaoAutenticada();
+
+        Competition vigente = competition(StatusCompetition.EM_ANDAMENTO);
+        competitionContextService.definirVigente(vigente.getId());
+
+        Competition outra = competition(StatusCompetition.EM_ANDAMENTO);
+        CompetitionCategory category = followCategory();
+        Team team = team();
+        Registration registration = approvedRegistration(outra, category, team, robot(team));
+
+        gestaoAutenticada();
+
+        assertThrows(
+                AccessDeniedException.class,
+                () -> tentativaService.criar(
+                        tentativa(registration, 1, 1, "41.000", 0, true, true)));
+
+        assertThrows(
+                AccessDeniedException.class,
+                () -> ausenciaService.listarPorContexto(outra.getId(), category.getId()));
     }
 
     @Test
