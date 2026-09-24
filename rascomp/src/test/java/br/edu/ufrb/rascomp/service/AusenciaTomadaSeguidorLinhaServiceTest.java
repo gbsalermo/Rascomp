@@ -46,6 +46,7 @@ class AusenciaTomadaSeguidorLinhaServiceTest {
     @Mock private CompetitionContextService competitionContextService;
 
         @Mock private FollowTakeScheduleService followTakeScheduleService;
+    @Mock private FollowResolutionService followResolutionService;
 
 @InjectMocks private AusenciaTomadaSeguidorLinhaService service;
 
@@ -105,6 +106,9 @@ class AusenciaTomadaSeguidorLinhaServiceTest {
 
         lenient().when(registrationRepository.findById(5L)).thenReturn(Optional.of(registration));
         lenient().when(configFollowRepository.findByCompetitionCategoryId(2L)).thenReturn(Optional.of(config));
+        lenient().when(followResolutionService.tomadaPermitida(1L, 2L, 1)).thenReturn(true);
+        lenient().when(followResolutionService.tomadaPermitida(1L, 2L, 2)).thenReturn(true);
+        lenient().when(followResolutionService.tomadaPermitida(1L, 2L, 3)).thenReturn(true);
     }
 
     @Test
