@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
+import br.edu.ufrb.rascomp.dto.RegistrationDisqualificationDTO;
 import br.edu.ufrb.rascomp.dto.RegistrationStatusHistoryDTO;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.service.RegistrationService;
@@ -72,6 +73,13 @@ public class RegistrationController {
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         registrationService.deletar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/desclassificar")
+    public ResponseEntity<RegistrationDTO> desclassificar(
+            @PathVariable Long id,
+            @Valid @RequestBody RegistrationDisqualificationDTO dto) {
+        return ResponseEntity.ok(registrationService.desclassificar(id, dto.getMotivo()));
     }
 
     @PatchMapping("/{id}/reativar")
