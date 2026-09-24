@@ -33,6 +33,12 @@ public class FollowTakeScheduleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.criar(dto));
     }
 
+    @PostMapping("/tomada-extra")
+    public ResponseEntity<FollowTakeScheduleDTO> criarTomadaExtra(
+            @Valid @RequestBody FollowTakeScheduleDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.criarTomadaExtra(dto));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<FollowTakeScheduleDTO> atualizar(
             @PathVariable Long id,
