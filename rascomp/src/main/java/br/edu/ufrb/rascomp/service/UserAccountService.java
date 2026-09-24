@@ -140,6 +140,21 @@ public class UserAccountService {
             validarNaoEhUltimoDevAtivo();
         }
 
+        Competitor competitorVinculado = usuario.getRole() == UserRole.PARTICIPANTE
+                ? competitorRepository.findByUserAccountId(usuario.getId()).orElse(null)
+                : null;
+
+        if (ativo && competitorVinculado != null) {
+            if (!Boolean.TRUE.equals(competitorVinculado.getTeam().getAtivo())) {
+                throw new IllegalArgumentException(
+                        "Reative a equipe vinculada antes de reativar esta conta PARTICIPANTE.");
+            }
+            if (!Boolean.TRUE.equals(competitorVinculado.getTeam().getInstitution().getAtivo())) {
+                throw new IllegalArgumentException(
+                        "Reative a instituição vinculada antes de reativar esta conta PARTICIPANTE.");
+            }
+        }
+
         usuario.setAtivo(ativo);
         if (!ativo) {
             usuario.setSessionVersion(usuario.getSessionVersion() == null ? 1L : usuario.getSessionVersion() + 1L);
@@ -147,11 +162,9 @@ public class UserAccountService {
 
         UserAccount salvo = userAccountRepository.save(usuario);
 
-        if (salvo.getRole() == UserRole.PARTICIPANTE) {
-            competitorRepository.findByUserAccountId(salvo.getId()).ifPresent(competitor -> {
-                competitor.setAtivo(ativo);
-                competitorRepository.save(competitor);
-            });
+        if (competitorVinculado != null) {
+            competitorVinculado.setAtivo(ativo);
+            competitorRepository.save(competitorVinculado);
         }
 
         return toDTOComVinculoCompetidor(salvo);
