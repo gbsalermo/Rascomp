@@ -14,6 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import br.edu.ufrb.rascomp.dto.FollowTakeScheduleDTO;
 import br.edu.ufrb.rascomp.dto.InspecaoSumoDTO;
+import br.edu.ufrb.rascomp.dto.MatchAgendaDTO;
 import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.model.Bracket;
 import br.edu.ufrb.rascomp.model.Competition;
@@ -24,6 +25,7 @@ import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusChamadaFollow;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
+import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoPartida;
 import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoFollow;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.service.BracketGenerationService;
@@ -32,6 +34,7 @@ import br.edu.ufrb.rascomp.service.CompetitionResultsService;
 import br.edu.ufrb.rascomp.service.FollowTakeScheduleService;
 import br.edu.ufrb.rascomp.service.InspecaoSumoService;
 import br.edu.ufrb.rascomp.service.MatchResultService;
+import br.edu.ufrb.rascomp.service.MatchService;
 import br.edu.ufrb.rascomp.service.RegistrationService;
 import br.edu.ufrb.rascomp.service.RegistrationStatusHistoryService;
 import br.edu.ufrb.rascomp.service.TentativaSeguidorLinhaService;
@@ -48,6 +51,7 @@ class CompetitionOperationFlowTest extends IntegrationFlowTestSupport {
     @Autowired private BracketGenerationService bracketGenerationService;
     @Autowired private RegistrationService registrationService;
     @Autowired private MatchResultService matchResultService;
+    @Autowired private MatchService matchService;
     @Autowired private RegistrationStatusHistoryService statusHistoryService;
 
     @AfterEach
@@ -96,6 +100,20 @@ class CompetitionOperationFlowTest extends IntegrationFlowTestSupport {
                         && item.getSourceId().equals(criada.getId())
                         && Integer.valueOf(1).equals(item.getConcluidos())));
 
+        var parcial = resultsService.listar(competition.getId());
+        assertEquals(1, parcial.size());
+        assertEquals("PENDENTE", parcial.get(0).getStatus());
+
+        for (int tomada = 2; tomada <= 3; tomada++) {
+            for (int numero = 1; numero <= 3; numero++) {
+                tentativaService.criar(tentativa(
+                        registration,
+                        tomada,
+                        numero,
+                        tomada == 2 ? "39.000" : "38.000"));
+            }
+        }
+
         var resultado = resultsService.listar(competition.getId());
         assertEquals(1, resultado.size());
         assertEquals("CONCLUIDO", resultado.get(0).getStatus());
@@ -129,6 +147,19 @@ class CompetitionOperationFlowTest extends IntegrationFlowTestSupport {
         competition.setStatus(StatusCompetition.EM_ANDAMENTO);
         competitionRepository.save(competition);
 
+        MatchAgendaDTO agendaPartida = new MatchAgendaDTO();
+        agendaPartida.setDataHora(LocalDateTime.now().plusHours(2));
+        agendaPartida.setPista("Dohyo A");
+        agendaPartida.setOrdemExecucao(2);
+        agendaPartida.setStatusConvocacao(StatusConvocacaoPartida.PRONTA);
+        matchService.atualizarAgenda(match.getId(), agendaPartida);
+
+        var agendaAntes = agendaService.listar(competition.getId());
+        assertTrue(agendaAntes.stream().anyMatch(item ->
+                "SUMO_MATCH".equals(item.getTipo())
+                        && item.getMatchId().equals(match.getId())
+                        && "PRONTA".equals(item.getStatus())));
+
         long roundsAntes = roundSumoRepository.count();
         registrationService.desclassificar(a.getId(), "Infração técnica confirmada pela organização.");
 
@@ -138,6 +169,12 @@ class CompetitionOperationFlowTest extends IntegrationFlowTestSupport {
         var resultado = matchResultService.resolverIndisponibilidadeAdministrativa(match.getId());
         assertEquals(b.getId(), resultado.getWinnerRegistrationId());
         assertEquals(roundsAntes, roundSumoRepository.count());
+
+        var agendaDepois = agendaService.listar(competition.getId());
+        assertTrue(agendaDepois.stream().anyMatch(item ->
+                "SUMO_MATCH".equals(item.getTipo())
+                        && item.getMatchId().equals(match.getId())
+                        && "FINALIZADA".equals(item.getStatus())));
 
         var historico = statusHistoryService.listar(a.getId());
         assertTrue(historico.stream().anyMatch(item ->
