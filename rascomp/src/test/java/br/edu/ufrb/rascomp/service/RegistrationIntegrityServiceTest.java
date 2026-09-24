@@ -113,8 +113,6 @@ class RegistrationIntegrityServiceTest {
         registration.setStatus(StatusRegistration.PENDENTE);
 
         when(registrationRepository.findById(1L)).thenReturn(Optional.of(registration));
-        when(registrationRepository.save(any(Registration.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -173,6 +171,8 @@ class RegistrationIntegrityServiceTest {
     @Test
     void organizacaoCancelaAprovadaSemHistoricoComoCancelada() {
         registration.setStatus(StatusRegistration.APROVADA);
+        when(registrationRepository.save(any(Registration.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.deletar(1L);
 
@@ -190,6 +190,8 @@ class RegistrationIntegrityServiceTest {
     void organizacaoMarcaComoDesistenteQuandoJaExisteAtividadeCompetitiva() {
         registration.setStatus(StatusRegistration.APROVADA);
         when(tentativaRepository.existsByRegistrationId(1L)).thenReturn(true);
+        when(registrationRepository.save(any(Registration.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.deletar(1L);
 
@@ -207,6 +209,8 @@ class RegistrationIntegrityServiceTest {
     void ausenciaDeTomadaFollowTambemContaComoAtividadeCompetitiva() {
         registration.setStatus(StatusRegistration.APROVADA);
         when(ausenciaFollowRepository.existsByRegistrationId(1L)).thenReturn(true);
+        when(registrationRepository.save(any(Registration.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.deletar(1L);
 
