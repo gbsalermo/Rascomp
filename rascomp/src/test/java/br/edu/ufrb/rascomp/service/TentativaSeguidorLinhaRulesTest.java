@@ -40,7 +40,9 @@ class TentativaSeguidorLinhaRulesTest {
     @Mock private AusenciaTomadaSeguidorLinhaRepository ausenciaRepository;
     @Mock private CompetitionContextService competitionContextService;
 
-    @InjectMocks private TentativaSeguidorLinhaService service;
+        @Mock private FollowTakeScheduleService followTakeScheduleService;
+
+@InjectMocks private TentativaSeguidorLinhaService service;
 
     @BeforeEach
     void setup() {
