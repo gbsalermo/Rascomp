@@ -30,6 +30,7 @@ public class CompetitionAdminCatalogService {
         return robotImageService.listar(robotId);
     }
 
+    @Transactional(readOnly = true)
     public CompetitionAdminCatalogDTO buscar(Long competitionId) {
         competitionContextService.exigirOperavel(competitionId);
 
