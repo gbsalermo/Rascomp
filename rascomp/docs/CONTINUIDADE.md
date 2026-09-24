@@ -1471,7 +1471,7 @@ DESCLASSIFICADA:
 - Sumô já aplica automaticamente após esgotar tentativas de inspeção sem aprovação;
 - demais regras/manualização ficam no BLOCO 3.
 
-V1–V16 imutáveis. Próxima migration estrutural: V17+.
+V1–V17 imutáveis. Próxima migration estrutural: V18+.
 
 
 ### Checkpoint pós-correções
@@ -1483,4 +1483,50 @@ MySQL + Flyway V16 + testdata ✅
 Frontend Checks #149 ✅
 ```
 
-Próxima migration estrutural: V17+.
+Próxima migration estrutural: V18+.
+
+
+## ETAPA 4 — BLOCO 2 — auditoria final V17
+
+V17 cria a tabela `registration_status_history`.
+
+Cada transição auditada registra:
+
+- Registration;
+- status anterior;
+- novo status;
+- tipo da mudança;
+- UserAccount responsável quando disponível;
+- motivo;
+- data/hora.
+
+Tipos atuais:
+
+```text
+CRIACAO
+APROVACAO
+REJEICAO
+CANCELAMENTO
+DESISTENCIA
+REATIVACAO
+DESCLASSIFICACAO
+```
+
+Integrações:
+
+- RegistrationService registra criação, revisão, cancelamento/desistência e reativação;
+- InspecaoSumoService registra a desclassificação automática por esgotamento das tentativas de inspeção;
+- solicitações de cancelamento aprovadas propagam o motivo original do participante;
+- `GET /api/v1/inscricoes/{id}/historico-status` respeita CompetitionContextService;
+- não há backfill fictício das transições anteriores à V17.
+
+Checkpoint:
+
+```text
+Backend Tests #414 ✅
+161 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V17 + testdata ✅
+Frontend Checks #164 ✅
+```
+
+V1–V17 imutáveis. Próxima migration estrutural: V18+.
