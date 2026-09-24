@@ -79,6 +79,7 @@ class RegistrationFlowTest extends IntegrationFlowTestSupport {
 
     @Test
     void cancelamentoDepoisDeAtividadeFollowDeveVirarDesistente() {
+        organizacaoAutenticada();
         Competition competition = competition(StatusCompetition.EM_ANDAMENTO);
         CompetitionCategory category = followCategory();
         Team team = team();
