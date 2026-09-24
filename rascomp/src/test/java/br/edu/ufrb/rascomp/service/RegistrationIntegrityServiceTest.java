@@ -113,6 +113,8 @@ class RegistrationIntegrityServiceTest {
         registration.setStatus(StatusRegistration.PENDENTE);
 
         when(registrationRepository.findById(1L)).thenReturn(Optional.of(registration));
+        when(registrationRepository.save(any(Registration.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
