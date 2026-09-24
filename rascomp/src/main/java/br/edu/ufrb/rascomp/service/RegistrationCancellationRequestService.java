@@ -106,7 +106,11 @@ public class RegistrationCancellationRequestService {
         RegistrationCancellationRequest request = buscarPendente(requestId);
         competitionContextService.exigirOperavel(request.getRegistration().getCompetition().getId());
         UserAccount revisor = exigirOperadorCompeticao();
-        concluir(request, StatusCancellationRequest.REJEITADA, revisor, resposta);
+        concluir(
+                request,
+                StatusCancellationRequest.REJEITADA,
+                revisor,
+                normalizarObrigatorio(resposta, "Informe a justificativa para rejeitar o cancelamento."));
         return new RegistrationCancellationRequestDTO(requestRepository.save(request));
     }
 
