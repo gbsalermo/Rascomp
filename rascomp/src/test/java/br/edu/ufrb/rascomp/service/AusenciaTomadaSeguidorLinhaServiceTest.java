@@ -45,7 +45,9 @@ class AusenciaTomadaSeguidorLinhaServiceTest {
     @Mock private UserAccountService userAccountService;
     @Mock private CompetitionContextService competitionContextService;
 
-    @InjectMocks private AusenciaTomadaSeguidorLinhaService service;
+        @Mock private FollowTakeScheduleService followTakeScheduleService;
+
+@InjectMocks private AusenciaTomadaSeguidorLinhaService service;
 
     private Registration registration;
     private UserAccount organizacao;
