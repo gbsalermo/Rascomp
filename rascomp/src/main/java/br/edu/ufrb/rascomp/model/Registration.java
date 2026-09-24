@@ -85,6 +85,9 @@ public class Registration implements Serializable {
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
 
+    @Column(name = "review_reason", length = 500)
+    private String reviewReason;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private StatusRegistration status;
