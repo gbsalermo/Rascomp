@@ -1433,11 +1433,12 @@ Frontend Checks #137 ✅
 
 V1–V15 permanecem imutáveis. Próxima migration estrutural: V16+.
 
-### Decisões ainda não fechadas
+### Decisões de produto encerradas
 
-- `CompetitionCategory` continua global; decidir se será criada associação explícita Competition ↔ Category;
-- UserAccount PARTICIPANTE e Competitor continuam identidades separadas: desativar a conta não altera automaticamente Competitor/Registration;
-- se houver associação Competition ↔ Category, decidir se GESTAO poderá habilitar categorias globais na vigente ou se continuará DEV-only.
+- `CompetitionCategory` permanece global;
+- UserAccount PARTICIPANTE sincroniza identidade e ativo/inativo com Competitor vinculado;
+- Team/Robot/Registration não sofrem cascata automática;
+- catálogo de categorias permanece DEV-only.
 
 Não iniciar BLOCO 3 antes da validação prática/decisões finais do BLOCO 2.
 
@@ -1471,3 +1472,15 @@ DESCLASSIFICADA:
 - demais regras/manualização ficam no BLOCO 3.
 
 V1–V16 imutáveis. Próxima migration estrutural: V17+.
+
+
+### Checkpoint pós-correções
+
+```text
+Backend Tests #388 ✅
+161 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V16 + testdata ✅
+Frontend Checks #149 ✅
+```
+
+Próxima migration estrutural: V17+.
