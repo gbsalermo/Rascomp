@@ -25,9 +25,11 @@ public class BracketService {
     private final CompetitionRepository competitionRepository;
     private final CompetitionCategoryRepository categoryRepository;
     private final BracketIntegrityService bracketIntegrityService;
+    private final CompetitionContextService competitionContextService;
 
     @Transactional
     public BracketDTO criar(BracketDTO dto) {
+        competitionContextService.exigirOperavel(dto.getCompetitionId());
         Competition competition = buscarCompetitionParaAtualizacao(dto.getCompetitionId());
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         validarAtivos(competition, category);
@@ -72,6 +74,7 @@ public class BracketService {
     @Transactional
     public BracketDTO atualizar(Long id, BracketDTO dto) {
         Bracket bracket = buscarBracket(id);
+        competitionContextService.exigirOperavel(bracket.getCompetition().getId());
         bracketIntegrityService.validarSemAtividadeCompetitiva(bracket);
 
         Competition competition = buscarCompetitionParaAtualizacao(dto.getCompetitionId());
@@ -96,6 +99,7 @@ public class BracketService {
     @Transactional
     public void deletar(Long id) {
         Bracket bracket = buscarBracket(id);
+        competitionContextService.exigirOperavel(bracket.getCompetition().getId());
         bracketIntegrityService.validarSemAtividadeCompetitiva(bracket);
         bracket.setAtivo(false);
         bracket.setAtual(false);
@@ -106,6 +110,7 @@ public class BracketService {
     @Transactional
     public BracketDTO reativar(Long id) {
         Bracket bracket = buscarBracket(id);
+        competitionContextService.exigirOperavel(bracket.getCompetition().getId());
         bracketIntegrityService.validarSemAtividadeCompetitiva(bracket);
         Competition competition = buscarCompetitionParaAtualizacao(bracket.getCompetition().getId());
         validarAtivos(competition, bracket.getCategory());
