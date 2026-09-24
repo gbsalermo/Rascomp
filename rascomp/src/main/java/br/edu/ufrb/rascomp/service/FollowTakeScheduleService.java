@@ -133,6 +133,7 @@ public class FollowTakeScheduleService {
     public List<FollowTakeScheduleEntryDTO> sincronizarFila(Long scheduleId) {
         FollowTakeSchedule schedule = buscarSchedule(scheduleId);
         competitionContextService.exigirOperavel(schedule.getCompetition().getId());
+        validarChamadaEditavel(schedule);
         sincronizarFilaInterno(schedule);
         return listarFila(scheduleId);
     }
@@ -148,11 +149,15 @@ public class FollowTakeScheduleService {
 
         competitionContextService.exigirOperavel(entry.getSchedule().getCompetition().getId());
 
+        validarChamadaEditavel(entry.getSchedule());
+
         if (entry.getStatus() == StatusConvocacaoFollow.AUSENTE
                 || entry.getStatus() == StatusConvocacaoFollow.CONCLUIDA) {
             throw new IllegalArgumentException(
                     "Convocação concluída ou marcada como ausente é somente leitura no fluxo comum.");
         }
+
+        validarTransicaoConvocacao(entry, dto.getStatus());
 
         if (dto.getOrdemConvocacao() != null) {
             entry.setOrdemConvocacao(dto.getOrdemConvocacao());
@@ -200,6 +205,39 @@ public class FollowTakeScheduleService {
                         registration.getCategory().getId(),
                         tomada,
                         registration.getId());
+    }
+
+    private void validarChamadaEditavel(FollowTakeSchedule schedule) {
+        if (schedule.getStatus() == StatusChamadaFollow.FINALIZADA
+                || schedule.getStatus() == StatusChamadaFollow.CANCELADA) {
+            throw new IllegalArgumentException(
+                    "Chamada finalizada ou cancelada é somente leitura.");
+        }
+    }
+
+    private void validarTransicaoConvocacao(
+            FollowTakeScheduleEntry entry,
+            StatusConvocacaoFollow novoStatus) {
+        if (novoStatus == null || novoStatus == entry.getStatus()) return;
+
+        if (novoStatus == StatusConvocacaoFollow.CONCLUIDA
+                || novoStatus == StatusConvocacaoFollow.AUSENTE
+                || novoStatus == StatusConvocacaoFollow.EM_EXECUCAO) {
+            throw new IllegalArgumentException(
+                    "Conclusão, ausência e execução da tomada são atualizadas pelo fluxo competitivo.");
+        }
+
+        boolean permitida =
+                entry.getStatus() == StatusConvocacaoFollow.AGUARDANDO
+                        && (novoStatus == StatusConvocacaoFollow.CONVOCADA
+                                || novoStatus == StatusConvocacaoFollow.EM_APRESENTACAO)
+                || entry.getStatus() == StatusConvocacaoFollow.CONVOCADA
+                        && novoStatus == StatusConvocacaoFollow.EM_APRESENTACAO;
+
+        if (!permitida) {
+            throw new IllegalArgumentException(
+                    "Transição de convocação inválida para o estado atual.");
+        }
     }
 
     private void sincronizarFilaInterno(FollowTakeSchedule schedule) {
