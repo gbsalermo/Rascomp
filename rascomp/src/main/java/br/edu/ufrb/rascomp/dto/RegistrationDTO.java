@@ -44,6 +44,9 @@ public class RegistrationDTO {
     private String reviewedByUserNome;
     private LocalDateTime reviewedAt;
 
+    @Size(max = 500)
+    private String reviewReason;
+
     private StatusRegistration status;
 
     @Size(max = 500)
@@ -81,6 +84,7 @@ public class RegistrationDTO {
         }
 
         this.reviewedAt = entity.getReviewedAt();
+        this.reviewReason = entity.getReviewReason();
         this.status = entity.getStatus();
         this.observacao = entity.getObservacao();
         this.ativo = entity.getAtivo();
