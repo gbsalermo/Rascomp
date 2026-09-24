@@ -143,6 +143,20 @@ class RegistrationCancellationRequestServiceTest {
         assertEquals(StatusCancellationRequest.REJEITADA, result.getStatus());
     }
 
+    @Test
+    void rejeicaoDeveExigirJustificativa() {
+        RegistrationCancellationRequest request = pendingRequest();
+        when(requestRepository.findById(60L)).thenReturn(Optional.of(request));
+        when(userAccountService.buscarAtual()).thenReturn(organizacao);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.rejeitar(60L, "  "));
+
+        assertEquals("Informe a justificativa para rejeitar o cancelamento.", ex.getMessage());
+        verify(requestRepository, never()).save(any());
+    }
+
     private RegistrationCancellationRequest pendingRequest() {
         RegistrationCancellationRequest request = new RegistrationCancellationRequest();
         request.setId(60L);
