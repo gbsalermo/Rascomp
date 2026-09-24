@@ -159,6 +159,15 @@ public class RegistrationService {
         if (dto.getStatus() != null && dto.getStatus() != registration.getStatus()) {
             validarTransicaoDeRevisao(registration, dto.getStatus());
             aplicarRevisaoSeNecessario(registration, dto.getStatus());
+
+            if (dto.getStatus() == StatusRegistration.REJEITADA) {
+                registration.setReviewReason(normalizarObrigatorio(
+                        dto.getReviewReason(),
+                        "Informe o motivo da rejeição da inscrição."));
+            } else {
+                registration.setReviewReason(null);
+            }
+
             registration.setStatus(dto.getStatus());
         }
 
@@ -222,7 +231,7 @@ public class RegistrationService {
             throw new IllegalArgumentException(
                     "Somente inscrições CANCELADAS ou REJEITADAS podem ser reabertas pela organização.");
         }
-        return reativarInterno(registration);
+        return reativarInterno(registration, false);
     }
 
     @Transactional
@@ -232,14 +241,21 @@ public class RegistrationService {
             throw new IllegalArgumentException(
                     "O participante só pode reativar uma inscrição CANCELADA.");
         }
-        return reativarInterno(registration);
+        return reativarInterno(registration, true);
     }
 
-    private RegistrationDTO reativarInterno(Registration registration) {
+    private RegistrationDTO reativarInterno(Registration registration, boolean exigirPeriodoCalendario) {
         validarDisponibilidade(
                 registration.getCompetition(), registration.getCategory(),
                 registration.getTeam(), registration.getRobot());
-        validarInscricoesAbertas(registration.getCompetition());
+
+        if (registration.getCompetition().getStatus() != StatusCompetition.INSCRICOES_ABERTAS) {
+            throw new IllegalArgumentException("As inscrições não estão abertas para esta competição.");
+        }
+        if (exigirPeriodoCalendario) {
+            validarInscricoesAbertas(registration.getCompetition());
+        }
+
         validarCompatibilidadeFisicaSumo(
                 registration.getCompetition(), registration.getCategory(), registration.getRobot(), registration.getId());
 
@@ -247,6 +263,7 @@ public class RegistrationService {
         registration.setStatus(StatusRegistration.PENDENTE);
         registration.setReviewedByUser(null);
         registration.setReviewedAt(null);
+        registration.setReviewReason(null);
         return new RegistrationDTO(registrationRepository.save(registration));
     }
 
@@ -358,6 +375,17 @@ public class RegistrationService {
         if (!Boolean.TRUE.equals(team.getAtivo())) throw new IllegalArgumentException("Equipe inativa.");
         if (!Boolean.TRUE.equals(team.getInstitution().getAtivo())) throw new IllegalArgumentException("Instituição inativa.");
         if (!Boolean.TRUE.equals(robot.getAtivo())) throw new IllegalArgumentException("Robô inativo.");
+    }
+
+    private String normalizarObrigatorio(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(message);
+        }
+        String normalized = value.trim();
+        if (normalized.length() > 500) {
+            throw new IllegalArgumentException("O motivo deve ter no máximo 500 caracteres.");
+        }
+        return normalized;
     }
 
     private void validarInscricoesAbertas(Competition competition) {
