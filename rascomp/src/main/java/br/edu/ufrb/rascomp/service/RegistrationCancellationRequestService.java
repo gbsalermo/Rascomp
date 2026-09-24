@@ -96,7 +96,9 @@ public class RegistrationCancellationRequestService {
         competitionContextService.exigirOperavel(request.getRegistration().getCompetition().getId());
         UserAccount revisor = exigirOperadorCompeticao();
 
-        registrationService.cancelarAprovadaPorSolicitacao(request.getRegistration().getId());
+        registrationService.cancelarAprovadaPorSolicitacao(
+                request.getRegistration().getId(),
+                request.getMotivo());
         concluir(request, StatusCancellationRequest.APROVADA, revisor, resposta);
         return new RegistrationCancellationRequestDTO(requestRepository.save(request));
     }
