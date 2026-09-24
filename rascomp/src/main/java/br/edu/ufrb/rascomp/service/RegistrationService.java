@@ -18,6 +18,7 @@ import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
@@ -49,6 +50,7 @@ public class RegistrationService {
     private final AusenciaTomadaSeguidorLinhaRepository ausenciaFollowRepository;
     private final InspecaoSumoRepository inspecaoSumoRepository;
     private final MatchRepository matchRepository;
+    private final RegistrationStatusHistoryService statusHistoryService;
 
     @Transactional
     public RegistrationDTO criar(RegistrationDTO dto) {
@@ -87,7 +89,14 @@ public class RegistrationService {
         registration.setRequestedByUser(solicitante);
         registration.setStatus(StatusRegistration.PENDENTE);
         registration.setAtivo(true);
-        return new RegistrationDTO(registrationRepository.save(registration));
+        Registration salva = registrationRepository.save(registration);
+        statusHistoryService.registrar(
+                salva,
+                null,
+                StatusRegistration.PENDENTE,
+                RegistrationStatusChangeType.CRIACAO,
+                null);
+        return new RegistrationDTO(salva);
     }
 
     @Transactional(readOnly = true)
@@ -156,11 +165,14 @@ public class RegistrationService {
         Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, false);
         preencher(registration, dto, competition, category, team, robot, competitors);
 
-        if (dto.getStatus() != null && dto.getStatus() != registration.getStatus()) {
-            validarTransicaoDeRevisao(registration, dto.getStatus());
-            aplicarRevisaoSeNecessario(registration, dto.getStatus());
+        StatusRegistration statusAnterior = registration.getStatus();
+        StatusRegistration novoStatus = dto.getStatus();
 
-            if (dto.getStatus() == StatusRegistration.REJEITADA) {
+        if (novoStatus != null && novoStatus != statusAnterior) {
+            validarTransicaoDeRevisao(registration, novoStatus);
+            aplicarRevisaoSeNecessario(registration, novoStatus);
+
+            if (novoStatus == StatusRegistration.REJEITADA) {
                 registration.setReviewReason(normalizarObrigatorio(
                         dto.getReviewReason(),
                         "Informe o motivo da rejeição da inscrição."));
@@ -168,11 +180,24 @@ public class RegistrationService {
                 registration.setReviewReason(null);
             }
 
-            registration.setStatus(dto.getStatus());
+            registration.setStatus(novoStatus);
         }
 
         registration.setAtivo(true);
-        return new RegistrationDTO(registrationRepository.save(registration));
+        Registration salva = registrationRepository.save(registration);
+
+        if (novoStatus != null && novoStatus != statusAnterior) {
+            statusHistoryService.registrar(
+                    salva,
+                    statusAnterior,
+                    novoStatus,
+                    novoStatus == StatusRegistration.APROVADA
+                            ? RegistrationStatusChangeType.APROVACAO
+                            : RegistrationStatusChangeType.REJEICAO,
+                    salva.getReviewReason());
+        }
+
+        return new RegistrationDTO(salva);
     }
 
     @Transactional
@@ -245,6 +270,7 @@ public class RegistrationService {
     }
 
     private RegistrationDTO reativarInterno(Registration registration, boolean exigirPeriodoCalendario) {
+        StatusRegistration statusAnterior = registration.getStatus();
         validarDisponibilidade(
                 registration.getCompetition(), registration.getCategory(),
                 registration.getTeam(), registration.getRobot());
@@ -264,7 +290,16 @@ public class RegistrationService {
         registration.setReviewedByUser(null);
         registration.setReviewedAt(null);
         registration.setReviewReason(null);
-        return new RegistrationDTO(registrationRepository.save(registration));
+        Registration salva = registrationRepository.save(registration);
+        statusHistoryService.registrar(
+                salva,
+                statusAnterior,
+                StatusRegistration.PENDENTE,
+                RegistrationStatusChangeType.REATIVACAO,
+                exigirPeriodoCalendario
+                        ? "Reativação solicitada pelo participante."
+                        : "Reativação administrativa da inscrição.");
+        return new RegistrationDTO(salva);
     }
 
     private void validarEdicaoComum(Registration registration, RegistrationDTO dto) {
@@ -287,9 +322,21 @@ public class RegistrationService {
     }
 
     private void cancelar(Registration registration, StatusRegistration statusDestino) {
+        StatusRegistration statusAnterior = registration.getStatus();
         registration.setAtivo(false);
         registration.setStatus(statusDestino);
-        registrationRepository.save(registration);
+        Registration salva = registrationRepository.save(registration);
+
+        statusHistoryService.registrar(
+                salva,
+                statusAnterior,
+                statusDestino,
+                statusDestino == StatusRegistration.DESISTENTE
+                        ? RegistrationStatusChangeType.DESISTENCIA
+                        : RegistrationStatusChangeType.CANCELAMENTO,
+                statusDestino == StatusRegistration.DESISTENTE
+                        ? "Saída após atividade competitiva registrada."
+                        : null);
     }
 
     private boolean possuiAtividadeCompetitiva(Long registrationId) {
