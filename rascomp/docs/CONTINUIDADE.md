@@ -1440,3 +1440,34 @@ V1–V15 permanecem imutáveis. Próxima migration estrutural: V16+.
 - se houver associação Competition ↔ Category, decidir se GESTAO poderá habilitar categorias globais na vigente ou se continuará DEV-only.
 
 Não iniciar BLOCO 3 antes da validação prática/decisões finais do BLOCO 2.
+
+
+## ETAPA 4 — BLOCO 2 — correções finais pós-validação
+
+Correções backend:
+
+- `CompetitionAdminCatalogService.buscar()` agora é `@Transactional(readOnly = true)`, evitando LazyInitializationException na montagem de TeamDTO/RobotDTO/CompetitorDTO;
+- V16 adiciona `registrations.review_reason VARCHAR(500)`;
+- REJEITADA exige motivo;
+- reativação administrativa de CANCELADA/REJEITADA exige status INSCRICOES_ABERTAS, mas não repete a restrição de datas históricas;
+- reativação pelo participante continua exigindo a janela temporal válida;
+- rejeição de solicitação de cancelamento exige resposta;
+- UserAccount PARTICIPANTE sincroniza nome/e-mail/telefone/ativo com Competitor vinculado;
+- Competitor ligado a conta PARTICIPANTE não pode ser ativado/desativado diretamente pelo CompetitorService;
+- reativação da conta é bloqueada se Team/Institution estiver inativa;
+- UserAccountDTO expõe metadados do vínculo para permitir aviso de equipe sem competidores ativos;
+- teste integrado `CompetitionAdminCatalogFlowTest` cobre o catálogo com relações LAZY reais.
+
+Decisões consolidadas:
+
+- CompetitionCategory permanece global;
+- nenhuma associação Competition ↔ Category será criada no BLOCO 2;
+- catálogo de categorias é DEV-only;
+- desativar PARTICIPANTE também desativa Competitor, mas não Team/Robot/Registration;
+- ausência de competidores ativos gera alerta administrativo; não existe cascata destrutiva automática.
+
+DESCLASSIFICADA:
+- Sumô já aplica automaticamente após esgotar tentativas de inspeção sem aprovação;
+- demais regras/manualização ficam no BLOCO 3.
+
+V1–V16 imutáveis. Próxima migration estrutural: V17+.
