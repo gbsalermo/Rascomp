@@ -28,7 +28,7 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2   ✅ concluída / validada
 ETAPA 3   ✅ concluída / validada
-ETAPA 4   🚧 EM ANDAMENTO — BLOCO 2 ✅ CONCLUÍDO / BLOCO 3 PRÓXIMO
+ETAPA 4   🚧 EM ANDAMENTO — BLOCO 3 / 3A FOLLOW LINE
 ```
 
 Blocos concluídos da ETAPA 1:
@@ -1567,3 +1567,31 @@ Frontend Checks #170 ✅
 V1–V17 permanecem imutáveis. Próxima migration estrutural: V18+.
 
 Próximo: BLOCO 3 — Operação competitiva, ainda não iniciado.
+
+
+## ETAPA 4 — BLOCO 3 / 3A Follow Line
+
+Primeiro checkpoint do BLOCO 3.
+
+Hardening aplicado ao Follow:
+
+- `TentativaSeguidorLinhaService` exige CompetitionContextService em criação, leitura, atualização e exclusão;
+- listagem por contexto valida competitionId;
+- atualização de tentativa não pode trocar a Registration original;
+- `AusenciaTomadaSeguidorLinhaService` exige CompetitionContextService para registrar/listar ausência;
+- `RankingFollowController` valida CompetitionContextService no endpoint administrativo;
+- `RankingFollowService` permanece reutilizável pelo endpoint público, portanto a restrição administrativa não foi colocada dentro do service;
+- fluxo integrado comprova GESTAO bloqueada fora da competição vigente e DEV livre para operar outra edição permitida.
+
+Checkpoint:
+
+```text
+Backend Tests #429 ✅
+162 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V17 + testdata ✅
+Frontend Checks #177 ✅
+```
+
+Nenhuma migration nova foi necessária. V1–V17 permanecem imutáveis; próxima migration estrutural V18+.
+
+Agenda Follow continua na 3C.
