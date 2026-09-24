@@ -37,6 +37,7 @@ class FollowCompetitionFlowTest extends IntegrationFlowTestSupport {
 
     @Test
     void deveClassificarMelhorTentativaETravarTomadaPerdidaPorAusencia() {
+        organizacaoAutenticada();
         Competition competition = competition(StatusCompetition.EM_ANDAMENTO);
         CompetitionCategory category = followCategory();
         Team team = team();
@@ -46,7 +47,6 @@ class FollowCompetitionFlowTest extends IntegrationFlowTestSupport {
         TentativaSeguidorLinhaDTO segunda = tentativa(registration, 1, 2, "42.000", 0, true, true);
         tentativaService.criar(segunda);
 
-        organizacaoAutenticada();
         AusenciaTomadaSeguidorLinhaDTO ausencia = new AusenciaTomadaSeguidorLinhaDTO();
         ausencia.setRegistrationId(registration.getId());
         ausencia.setTomada(2);
@@ -68,6 +68,7 @@ class FollowCompetitionFlowTest extends IntegrationFlowTestSupport {
 
     @Test
     void tentativaComEstadoImpossivelNaoPodeSerPersistida() {
+        organizacaoAutenticada();
         Competition competition = competition(StatusCompetition.EM_ANDAMENTO);
         CompetitionCategory category = followCategory();
         Team team = team();
