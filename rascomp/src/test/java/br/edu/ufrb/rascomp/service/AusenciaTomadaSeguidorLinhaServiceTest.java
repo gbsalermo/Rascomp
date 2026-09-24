@@ -43,6 +43,7 @@ class AusenciaTomadaSeguidorLinhaServiceTest {
     @Mock private RegistrationRepository registrationRepository;
     @Mock private ConfigFollowRepository configFollowRepository;
     @Mock private UserAccountService userAccountService;
+    @Mock private CompetitionContextService competitionContextService;
 
     @InjectMocks private AusenciaTomadaSeguidorLinhaService service;
 
