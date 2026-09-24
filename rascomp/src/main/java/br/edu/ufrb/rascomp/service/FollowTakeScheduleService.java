@@ -59,7 +59,10 @@ public class FollowTakeScheduleService {
         schedule.setAtivo(true);
 
         FollowTakeSchedule salva = scheduleRepository.save(schedule);
-        sincronizarFilaInterno(salva);
+        if (salva.getStatus() != StatusChamadaFollow.FINALIZADA
+                && salva.getStatus() != StatusChamadaFollow.CANCELADA) {
+            sincronizarFilaInterno(salva);
+        }
         return montarDTO(salva);
     }
 
@@ -179,6 +182,8 @@ public class FollowTakeScheduleService {
             boolean tomadaCompleta) {
 
         localizarEntrada(registration, tomada).ifPresent(entry -> {
+            if (entry.getSchedule().getStatus() == StatusChamadaFollow.FINALIZADA
+                    || entry.getSchedule().getStatus() == StatusChamadaFollow.CANCELADA) return;
             if (entry.getStatus() == StatusConvocacaoFollow.AUSENTE) return;
             entry.setStatus(tomadaCompleta
                     ? StatusConvocacaoFollow.CONCLUIDA
@@ -191,6 +196,8 @@ public class FollowTakeScheduleService {
     @Transactional
     public void registrarAusencia(Registration registration, Integer tomada) {
         localizarEntrada(registration, tomada).ifPresent(entry -> {
+            if (entry.getSchedule().getStatus() == StatusChamadaFollow.FINALIZADA
+                    || entry.getSchedule().getStatus() == StatusChamadaFollow.CANCELADA) return;
             entry.setStatus(StatusConvocacaoFollow.AUSENTE);
             entryRepository.save(entry);
             recalcularStatusChamada(entry.getSchedule());
@@ -281,6 +288,7 @@ public class FollowTakeScheduleService {
 
     private void recalcularStatusChamada(FollowTakeSchedule schedule) {
         if (schedule.getStatus() == StatusChamadaFollow.CANCELADA
+                || schedule.getStatus() == StatusChamadaFollow.FINALIZADA
                 || schedule.getStatus() == StatusChamadaFollow.ADIADA) {
             return;
         }
