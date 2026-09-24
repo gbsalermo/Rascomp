@@ -13,6 +13,7 @@ import br.edu.ufrb.rascomp.model.InspecaoSumo;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.ConfigSumoRepository;
 import br.edu.ufrb.rascomp.repository.InspecaoSumoRepository;
@@ -27,6 +28,7 @@ public class InspecaoSumoService {
     private final InspecaoSumoRepository inspecaoRepository;
     private final RegistrationRepository registrationRepository;
     private final ConfigSumoRepository configSumoRepository;
+    private final RegistrationStatusHistoryService statusHistoryService;
 
     @Transactional
     public InspecaoSumoDTO registrar(InspecaoSumoDTO dto) {
@@ -59,8 +61,15 @@ public class InspecaoSumoService {
         InspecaoSumo salva = inspecaoRepository.save(inspecao);
 
         if (!aprovada && numeroTentativa == config.getMaxTentativasInspecao()) {
+            StatusRegistration statusAnterior = registration.getStatus();
             registration.setStatus(StatusRegistration.DESCLASSIFICADA);
-            registrationRepository.save(registration);
+            Registration atualizada = registrationRepository.save(registration);
+            statusHistoryService.registrar(
+                    atualizada,
+                    statusAnterior,
+                    StatusRegistration.DESCLASSIFICADA,
+                    RegistrationStatusChangeType.DESCLASSIFICACAO,
+                    "Limite máximo de tentativas de inspeção de Sumô atingido sem aprovação.");
         }
 
         return new InspecaoSumoDTO(salva);
