@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -29,6 +30,7 @@ import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
@@ -130,6 +132,12 @@ class RegistrationReviewServiceTest {
         assertEquals(StatusRegistration.APROVADA, result.getStatus());
         assertEquals(organizacao.getId(), registration.getReviewedByUser().getId());
         assertNotNull(registration.getReviewedAt());
+        verify(statusHistoryService).registrar(
+                registration,
+                StatusRegistration.PENDENTE,
+                StatusRegistration.APROVADA,
+                RegistrationStatusChangeType.APROVACAO,
+                null);
     }
 
     @Test
@@ -153,6 +161,12 @@ class RegistrationReviewServiceTest {
         assertEquals("Documentação competitiva incompleta", registration.getReviewReason());
         assertEquals(92L, registration.getReviewedByUser().getId());
         assertNotNull(registration.getReviewedAt());
+        verify(statusHistoryService).registrar(
+                registration,
+                StatusRegistration.PENDENTE,
+                StatusRegistration.REJEITADA,
+                RegistrationStatusChangeType.REJEICAO,
+                "Documentação competitiva incompleta");
     }
 
     @Test
