@@ -3,6 +3,7 @@ package br.edu.ufrb.rascomp.service;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -38,6 +39,7 @@ class TentativaSeguidorLinhaServiceTest {
     @Mock private CompetitionContextService competitionContextService;
 
         @Mock private FollowTakeScheduleService followTakeScheduleService;
+    @Mock private FollowResolutionService followResolutionService;
 
 @InjectMocks
     private TentativaSeguidorLinhaService service;
@@ -76,6 +78,9 @@ class TentativaSeguidorLinhaServiceTest {
 
         when(registrationRepository.findById(1L)).thenReturn(Optional.of(registration));
         when(configFollowRepository.findByCompetitionCategoryId(3L)).thenReturn(Optional.of(config));
+        lenient().when(followResolutionService.tomadaPermitida(9L, 3L, 1)).thenReturn(true);
+        lenient().when(followResolutionService.tomadaPermitida(9L, 3L, 2)).thenReturn(true);
+        lenient().when(followResolutionService.tomadaPermitida(9L, 3L, 3)).thenReturn(true);
     }
 
     @Test
