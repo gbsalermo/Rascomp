@@ -32,10 +32,12 @@ public class MatchJudgeDecisionService {
     private final ConfigSumoRepository configSumoRepository;
     private final RoundSumoRepository roundRepository;
     private final MatchResultService matchResultService;
+    private final CompetitionContextService competitionContextService;
 
     @Transactional
     public MatchJudgeDecisionDTO decidir(MatchJudgeDecisionDTO dto) {
         Match match = buscarMatch(dto.getMatchId());
+        exigirContexto(match);
         validarPartida(match);
 
         if (decisionRepository.existsByMatchId(match.getId())) {
@@ -75,11 +77,16 @@ public class MatchJudgeDecisionService {
 
     @Transactional(readOnly = true)
     public MatchJudgeDecisionDTO buscarPorPartida(Long matchId) {
-        buscarMatch(matchId);
+        Match match = buscarMatch(matchId);
+        exigirContexto(match);
         return decisionRepository.findByMatchId(matchId)
                 .map(MatchJudgeDecisionDTO::new)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Nenhuma decisão de juiz encontrada para a partida: " + matchId));
+    }
+
+    private void exigirContexto(Match match) {
+        competitionContextService.exigirOperavel(match.getBracket().getCompetition().getId());
     }
 
     private void validarPartida(Match match) {

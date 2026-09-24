@@ -22,9 +22,11 @@ import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
+import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.service.RegistrationService;
+import br.edu.ufrb.rascomp.service.RegistrationStatusHistoryService;
 import br.edu.ufrb.rascomp.service.TentativaSeguidorLinhaService;
 
 @SpringBootTest
@@ -32,6 +34,7 @@ import br.edu.ufrb.rascomp.service.TentativaSeguidorLinhaService;
 class RegistrationFlowTest extends IntegrationFlowTestSupport {
 
     @Autowired private RegistrationService registrationService;
+    @Autowired private RegistrationStatusHistoryService statusHistoryService;
     @Autowired private TentativaSeguidorLinhaService tentativaService;
 
     @AfterEach
@@ -41,6 +44,7 @@ class RegistrationFlowTest extends IntegrationFlowTestSupport {
 
     @Test
     void deveCriarAprovarECancelarSemHistoricoComoCancelada() {
+        var organizacao = organizacaoAutenticada();
         Competition competition = competition(StatusCompetition.INSCRICOES_ABERTAS);
         CompetitionCategory category = followCategory();
         Team team = team();
@@ -50,7 +54,6 @@ class RegistrationFlowTest extends IntegrationFlowTestSupport {
         assertEquals(StatusRegistration.PENDENTE, criada.getStatus());
         assertTrue(criada.getAtivo());
 
-        var organizacao = organizacaoAutenticada();
         RegistrationDTO revisao = registrationService.buscarPorId(criada.getId());
         revisao.setStatus(StatusRegistration.APROVADA);
         RegistrationDTO aprovada = registrationService.atualizar(criada.getId(), revisao);
@@ -63,10 +66,20 @@ class RegistrationFlowTest extends IntegrationFlowTestSupport {
 
         assertEquals(StatusRegistration.CANCELADA, cancelada.getStatus());
         assertFalse(cancelada.getAtivo());
+
+        var historico = statusHistoryService.listar(criada.getId());
+        assertEquals(3, historico.size());
+        assertEquals(RegistrationStatusChangeType.CANCELAMENTO, historico.get(0).getChangeType());
+        assertEquals(StatusRegistration.CANCELADA, historico.get(0).getNewStatus());
+        assertEquals(RegistrationStatusChangeType.APROVACAO, historico.get(1).getChangeType());
+        assertEquals(StatusRegistration.APROVADA, historico.get(1).getNewStatus());
+        assertEquals(RegistrationStatusChangeType.CRIACAO, historico.get(2).getChangeType());
+        assertEquals(StatusRegistration.PENDENTE, historico.get(2).getNewStatus());
     }
 
     @Test
     void cancelamentoDepoisDeAtividadeFollowDeveVirarDesistente() {
+        organizacaoAutenticada();
         Competition competition = competition(StatusCompetition.EM_ANDAMENTO);
         CompetitionCategory category = followCategory();
         Team team = team();

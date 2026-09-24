@@ -27,7 +27,7 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
 ETAPA 3  ✅ concluída / validada
-ETAPA 4  ⏳ próxima / não iniciada — Consolidação funcional e polimento do MVP
+ETAPA 4  🚧 em andamento — BLOCO 3 implementado / aguardando validação
 ```
 
 A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 foi concluída/validada em 13/09/2026. A ETAPA 3 foi concluída/validada em 19/09/2026 após integração, testes automatizados e validação prática da matriz de permissões.
@@ -88,12 +88,13 @@ ETAPA 1 = concluída / validada
 ETAPA 2 = concluída / validada
 ```
 
-Último checkpoint documentado:
+Checkpoint automatizado atual da branch da ETAPA 4:
 
 ```text
-111 testes / 0 falhas / 0 erros / 0 skipped
+142 testes / 0 falhas / 0 erros / 0 skipped
 H2 flowtest integrado ✅
-MySQL + Flyway V12 + testdata ✅
+MySQL + Flyway V14 + testdata ✅
+Backend Tests #371 ✅
 ```
 
 Não atualizar a contagem por inferência.
@@ -116,7 +117,7 @@ Esses itens foram executados na ETAPA 2 sem antecipação durante a ETAPA 1.
 
 ## Próximo trabalho
 
-Checkpoint atual: **ETAPA 3 — Nova matriz de permissões ✅** encerrada. A próxima etapa é a **ETAPA 4 — Consolidação funcional e polimento do MVP**, ainda não iniciada. A validação final de permissões foi incorporada à ETAPA 15.
+Checkpoint atual: **ETAPA 4 — Consolidação funcional e polimento do MVP 🚧**. **BLOCO 2 concluído e validado**; **BLOCO 3 — Operação competitiva** totalmente implementado e aguardando validação manual final. A validação final de permissões permanece incorporada à ETAPA 15.
 
 ## Roadmap reorganizado — 19/09/2026
 

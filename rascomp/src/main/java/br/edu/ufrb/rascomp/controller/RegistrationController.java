@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -16,8 +17,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
+import br.edu.ufrb.rascomp.dto.RegistrationDisqualificationDTO;
+import br.edu.ufrb.rascomp.dto.RegistrationStatusHistoryDTO;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.service.RegistrationService;
+import br.edu.ufrb.rascomp.service.RegistrationStatusHistoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -26,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RegistrationController {
     private final RegistrationService registrationService;
+    private final RegistrationStatusHistoryService statusHistoryService;
 
     @PostMapping
     public ResponseEntity<RegistrationDTO> criar(@Valid @RequestBody RegistrationDTO dto) {
@@ -33,8 +38,14 @@ public class RegistrationController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<RegistrationDTO>> listar(@RequestParam(defaultValue = "false") boolean apenasAtivas) {
         return ResponseEntity.ok(registrationService.listar(apenasAtivas));
+    }
+
+    @GetMapping("/{id}/historico-status")
+    public ResponseEntity<List<RegistrationStatusHistoryDTO>> historicoStatus(@PathVariable Long id) {
+        return ResponseEntity.ok(statusHistoryService.listar(id));
     }
 
     @GetMapping("/{id}")
@@ -48,6 +59,7 @@ public class RegistrationController {
     }
 
     @GetMapping("/por-status")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<RegistrationDTO>> listarPorStatus(@RequestParam StatusRegistration status) {
         return ResponseEntity.ok(registrationService.listarPorStatus(status));
     }
@@ -61,6 +73,13 @@ public class RegistrationController {
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         registrationService.deletar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/desclassificar")
+    public ResponseEntity<RegistrationDTO> desclassificar(
+            @PathVariable Long id,
+            @Valid @RequestBody RegistrationDisqualificationDTO dto) {
+        return ResponseEntity.ok(registrationService.desclassificar(id, dto.getMotivo()));
     }
 
     @PatchMapping("/{id}/reativar")

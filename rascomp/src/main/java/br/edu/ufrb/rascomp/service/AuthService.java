@@ -24,6 +24,7 @@ public class AuthService {
     @Transactional
     public AuthResponse cadastrarParticipante(RegisterRequest request) {
         UserAccount usuario = userAccountService.cadastrarParticipante(request);
+        usuario = userAccountService.iniciarNovaSessao(usuario);
         return new AuthResponse(jwtService.gerarToken(usuario, request.isLembrarDeMim()), usuario);
     }
 
@@ -35,12 +36,17 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(email, request.getSenha()));
 
         UserAccount usuario = userAccountService.buscarPorEmail(email);
-        userAccountService.registrarLogin(usuario);
+        usuario = userAccountService.iniciarNovaSessao(usuario);
         return new AuthResponse(jwtService.gerarToken(usuario, request.isLembrarDeMim()), usuario);
     }
 
     @Transactional(readOnly = true)
     public UserAccountDTO me() {
         return new UserAccountDTO(userAccountService.buscarAtual());
+    }
+
+    @Transactional
+    public void logout() {
+        userAccountService.encerrarSessaoAtual();
     }
 }

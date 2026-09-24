@@ -15,6 +15,10 @@ public interface InspecaoSumoRepository extends JpaRepository<InspecaoSumo, Long
 
     Optional<InspecaoSumo> findFirstByRegistrationIdOrderByNumeroTentativaDesc(Long registrationId);
 
+    List<InspecaoSumo> findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
+            Long competitionId,
+            Long categoryId);
+
     boolean existsByRegistrationId(Long registrationId);
 
     boolean existsByRegistrationIdAndAprovadaTrue(Long registrationId);

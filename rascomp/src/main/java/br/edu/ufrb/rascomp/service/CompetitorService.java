@@ -37,7 +37,9 @@ public class CompetitorService {
 
         Competitor competitor = new Competitor();
         preencherCompetitor(competitor, dto, team, userAccount);
-        competitor.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
+        competitor.setAtivo(userAccount != null
+                ? userAccount.getAtivo()
+                : (dto.getAtivo() != null ? dto.getAtivo() : true));
         return new CompetitorDTO(competitorRepository.save(competitor));
     }
 
@@ -85,13 +87,18 @@ public class CompetitorService {
 
         UserAccount userAccount = buscarContaOpcional(dto.getUserAccountId(), id, dto.getEmail());
         preencherCompetitor(competitor, dto, team, userAccount);
-        if (dto.getAtivo() != null) competitor.setAtivo(dto.getAtivo());
+        if (userAccount != null) {
+            competitor.setAtivo(userAccount.getAtivo());
+        } else if (dto.getAtivo() != null) {
+            competitor.setAtivo(dto.getAtivo());
+        }
         return new CompetitorDTO(competitorRepository.save(competitor));
     }
 
     @Transactional
     public void deletar(Long id) {
         Competitor competitor = buscarEntidade(id);
+        exigirSemContaVinculadaParaAlterarAtivo(competitor);
         competitor.setAtivo(false);
         competitorRepository.save(competitor);
     }
@@ -99,10 +106,18 @@ public class CompetitorService {
     @Transactional
     public CompetitorDTO reativar(Long id) {
         Competitor competitor = buscarEntidade(id);
+        exigirSemContaVinculadaParaAlterarAtivo(competitor);
         validarEquipeAtiva(competitor.getTeam());
         validarInstituicaoAtiva(competitor.getTeam().getInstitution());
         competitor.setAtivo(true);
         return new CompetitorDTO(competitorRepository.save(competitor));
+    }
+
+    private void exigirSemContaVinculadaParaAlterarAtivo(Competitor competitor) {
+        if (competitor.getUserAccount() != null) {
+            throw new IllegalArgumentException(
+                    "Competidor vinculado a uma conta PARTICIPANTE deve ser ativado ou desativado pela gestão de Usuários.");
+        }
     }
 
     private Competitor buscarEntidade(Long id) {

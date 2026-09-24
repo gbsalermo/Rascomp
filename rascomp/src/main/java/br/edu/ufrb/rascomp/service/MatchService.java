@@ -28,10 +28,12 @@ public class MatchService {
     private final BracketRepository bracketRepository;
     private final RegistrationRepository registrationRepository;
     private final InspecaoSumoService inspecaoSumoService;
+    private final CompetitionContextService competitionContextService;
 
     @Transactional
     public MatchDTO criar(MatchDTO dto) {
         Bracket bracket = buscarBracket(dto.getBracketId());
+        exigirContexto(bracket);
         validarEstruturaEditavel(bracket);
 
         Registration a = buscarRegistrationOpcional(dto.getRegistrationAId());
@@ -72,6 +74,7 @@ public class MatchService {
     @Transactional
     public MatchDTO atualizar(Long id, MatchDTO dto) {
         Match match = buscarMatch(id);
+        exigirContexto(match.getBracket());
         Bracket bracket = buscarBracket(dto.getBracketId());
         validarEstruturaEditavel(match.getBracket());
         validarEstruturaEditavel(bracket);
@@ -90,6 +93,7 @@ public class MatchService {
     @Transactional
     public MatchDTO atualizarAgenda(Long id, MatchAgendaDTO dto) {
         Match match = buscarMatch(id);
+        exigirContexto(match.getBracket());
         validarBracketOperavel(match.getBracket());
         validarAgendaEditavel(match);
 
@@ -106,6 +110,7 @@ public class MatchService {
     @Transactional
     public void deletar(Long id) {
         Match match = buscarMatch(id);
+        exigirContexto(match.getBracket());
         validarEstruturaEditavel(match.getBracket());
         match.setAtivo(false);
         match.setStatus(StatusMatch.CANCELADA);
@@ -116,12 +121,17 @@ public class MatchService {
     @Transactional
     public MatchDTO reativar(Long id) {
         Match match = buscarMatch(id);
+        exigirContexto(match.getBracket());
         validarEstruturaEditavel(match.getBracket());
         validarParticipantes(match.getBracket(), match.getRegistrationA(), match.getRegistrationB());
         match.setAtivo(true);
         match.setStatus(definirStatusInicial(match.getRegistrationA(), match.getRegistrationB()));
         match.setStatusConvocacao(StatusConvocacaoPartida.NAO_CONVOCADA);
         return new MatchDTO(matchRepository.save(match));
+    }
+
+    private void exigirContexto(Bracket bracket) {
+        competitionContextService.exigirOperavel(bracket.getCompetition().getId());
     }
 
     private void validarParticipantes(Bracket bracket, Registration a, Registration b) {

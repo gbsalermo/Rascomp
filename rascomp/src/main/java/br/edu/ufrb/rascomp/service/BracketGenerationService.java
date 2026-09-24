@@ -37,9 +37,11 @@ public class BracketGenerationService {
     private final BracketProgressionService bracketProgressionService;
     private final BracketIntegrityService bracketIntegrityService;
     private final InspecaoSumoService inspecaoSumoService;
+    private final CompetitionContextService competitionContextService;
 
     @Transactional
     public BracketDTO gerar(Long competitionId, Long categoryId) {
+        competitionContextService.exigirOperavel(competitionId);
         Competition competition = buscarCompetitionParaAtualizacao(competitionId);
         CompetitionCategory category = buscarCategory(categoryId);
 

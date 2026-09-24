@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -28,6 +29,7 @@ public class TeamController {
     private final TeamService teamService;
 
     @PostMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<TeamDTO> criar(
             @Valid @RequestBody TeamDTO dto) {
 
@@ -37,6 +39,7 @@ public class TeamController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<TeamDTO>> listar(
             @RequestParam(
                 defaultValue = "false"
@@ -54,6 +57,7 @@ public class TeamController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<TeamDTO> buscarPorId(
             @PathVariable Long id) {
 
@@ -63,6 +67,7 @@ public class TeamController {
     }
 
     @GetMapping("/por-instituicao")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<TeamDTO>> listarPorInstituicao(
             @RequestParam Long institutionId,
             @RequestParam(
@@ -78,6 +83,7 @@ public class TeamController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<TeamDTO> atualizar(
             @PathVariable Long id,
             @Valid @RequestBody TeamDTO dto) {
@@ -88,6 +94,7 @@ public class TeamController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<Void> deletar(
             @PathVariable Long id) {
 
@@ -97,6 +104,7 @@ public class TeamController {
     }
 
     @PatchMapping("/{id}/reativar")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<TeamDTO> reativar(
             @PathVariable Long id) {
 

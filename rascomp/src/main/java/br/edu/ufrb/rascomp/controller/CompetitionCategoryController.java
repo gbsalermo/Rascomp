@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +29,7 @@ public class CompetitionCategoryController {
     private final CompetitionCategoryService competitionCategoryService;
 
     @PostMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<CompetitionCategoryDTO> criar(
             @Valid @RequestBody CompetitionCategoryDTO dto) {
 
@@ -70,6 +72,7 @@ public class CompetitionCategoryController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<CompetitionCategoryDTO> atualizar(
             @PathVariable Long id,
             @Valid @RequestBody CompetitionCategoryDTO dto) {
@@ -79,6 +82,7 @@ public class CompetitionCategoryController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         competitionCategoryService.deletar(id);
         return ResponseEntity.noContent().build();

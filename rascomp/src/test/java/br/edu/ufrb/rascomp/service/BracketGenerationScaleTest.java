@@ -45,7 +45,9 @@ class BracketGenerationScaleTest {
     @Mock private BracketIntegrityService bracketIntegrityService;
     @Mock private InspecaoSumoService inspecaoSumoService;
 
-    @InjectMocks private BracketGenerationService service;
+        @Mock private CompetitionContextService competitionContextService;
+
+@InjectMocks private BracketGenerationService service;
 
     private Competition competition;
     private CompetitionCategory category;

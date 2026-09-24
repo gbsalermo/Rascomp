@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -28,6 +29,7 @@ public class RobotController {
     private final RobotService robotService;
 
     @PostMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<RobotDTO> criar(
             @Valid @RequestBody RobotDTO dto) {
 
@@ -37,6 +39,7 @@ public class RobotController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<RobotDTO>> listar(
             @RequestParam(defaultValue = "false") boolean apenasAtivos) {
 
@@ -48,6 +51,7 @@ public class RobotController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<RobotDTO> buscarPorId(
             @PathVariable Long id) {
 
@@ -57,6 +61,7 @@ public class RobotController {
     }
 
     @GetMapping("/por-equipe")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<RobotDTO>> listarPorEquipe(
             @RequestParam Long teamId,
             @RequestParam(defaultValue = "false") boolean apenasAtivos) {
@@ -67,6 +72,7 @@ public class RobotController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<RobotDTO> atualizar(
             @PathVariable Long id,
             @Valid @RequestBody RobotDTO dto) {
@@ -77,6 +83,7 @@ public class RobotController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<Void> deletar(
             @PathVariable Long id) {
 
@@ -85,6 +92,7 @@ public class RobotController {
     }
 
     @PatchMapping("/{id}/reativar")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<RobotDTO> reativar(
             @PathVariable Long id) {
 

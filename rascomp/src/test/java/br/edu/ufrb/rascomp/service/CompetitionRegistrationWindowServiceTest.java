@@ -40,6 +40,7 @@ import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
 class CompetitionRegistrationWindowServiceTest {
 
     @Mock private CompetitionRepository competitionRepository;
+    @Mock private CompetitionContextService competitionContextService;
     @Mock private CompetitionRegistrationWindowChangeRepository changeRepository;
     @Mock private BracketRepository bracketRepository;
     @Mock private TentativaSeguidorLinhaRepository tentativaRepository;
@@ -157,7 +158,7 @@ class CompetitionRegistrationWindowServiceTest {
 
     private void prepararBase() {
         when(userAccountService.buscarAtual()).thenReturn(organizacao);
-        when(competitionRepository.findById(10L)).thenReturn(Optional.of(competition));
+        when(competitionContextService.exigirOperavel(10L)).thenReturn(competition);
     }
 
     private CompetitionRegistrationWindowChangeRequest request(LocalDate novaData, String motivo) {

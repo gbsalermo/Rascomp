@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import br.edu.ufrb.rascomp.dto.BracketDTO;
 import br.edu.ufrb.rascomp.service.BracketGenerationService;
 import br.edu.ufrb.rascomp.service.BracketService;
+import br.edu.ufrb.rascomp.service.CompetitionContextService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -27,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class BracketController {
     private final BracketService bracketService;
     private final BracketGenerationService bracketGenerationService;
+    private final CompetitionContextService competitionContextService;
 
     @PostMapping
     public ResponseEntity<BracketDTO> criar(@Valid @RequestBody BracketDTO dto) {
@@ -42,17 +45,21 @@ public class BracketController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<BracketDTO>> listar(@RequestParam(defaultValue = "false") boolean apenasAtivos) {
         return ResponseEntity.ok(bracketService.listar(apenasAtivos));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<BracketDTO> buscarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(bracketService.buscarPorId(id));
+        BracketDTO dto = bracketService.buscarPorId(id);
+        competitionContextService.exigirOperavel(dto.getCompetitionId());
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/por-competicao")
     public ResponseEntity<List<BracketDTO>> listarPorCompeticao(@RequestParam Long competitionId) {
+        competitionContextService.exigirOperavel(competitionId);
         return ResponseEntity.ok(bracketService.listarPorCompeticao(competitionId));
     }
 

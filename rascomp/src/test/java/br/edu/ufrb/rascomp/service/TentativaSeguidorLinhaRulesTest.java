@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -19,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
+import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.ConfigFollow;
 import br.edu.ufrb.rascomp.model.Registration;
@@ -37,15 +39,24 @@ class TentativaSeguidorLinhaRulesTest {
     @Mock private RegistrationRepository registrationRepository;
     @Mock private ConfigFollowRepository configFollowRepository;
     @Mock private AusenciaTomadaSeguidorLinhaRepository ausenciaRepository;
+    @Mock private CompetitionContextService competitionContextService;
 
-    @InjectMocks private TentativaSeguidorLinhaService service;
+        @Mock private FollowTakeScheduleService followTakeScheduleService;
+    @Mock private FollowResolutionService followResolutionService;
+
+@InjectMocks private TentativaSeguidorLinhaService service;
 
     @BeforeEach
     void setup() {
         CompetitionCategory category = CompetitionCategory.builder()
                 .id(7L).nome("Follow").modalidade(Modalidade.FOLLOW_LINE).ativo(true).build();
+        Competition competition = new Competition();
+        competition.setId(6L);
+        competition.setAtivo(true);
+
         Registration registration = new Registration();
         registration.setId(8L);
+        registration.setCompetition(competition);
         registration.setCategory(category);
         registration.setStatus(StatusRegistration.APROVADA);
         registration.setAtivo(true);
@@ -62,6 +73,9 @@ class TentativaSeguidorLinhaRulesTest {
 
         when(registrationRepository.findById(8L)).thenReturn(Optional.of(registration));
         when(configFollowRepository.findByCompetitionCategoryId(7L)).thenReturn(Optional.of(config));
+        lenient().when(followResolutionService.tomadaPermitida(6L, 7L, 1)).thenReturn(true);
+        lenient().when(followResolutionService.tomadaPermitida(6L, 7L, 2)).thenReturn(true);
+        lenient().when(followResolutionService.tomadaPermitida(6L, 7L, 3)).thenReturn(true);
     }
 
     @Test

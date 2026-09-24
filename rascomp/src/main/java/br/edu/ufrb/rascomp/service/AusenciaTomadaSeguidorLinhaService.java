@@ -30,15 +30,19 @@ public class AusenciaTomadaSeguidorLinhaService {
     private final RegistrationRepository registrationRepository;
     private final ConfigFollowRepository configFollowRepository;
     private final UserAccountService userAccountService;
+    private final CompetitionContextService competitionContextService;
+    private final FollowTakeScheduleService followTakeScheduleService;
+    private final FollowResolutionService followResolutionService;
 
     @Transactional
     public AusenciaTomadaSeguidorLinhaDTO marcar(AusenciaTomadaSeguidorLinhaDTO dto) {
         UserAccount organizacao = exigirOperadorCompeticao();
         Registration registration = buscarRegistration(dto.getRegistrationId());
+        exigirContexto(registration);
         validarRegistration(registration);
 
         ConfigFollow config = buscarConfigFollow(registration);
-        validarTomada(dto.getTomada(), config);
+        validarTomada(dto.getTomada(), config, registration);
 
         if (tentativaRepository.existsByRegistrationIdAndTomada(registration.getId(), dto.getTomada())) {
             throw new IllegalArgumentException(
@@ -57,12 +61,15 @@ public class AusenciaTomadaSeguidorLinhaService {
                 : dto.getObservacao().trim());
         ausencia.setRegistradoPor(organizacao);
 
-        return new AusenciaTomadaSeguidorLinhaDTO(ausenciaRepository.save(ausencia));
+        AusenciaTomadaSeguidorLinha salva = ausenciaRepository.save(ausencia);
+        followTakeScheduleService.registrarAusencia(registration, dto.getTomada());
+        return new AusenciaTomadaSeguidorLinhaDTO(salva);
     }
 
     @Transactional(readOnly = true)
     public List<AusenciaTomadaSeguidorLinhaDTO> listarPorInscricao(Long registrationId) {
-        buscarRegistration(registrationId);
+        Registration registration = buscarRegistration(registrationId);
+        exigirContexto(registration);
         return ausenciaRepository.findByRegistrationIdOrderByTomadaAsc(registrationId)
                 .stream()
                 .map(AusenciaTomadaSeguidorLinhaDTO::new)
@@ -71,6 +78,7 @@ public class AusenciaTomadaSeguidorLinhaService {
 
     @Transactional(readOnly = true)
     public List<AusenciaTomadaSeguidorLinhaDTO> listarPorContexto(Long competitionId, Long categoryId) {
+        competitionContextService.exigirOperavel(competitionId);
         return ausenciaRepository
                 .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
                         competitionId,
@@ -78,6 +86,10 @@ public class AusenciaTomadaSeguidorLinhaService {
                 .stream()
                 .map(AusenciaTomadaSeguidorLinhaDTO::new)
                 .toList();
+    }
+
+    private void exigirContexto(Registration registration) {
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
     }
 
     private UserAccount exigirOperadorCompeticao() {
@@ -109,10 +121,17 @@ public class AusenciaTomadaSeguidorLinhaService {
                         "Configuração de Seguidor de Linha não encontrada para a categoria: " + categoryId));
     }
 
-    private void validarTomada(Integer tomada, ConfigFollow config) {
-        if (tomada == null || tomada < 1 || tomada > config.getNumeroTomadas()) {
+    private void validarTomada(
+            Integer tomada,
+            ConfigFollow config,
+            Registration registration) {
+
+        if (!followResolutionService.tomadaPermitida(
+                registration.getCompetition().getId(),
+                registration.getCategory().getId(),
+                tomada)) {
             throw new IllegalArgumentException(
-                    "Tomada inválida. Esta categoria permite tomadas de 1 até " + config.getNumeroTomadas() + ".");
+                    "Tomada inválida. Use uma tomada normal ou uma Tomada Extra previamente autorizada.");
         }
     }
 }

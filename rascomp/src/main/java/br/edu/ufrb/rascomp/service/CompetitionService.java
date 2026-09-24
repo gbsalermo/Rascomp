@@ -70,6 +70,18 @@ public class CompetitionService {
     }
 
     @Transactional
+    public CompetitionDTO alterarStatus(Long id, StatusCompetition novoStatus) {
+        if (novoStatus == null) {
+            throw new IllegalArgumentException("Informe o novo status da competição.");
+        }
+
+        Competition competition = buscarCompetition(id);
+        validarTransicaoStatus(competition.getStatus(), novoStatus);
+        competition.setStatus(novoStatus);
+        return new CompetitionDTO(competitionRepository.save(competition));
+    }
+
+    @Transactional
     public void deletar(Long id) {
         Competition competition = buscarCompetition(id);
         competition.setAtivo(false);

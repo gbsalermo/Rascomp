@@ -11,9 +11,12 @@ import br.edu.ufrb.rascomp.model.MatchResult;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
+import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.StatusRoundSumo;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.MatchResultRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
+import br.edu.ufrb.rascomp.repository.RoundSumoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +27,8 @@ public class MatchResultService {
     private final MatchRepository matchRepository;
     private final RegistrationRepository registrationRepository;
     private final BracketProgressionService bracketProgressionService;
+    private final RoundSumoRepository roundSumoRepository;
+    private final CompetitionContextService competitionContextService;
 
     @Transactional
     public MatchResultDTO criar(MatchResultDTO dto) {
@@ -97,6 +102,68 @@ public class MatchResultService {
 
         String observacao = "Decisão do juiz " + judgeNome + ": " + justificativa;
         return salvarResultado(match, winner, vitoriasA, vitoriasB, observacao);
+    }
+
+    @Transactional
+    public MatchResultDTO resolverIndisponibilidadeAdministrativa(Long matchId) {
+        Match match = buscarMatch(matchId);
+        competitionContextService.exigirOperavel(match.getBracket().getCompetition().getId());
+        validarBracketOperavel(match);
+
+        if (!Boolean.TRUE.equals(match.getAtivo())) {
+            throw new IllegalArgumentException("A partida deve estar ativa.");
+        }
+        if (match.getBracket().getCategory().getModalidade() != Modalidade.SUMO) {
+            throw new IllegalArgumentException("A resolução administrativa deste fluxo é exclusiva do Sumô.");
+        }
+        if (match.getRegistrationA() == null || match.getRegistrationB() == null) {
+            throw new IllegalArgumentException("A partida precisa possuir os dois participantes para resolução administrativa.");
+        }
+        if (match.getStatus() == StatusMatch.FINALIZADA
+                || match.getStatus() == StatusMatch.CANCELADA
+                || match.getStatus() == StatusMatch.BYE) {
+            throw new IllegalArgumentException("A partida já está encerrada ou não exige resolução administrativa.");
+        }
+        if (resultRepository.existsByMatchId(match.getId())) {
+            throw new IllegalArgumentException("A partida já possui resultado consolidado.");
+        }
+
+        Registration a = match.getRegistrationA();
+        Registration b = match.getRegistrationB();
+        boolean aIndisponivel = indisponivelCompetitivamente(a);
+        boolean bIndisponivel = indisponivelCompetitivamente(b);
+
+        if (aIndisponivel == bIndisponivel) {
+            throw new IllegalArgumentException(
+                    aIndisponivel
+                            ? "Os dois participantes estão indisponíveis. Use uma correção administrativa excepcional."
+                            : "Nenhum participante está DESCLASSIFICADO ou DESISTENTE.");
+        }
+
+        Registration winner = aIndisponivel ? b : a;
+        Registration loser = aIndisponivel ? a : b;
+
+        int vitoriasA = contarVitorias(match, a);
+        int vitoriasB = contarVitorias(match, b);
+        String motivo = loser.getStatus() == StatusRegistration.DESCLASSIFICADA
+                ? "Vitória administrativa por desclassificação de " + loser.getRobot().getNome() + "."
+                : "Vitória administrativa por desistência de " + loser.getRobot().getNome() + ".";
+
+        return salvarResultado(match, winner, vitoriasA, vitoriasB, motivo);
+    }
+
+    private boolean indisponivelCompetitivamente(Registration registration) {
+        return registration.getStatus() == StatusRegistration.DESCLASSIFICADA
+                || registration.getStatus() == StatusRegistration.DESISTENTE;
+    }
+
+    private int contarVitorias(Match match, Registration registration) {
+        return Math.toIntExact(roundSumoRepository.findByMatchIdOrderByNumeroRoundAsc(match.getId())
+                .stream()
+                .filter(round -> round.getStatus() == StatusRoundSumo.FINALIZADO)
+                .filter(round -> round.getWinner() != null
+                        && round.getWinner().getId().equals(registration.getId()))
+                .count());
     }
 
     @Transactional(readOnly = true)

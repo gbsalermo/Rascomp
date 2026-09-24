@@ -42,7 +42,9 @@ class MatchServiceTest {
     @Mock private RegistrationRepository registrationRepository;
     @Mock private InspecaoSumoService inspecaoSumoService;
 
-    @InjectMocks
+        @Mock private CompetitionContextService competitionContextService;
+
+@InjectMocks
     private MatchService service;
 
     @Test
@@ -53,8 +55,12 @@ class MatchServiceTest {
                 .ativo(true)
                 .build();
 
+        Competition competition = new Competition();
+        competition.setId(99L);
+
         Bracket bracket = new Bracket();
         bracket.setId(10L);
+        bracket.setCompetition(competition);
         bracket.setCategory(follow);
         bracket.setAtivo(true);
         bracket.setAtual(true);
@@ -181,11 +187,14 @@ class MatchServiceTest {
 
     @Test
     void deveBloquearAgendaDepoisQuePartidaComecou() {
+        Competition competition = new Competition();
+        competition.setId(99L);
         CompetitionCategory sumo = CompetitionCategory.builder()
                 .id(2L)
                 .modalidade(Modalidade.SUMO)
                 .build();
         Bracket bracket = new Bracket();
+        bracket.setCompetition(competition);
         bracket.setCategory(sumo);
         bracket.setAtivo(true);
         bracket.setAtual(true);
@@ -203,12 +212,15 @@ class MatchServiceTest {
 
     @Test
     void deveBloquearEdicaoEstruturalDepoisDaGeracao() {
+        Competition competition = new Competition();
+        competition.setId(99L);
         CompetitionCategory sumo = CompetitionCategory.builder()
                 .id(2L)
                 .modalidade(Modalidade.SUMO)
                 .build();
         Bracket bracket = new Bracket();
         bracket.setId(10L);
+        bracket.setCompetition(competition);
         bracket.setCategory(sumo);
         bracket.setAtivo(true);
         bracket.setAtual(true);
