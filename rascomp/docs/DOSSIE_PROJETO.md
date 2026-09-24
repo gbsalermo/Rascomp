@@ -25,10 +25,10 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
 ETAPA 3  ✅ concluída / validada
-ETAPA 4   🚧 EM ANDAMENTO — BLOCO 3 / 3A FOLLOW LINE
+ETAPA 4   🚧 EM ANDAMENTO — BLOCO 3 IMPLEMENTADO / AGUARDANDO VALIDAÇÃO
 ```
 
-As ETAPAS 1, 2 e 3 estão encerradas/validadas. A ETAPA 4 está em andamento; BLOCO 2 administrativo concluído/validado e BLOCO 3 iniciado pela 3A — Follow Line.
+As ETAPAS 1, 2 e 3 estão encerradas/validadas. A ETAPA 4 está em andamento; BLOCO 2 administrativo concluído/validado e BLOCO 3 completamente implementado, aguardando validação manual.
 
 Checkpoint backend:
 
@@ -193,3 +193,23 @@ Primeiro hardening:
 - tentativa existente não pode ser transferida para outra inscrição por update.
 
 Checkpoint de código: Backend Tests #429 ✅, 162 testes verdes, MySQL/Flyway V17/testdata ✅ e Frontend Checks #177 ✅.
+
+
+## ETAPA 4 — BLOCO 3 implementado
+
+3A Follow Line, 3B Sumô e 3C Chaves/Agenda/Resultados estão implementados.
+
+Backend consolidado:
+
+- CompetitionContextService em operação competitiva;
+- V18 com agenda de chamadas/tomadas Follow;
+- CompetitionAgendaService unificando Follow + Match;
+- CompetitionResultsService consolidando vencedores;
+- desclassificação manual e automática auditada;
+- resolução administrativa preservando chave;
+- guardas de fila/convocação e estados encerrados;
+- partidas futuras sem participantes fora da Agenda real.
+
+Checkpoint: Backend Tests #493 ✅, 166 testes, MySQL/Flyway V18/testdata ✅, Frontend Checks #213 ✅.
+
+Próxima migration estrutural: V19+.
