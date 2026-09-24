@@ -1,6 +1,7 @@
 package br.edu.ufrb.rascomp.flow;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
@@ -13,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import br.edu.ufrb.rascomp.dto.FollowTakeScheduleDTO;
+import br.edu.ufrb.rascomp.dto.FollowTakeScheduleEntryDTO;
 import br.edu.ufrb.rascomp.dto.InspecaoSumoDTO;
 import br.edu.ufrb.rascomp.dto.MatchAgendaDTO;
 import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
@@ -85,6 +87,23 @@ class CompetitionOperationFlowTest extends IntegrationFlowTestSupport {
         assertEquals(StatusConvocacaoFollow.AGUARDANDO, filaInicial.get(0).getStatus());
         assertEquals(registration.getId(), filaInicial.get(0).getRegistrationId());
 
+        FollowTakeScheduleEntryDTO conclusaoManual = new FollowTakeScheduleEntryDTO();
+        conclusaoManual.setOrdemConvocacao(1);
+        conclusaoManual.setStatus(StatusConvocacaoFollow.CONCLUIDA);
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> followScheduleService.atualizarConvocacao(
+                        filaInicial.get(0).getId(),
+                        conclusaoManual));
+
+        FollowTakeScheduleEntryDTO convocar = new FollowTakeScheduleEntryDTO();
+        convocar.setOrdemConvocacao(1);
+        convocar.setStatus(StatusConvocacaoFollow.CONVOCADA);
+        var convocada = followScheduleService.atualizarConvocacao(
+                filaInicial.get(0).getId(),
+                convocar);
+        assertEquals(StatusConvocacaoFollow.CONVOCADA, convocada.getStatus());
+
         for (int numero = 1; numero <= 3; numero++) {
             tentativaService.criar(tentativa(registration, 1, numero, "40.000"));
         }
@@ -93,6 +112,9 @@ class CompetitionOperationFlowTest extends IntegrationFlowTestSupport {
         assertEquals(StatusConvocacaoFollow.CONCLUIDA, filaFinal.get(0).getStatus());
         assertEquals(StatusChamadaFollow.FINALIZADA,
                 followScheduleService.buscarPorId(criada.getId()).getStatus());
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> followScheduleService.sincronizarFila(criada.getId()));
 
         var agenda = agendaService.listar(competition.getId());
         assertTrue(agenda.stream().anyMatch(item ->
@@ -118,6 +140,48 @@ class CompetitionOperationFlowTest extends IntegrationFlowTestSupport {
         assertEquals(1, resultado.size());
         assertEquals("CONCLUIDO", resultado.get(0).getStatus());
         assertEquals(registration.getId(), resultado.get(0).getWinnerRegistrationId());
+    }
+
+    @Test
+    void agendaSumoNaoDeveExporRodadaQueAindaAguardaParticipantes() {
+        organizacaoAutenticada();
+
+        Competition competition = competition(StatusCompetition.INSCRICOES_ENCERRADAS);
+        CompetitionCategory category = sumoCategory();
+
+        for (int i = 0; i < 4; i++) {
+            Team team = team();
+            Registration registration = approvedRegistration(
+                    competition,
+                    category,
+                    team,
+                    robot(team));
+            inspecionar(registration);
+        }
+
+        Long bracketId = bracketGenerationService.gerar(
+                competition.getId(), category.getId()).getId();
+
+        var partidas = matchRepository
+                .findByBracketIdOrderByRodadaAscOrdemAsc(bracketId);
+        long aguardando = partidas.stream()
+                .filter(item -> item.getStatus()
+                        == br.edu.ufrb.rascomp.model.Enum.StatusMatch.AGUARDANDO_PARTICIPANTES)
+                .count();
+        assertEquals(1, aguardando);
+
+        var agenda = agendaService.listar(competition.getId());
+        long batalhas = agenda.stream()
+                .filter(item -> "SUMO_MATCH".equals(item.getTipo()))
+                .count();
+
+        assertEquals(2, batalhas);
+        assertTrue(agenda.stream().noneMatch(item ->
+                "SUMO_MATCH".equals(item.getTipo())
+                        && partidas.stream()
+                                .filter(match -> match.getStatus()
+                                        == br.edu.ufrb.rascomp.model.Enum.StatusMatch.AGUARDANDO_PARTICIPANTES)
+                                .anyMatch(match -> match.getId().equals(item.getMatchId()))));
     }
 
     @Test
