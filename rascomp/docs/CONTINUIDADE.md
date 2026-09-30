@@ -1744,3 +1744,21 @@ Frontend Checks #224 ✅
 V1–V19 imutáveis. Próxima migration estrutural: V20+.
 
 Única decisão restante para o fechamento manual do BLOCO 3: bloquear ou não tentativa/ausência Follow fora de Competition `EM_ANDAMENTO`.
+
+
+## Checkpoint de QA manual do BLOCO 3 — 29/09/2026
+
+A bateria manual foi pausada após o teste 23 para eliminar o excesso de dados de demonstração e tornar os cenários reproduzíveis.
+
+O profile `testdata` agora usa banco dedicado `rascomp_b3_validation`, desliga os seeds antigos e habilita somente `Block3ValidationDataInitializer`.
+
+Cenário único:
+
+- competição `ETAPA 4 · BLOCO 3 · VALIDAÇÃO`, vigente e em andamento;
+- `B3 · Follow Operação`: 4 robôs livres;
+- `B3 · Follow Exceção`: programa normal encerrado sem tentativa classificável para Tomada Extra/decisão administrativa;
+- `B3 · Mini Sumô RC`: 5 inscritos aptos na chave + 2 sem inspeção;
+- uma chave histórica + uma vigente, com BYE;
+- contas `dev.b3@rascomp.local` e `gestao.b3@rascomp.local`, senha `Rascomp@2026`.
+
+Seeds antigos permanecem disponíveis no código, mas ficam desligados neste profile. O `DataInitializer` base ganhou flag `rascomp.seed.base` (default true) para poder ser desligado somente no cenário de QA.
