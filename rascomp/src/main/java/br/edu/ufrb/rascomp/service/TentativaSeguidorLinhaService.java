@@ -199,6 +199,13 @@ public class TentativaSeguidorLinhaService {
             throw new IllegalArgumentException("Tentativa concluída deve possuir tempo registrado.");
         }
 
+        if (concluida
+                && dto.getTempoSegundos() != null
+                && dto.getTempoSegundos().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(
+                    "Tentativa concluída deve possuir tempo maior que zero. Inicie o cronômetro ou informe um tempo válido.");
+        }
+
         if (valida && !possuiTempo) {
             throw new IllegalArgumentException("Tentativa válida deve possuir tempo registrado.");
         }
