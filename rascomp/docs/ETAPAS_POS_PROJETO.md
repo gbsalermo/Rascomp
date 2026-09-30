@@ -53,3 +53,10 @@ Observação mobile:
 - O checkpoint deve estar concluído antes da ETAPA 10 — fechamento do MVP.
 - No estado atual, apenas o login possui tratamento responsivo dedicado já revisado.
 - Na ETAPA 14, essa experiência é revalidada fisicamente em smartphones/tablets reais.
+
+
+## Decisões sincronizadas — 29/09/2026
+
+- ETAPA 5 — Ajustes Gerais DEV + auditoria: incluir operação excepcional para DEV adicionar manualmente robôs/competidores e operação explícita/auditável para encerrar/cancelar uma chave vigente e gerar outra quando correção estrutural exigir. Exigir motivo, responsável, data/hora e preservar histórico competitivo.
+- ETAPA 6 — Futebol de Robôs: prever cronômetro operacional com referência de 2 minutos (configurável até confirmação regulamentar), placar por gols, controles operacionais e persistência do resultado oficial no backend.
+- Pós-produção: avaliar subcategorias Follow Pro/Júnior como configuração opcional. Até confirmação da competição, Follow permanece categoria única.
