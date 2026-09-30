@@ -112,3 +112,8 @@ A ETAPA 4 pode corrigir problemas encontrados no sistema atual, mas o trabalho c
 O login já possui tratamento responsivo dedicado; Gestão e Portal do Participante ainda precisam revisão sistemática.
 
 A ETAPA 14 permanece como validação física/hardening em aparelhos reais.
+
+
+## Decisões competitivas futuras — 29/09/2026
+
+Foram incorporadas ao planejamento cross-repo três decisões: (1) ETAPA 5 terá ferramentas DEV auditáveis para inclusão manual excepcional de robôs/competidores e para encerramento/cancelamento de chave seguido de geração de nova chave quando uma correção estrutural exigir; (2) ETAPA 6 de Futebol de Robôs terá cronômetro operacional, com 2 minutos como referência atual/configurável, e placar por gols persistido como resultado oficial; (3) Follow Pro/Júnior fica reservado à pós-produção e só será ativado se a competição confirmar essa divisão, mantendo Follow como categoria única no MVP atual.
