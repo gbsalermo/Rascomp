@@ -92,6 +92,14 @@ class TentativaSeguidorLinhaServiceTest {
     }
 
     @Test
+    void deveRejeitarTentativaConcluidaComTempoZero() {
+        TentativaSeguidorLinhaDTO dto = tentativaBase();
+        dto.setTempoSegundos(BigDecimal.ZERO);
+
+        assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
+    }
+
+    @Test
     void tempoAcimaDoMaximoDevePersistirComoTentativaInvalida() {
         TentativaSeguidorLinhaDTO dto = tentativaBase();
         dto.setTempoSegundos(new BigDecimal("181.500"));
