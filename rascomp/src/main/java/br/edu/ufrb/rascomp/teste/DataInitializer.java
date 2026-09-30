@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +37,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "rascomp.seed.base", havingValue = "true", matchIfMissing = true)
 public class DataInitializer implements CommandLineRunner {
 
     private final CompetitionCategoryRepository competitionCategoryRepository;
