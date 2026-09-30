@@ -32,6 +32,7 @@ import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.SumoControlMode;
 import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
+import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionJudgeRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
@@ -81,6 +82,7 @@ public class Block3ValidationDataInitializer implements CommandLineRunner {
     private final RegistrationRepository registrationRepository;
     private final TentativaSeguidorLinhaRepository tentativaRepository;
     private final CompetitionJudgeRepository judgeRepository;
+    private final BracketRepository bracketRepository;
 
     private final PasswordEncoder passwordEncoder;
     private final InspecaoSumoService inspecaoSumoService;
@@ -440,9 +442,18 @@ public class Block3ValidationDataInitializer implements CommandLineRunner {
             Competition competition,
             CompetitionCategory category) {
 
-        // O banco dedicado começa vazio. Duas gerações consecutivas criam:
-        // 1) uma chave histórica; 2) uma chave vigente. BYE não bloqueia regeneração.
-        bracketGenerationService.gerar(competition.getId(), category.getId());
-        bracketGenerationService.gerar(competition.getId(), category.getId());
+        long existentes = bracketRepository
+                .findByCompetitionIdOrderByDataCadastroDesc(competition.getId())
+                .stream()
+                .filter(item -> item.getCategory().getId().equals(category.getId()))
+                .count();
+
+        // Mantém o seed idempotente: no máximo uma histórica + uma vigente.
+        if (existentes == 0) {
+            bracketGenerationService.gerar(competition.getId(), category.getId());
+            bracketGenerationService.gerar(competition.getId(), category.getId());
+        } else if (existentes == 1) {
+            bracketGenerationService.gerar(competition.getId(), category.getId());
+        }
     }
 }
