@@ -1090,3 +1090,10 @@ ETAPA 14 → testes físicos finais em aparelhos reais
 ```
 
 O backend deve permanecer estável durante esse trabalho, alterando contratos apenas se algum fluxo mobile revelar necessidade funcional real.
+
+
+## Decisões de roadmap sincronizadas — 29/09/2026
+
+- ETAPA 5: ferramentas DEV excepcionais para inclusão manual de robôs/competidores e fechamento/cancelamento auditável de chave com geração de nova chave quando necessário; preservar histórico e exigir motivo.
+- ETAPA 6: Futebol de Robôs com cronômetro operacional (2 min como referência atual, configurável), placar por gols e resultado oficial persistido.
+- Pós-produção: Follow Pro/Júnior permanece hipótese configurável pendente de confirmação; Follow atual continua categoria única.
