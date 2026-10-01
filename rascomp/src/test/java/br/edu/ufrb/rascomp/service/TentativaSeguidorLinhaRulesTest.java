@@ -26,6 +26,7 @@ import br.edu.ufrb.rascomp.model.ConfigFollow;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.TentativaSeguidorLinha;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
@@ -53,6 +54,7 @@ class TentativaSeguidorLinhaRulesTest {
         Competition competition = new Competition();
         competition.setId(6L);
         competition.setAtivo(true);
+        competition.setStatus(StatusCompetition.EM_ANDAMENTO);
 
         Registration registration = new Registration();
         registration.setId(8L);
