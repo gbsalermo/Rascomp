@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import br.edu.ufrb.rascomp.dto.CompetitorDTO;
 import br.edu.ufrb.rascomp.dto.ConfigFollowDTO;
+import br.edu.ufrb.rascomp.dto.InstitutionDTO;
 import br.edu.ufrb.rascomp.dto.ParticipantCompetitorRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantRegistrationRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantRobotRequest;
@@ -48,6 +49,11 @@ public class ParticipantPortalController {
     @PostMapping("/equipes")
     public ResponseEntity<TeamDTO> criarEquipe(@Valid @RequestBody ParticipantTeamRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(portalService.criarEquipe(request));
+    }
+
+    @PostMapping("/instituicoes")
+    public ResponseEntity<InstitutionDTO> criarInstituicao(@Valid @RequestBody InstitutionDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.criarInstituicao(request));
     }
 
     @PutMapping("/equipes/{teamId}")
