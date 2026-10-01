@@ -62,7 +62,7 @@ public class RegistrationService {
     @Transactional
     public RegistrationDTO criar(RegistrationDTO dto) {
         competitionContextService.exigirOperavel(dto.getCompetitionId());
-        return criarInterno(dto, null, false);
+        return criarInterno(dto, null, true);
     }
 
     @Transactional
@@ -633,11 +633,6 @@ public class RegistrationService {
     }
 
     private void validarAprovacaoDoFluxoParticipante(Registration registration) {
-        UserAccount solicitante = registration.getRequestedByUser();
-        if (solicitante == null || solicitante.getRole() != UserRole.PARTICIPANTE) {
-            return;
-        }
-
         if (registration.getPaymentReceiptStorageKey() == null) {
             throw new IllegalArgumentException(
                     "A inscrição do robô ainda não possui comprovante de pagamento.");
