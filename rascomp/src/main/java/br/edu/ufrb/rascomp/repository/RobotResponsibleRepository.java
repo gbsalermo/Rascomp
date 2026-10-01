@@ -11,6 +11,8 @@ import br.edu.ufrb.rascomp.model.RobotResponsible;
 @Repository
 public interface RobotResponsibleRepository extends JpaRepository<RobotResponsible, Long> {
 
+    List<RobotResponsible> findByRobotIdOrderByCompetitorNomeAsc(Long robotId);
+
     List<RobotResponsible> findByRobotIdAndAtivoTrueOrderByCompetitorNomeAsc(Long robotId);
 
     List<RobotResponsible> findByCompetitorIdAndAtivoTrueOrderByRobotNomeAsc(Long competitorId);
