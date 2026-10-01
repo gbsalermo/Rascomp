@@ -1,11 +1,13 @@
 package br.edu.ufrb.rascomp.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,15 +15,21 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import br.edu.ufrb.rascomp.dto.CompetitorDTO;
+import br.edu.ufrb.rascomp.dto.ParticipantTeamRequest;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RobotDTO;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
+import br.edu.ufrb.rascomp.model.Enum.UserRole;
+import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ParticipantPortalServiceTest {
 
     @Mock private AccessPolicyService accessPolicyService;
+    @Mock private CompetitorRepository competitorRepository;
+    @Mock private InstitutionService institutionService;
     @Mock private TeamService teamService;
     @Mock private CompetitorService competitorService;
     @Mock private RobotService robotService;
@@ -33,6 +41,37 @@ class ParticipantPortalServiceTest {
 
     @InjectMocks
     private ParticipantPortalService service;
+
+    @Test
+    void criarEquipeDeveVincularParticipanteComoCompetidorAutomaticamente() {
+        UserAccount participante = usuario(1L);
+        participante.setRole(UserRole.PARTICIPANTE);
+        participante.setNome("Gabriel");
+        participante.setEmail("gabriel@teste.com");
+
+        ParticipantTeamRequest request = new ParticipantTeamRequest();
+        request.setNome("Equipe Teste");
+        request.setInstitutionId(5L);
+
+        br.edu.ufrb.rascomp.dto.TeamDTO team = new br.edu.ufrb.rascomp.dto.TeamDTO();
+        team.setId(10L);
+        team.setNome("Equipe Teste");
+
+        when(accessPolicyService.usuarioAtual()).thenReturn(participante);
+        when(competitorRepository.findByUserAccountId(1L)).thenReturn(Optional.empty());
+        when(teamService.criarParaResponsavel(any(br.edu.ufrb.rascomp.dto.TeamDTO.class), org.mockito.ArgumentMatchers.eq(participante)))
+                .thenReturn(team);
+        when(competitorService.criar(any(CompetitorDTO.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        var result = service.criarEquipe(request);
+
+        assertEquals(10L, result.getId());
+        verify(competitorService).criar(org.mockito.ArgumentMatchers.argThat(dto ->
+                Long.valueOf(10L).equals(dto.getTeamId())
+                        && Long.valueOf(1L).equals(dto.getUserAccountId())
+                        && "gabriel@teste.com".equals(dto.getEmail())));
+    }
 
     @Test
     void liderDeveVisualizarTodosOsRobosDaEquipe() {
