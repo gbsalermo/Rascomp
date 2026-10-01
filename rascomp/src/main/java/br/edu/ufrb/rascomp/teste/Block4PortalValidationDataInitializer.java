@@ -43,7 +43,7 @@ import lombok.RequiredArgsConstructor;
  * Mantém uma competição com inscrições abertas e uma equipe com:
  * - líder PARTICIPANTE;
  * - membro PARTICIPANTE responsável apenas por um dos robôs;
- * - competidor de apoio sem conta;
+ * - participante de apoio com conta própria, responsável por múltiplos robôs;
  * - categorias Follow, Mini Sumô e Sumô 3 kg.
  *
  * Não cria Registration pronta: a inscrição deve nascer pelo Portal durante o teste.
@@ -59,6 +59,7 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
     public static final String GESTAO_EMAIL = "gestao.b4@rascomp.local";
     public static final String LEADER_EMAIL = "lider.b4@rascomp.local";
     public static final String MEMBER_EMAIL = "membro.b4@rascomp.local";
+    public static final String SUPPORT_EMAIL = "apoio.b4@rascomp.local";
     public static final String PASSWORD = "Rascomp@2026";
 
     private static final String COMPETITION_NAME = "ETAPA 4 · BLOCO 4.3 · INSCRIÇÕES";
