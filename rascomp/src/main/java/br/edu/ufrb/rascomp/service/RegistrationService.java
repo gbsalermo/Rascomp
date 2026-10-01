@@ -8,11 +8,14 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import br.edu.ufrb.rascomp.dto.RegistrationCompetitorContextDTO;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Competitor;
+import br.edu.ufrb.rascomp.model.ParticipantCompetitionRegistration;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
@@ -30,6 +33,7 @@ import br.edu.ufrb.rascomp.repository.InspecaoSumoRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
+import br.edu.ufrb.rascomp.repository.RobotResponsibleRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
 import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -44,6 +48,7 @@ public class RegistrationService {
     private final CompetitionCategoryRepository categoryRepository;
     private final TeamRepository teamRepository;
     private final RobotRepository robotRepository;
+    private final RobotResponsibleRepository robotResponsibleRepository;
     private final CompetitorRepository competitorRepository;
     private final UserAccountService userAccountService;
     private final TentativaSeguidorLinhaRepository tentativaRepository;
@@ -51,6 +56,8 @@ public class RegistrationService {
     private final InspecaoSumoRepository inspecaoSumoRepository;
     private final MatchRepository matchRepository;
     private final RegistrationStatusHistoryService statusHistoryService;
+    private final ParticipantCompetitionRegistrationService participantCompetitionRegistrationService;
+    private final RegistrationReceiptStorageService receiptStorageService;
 
     @Transactional
     public RegistrationDTO criar(RegistrationDTO dto) {
@@ -83,6 +90,7 @@ public class RegistrationService {
         validarDuplicidade(dto, null);
 
         Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, true);
+        validarCompetidoresResponsaveis(robot, competitors);
         String motivo = normalizarObrigatorio(
                 justificativa,
                 "Informe a justificativa da entrada manual.");
@@ -132,6 +140,7 @@ public class RegistrationService {
         validarDuplicidade(dto, null);
 
         Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, exigirCompetidor);
+        validarCompetidoresResponsaveis(robot, competitors);
 
         Registration registration = new Registration();
         preencher(registration, dto, competition, category, team, robot, competitors);
@@ -187,6 +196,79 @@ public class RegistrationService {
                 .toList();
     }
 
+    @Transactional
+    public RegistrationDTO anexarComprovantePorParticipante(Long id, MultipartFile comprovante) {
+        Registration registration = buscarRegistration(id);
+        if (registration.getStatus() != StatusRegistration.PENDENTE) {
+            throw new IllegalArgumentException(
+                    "O comprovante só pode ser enviado enquanto a inscrição do robô estiver PENDENTE.");
+        }
+
+        RegistrationReceiptStorageService.StoredReceipt receipt = receiptStorageService.armazenar(
+                "robo",
+                registration.getCompetition().getId(),
+                registration.getId(),
+                comprovante);
+
+        if (registration.getPaymentReceiptStorageKey() != null) {
+            receiptStorageService.remover(registration.getPaymentReceiptStorageKey());
+        }
+
+        registration.setPaymentReceiptStorageKey(receipt.storageKey());
+        registration.setPaymentReceiptOriginalName(receipt.originalFilename());
+        registration.setPaymentReceiptContentType(receipt.contentType());
+        return new RegistrationDTO(registrationRepository.save(registration));
+    }
+
+    @Transactional(readOnly = true)
+    public List<RegistrationCompetitorContextDTO> contextoCompetidores(Long id) {
+        Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
+
+        return registration.getCompetitors().stream()
+                .map(competitor -> {
+                    ParticipantCompetitionRegistration pessoal =
+                            participantCompetitionRegistrationService.findByCompetitionAndCompetitor(
+                                    registration.getCompetition().getId(),
+                                    competitor.getId());
+
+                    return new RegistrationCompetitorContextDTO(
+                            competitor.getId(),
+                            competitor.getNome(),
+                            robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(
+                                    registration.getRobot().getId(),
+                                    competitor.getId()),
+                            pessoal == null ? null : pessoal.getId(),
+                            pessoal == null ? null : pessoal.getStatus());
+                })
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public RegistrationReceiptStorageService.ReceiptFile comprovanteAdministrativo(Long id) {
+        Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
+        return carregarComprovante(registration);
+    }
+
+    @Transactional(readOnly = true)
+    public RegistrationReceiptStorageService.ReceiptFile comprovanteDoParticipante(Long id) {
+        Registration registration = buscarRegistration(id);
+        UserAccount atual = userAccountService.buscarAtual();
+        boolean lider = registration.getTeam().getResponsibleUser() != null
+                && registration.getTeam().getResponsibleUser().getId().equals(atual.getId());
+        boolean responsavel = competitorRepository.findByUserAccountId(atual.getId())
+                .map(comp -> robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(
+                        registration.getRobot().getId(), comp.getId()))
+                .orElse(false);
+
+        if (!lider && !responsavel) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Você não pode acessar o comprovante desta inscrição.");
+        }
+        return carregarComprovante(registration);
+    }
+
     @Transactional(readOnly = true)
     public RegistrationDTO buscarPorId(Long id) {
         Registration registration = buscarRegistration(id);
@@ -225,6 +307,7 @@ public class RegistrationService {
         validarDuplicidade(dto, id);
 
         Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, false);
+        validarCompetidoresResponsaveis(robot, competitors);
         preencher(registration, dto, competition, category, team, robot, competitors);
 
         StatusRegistration statusAnterior = registration.getStatus();
@@ -232,6 +315,9 @@ public class RegistrationService {
 
         if (novoStatus != null && novoStatus != statusAnterior) {
             validarTransicaoDeRevisao(registration, novoStatus);
+            if (novoStatus == StatusRegistration.APROVADA) {
+                validarAprovacaoDoFluxoParticipante(registration);
+            }
             aplicarRevisaoSeNecessario(registration, novoStatus);
 
             if (novoStatus == StatusRegistration.REJEITADA) {
@@ -386,6 +472,7 @@ public class RegistrationService {
 
         validarCompatibilidadeFisicaSumo(
                 registration.getCompetition(), registration.getCategory(), registration.getRobot(), registration.getId());
+        validarCompetidoresResponsaveis(registration.getRobot(), registration.getCompetitors());
 
         registration.setAtivo(true);
         registration.setStatus(StatusRegistration.PENDENTE);
@@ -525,6 +612,51 @@ public class RegistrationService {
             result.add(competitor);
         }
         return result;
+    }
+
+    private void validarCompetidoresResponsaveis(Robot robot, Set<Competitor> competitors) {
+        if (competitors == null || competitors.isEmpty()) {
+            return;
+        }
+
+        List<String> invalidos = competitors.stream()
+                .filter(competitor -> !robotResponsibleRepository
+                        .existsByRobotIdAndCompetitorIdAndAtivoTrue(robot.getId(), competitor.getId()))
+                .map(Competitor::getNome)
+                .toList();
+
+        if (!invalidos.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "A inscrição do robô só pode usar competidores associados como responsáveis "
+                            + "permanentes deste robô. Não associados: " + String.join(", ", invalidos));
+        }
+    }
+
+    private void validarAprovacaoDoFluxoParticipante(Registration registration) {
+        UserAccount solicitante = registration.getRequestedByUser();
+        if (solicitante == null || solicitante.getRole() != UserRole.PARTICIPANTE) {
+            return;
+        }
+
+        if (registration.getPaymentReceiptStorageKey() == null) {
+            throw new IllegalArgumentException(
+                    "A inscrição do robô ainda não possui comprovante de pagamento.");
+        }
+
+        participantCompetitionRegistrationService.exigirTodosAprovados(
+                registration.getCompetition().getId(),
+                registration.getCompetitors());
+    }
+
+    private RegistrationReceiptStorageService.ReceiptFile carregarComprovante(
+            Registration registration) {
+        if (registration.getPaymentReceiptStorageKey() == null) {
+            throw new EntityNotFoundException("A inscrição do robô não possui comprovante anexado.");
+        }
+        return receiptStorageService.carregar(
+                registration.getPaymentReceiptStorageKey(),
+                registration.getPaymentReceiptContentType(),
+                registration.getPaymentReceiptOriginalName());
     }
 
     private void validarDisponibilidade(Competition c, CompetitionCategory category, Team team, Robot robot) {
