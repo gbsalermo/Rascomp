@@ -633,6 +633,11 @@ public class RegistrationService {
     }
 
     private void validarAprovacaoDoFluxoParticipante(Registration registration) {
+        if (registration.getCompetitors() == null || registration.getCompetitors().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "A inscrição do robô precisa possuir ao menos um competidor responsável.");
+        }
+
         if (registration.getPaymentReceiptStorageKey() == null) {
             throw new IllegalArgumentException(
                     "A inscrição do robô ainda não possui comprovante de pagamento.");
