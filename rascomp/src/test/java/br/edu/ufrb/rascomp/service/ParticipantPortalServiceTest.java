@@ -16,9 +16,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.edu.ufrb.rascomp.dto.CompetitorDTO;
+import br.edu.ufrb.rascomp.dto.ParticipantRegistrationRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantTeamRequest;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RobotDTO;
+import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
@@ -116,22 +118,68 @@ class ParticipantPortalServiceTest {
     }
 
     @Test
-    void membroDeveReceberSomenteSuasInscricoes() {
+    void membroDeveReceberInscricoesComoCompetidorEOuResponsavelPeloRoboSemDuplicar() {
         UserAccount lider = usuario(1L);
         UserAccount membro = usuario(2L);
         Team team = equipe(10L, lider);
-        RegistrationDTO propria = inscricao(200L, 100L);
+        RegistrationDTO comoCompetidor = inscricao(200L, 100L);
+        RegistrationDTO comoResponsavel = inscricao(201L, 101L);
+        RobotDTO roboGerenciado = robo(101L, "Ares");
 
         when(accessPolicyService.exigirEquipeDoParticipante(10L)).thenReturn(team);
         when(accessPolicyService.usuarioAtual()).thenReturn(membro);
         when(accessPolicyService.ehResponsavel(team, membro)).thenReturn(false);
+        when(robotResponsibleService.listarRobosDoCompetidorAtual(10L))
+                .thenReturn(List.of(roboGerenciado));
         when(registrationService.listarPorEquipeEParticipante(10L, 2L))
-                .thenReturn(List.of(propria));
+                .thenReturn(List.of(comoCompetidor));
+        when(registrationService.listarPorEquipeERobos(10L, List.of(101L)))
+                .thenReturn(List.of(comoResponsavel));
 
         List<RegistrationDTO> resultado = service.inscricoes(10L);
 
-        assertEquals(List.of(200L), resultado.stream().map(RegistrationDTO::getId).toList());
+        assertEquals(List.of(200L, 201L), resultado.stream().map(RegistrationDTO::getId).toList());
         verify(registrationService, never()).listarPorEquipe(10L, false);
+    }
+
+    @Test
+    void membroResponsavelPeloRoboDevePoderEnviarInscricaoPendente() {
+        UserAccount lider = usuario(1L);
+        UserAccount membro = usuario(2L);
+        membro.setRole(UserRole.PARTICIPANTE);
+        Team team = equipe(10L, lider);
+
+        Robot robot = new Robot();
+        robot.setId(100L);
+        robot.setNome("Chronos");
+        robot.setTeam(team);
+        robot.setAtivo(true);
+
+        ParticipantRegistrationRequest request = new ParticipantRegistrationRequest();
+        request.setCompetitionId(20L);
+        request.setCategoryId(30L);
+        request.setRobotId(100L);
+        request.setCompetitorIds(List.of(40L));
+
+        RegistrationDTO criada = inscricao(300L, 100L);
+
+        when(accessPolicyService.exigirEquipeDoParticipante(10L)).thenReturn(team);
+        when(accessPolicyService.exigirRoboGerenciavelPeloParticipante(100L)).thenReturn(robot);
+        when(accessPolicyService.usuarioAtual()).thenReturn(membro);
+        when(registrationService.criarPorParticipante(any(RegistrationDTO.class), org.mockito.ArgumentMatchers.eq(membro)))
+                .thenReturn(criada);
+
+        RegistrationDTO resultado = service.inscrever(10L, request);
+
+        assertEquals(300L, resultado.getId());
+        verify(accessPolicyService, never()).exigirEquipeDoResponsavel(10L);
+        verify(registrationService).criarPorParticipante(
+                org.mockito.ArgumentMatchers.argThat(dto ->
+                        Long.valueOf(20L).equals(dto.getCompetitionId())
+                                && Long.valueOf(30L).equals(dto.getCategoryId())
+                                && Long.valueOf(100L).equals(dto.getRobotId())
+                                && dto.getCompetitorIds().equals(List.of(40L))),
+                org.mockito.ArgumentMatchers.eq(membro));
     }
 
     private UserAccount usuario(Long id) {

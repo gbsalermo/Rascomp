@@ -99,7 +99,8 @@ public class AccessPolicyService {
                 .orElseThrow(() -> new EntityNotFoundException("Inscrição não encontrada: " + registrationId));
         UserAccount usuario = usuarioAtual();
 
-        if (ehResponsavel(registration.getTeam(), usuario)) {
+        if (ehResponsavel(registration.getTeam(), usuario)
+                || usuarioEhResponsavelPeloRobo(registration.getRobot().getId(), usuario.getId())) {
             return registration;
         }
 
@@ -110,9 +111,24 @@ public class AccessPolicyService {
 
         if (!participa) {
             throw new org.springframework.security.access.AccessDeniedException(
-                    "Você não participa desta inscrição.");
+                    "Você não participa desta inscrição nem é responsável pelo robô.");
         }
         return registration;
+    }
+
+    @Transactional(readOnly = true)
+    public Registration exigirInscricaoGerenciavelPeloParticipante(Long registrationId) {
+        Registration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new EntityNotFoundException("Inscrição não encontrada: " + registrationId));
+        UserAccount usuario = usuarioAtual();
+
+        if (ehResponsavel(registration.getTeam(), usuario)
+                || usuarioEhResponsavelPeloRobo(registration.getRobot().getId(), usuario.getId())) {
+            return registration;
+        }
+
+        throw new org.springframework.security.access.AccessDeniedException(
+                "Você não possui permissão para administrar a inscrição deste robô.");
     }
 
     @Transactional(readOnly = true)
@@ -125,10 +141,7 @@ public class AccessPolicyService {
             return robot;
         }
 
-        boolean responsavelPeloRobo = competitorRepository.findByUserAccountId(usuario.getId())
-                .map(competitor -> robotResponsibleRepository
-                        .existsByRobotIdAndCompetitorIdAndAtivoTrue(robotId, competitor.getId()))
-                .orElse(false);
+        boolean responsavelPeloRobo = usuarioEhResponsavelPeloRobo(robotId, usuario.getId());
 
         if (!responsavelPeloRobo) {
             throw new org.springframework.security.access.AccessDeniedException(
@@ -145,5 +158,13 @@ public class AccessPolicyService {
     public boolean ehResponsavel(Team team, UserAccount usuario) {
         return team.getResponsibleUser() != null
                 && team.getResponsibleUser().getId().equals(usuario.getId());
+    }
+
+    private boolean usuarioEhResponsavelPeloRobo(Long robotId, Long userAccountId) {
+        return competitorRepository.findByUserAccountId(userAccountId)
+                .filter(competitor -> Boolean.TRUE.equals(competitor.getAtivo()))
+                .map(competitor -> robotResponsibleRepository
+                        .existsByRobotIdAndCompetitorIdAndAtivoTrue(robotId, competitor.getId()))
+                .orElse(false);
     }
 }

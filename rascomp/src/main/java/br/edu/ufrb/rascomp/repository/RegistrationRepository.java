@@ -22,6 +22,9 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     List<Registration> findByTeamIdOrderByDataCadastroDesc(Long teamId);
     List<Registration> findByTeamIdAndAtivoTrueOrderByDataCadastroDesc(Long teamId);
     List<Registration> findByRequestedByUserIdOrderByDataCadastroDesc(Long userId);
+    List<Registration> findByTeamIdAndRobotIdInOrderByDataCadastroDesc(
+            Long teamId,
+            Collection<Long> robotIds);
 
     @Query("""
             select distinct r.team

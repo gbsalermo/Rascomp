@@ -175,6 +175,19 @@ public class RegistrationService {
     }
 
     @Transactional(readOnly = true)
+    public List<RegistrationDTO> listarPorEquipeERobos(Long teamId, List<Long> robotIds) {
+        buscarTeam(teamId);
+        if (robotIds == null || robotIds.isEmpty()) {
+            return List.of();
+        }
+        return registrationRepository
+                .findByTeamIdAndRobotIdInOrderByDataCadastroDesc(teamId, robotIds)
+                .stream()
+                .map(RegistrationDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public RegistrationDTO buscarPorId(Long id) {
         Registration registration = buscarRegistration(id);
         competitionContextService.exigirOperavel(registration.getCompetition().getId());

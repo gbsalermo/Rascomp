@@ -1,6 +1,10 @@
 package br.edu.ufrb.rascomp.service;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -214,7 +218,25 @@ public class ParticipantPortalService {
             return registrationService.listarPorEquipe(teamId, false);
         }
 
-        return registrationService.listarPorEquipeEParticipante(teamId, usuario.getId());
+        List<Long> robotIds = robotResponsibleService.listarRobosDoCompetidorAtual(teamId)
+                .stream()
+                .map(RobotDTO::getId)
+                .toList();
+
+        List<RegistrationDTO> comoCompetidor =
+                registrationService.listarPorEquipeEParticipante(teamId, usuario.getId());
+        List<RegistrationDTO> comoResponsavelPeloRobo =
+                registrationService.listarPorEquipeERobos(teamId, robotIds);
+
+        Map<Long, RegistrationDTO> unicas = new LinkedHashMap<>();
+        Stream.concat(comoCompetidor.stream(), comoResponsavelPeloRobo.stream())
+                .forEach(registration -> unicas.putIfAbsent(registration.getId(), registration));
+
+        return unicas.values().stream()
+                .sorted(Comparator.comparing(
+                        RegistrationDTO::getDataCadastro,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -231,8 +253,8 @@ public class ParticipantPortalService {
 
     @Transactional
     public RegistrationDTO inscrever(Long teamId, ParticipantRegistrationRequest request) {
-        accessPolicyService.exigirEquipeDoResponsavel(teamId);
-        Robot robot = accessPolicyService.exigirRoboDaEquipe(request.getRobotId());
+        accessPolicyService.exigirEquipeDoParticipante(teamId);
+        Robot robot = accessPolicyService.exigirRoboGerenciavelPeloParticipante(request.getRobotId());
         if (!robot.getTeam().getId().equals(teamId)) {
             throw new IllegalArgumentException("O robô deve pertencer à equipe informada.");
         }
@@ -248,25 +270,25 @@ public class ParticipantPortalService {
 
     @Transactional
     public void cancelarInscricao(Long registrationId) {
-        accessPolicyService.exigirInscricaoDaEquipe(registrationId);
+        accessPolicyService.exigirInscricaoGerenciavelPeloParticipante(registrationId);
         registrationService.cancelarPorParticipante(registrationId);
     }
 
     @Transactional
     public RegistrationDTO reativarInscricao(Long registrationId) {
-        accessPolicyService.exigirInscricaoDaEquipe(registrationId);
+        accessPolicyService.exigirInscricaoGerenciavelPeloParticipante(registrationId);
         return registrationService.reativarPorParticipante(registrationId);
     }
 
     @Transactional
     public RegistrationCancellationRequestDTO solicitarCancelamento(Long registrationId, String motivo) {
-        accessPolicyService.exigirInscricaoDaEquipe(registrationId);
+        accessPolicyService.exigirInscricaoGerenciavelPeloParticipante(registrationId);
         return cancellationRequestService.solicitar(registrationId, accessPolicyService.usuarioAtual(), motivo);
     }
 
     @Transactional(readOnly = true)
     public List<RegistrationCancellationRequestDTO> solicitacoesCancelamento(Long registrationId) {
-        accessPolicyService.exigirInscricaoDaEquipe(registrationId);
+        accessPolicyService.exigirInscricaoGerenciavelPeloParticipante(registrationId);
         return cancellationRequestService.listarPorInscricao(registrationId);
     }
 
