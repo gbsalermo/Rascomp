@@ -24,10 +24,21 @@ public class CompetitionCategoryResultDTO {
     private String winnerRobotNome;
     private String winnerTeamNome;
 
+    private Long secondRegistrationId;
+    private String secondRobotNome;
+    private String secondTeamNome;
+    private BigDecimal secondTempoFinalSegundos;
+
+    private Long thirdRegistrationId;
+    private String thirdRobotNome;
+    private String thirdTeamNome;
+    private BigDecimal thirdTempoFinalSegundos;
+
     private BigDecimal tempoFinalSegundos;
     private Integer pontosA;
     private Integer pontosB;
     private Long finalMatchId;
+    private Long thirdPlaceMatchId;
 
     private String resolutionType;
     private String resolutionReason;
