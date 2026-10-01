@@ -35,6 +35,7 @@ public class ManualCompetitionEntryService {
     private final UserAccountRepository userAccountRepository;
     private final CompetitorRepository competitorRepository;
     private final RobotService robotService;
+    private final RobotResponsibleService robotResponsibleService;
     private final RegistrationService registrationService;
 
     @Transactional
@@ -72,6 +73,7 @@ public class ManualCompetitionEntryService {
         robotRequest.setTeamId(team.getId());
         robotRequest.setAtivo(true);
         RobotDTO robot = robotService.criar(robotRequest);
+        robotResponsibleService.associarManual(robot.getId(), competitor.getId(), dev);
 
         RegistrationDTO registration = new RegistrationDTO();
         registration.setCompetitionId(request.getCompetitionId());
