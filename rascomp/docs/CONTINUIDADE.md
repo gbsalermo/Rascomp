@@ -1861,3 +1861,18 @@ Regra canônica revisada:
 - fluxo manual permanece exceção, não substitui o onboarding normal.
 
 Ingresso em equipe existente e aprovação do vínculo serão concluídos no BLOCO 4 e deverão criar o Competitor automaticamente.
+
+
+## Fronteira BLOCO 3 → BLOCO 4 — 30/09/2026
+
+O domínio de operação competitiva do BLOCO 3 está congelado. Convites, ingresso em equipe e responsabilidade de robôs passam ao BLOCO 4.
+
+BLOCO 4 deve consolidar:
+- convite/aceite e solicitação/aprovação de ingresso em equipe;
+- `PARTICIPANTE → Competitor → Team`;
+- vínculo N:N `Robot ↔ Competitor responsável`;
+- visibilidade "Meus robôs" por responsabilidade, enquanto o líder administra todos;
+- associação de responsáveis pelo líder ao criar/editar robôs;
+- inscrição usando os responsáveis como sugestão inicial, sem confundir responsabilidade permanente com competidores daquela Registration.
+
+O cadastro manual DEV permanece apenas como contingência operacional descoberta no BLOCO 3.
