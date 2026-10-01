@@ -17,9 +17,6 @@ public class ManualCompetitionEntryRequest {
     private Long categoryId;
 
     @NotNull
-    private Long teamId;
-
-    @NotNull
     private Long participantUserId;
 
     @NotBlank
