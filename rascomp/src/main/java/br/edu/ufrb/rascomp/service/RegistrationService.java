@@ -533,6 +533,16 @@ public class RegistrationService {
         return normalized;
     }
 
+    private void validarEstadoParaEntradaManual(Competition competition) {
+        StatusCompetition status = competition.getStatus();
+        if (status == StatusCompetition.PLANEJADA
+                || status == StatusCompetition.FINALIZADA
+                || status == StatusCompetition.CANCELADA) {
+            throw new IllegalArgumentException(
+                    "Entrada manual só é permitida em competição com inscrições abertas/encerradas ou EM_ANDAMENTO.");
+        }
+    }
+
     private void validarInscricoesAbertas(Competition competition) {
         LocalDate hoje = LocalDate.now();
         boolean periodoValido = !hoje.isBefore(competition.getInicioInscricoes())
