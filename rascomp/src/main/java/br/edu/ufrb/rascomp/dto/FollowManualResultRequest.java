@@ -19,6 +19,9 @@ public class FollowManualResultRequest {
     @NotNull
     private Long winnerRegistrationId;
 
+    private Long secondRegistrationId;
+    private Long thirdRegistrationId;
+
     @NotBlank
     @Size(max = 500)
     private String justificativa;
