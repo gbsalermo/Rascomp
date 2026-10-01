@@ -1827,3 +1827,23 @@ V23 audita correções de `match_results` com motivo, DEV e data/hora. A operaç
 - bloqueia se a dependência seguinte já iniciou.
 
 A bateria automatizada ganhou cobertura para entrada manual, regeneração excepcional, terceiro lugar, pódio manual e correção DEV.
+
+
+## Correções finais implementadas — aguardando re-smoke
+
+Após a bateria 1–56, foram implementadas as correções estruturais principais:
+
+- entrada manual DEV de participante/robô vinculada a conta PARTICIPANTE + equipe/competidor;
+- inscrição manual já aprovada e auditada;
+- Follow: novo robô entra nas próximas filas/tomadas após sincronização;
+- Sumô: novo robô exige inspeção antes de entrar em nova chave;
+- regeneração excepcional DEV de chave com justificativa e histórico, bloqueada após atividade competitiva real;
+- Chaves passou a exibir a árvore no próprio módulo;
+- correção excepcional DEV de resultado Sumô com justificativa, auditoria e proteção de dependências;
+- pódio completo em Resultados;
+- decisão administrativa Follow passou a aceitar 1º/2º/3º;
+- disputa de 3º lugar Sumô criada junto da chave e alimentada pelos perdedores das semifinais;
+- estado competitivo derivado (Campeão, Vice, 3º, Eliminado etc.) no Sumô;
+- melhorias anteriores de g/kg, juízes, BYE, filtros, chamada e bloqueio Follow fora de EM_ANDAMENTO.
+
+Estado: **CORREÇÕES IMPLEMENTADAS · RE-SMOKE PENDENTE**.
