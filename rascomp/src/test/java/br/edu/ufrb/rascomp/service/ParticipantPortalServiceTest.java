@@ -33,6 +33,7 @@ class ParticipantPortalServiceTest {
     @Mock private TeamService teamService;
     @Mock private CompetitorService competitorService;
     @Mock private RobotService robotService;
+    @Mock private RobotResponsibleService robotResponsibleService;
     @Mock private RegistrationService registrationService;
     @Mock private RegistrationCancellationRequestService cancellationRequestService;
     @Mock private RobotImageService robotImageService;
@@ -93,27 +94,25 @@ class ParticipantPortalServiceTest {
     }
 
     @Test
-    void membroDeveVisualizarSomenteRobosDasPropriasInscricoes() {
+    void membroDeveVisualizarSomenteRobosPelosQuaisEhResponsavel() {
         UserAccount lider = usuario(1L);
         UserAccount membro = usuario(2L);
         Team team = equipe(10L, lider);
 
-        RegistrationDTO follow = inscricao(200L, 100L);
-        RegistrationDTO sumoMesmoRobo = inscricao(201L, 100L);
-        RegistrationDTO outroRobo = inscricao(202L, 102L);
+        RobotDTO chronos = robo(100L, "Chronos");
+        RobotDTO ares = robo(102L, "Ares");
 
         when(accessPolicyService.exigirEquipeDoParticipante(10L)).thenReturn(team);
         when(accessPolicyService.usuarioAtual()).thenReturn(membro);
         when(accessPolicyService.ehResponsavel(team, membro)).thenReturn(false);
-        when(registrationService.listarPorEquipeEParticipante(10L, 2L))
-                .thenReturn(List.of(follow, sumoMesmoRobo, outroRobo));
-        when(robotService.buscarPorId(100L)).thenReturn(robo(100L, "Chronos"));
-        when(robotService.buscarPorId(102L)).thenReturn(robo(102L, "Ares"));
+        when(robotResponsibleService.listarRobosDoCompetidorAtual(10L))
+                .thenReturn(List.of(chronos, ares));
 
         List<RobotDTO> resultado = service.robos(10L);
 
         assertEquals(List.of(100L, 102L), resultado.stream().map(RobotDTO::getId).toList());
         verify(robotService, never()).listarPorEquipe(10L, false);
+        verify(registrationService, never()).listarPorEquipeEParticipante(10L, 2L);
     }
 
     @Test
