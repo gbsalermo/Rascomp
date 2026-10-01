@@ -29,8 +29,12 @@ import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RobotDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
 import br.edu.ufrb.rascomp.dto.TeamDTO;
+import br.edu.ufrb.rascomp.dto.TeamInviteCreateRequest;
+import br.edu.ufrb.rascomp.dto.TeamJoinCreateRequest;
+import br.edu.ufrb.rascomp.dto.TeamMembershipRequestDTO;
 import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.service.ParticipantPortalService;
+import br.edu.ufrb.rascomp.service.TeamMembershipService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -40,6 +44,7 @@ import lombok.RequiredArgsConstructor;
 public class ParticipantPortalController {
 
     private final ParticipantPortalService portalService;
+    private final TeamMembershipService membershipService;
 
     @GetMapping("/equipes")
     public ResponseEntity<List<TeamDTO>> equipes() {
@@ -54,6 +59,52 @@ public class ParticipantPortalController {
     @PostMapping("/instituicoes")
     public ResponseEntity<InstitutionDTO> criarInstituicao(@Valid @RequestBody InstitutionDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(portalService.criarInstituicao(request));
+    }
+
+    @PostMapping("/equipes/{teamId}/convites")
+    public ResponseEntity<TeamMembershipRequestDTO> convidarIntegrante(
+            @PathVariable Long teamId,
+            @Valid @RequestBody TeamInviteCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(membershipService.convidar(teamId, request));
+    }
+
+    @PostMapping("/equipes/{teamId}/solicitacoes")
+    public ResponseEntity<TeamMembershipRequestDTO> solicitarEntrada(
+            @PathVariable Long teamId,
+            @Valid @RequestBody TeamJoinCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(membershipService.solicitarEntrada(teamId, request));
+    }
+
+    @GetMapping("/vinculos-equipe")
+    public ResponseEntity<List<TeamMembershipRequestDTO>> meusVinculosEquipe() {
+        return ResponseEntity.ok(membershipService.minhasSolicitacoes());
+    }
+
+    @GetMapping("/equipes/{teamId}/vinculos")
+    public ResponseEntity<List<TeamMembershipRequestDTO>> vinculosDaEquipe(@PathVariable Long teamId) {
+        return ResponseEntity.ok(membershipService.solicitacoesDaEquipe(teamId));
+    }
+
+    @PostMapping("/vinculos-equipe/{requestId}/aceitar-convite")
+    public ResponseEntity<TeamMembershipRequestDTO> aceitarConvite(@PathVariable Long requestId) {
+        return ResponseEntity.ok(membershipService.aceitarConvite(requestId));
+    }
+
+    @PostMapping("/vinculos-equipe/{requestId}/rejeitar-convite")
+    public ResponseEntity<TeamMembershipRequestDTO> rejeitarConvite(@PathVariable Long requestId) {
+        return ResponseEntity.ok(membershipService.rejeitarConvite(requestId));
+    }
+
+    @PostMapping("/vinculos-equipe/{requestId}/aprovar-solicitacao")
+    public ResponseEntity<TeamMembershipRequestDTO> aprovarSolicitacao(@PathVariable Long requestId) {
+        return ResponseEntity.ok(membershipService.aprovarSolicitacao(requestId));
+    }
+
+    @PostMapping("/vinculos-equipe/{requestId}/rejeitar-solicitacao")
+    public ResponseEntity<TeamMembershipRequestDTO> rejeitarSolicitacao(@PathVariable Long requestId) {
+        return ResponseEntity.ok(membershipService.rejeitarSolicitacao(requestId));
     }
 
     @PutMapping("/equipes/{teamId}")
