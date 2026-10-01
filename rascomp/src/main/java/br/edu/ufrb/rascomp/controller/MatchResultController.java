@@ -7,10 +7,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.edu.ufrb.rascomp.dto.MatchResultCorrectionRequest;
 import br.edu.ufrb.rascomp.dto.MatchResultDTO;
 import br.edu.ufrb.rascomp.service.BracketService;
 import br.edu.ufrb.rascomp.service.CompetitionContextService;
@@ -26,6 +28,17 @@ public class MatchResultController {
     private final BracketService bracketService;
     private final MatchService matchService;
     private final CompetitionContextService competitionContextService;
+
+    @PostMapping("/{matchId}/corrigir-excepcional")
+    @PreAuthorize("hasRole('DEV')")
+    public ResponseEntity<MatchResultDTO> corrigirExcepcional(
+            @PathVariable Long matchId,
+            @jakarta.validation.Valid @RequestBody MatchResultCorrectionRequest request) {
+        return ResponseEntity.ok(resultService.corrigirExcepcionalDev(
+                matchId,
+                request.getWinnerRegistrationId(),
+                request.getJustificativa()));
+    }
 
     @PostMapping("/resolver-indisponibilidade")
     public ResponseEntity<MatchResultDTO> resolverIndisponibilidade(
