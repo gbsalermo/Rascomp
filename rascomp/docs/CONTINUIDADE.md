@@ -1,6 +1,6 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **19/09/2026**
+Última atualização: **01/10/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
@@ -28,7 +28,7 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2   ✅ concluída / validada
 ETAPA 3   ✅ concluída / validada
-ETAPA 4   🚧 EM ANDAMENTO — BLOCO 3 IMPLEMENTADO / AGUARDANDO VALIDAÇÃO
+ETAPA 4   🚧 EM ANDAMENTO — BLOCO 3 ✅ / BLOCO 4.3 🧪 aguardando validação manual
 ```
 
 Blocos concluídos da ETAPA 1:
@@ -94,7 +94,7 @@ O Bloco 5 fechou a validação integrada da ETAPA 1:
 - total da suíte: **111 testes / 0 falhas / 0 erros / 0 skipped**;
 - `demo-profile` verde contra MySQL real + Flyway V12.
 
-As **ETAPAS 1, 2 e 3 estão concluídas e validadas**. O novo roadmap coloca a **ETAPA 4 — Consolidação funcional e polimento do MVP** como próxima etapa, ainda não iniciada.
+As **ETAPAS 1, 2 e 3 estão concluídas e validadas**. A **ETAPA 4 — Consolidação funcional e polimento do MVP** está em andamento. O BLOCO 3 foi concluído/validado; no BLOCO 4, 4.1 e 4.2 estão implementados e o 4.3 está implementado aguardando validação manual. O 4.4 não foi iniciado.
 
 ---
 
@@ -103,7 +103,7 @@ As **ETAPAS 1, 2 e 3 estão concluídas e validadas**. O novo roadmap coloca a *
 ```text
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
-MYSQL + FLYWAY V1–V13                    ✅
+MYSQL + FLYWAY V1–V24                    ✅
 COMPETIÇÕES                              ✅ transições + prorrogação/reabertura
 EQUIPES / COMPETIDORES / ROBÔS           ✅
 INSCRIÇÕES + REVISÃO                     ✅ invariantes + cancelamento + híbridos
@@ -123,7 +123,7 @@ SUICÍDIO/WO                              ✅
 CHAVES / BYE / PROGRESSÃO                ✅ Bloco 4 alinhado
 AGENDA OPERACIONAL DE PARTIDAS           ✅ separada da árvore lógica
 HISTÓRICO DE CHAVES                      ✅
-API PARTICIPANTE                         ✅ base + cancelamento/reativação
+API PARTICIPANTE                         ✅ equipe + robôs + inscrição normal PENDENTE
 API PÚBLICA                              ✅
 PROFILE TESTDATA                         ✅
 ```
@@ -1895,3 +1895,135 @@ V24 adiciona:
 - criador do robô vira responsável inicial;
 - líder pode definir responsáveis;
 - autorização/visibilidade do membro passa a usar responsabilidade por robô.
+
+
+---
+
+## ETAPA 4 / BLOCO 4.3 — inscrição normal pelo Portal — 01/10/2026
+
+### Regra consolidada
+
+```text
+Team possui Robot
+Robot possui RobotResponsible (N:N com Competitor)
+
+RobotResponsible
+≠
+Registration.competitors
+```
+
+Responsabilidade permanente pelo robô continua separada da composição específica de uma inscrição.
+
+Fluxo normal:
+
+```text
+PARTICIPANTE associado a Team
+→ escolhe Competition com inscrições abertas
+→ escolhe Robot gerenciável
+→ escolhe Category
+→ responsáveis permanentes vêm como sugestão inicial
+→ ajusta competidores ativos da mesma Team
+→ envia
+→ Registration = PENDENTE
+→ GESTAO aprova/rejeita
+→ somente APROVADA vira participação oficial
+```
+
+### Autorização
+
+`ParticipantPortalService.inscrever(...)` não exige mais que o usuário seja líder.
+
+Agora:
+
+- líder pode administrar qualquer Robot da própria Team;
+- membro comum pode administrar Robot quando possui `RobotResponsible` ativo;
+- estar apenas em `Registration.competitors` permite visualizar aquela participação, mas não concede administração permanente do Robot;
+- cancelamento, reativação e solicitação de cancelamento pelo Portal usam a mesma regra de administração do Robot.
+
+### Reuso do domínio existente
+
+O 4.3 não criou segundo fluxo de Registration.
+
+Continua usando `RegistrationService.criarPorParticipante(...)`, portanto permanecem centralizadas:
+
+- janela e estado de inscrições;
+- vínculo Robot → Team;
+- Competitor ativo e pertencente à Team;
+- ao menos um competidor;
+- duplicidade Competition + Category + Robot;
+- compatibilidade física do Sumô;
+- criação em `PENDENTE`;
+- histórico de status.
+
+O fluxo administrativo de aprovação/rejeição também não foi duplicado.
+
+### Listagem do membro
+
+Para membro comum, o Portal reúne e deduplica:
+
+1. Registration em que sua UserAccount está entre os competidores específicos;
+2. Registration dos Robots pelos quais possui responsabilidade permanente.
+
+O líder continua recebendo todas as inscrições da equipe.
+
+### Testes automatizados adicionados
+
+`ParticipantPortalServiceTest`:
+- membro responsável pode enviar inscrição sem ser líder;
+- listagem reúne participação específica + responsabilidade por Robot sem duplicar.
+
+`AccessPolicyServiceTest`:
+- responsável permanente pode administrar a Registration do Robot;
+- membro sem responsabilidade permanente não pode administrá-la.
+
+As suítes pré-existentes de `RegistrationService` preservam cobertura de PENDENTE e invariantes de equipe.
+
+### Profile `testdata` do 4.3
+
+O profile passou a usar banco dedicado:
+
+```text
+rascomp_b4_validation
+```
+
+Initializer:
+
+```text
+Block4PortalValidationDataInitializer
+```
+
+Contas:
+
+```text
+dev.b4@rascomp.local
+gestao.b4@rascomp.local
+lider.b4@rascomp.local
+membro.b4@rascomp.local
+senha: Rascomp@2026
+```
+
+Cenário principal:
+
+- Competition `ETAPA 4 · BLOCO 4.3 · INSCRIÇÕES`, vigente e com inscrições abertas;
+- Team `B4 · Equipe Portal`;
+- `B4 · Vespa` sob responsabilidade de Membro B4 + Apoio B4;
+- `B4 · Atlas` disponível ao líder, mas não ao membro comum;
+- categorias Follow, Mini Sumô RC e Sumô 3 kg RC;
+- nenhuma Registration pré-criada.
+
+O initializer do BLOCO 3 permanece no código, porém desativado no profile atual.
+
+### CI do 4.3
+
+O job de MySQL/testdata foi atualizado para exercitar o fluxo real:
+
+- login de membro/líder/GESTAO;
+- visibilidade diferente de Robots;
+- criação via endpoint PARTICIPANTE;
+- status `PENDENTE`;
+- ausência na API pública antes da aprovação;
+- bloqueio de duplicidade;
+- aprovação pelo fluxo administrativo;
+- presença na API pública somente após `APROVADA`.
+
+Estado documental deste checkpoint: **implementação concluída; execução do CI atual ainda precisa ser confirmada antes de marcar o 4.3 como validado. BLOCO 4.4 não iniciado.**
