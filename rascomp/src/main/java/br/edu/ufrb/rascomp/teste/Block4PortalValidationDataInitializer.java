@@ -89,13 +89,14 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
         garantirUsuario(GESTAO_EMAIL, "Gestão B4", UserRole.GESTAO);
         UserAccount liderUser = garantirUsuario(LEADER_EMAIL, "Líder B4", UserRole.PARTICIPANTE);
         UserAccount membroUser = garantirUsuario(MEMBER_EMAIL, "Membro B4", UserRole.PARTICIPANTE);
+        UserAccount apoioUser = garantirUsuario(SUPPORT_EMAIL, "Apoio B4", UserRole.PARTICIPANTE);
 
         Institution institution = garantirInstituicao();
         Team team = garantirEquipe(institution, liderUser);
 
         Competitor lider = garantirCompetidor("Líder B4", LEADER_EMAIL, team, liderUser);
         Competitor membro = garantirCompetidor("Membro B4", MEMBER_EMAIL, team, membroUser);
-        Competitor apoio = garantirCompetidor("Apoio B4", "apoio.b4@rascomp.local", team, null);
+        Competitor apoio = garantirCompetidor("Apoio B4", SUPPORT_EMAIL, team, apoioUser);
 
         Robot vespa = garantirRobo(
                 RESPONSIBLE_ROBOT,
@@ -107,8 +108,8 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
                 team);
 
         garantirResponsabilidade(vespa, membro, membroUser);
-        garantirResponsabilidade(vespa, apoio, liderUser);
-        garantirResponsabilidade(atlas, apoio, liderUser);
+        garantirResponsabilidade(vespa, apoio, apoioUser);
+        garantirResponsabilidade(atlas, apoio, apoioUser);
 
         CompetitionCategory follow = garantirCategoria(
                 FOLLOW_CATEGORY,
@@ -139,7 +140,9 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
         System.out.println("GESTAO: " + GESTAO_EMAIL + " / " + PASSWORD);
         System.out.println("LIDER: " + LEADER_EMAIL + " / " + PASSWORD);
         System.out.println("MEMBRO: " + MEMBER_EMAIL + " / " + PASSWORD);
+        System.out.println("APOIO: " + SUPPORT_EMAIL + " / " + PASSWORD);
         System.out.println("Membro responsável por: " + RESPONSIBLE_ROBOT);
+        System.out.println("Apoio responsável por: " + RESPONSIBLE_ROBOT + " + " + LEADER_ONLY_ROBOT);
         System.out.println("Robô exclusivo da visão administrativa do líder: " + LEADER_ONLY_ROBOT);
         System.out.println("Nenhuma Registration é pré-criada: o teste começa no Portal.");
         System.out.println("============================================================");
