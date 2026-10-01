@@ -1,8 +1,13 @@
 package br.edu.ufrb.rascomp.controller;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,11 +22,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.edu.ufrb.rascomp.dto.ManualCompetitionEntryRequest;
+import br.edu.ufrb.rascomp.dto.RegistrationCompetitorContextDTO;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RegistrationDisqualificationDTO;
 import br.edu.ufrb.rascomp.dto.RegistrationStatusHistoryDTO;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.service.ManualCompetitionEntryService;
+import br.edu.ufrb.rascomp.service.RegistrationReceiptStorageService;
 import br.edu.ufrb.rascomp.service.RegistrationService;
 import br.edu.ufrb.rascomp.service.RegistrationStatusHistoryService;
 import jakarta.validation.Valid;
@@ -57,6 +64,27 @@ public class RegistrationController {
     @GetMapping("/{id}/historico-status")
     public ResponseEntity<List<RegistrationStatusHistoryDTO>> historicoStatus(@PathVariable Long id) {
         return ResponseEntity.ok(statusHistoryService.listar(id));
+    }
+
+    @GetMapping("/{id}/contexto-competidores")
+    public ResponseEntity<List<RegistrationCompetitorContextDTO>> contextoCompetidores(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(registrationService.contextoCompetidores(id));
+    }
+
+    @GetMapping("/{id}/comprovante")
+    public ResponseEntity<Resource> comprovante(@PathVariable Long id) {
+        RegistrationReceiptStorageService.ReceiptFile file =
+                registrationService.comprovanteAdministrativo(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.contentType()))
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.inline()
+                                .filename(file.filename(), StandardCharsets.UTF_8)
+                                .build()
+                                .toString())
+                .body(file.resource());
     }
 
     @GetMapping("/{id}")
