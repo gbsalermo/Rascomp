@@ -1775,3 +1775,55 @@ Pódio oficial consolidado como requisito:
 - Sumô: campeão = vencedor da final, vice = perdedor da final, 3º = vencedor de disputa própria entre os perdedores das semifinais.
 
 A disputa de terceiro lugar, correção DEV auditável, estado derivado ELIMINADO, independência da tela Chaves e histórico/pódio consolidado em Resultados são correções necessárias antes de marcar o BLOCO 3 como CONCLUÍDO.
+
+
+## ETAPA 4 / BLOCO 3 — correções finais para re-smoke — 30/09/2026
+
+Novos fluxos de domínio:
+
+### Entrada manual DEV
+
+`ManualCompetitionEntryService` implementa:
+
+```text
+UserAccount PARTICIPANTE ativa
+→ Competitor existente ou criado/vinculado na Team escolhida
+→ Robot criado na Team
+→ Registration APROVADA
+→ RegistrationStatusHistory = ENTRADA_MANUAL
+```
+
+A operação exige DEV + justificativa e pode ocorrer com inscrições abertas/encerradas ou competição `EM_ANDAMENTO`, sem reabrir inscrições públicas.
+
+No Sumô, a inspeção continua obrigatória. No Follow, a nova inscrição pode entrar na sincronização das próximas chamadas.
+
+### Regeneração excepcional de chave
+
+V20 adiciona auditoria em `brackets` (`generation_reason`, `generated_by_user_id`).
+
+DEV pode regenerar durante `EM_ANDAMENTO` com justificativa somente enquanto a chave atual não tiver atividade competitiva real. A chave anterior vira histórica; nunca é apagada.
+
+### Terceiro lugar
+
+V21 adiciona `matches.match_type`:
+
+- `ELIMINATORIA`;
+- `TERCEIRO_LUGAR`.
+
+A geração cria a disputa de 3º para chaves com semifinais. Os perdedores das duas semifinais alimentam automaticamente seus slots. Correções seguras de semifinal também corrigem o participante correspondente na disputa de 3º.
+
+### Pódio Follow
+
+V22 amplia `follow_manual_results` com segundo e terceiro lugares. Ranking normal/extra usa as três primeiras posições; decisão administrativa exige pódio ordenado conforme quantidade de elegíveis.
+
+### Correção extrema DEV
+
+V23 audita correções de `match_results` com motivo, DEV e data/hora. A operação:
+
+- preserva os rounds originais;
+- altera o vencedor consolidado;
+- mantém o placar coerente;
+- corrige propagação/3º lugar quando seguro;
+- bloqueia se a dependência seguinte já iniciou.
+
+A bateria automatizada ganhou cobertura para entrada manual, regeneração excepcional, terceiro lugar, pódio manual e correção DEV.
