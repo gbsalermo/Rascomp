@@ -2308,3 +2308,32 @@ BLOCO 4.4
 ```
 
 A bateria manual canônica está em `docs/VALIDACAO_ETAPA4_BLOCO4.md`.
+
+
+### Sequenciamento obrigatório — inscrição pessoal antes do robô
+
+Para garantir cadastro separado e em ordem sem obrigar o participante a aguardar análise administrativa:
+
+```text
+1. PARTICIPANTE envia Minha inscrição
+   → ParticipantCompetitionRegistration = PENDENTE
+
+2. A existência da inscrição pessoal PENDENTE ou APROVADA
+   → libera Inscrever robô
+
+3. PARTICIPANTE envia Registration do Robot
+   → Registration = PENDENTE
+
+4. GESTAO analisa
+   → primeiro aprova as pessoas
+   → depois pode aprovar o Robot
+```
+
+Regras:
+
+- antes de existir inscrição pessoal `PENDENTE` ou `APROVADA` na Competition, o botão de inscrição de Robot fica bloqueado;
+- não é necessário aguardar a aprovação pessoal para criar a inscrição do Robot;
+- cada competidor selecionado na composição do Robot precisa ao menos possuir inscrição pessoal `PENDENTE` ou `APROVADA` na mesma Competition;
+- para aprovar o Robot, todos os competidores selecionados precisam estar pessoalmente `APROVADOS`;
+- inscrição pessoal `REJEITADA` ou `CANCELADA` não libera nova inscrição de Robot;
+- o backend repete todas essas validações, independentemente da interface.
