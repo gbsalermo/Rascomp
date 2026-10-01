@@ -23,6 +23,7 @@ import br.edu.ufrb.rascomp.model.ConfigFollow;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.TentativaSeguidorLinha;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
@@ -58,6 +59,7 @@ class TentativaSeguidorLinhaServiceTest {
         Competition competition = new Competition();
         competition.setId(9L);
         competition.setAtivo(true);
+        competition.setStatus(StatusCompetition.EM_ANDAMENTO);
 
         registration = new Registration();
         registration.setId(1L);
@@ -81,6 +83,12 @@ class TentativaSeguidorLinhaServiceTest {
         lenient().when(followResolutionService.tomadaPermitida(9L, 3L, 1)).thenReturn(true);
         lenient().when(followResolutionService.tomadaPermitida(9L, 3L, 2)).thenReturn(true);
         lenient().when(followResolutionService.tomadaPermitida(9L, 3L, 3)).thenReturn(true);
+    }
+
+    @Test
+    void deveRejeitarTentativaQuandoCompeticaoNaoEstaEmAndamento() {
+        registration.getCompetition().setStatus(StatusCompetition.FINALIZADA);
+        assertThrows(IllegalArgumentException.class, () -> service.criar(tentativaBase()));
     }
 
     @Test
