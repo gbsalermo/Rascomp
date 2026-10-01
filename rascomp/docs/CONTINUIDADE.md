@@ -103,7 +103,7 @@ As **ETAPAS 1, 2 e 3 estão concluídas e validadas**. A **ETAPA 4 — Consolida
 ```text
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
-MYSQL + FLYWAY V1–V24                    ✅
+MYSQL + FLYWAY V1–V25                    ✅
 COMPETIÇÕES                              ✅ transições + prorrogação/reabertura
 EQUIPES / COMPETIDORES / ROBÔS           ✅
 INSCRIÇÕES + REVISÃO                     ✅ invariantes + cancelamento + híbridos
@@ -2162,3 +2162,149 @@ RobotResponsible
 Registration.competitors
 = recorte competitivo daquele Robot naquela Competition/Category
 ```
+
+
+---
+
+## Checkpoint 01/10/2026 — BLOCO 4.3 / inscrição dupla e N:N implementados
+
+O 4.3 foi reaberto antes da validação manual e a implementação principal foi alinhada ao fluxo real definido com o cliente.
+
+### Migration V25
+
+`V25__participant_competition_registration_and_payment_receipts.sql` adiciona:
+
+- `participant_competition_registrations`;
+- unicidade `Competition + Competitor`;
+- status pessoal `PENDENTE | APROVADA | REJEITADA | CANCELADA`;
+- solicitante/revisor/data/motivo;
+- metadata do comprovante pessoal;
+- metadata do comprovante da Registration do Robot.
+
+Migrations V1–V25 permanecem imutáveis. Próxima migration estrutural: **V26+**.
+
+### Inscrição pessoal
+
+Fluxo:
+
+```text
+PARTICIPANTE associado a Competitor/Team
+→ Competition com inscrições abertas
+→ comprovante
+→ ParticipantCompetitionRegistration PENDENTE
+→ GESTAO aprova/rejeita
+```
+
+A associação à Team e a responsabilidade por Robot continuam independentes desta aprovação.
+
+### Inscrição de Robot
+
+Fluxo normal:
+
+```text
+Robot
+→ Competition + Category
+→ selecionar 1..N RobotResponsible
+→ comprovante próprio
+→ Registration PENDENTE
+→ GESTAO analisa
+```
+
+A aprovação exige simultaneamente:
+
+- pelo menos um competidor;
+- todos os `Registration.competitors` são `RobotResponsible` ativos do Robot;
+- todos possuem inscrição pessoal `APROVADA` na mesma Competition;
+- comprovante do Robot presente;
+- invariantes anteriores de Registration preservadas.
+
+A Registration pode ser enviada enquanto as inscrições pessoais estão PENDENTE; apenas a aprovação fica bloqueada.
+
+### Relação N:N
+
+```text
+Robot → 1..N RobotResponsible
+Competitor → 0..N Robots
+```
+
+O cenário QA passa a provar os dois sentidos:
+
+```text
+Vespa → Membro B4 + Apoio B4
+Apoio B4 → Vespa + Atlas
+```
+
+Adicionar responsabilidade permanente não reescreve uma Registration existente.
+
+Remover um `RobotResponsible` usado em Registration `PENDENTE` ou `APROVADA` é bloqueado até regularização.
+
+O fluxo manual DEV formaliza a responsabilidade escolhida antes de criar a entrada competitiva excepcional.
+
+### Aprovação cruzada na GESTAO
+
+A interface administrativa passa a mostrar:
+
+```text
+Competitor → Robots associados + status das inscrições dos Robots
+Robot → Competitors selecionados + status da inscrição pessoal
+```
+
+Os comprovantes da pessoa e do Robot são independentes e podem ser consultados pela GESTAO.
+
+O frontend antecipa bloqueios para UX, mas o backend repete as validações no momento da aprovação.
+
+### Storage de comprovantes
+
+Storage local atual:
+
+```text
+./uploads/registration-receipts
+```
+
+Formatos aceitos:
+
+- PDF;
+- JPEG;
+- PNG;
+- WEBP.
+
+Limite: 10 MB.
+
+O diretório `uploads/` já permanece ignorado pelo Git.
+
+### QA automatizado preparado
+
+O profile `testdata` usa:
+
+```text
+membro.b4@rascomp.local → Vespa
+apoio.b4@rascomp.local  → Vespa + Atlas
+lider.b4@rascomp.local  → administra a Team
+gestao.b4@rascomp.local → aprovação
+```
+
+O job `portal-testdata` foi atualizado para:
+
+1. criar duas inscrições pessoais PENDENTE com comprovante;
+2. criar Vespa PENDENTE com dois RobotResponsible;
+3. comprovar que aprovação precoce do Robot falha;
+4. aprovar as duas pessoas;
+5. confirmar contexto cruzado;
+6. aprovar o Robot;
+7. confirmar que apenas APROVADA entra na API pública.
+
+Também foram adicionados/adaptados testes unitários e de fluxo para inscrição pessoal, comprovante, responsabilidade e remoção protegida.
+
+### Estado
+
+```text
+BLOCO 4.3
+→ implementação principal adiantada
+→ build/CI atual ainda NÃO confirmado
+→ validação manual ainda NÃO realizada
+
+BLOCO 4.4
+→ NÃO INICIADO
+```
+
+A bateria manual canônica está em `docs/VALIDACAO_ETAPA4_BLOCO4.md`.
