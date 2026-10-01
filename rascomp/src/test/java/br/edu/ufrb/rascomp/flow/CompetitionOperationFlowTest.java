@@ -31,6 +31,7 @@ import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoPartida;
 import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoFollow;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.TipoPartidaSumo;
 import br.edu.ufrb.rascomp.service.AusenciaTomadaSeguidorLinhaService;
 import br.edu.ufrb.rascomp.service.BracketGenerationService;
 import br.edu.ufrb.rascomp.service.CompetitionAgendaService;
@@ -204,11 +205,21 @@ class CompetitionOperationFlowTest extends IntegrationFlowTestSupport {
 
         var partidas = matchRepository
                 .findByBracketIdOrderByRodadaAscOrdemAsc(bracketId);
-        long aguardando = partidas.stream()
+        var aguardando = partidas.stream()
                 .filter(item -> item.getStatus()
                         == br.edu.ufrb.rascomp.model.Enum.StatusMatch.AGUARDANDO_PARTICIPANTES)
-                .count();
-        assertEquals(1, aguardando);
+                .toList();
+
+        // Com quatro robôs existem duas semifinais prontas, enquanto
+        // a final aguarda os vencedores e a disputa de 3º lugar aguarda
+        // os dois perdedores das semifinais.
+        assertEquals(2, aguardando.size());
+        assertEquals(1, aguardando.stream()
+                .filter(item -> item.getTipoPartida() == TipoPartidaSumo.TERCEIRO_LUGAR)
+                .count());
+        assertEquals(1, aguardando.stream()
+                .filter(item -> item.getTipoPartida() == TipoPartidaSumo.ELIMINATORIA)
+                .count());
 
         var agenda = agendaService.listar(competition.getId());
         long batalhas = agenda.stream()
@@ -218,9 +229,7 @@ class CompetitionOperationFlowTest extends IntegrationFlowTestSupport {
         assertEquals(2, batalhas);
         assertTrue(agenda.stream().noneMatch(item ->
                 "SUMO_MATCH".equals(item.getTipo())
-                        && partidas.stream()
-                                .filter(match -> match.getStatus()
-                                        == br.edu.ufrb.rascomp.model.Enum.StatusMatch.AGUARDANDO_PARTICIPANTES)
+                        && aguardando.stream()
                                 .anyMatch(match -> match.getId().equals(item.getMatchId()))));
     }
 
