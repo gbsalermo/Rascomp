@@ -85,4 +85,57 @@ class RobotResponsibleServiceTest {
         assertEquals(4L, captor.getValue().getCompetitor().getId());
         assertEquals(true, captor.getValue().getAtivo());
     }
+
+
+    @Test
+    void naoDeveRemoverResponsavelUsadoEmInscricaoAtiva() {
+        UserAccount leader = new UserAccount();
+        leader.setId(1L);
+        leader.setNome("Líder");
+        leader.setAtivo(true);
+
+        Institution institution = new Institution();
+        institution.setId(2L);
+        institution.setNome("UFRB");
+
+        Team team = new Team();
+        team.setId(3L);
+        team.setInstitution(institution);
+        team.setResponsibleUser(leader);
+        team.setAtivo(true);
+
+        Competitor competitor = new Competitor();
+        competitor.setId(4L);
+        competitor.setNome("Gabriel");
+        competitor.setTeam(team);
+        competitor.setAtivo(true);
+
+        Robot robot = new Robot();
+        robot.setId(5L);
+        robot.setNome("Vespa");
+        robot.setTeam(team);
+        robot.setAtivo(true);
+
+        RobotResponsible link = new RobotResponsible();
+        link.setId(6L);
+        link.setRobot(robot);
+        link.setCompetitor(competitor);
+        link.setAtivo(true);
+
+        when(accessPolicyService.exigirRoboDaEquipe(5L)).thenReturn(robot);
+        when(accessPolicyService.usuarioAtual()).thenReturn(leader);
+        when(responsibleRepository.findByRobotIdOrderByCompetitorNomeAsc(5L))
+                .thenReturn(List.of(link));
+        when(registrationRepository.countActiveByRobotAndCompetitor(
+                5L,
+                4L,
+                List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA)))
+                .thenReturn(1L);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.definir(5L, Set.of()));
+
+        assertEquals(true, ex.getMessage().contains("Regularize a inscrição"));
+    }
 }
