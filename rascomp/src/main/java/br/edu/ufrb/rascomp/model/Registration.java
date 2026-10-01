@@ -95,6 +95,15 @@ public class Registration implements Serializable {
     @Column(length = 500)
     private String observacao;
 
+    @Column(name = "payment_receipt_storage_key", length = 500)
+    private String paymentReceiptStorageKey;
+
+    @Column(name = "payment_receipt_original_name", length = 255)
+    private String paymentReceiptOriginalName;
+
+    @Column(name = "payment_receipt_content_type", length = 100)
+    private String paymentReceiptContentType;
+
     @Column(nullable = false)
     private Boolean ativo = true;
 
