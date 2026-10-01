@@ -13,10 +13,13 @@ import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.Registration;
+import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
@@ -38,6 +41,7 @@ public class BracketGenerationService {
     private final BracketIntegrityService bracketIntegrityService;
     private final InspecaoSumoService inspecaoSumoService;
     private final CompetitionContextService competitionContextService;
+    private final UserAccountService userAccountService;
 
     @Transactional
     public BracketDTO gerar(Long competitionId, Long categoryId) {
@@ -49,8 +53,58 @@ public class BracketGenerationService {
         validarCategoriaSumo(category);
         bracketIntegrityService.validarEstadoParaGeracao(competition);
 
+        return gerarInterno(competition, category, null, null);
+    }
+
+    @Transactional
+    public BracketDTO regenerarExcepcionalDev(
+            Long competitionId,
+            Long categoryId,
+            String justificativa) {
+
+        UserAccount dev = userAccountService.buscarAtual();
+        if (dev.getRole() != UserRole.DEV) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "A regeneração excepcional de chave é exclusiva do DEV.");
+        }
+
+        competitionContextService.exigirOperavel(competitionId);
+        Competition competition = buscarCompetitionParaAtualizacao(competitionId);
+        CompetitionCategory category = buscarCategory(categoryId);
+
+        validarAtivos(competition, category);
+        validarCategoriaSumo(category);
+
+        if (competition.getStatus() != StatusCompetition.INSCRICOES_ENCERRADAS
+                && competition.getStatus() != StatusCompetition.EM_ANDAMENTO) {
+            throw new IllegalArgumentException(
+                    "A regeneração excepcional só é permitida com inscrições encerradas ou competição EM_ANDAMENTO.");
+        }
+
+        String motivo = justificativa == null ? "" : justificativa.trim();
+        if (motivo.isBlank()) {
+            throw new IllegalArgumentException("Informe a justificativa da regeneração excepcional.");
+        }
+        if (motivo.length() > 500) {
+            motivo = motivo.substring(0, 500);
+        }
+
+        return gerarInterno(competition, category, dev, motivo);
+    }
+
+    private BracketDTO gerarInterno(
+            Competition competition,
+            CompetitionCategory category,
+            UserAccount generatedBy,
+            String generationReason) {
+
+        Long competitionId = competition.getId();
+        Long categoryId = category.getId();
+
         List<Bracket> chavesAtuais = bracketRepository
                 .findByCompetitionIdAndCategoryIdAndAtualTrue(competitionId, categoryId);
+
+        // Mesmo no fluxo excepcional, nunca apagamos/reescrevemos uma chave que já teve disputa real.
         bracketIntegrityService.validarRegeneracaoPermitida(chavesAtuais);
 
         List<Registration> participantes = buscarParticipantesElegiveis(competitionId, categoryId);
@@ -65,6 +119,9 @@ public class BracketGenerationService {
         Collections.shuffle(participantesSorteados);
 
         Bracket bracket = criarBracket(competition, category);
+        bracket.setGeneratedByUser(generatedBy);
+        bracket.setGenerationReason(generationReason);
+
         List<Match> primeiraRodada = gerarArvoreCompleta(bracket, participantesSorteados);
 
         bracket.setStatus(StatusBracket.GERADO);
