@@ -19,6 +19,7 @@ import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.TipoPartidaSumo;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
@@ -182,12 +183,26 @@ public class BracketGenerationService {
                 match.setBracket(bracket);
                 match.setRodada(rodada);
                 match.setOrdem(ordem);
+                match.setTipoPartida(TipoPartidaSumo.ELIMINATORIA);
                 match.setRegistrationA(null);
                 match.setRegistrationB(null);
                 match.setStatus(StatusMatch.AGUARDANDO_PARTICIPANTES);
                 match.setAtivo(true);
                 partidas.add(match);
             }
+        }
+
+        if (participantes.size() >= 4 && totalRodadas >= 2) {
+            Match terceiroLugar = new Match();
+            terceiroLugar.setBracket(bracket);
+            terceiroLugar.setRodada(totalRodadas);
+            terceiroLugar.setOrdem(2);
+            terceiroLugar.setTipoPartida(TipoPartidaSumo.TERCEIRO_LUGAR);
+            terceiroLugar.setRegistrationA(null);
+            terceiroLugar.setRegistrationB(null);
+            terceiroLugar.setStatus(StatusMatch.AGUARDANDO_PARTICIPANTES);
+            terceiroLugar.setAtivo(true);
+            partidas.add(terceiroLugar);
         }
 
         matchRepository.saveAll(partidas);
@@ -209,6 +224,7 @@ public class BracketGenerationService {
             match.setBracket(bracket);
             match.setRodada(1);
             match.setOrdem(ordem);
+            match.setTipoPartida(TipoPartidaSumo.ELIMINATORIA);
             match.setAtivo(true);
 
             Registration participanteA = participantes.get(indiceParticipante++);
