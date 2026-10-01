@@ -28,6 +28,7 @@ import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
@@ -59,6 +60,7 @@ class AusenciaTomadaSeguidorLinhaServiceTest {
         competition.setId(1L);
         competition.setNome("RRC");
         competition.setAtivo(true);
+        competition.setStatus(StatusCompetition.EM_ANDAMENTO);
 
         CompetitionCategory category = CompetitionCategory.builder()
                 .id(2L)
@@ -109,6 +111,15 @@ class AusenciaTomadaSeguidorLinhaServiceTest {
         lenient().when(followResolutionService.tomadaPermitida(1L, 2L, 1)).thenReturn(true);
         lenient().when(followResolutionService.tomadaPermitida(1L, 2L, 2)).thenReturn(true);
         lenient().when(followResolutionService.tomadaPermitida(1L, 2L, 3)).thenReturn(true);
+    }
+
+    @Test
+    void naoPodeMarcarAusenciaQuandoCompeticaoNaoEstaEmAndamento() {
+        when(userAccountService.buscarAtual()).thenReturn(organizacao);
+        registration.getCompetition().setStatus(StatusCompetition.FINALIZADA);
+
+        assertThrows(IllegalArgumentException.class, () -> service.marcar(dto(1)));
+        verify(ausenciaRepository, never()).save(any());
     }
 
     @Test
