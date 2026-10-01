@@ -221,6 +221,24 @@ public class MatchResultService {
         bracketProgressionService.corrigirVencedor(match, vencedorAnterior, novoVencedor);
 
         result.setWinner(novoVencedor);
+
+        // Mantém o placar consolidado coerente com o vencedor corrigido.
+        // Em empate técnico/decisão de juiz, os pontos permanecem iguais.
+        if (result.getPontosA() != null
+                && result.getPontosB() != null
+                && !result.getPontosA().equals(result.getPontosB())) {
+
+            boolean novoVencedorEhA = match.getRegistrationA() != null
+                    && match.getRegistrationA().getId().equals(novoVencedor.getId());
+            boolean placarFavoreceA = result.getPontosA() > result.getPontosB();
+
+            if (novoVencedorEhA != placarFavoreceA) {
+                Integer pontosA = result.getPontosA();
+                result.setPontosA(result.getPontosB());
+                result.setPontosB(pontosA);
+            }
+        }
+
         result.setCorrectionReason(motivo);
         result.setCorrectedByUser(dev);
         result.setCorrectedAt(java.time.LocalDateTime.now());
