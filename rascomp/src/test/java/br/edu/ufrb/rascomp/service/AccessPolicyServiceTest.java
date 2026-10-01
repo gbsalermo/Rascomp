@@ -19,6 +19,7 @@ import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
+import br.edu.ufrb.rascomp.repository.RobotResponsibleRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,6 +29,7 @@ class AccessPolicyServiceTest {
     @Mock private TeamRepository teamRepository;
     @Mock private CompetitorRepository competitorRepository;
     @Mock private RobotRepository robotRepository;
+    @Mock private RobotResponsibleRepository robotResponsibleRepository;
     @Mock private RegistrationRepository registrationRepository;
 
     @InjectMocks
