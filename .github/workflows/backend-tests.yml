@@ -157,7 +157,7 @@ jobs:
           categories=$(curl -fsS http://127.0.0.1:8080/api/v1/public/categorias)
           category_id=$(echo "$categories" | jq -er '.[] | select(.modalidade == "FOLLOW_LINE") | .id' | head -n 1)
 
-          printf '%%PDF-1.4\n%% RasComp CI receipt\n' > /tmp/receipt.pdf
+          printf '%PDF-1.4\n% RasComp CI receipt\n' > /tmp/receipt.pdf
           jq -nc --argjson competitionId "$competition_id"             '{competitionId:$competitionId,observacao:"CI inscrição pessoal membro"}'             > /tmp/personal-member.json
           jq -nc --argjson competitionId "$competition_id"             '{competitionId:$competitionId,observacao:"CI inscrição pessoal apoio"}'             > /tmp/personal-support.json
 
