@@ -26,11 +26,13 @@ import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.Registration;
+import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
@@ -48,8 +50,8 @@ class BracketGenerationServiceTest {
     @Mock private BracketProgressionService bracketProgressionService;
     @Mock private BracketIntegrityService bracketIntegrityService;
     @Mock private InspecaoSumoService inspecaoSumoService;
-
-        @Mock private CompetitionContextService competitionContextService;
+    @Mock private UserAccountService userAccountService;
+    @Mock private CompetitionContextService competitionContextService;
 
 @InjectMocks
     private BracketGenerationService service;
@@ -71,6 +73,59 @@ class BracketGenerationServiceTest {
                 .modalidade(Modalidade.SUMO)
                 .ativo(true)
                 .build();
+    }
+
+    @Test
+    void devPodeRegenerarChaveDuranteCompeticaoAntesDeQualquerDisputaComJustificativa() {
+        competition.setStatus(StatusCompetition.EM_ANDAMENTO);
+
+        UserAccount dev = new UserAccount();
+        dev.setId(99L);
+        dev.setNome("DEV Teste");
+        dev.setRole(UserRole.DEV);
+        dev.setAtivo(true);
+
+        Bracket anterior = new Bracket();
+        anterior.setId(40L);
+        anterior.setCompetition(competition);
+        anterior.setCategory(categorySumo);
+        anterior.setNome("Chave anterior");
+        anterior.setStatus(StatusBracket.GERADO);
+        anterior.setAtivo(true);
+        anterior.setAtual(true);
+
+        when(userAccountService.buscarAtual()).thenReturn(dev);
+        when(competitionRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(competition));
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(categorySumo));
+        when(bracketRepository.findByCompetitionIdAndCategoryIdAndAtualTrue(1L, 1L))
+                .thenReturn(List.of(anterior));
+
+        List<Registration> participantes = List.of(registration(1L), registration(2L));
+        when(registrationRepository
+                .findByCompetitionIdAndCategoryIdAndStatusAndAtivoTrueOrderByIdAsc(
+                        eq(1L), eq(1L), eq(StatusRegistration.APROVADA)))
+                .thenReturn(participantes);
+        participantes.forEach(registration ->
+                when(inspecaoSumoService.estaAptaParaCompetir(registration.getId())).thenReturn(true));
+
+        when(bracketRepository.save(any(Bracket.class))).thenAnswer(invocation -> {
+            Bracket bracket = invocation.getArgument(0);
+            if (bracket.getId() == null) bracket.setId(50L);
+            return bracket;
+        });
+        when(matchRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BracketDTO result = service.regenerarExcepcionalDev(
+                1L,
+                1L,
+                "Inclusão de robô avulso autorizada.");
+
+        assertEquals("Inclusão de robô avulso autorizada.", result.getGenerationReason());
+        assertEquals(99L, result.getGeneratedByUserId());
+        assertTrue(result.getAtual());
+        assertEquals(false, anterior.getAtual());
+        assertEquals(StatusBracket.CANCELADO, anterior.getStatus());
+        verify(bracketIntegrityService).validarRegeneracaoPermitida(List.of(anterior));
     }
 
     @Test
