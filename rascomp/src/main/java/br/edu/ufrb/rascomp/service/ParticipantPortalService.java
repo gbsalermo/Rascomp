@@ -17,6 +17,8 @@ import br.edu.ufrb.rascomp.dto.RegistrationCancellationRequestDTO;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RobotDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
+import br.edu.ufrb.rascomp.dto.RobotResponsibleDTO;
+import br.edu.ufrb.rascomp.dto.RobotResponsibilityUpdateRequest;
 import br.edu.ufrb.rascomp.dto.TeamDTO;
 import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.model.Competitor;
@@ -37,6 +39,7 @@ public class ParticipantPortalService {
     private final TeamService teamService;
     private final CompetitorService competitorService;
     private final RobotService robotService;
+    private final RobotResponsibleService robotResponsibleService;
     private final RegistrationService registrationService;
     private final RegistrationCancellationRequestService cancellationRequestService;
     private final RobotImageService robotImageService;
@@ -142,27 +145,38 @@ public class ParticipantPortalService {
             return robotService.listarPorEquipe(teamId, false);
         }
 
-        return registrationService.listarPorEquipeEParticipante(teamId, usuario.getId())
-                .stream()
-                .map(RegistrationDTO::getRobotId)
-                .distinct()
-                .map(robotService::buscarPorId)
-                .toList();
+        return robotResponsibleService.listarRobosDoCompetidorAtual(teamId);
     }
 
     @Transactional
     public RobotDTO criarRobo(Long teamId, ParticipantRobotRequest request) {
-        accessPolicyService.exigirEquipeDoResponsavel(teamId);
+        accessPolicyService.exigirEquipeDoParticipante(teamId);
+        UserAccount usuario = accessPolicyService.usuarioAtual();
+
         RobotDTO dto = robotDto(request, teamId);
-        return robotService.criar(dto);
+        RobotDTO criado = robotService.criar(dto);
+        robotResponsibleService.associarCriador(criado.getId(), usuario);
+        return criado;
     }
 
     @Transactional
     public RobotDTO atualizarRobo(Long robotId, ParticipantRobotRequest request) {
-        Robot atual = accessPolicyService.exigirRoboDaEquipe(robotId);
+        Robot atual = accessPolicyService.exigirRoboGerenciavelPeloParticipante(robotId);
         RobotDTO dto = robotDto(request, atual.getTeam().getId());
         dto.setAtivo(atual.getAtivo());
         return robotService.atualizar(robotId, dto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RobotResponsibleDTO> responsaveisRobo(Long robotId) {
+        return robotResponsibleService.listar(robotId);
+    }
+
+    @Transactional
+    public List<RobotResponsibleDTO> definirResponsaveisRobo(
+            Long robotId,
+            RobotResponsibilityUpdateRequest request) {
+        return robotResponsibleService.definir(robotId, request.getCompetitorIds());
     }
 
     @Transactional
@@ -177,17 +191,17 @@ public class ParticipantPortalService {
     }
 
     public RobotImageDTO adicionarFoto(Long robotId, MultipartFile arquivo) {
-        accessPolicyService.exigirRoboDaEquipe(robotId);
+        accessPolicyService.exigirRoboGerenciavelPeloParticipante(robotId);
         return robotImageService.adicionar(robotId, arquivo);
     }
 
     public RobotImageDTO definirFotoPrincipal(Long robotId, Long imageId) {
-        accessPolicyService.exigirRoboDaEquipe(robotId);
+        accessPolicyService.exigirRoboGerenciavelPeloParticipante(robotId);
         return robotImageService.definirPrincipal(robotId, imageId);
     }
 
     public void removerFoto(Long robotId, Long imageId) {
-        accessPolicyService.exigirRoboDaEquipe(robotId);
+        accessPolicyService.exigirRoboGerenciavelPeloParticipante(robotId);
         robotImageService.remover(robotId, imageId);
     }
 
