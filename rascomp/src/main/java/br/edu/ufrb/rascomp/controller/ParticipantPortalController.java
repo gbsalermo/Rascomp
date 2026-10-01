@@ -28,6 +28,8 @@ import br.edu.ufrb.rascomp.dto.RegistrationCancellationRequestDTO;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RobotDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
+import br.edu.ufrb.rascomp.dto.RobotResponsibleDTO;
+import br.edu.ufrb.rascomp.dto.RobotResponsibilityUpdateRequest;
 import br.edu.ufrb.rascomp.dto.TeamDTO;
 import br.edu.ufrb.rascomp.dto.TeamInviteCreateRequest;
 import br.edu.ufrb.rascomp.dto.TeamJoinCreateRequest;
@@ -146,6 +148,18 @@ public class ParticipantPortalController {
     @PostMapping("/equipes/{teamId}/robos")
     public ResponseEntity<RobotDTO> criarRobo(@PathVariable Long teamId, @Valid @RequestBody ParticipantRobotRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(portalService.criarRobo(teamId, request));
+    }
+
+    @GetMapping("/robos/{robotId}/responsaveis")
+    public ResponseEntity<List<RobotResponsibleDTO>> responsaveisRobo(@PathVariable Long robotId) {
+        return ResponseEntity.ok(portalService.responsaveisRobo(robotId));
+    }
+
+    @PutMapping("/robos/{robotId}/responsaveis")
+    public ResponseEntity<List<RobotResponsibleDTO>> definirResponsaveisRobo(
+            @PathVariable Long robotId,
+            @Valid @RequestBody RobotResponsibilityUpdateRequest request) {
+        return ResponseEntity.ok(portalService.definirResponsaveisRobo(robotId, request));
     }
 
     @PutMapping("/robos/{robotId}")
