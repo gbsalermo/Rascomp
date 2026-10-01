@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.multipart.MultipartFile;
 
 import br.edu.ufrb.rascomp.dto.CompetitorDTO;
 import br.edu.ufrb.rascomp.dto.ParticipantRegistrationRequest;
@@ -41,6 +42,7 @@ class ParticipantPortalServiceTest {
     @Mock private RobotImageService robotImageService;
     @Mock private TentativaSeguidorLinhaService tentativaSeguidorLinhaService;
     @Mock private ConfigFollowService configFollowService;
+    @Mock private MultipartFile comprovante;
 
     @InjectMocks
     private ParticipantPortalService service;
@@ -169,7 +171,10 @@ class ParticipantPortalServiceTest {
         when(registrationService.criarPorParticipante(any(RegistrationDTO.class), org.mockito.ArgumentMatchers.eq(membro)))
                 .thenReturn(criada);
 
-        RegistrationDTO resultado = service.inscrever(10L, request);
+        when(registrationService.anexarComprovantePorParticipante(300L, comprovante))
+                .thenReturn(criada);
+
+        RegistrationDTO resultado = service.inscrever(10L, request, comprovante);
 
         assertEquals(300L, resultado.getId());
         verify(accessPolicyService, never()).exigirEquipeDoResponsavel(10L);
