@@ -1,8 +1,13 @@
 package br.edu.ufrb.rascomp.controller;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +18,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,6 +42,7 @@ import br.edu.ufrb.rascomp.dto.TeamJoinCreateRequest;
 import br.edu.ufrb.rascomp.dto.TeamMembershipRequestDTO;
 import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.service.ParticipantPortalService;
+import br.edu.ufrb.rascomp.service.RegistrationReceiptStorageService;
 import br.edu.ufrb.rascomp.service.TeamMembershipService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -209,9 +216,30 @@ public class ParticipantPortalController {
         return ResponseEntity.ok(portalService.configFollow(registrationId));
     }
 
-    @PostMapping("/equipes/{teamId}/inscricoes")
-    public ResponseEntity<RegistrationDTO> inscrever(@PathVariable Long teamId, @Valid @RequestBody ParticipantRegistrationRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.inscrever(teamId, request));
+    @PostMapping(
+            value = "/equipes/{teamId}/inscricoes",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<RegistrationDTO> inscrever(
+            @PathVariable Long teamId,
+            @Valid @RequestPart("dados") ParticipantRegistrationRequest request,
+            @RequestPart("comprovante") MultipartFile comprovante) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(portalService.inscrever(teamId, request, comprovante));
+    }
+
+    @GetMapping("/inscricoes/{registrationId}/comprovante")
+    public ResponseEntity<Resource> comprovanteInscricao(@PathVariable Long registrationId) {
+        RegistrationReceiptStorageService.ReceiptFile file =
+                portalService.comprovanteInscricao(registrationId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.contentType()))
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.inline()
+                                .filename(file.filename(), StandardCharsets.UTF_8)
+                                .build()
+                                .toString())
+                .body(file.resource());
     }
 
     @DeleteMapping("/inscricoes/{registrationId}")
