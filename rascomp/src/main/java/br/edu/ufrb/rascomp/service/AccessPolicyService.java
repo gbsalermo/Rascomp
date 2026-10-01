@@ -11,6 +11,7 @@ import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
+import br.edu.ufrb.rascomp.repository.RobotResponsibleRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class AccessPolicyService {
     private final TeamRepository teamRepository;
     private final CompetitorRepository competitorRepository;
     private final RobotRepository robotRepository;
+    private final RobotResponsibleRepository robotResponsibleRepository;
     private final RegistrationRepository registrationRepository;
 
     @Transactional(readOnly = true)
@@ -123,16 +125,21 @@ public class AccessPolicyService {
             return robot;
         }
 
-        boolean participa = registrationRepository
-                .findByTeamIdAndParticipantUserIdOrderByDataCadastroDesc(robot.getTeam().getId(), usuario.getId())
-                .stream()
-                .anyMatch(registration -> registration.getRobot().getId().equals(robotId));
+        boolean responsavelPeloRobo = competitorRepository.findByUserAccountId(usuario.getId())
+                .map(competitor -> robotResponsibleRepository
+                        .existsByRobotIdAndCompetitorIdAndAtivoTrue(robotId, competitor.getId()))
+                .orElse(false);
 
-        if (!participa) {
+        if (!responsavelPeloRobo) {
             throw new org.springframework.security.access.AccessDeniedException(
-                    "Você não participa de nenhuma inscrição deste robô.");
+                    "Você não é responsável por este robô.");
         }
         return robot;
+    }
+
+    @Transactional(readOnly = true)
+    public Robot exigirRoboGerenciavelPeloParticipante(Long robotId) {
+        return exigirRoboVisivelAoParticipante(robotId);
     }
 
     public boolean ehResponsavel(Team team, UserAccount usuario) {
