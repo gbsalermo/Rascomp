@@ -14,6 +14,8 @@ import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.RobotResponsible;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
+import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
 import br.edu.ufrb.rascomp.repository.RobotResponsibleRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -27,6 +29,7 @@ public class RobotResponsibleService {
     private final CompetitorRepository competitorRepository;
     private final RobotRepository robotRepository;
     private final RobotResponsibleRepository responsibleRepository;
+    private final RegistrationRepository registrationRepository;
 
     @Transactional(readOnly = true)
     public List<RobotResponsibleDTO> listar(Long robotId) {
@@ -88,7 +91,20 @@ public class RobotResponsibleService {
                 responsibleRepository.findByRobotIdOrderByCompetitorNomeAsc(robotId);
 
         atuais.forEach(link -> {
-            link.setAtivo(ids.contains(link.getCompetitor().getId()));
+            boolean manterAtivo = ids.contains(link.getCompetitor().getId());
+            if (Boolean.TRUE.equals(link.getAtivo()) && !manterAtivo) {
+                long usosAtivos = registrationRepository.countActiveByRobotAndCompetitor(
+                        robotId,
+                        link.getCompetitor().getId(),
+                        List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA));
+                if (usosAtivos > 0) {
+                    throw new IllegalArgumentException(
+                            "Não é possível remover " + link.getCompetitor().getNome()
+                                    + " da responsabilidade do robô enquanto existir inscrição PENDENTE "
+                                    + "ou APROVADA usando esse competidor. Regularize a inscrição primeiro.");
+                }
+            }
+            link.setAtivo(manterAtivo);
             responsibleRepository.save(link);
         });
 
@@ -127,6 +143,29 @@ public class RobotResponsibleService {
         link.setRobot(robot);
         link.setCompetitor(competitor);
         link.setCreatedByUser(usuario);
+        link.setAtivo(true);
+        responsibleRepository.save(link);
+    }
+
+    @Transactional
+    public void associarManual(Long robotId, Long competitorId, UserAccount actor) {
+        Robot robot = robotRepository.findById(robotId)
+                .orElseThrow(() -> new EntityNotFoundException("Robô não encontrado: " + robotId));
+        Competitor competitor = competitorRepository.findById(competitorId)
+                .orElseThrow(() -> new EntityNotFoundException("Competidor não encontrado: " + competitorId));
+
+        if (!Boolean.TRUE.equals(competitor.getAtivo())
+                || !competitor.getTeam().getId().equals(robot.getTeam().getId())) {
+            throw new IllegalArgumentException(
+                    "O responsável manual deve ser competidor ativo da mesma equipe do robô.");
+        }
+
+        RobotResponsible link = responsibleRepository
+                .findByRobotIdAndCompetitorId(robotId, competitorId)
+                .orElseGet(RobotResponsible::new);
+        link.setRobot(robot);
+        link.setCompetitor(competitor);
+        link.setCreatedByUser(actor);
         link.setAtivo(true);
         responsibleRepository.save(link);
     }
