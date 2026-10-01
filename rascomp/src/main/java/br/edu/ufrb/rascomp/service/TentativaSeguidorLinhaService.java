@@ -11,6 +11,7 @@ import br.edu.ufrb.rascomp.model.ConfigFollow;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.TentativaSeguidorLinha;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
@@ -133,6 +134,11 @@ public class TentativaSeguidorLinhaService {
     }
 
     private void validarRegistration(Registration registration) {
+        if (registration.getCompetition() == null
+                || registration.getCompetition().getStatus() != StatusCompetition.EM_ANDAMENTO) {
+            throw new IllegalArgumentException(
+                    "Tentativas de Follow só podem ser registradas com a competição EM_ANDAMENTO.");
+        }
         if (!Boolean.TRUE.equals(registration.getAtivo()) || registration.getStatus() != StatusRegistration.APROVADA) {
             throw new IllegalArgumentException("A inscrição deve estar ativa e aprovada.");
         }
