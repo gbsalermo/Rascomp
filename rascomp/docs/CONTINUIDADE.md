@@ -1876,3 +1876,22 @@ BLOCO 4 deve consolidar:
 - inscrição usando os responsáveis como sugestão inicial, sem confundir responsabilidade permanente com competidores daquela Registration.
 
 O cadastro manual DEV permanece apenas como contingência operacional descoberta no BLOCO 3.
+
+
+## BLOCO 4 iniciado — 01/10/2026
+
+V24 adiciona:
+- `team_membership_requests`;
+- `robot_responsibles`.
+
+4.1 implementado:
+- CONVITE líder → participante;
+- SOLICITACAO participante → equipe;
+- aceite/aprovação cria/reaproveita Competitor vinculado à UserAccount e Team;
+- conta já associada a outra equipe é bloqueada.
+
+4.2 base implementada:
+- RobotResponsible;
+- criador do robô vira responsável inicial;
+- líder pode definir responsáveis;
+- autorização/visibilidade do membro passa a usar responsabilidade por robô.
