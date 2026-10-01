@@ -1762,3 +1762,16 @@ Cenário único:
 - contas `dev.b3@rascomp.local` e `gestao.b3@rascomp.local`, senha `Rascomp@2026`.
 
 Seeds antigos permanecem disponíveis no código, mas ficam desligados neste profile. O `DataInitializer` base ganhou flag `rascomp.seed.base` (default true) para poder ser desligado somente no cenário de QA.
+
+
+## Fechamento manual do BLOCO 3 — 30/09/2026
+
+A bateria 1–56 foi percorrida. Regra pendente de janela operacional foi encerrada: tentativas e ausências Follow passam a exigir `Competition.status == EM_ANDAMENTO`.
+
+Pódio oficial consolidado como requisito:
+
+- Follow normal/extra: posições 1–3 do ranking;
+- Follow sem tentativa classificável: decisão administrativa deve definir pódio ordenado, com justificativa/auditoria e sem criar tempo fictício;
+- Sumô: campeão = vencedor da final, vice = perdedor da final, 3º = vencedor de disputa própria entre os perdedores das semifinais.
+
+A disputa de terceiro lugar, correção DEV auditável, estado derivado ELIMINADO, independência da tela Chaves e histórico/pódio consolidado em Resultados são correções necessárias antes de marcar o BLOCO 3 como CONCLUÍDO.
