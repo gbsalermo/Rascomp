@@ -59,6 +59,55 @@ public class RegistrationService {
     }
 
     @Transactional
+    public RegistrationDTO criarEntradaManualDev(
+            RegistrationDTO dto,
+            UserAccount dev,
+            String justificativa) {
+
+        if (dev == null || dev.getRole() != UserRole.DEV) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "A entrada manual de participante/robô é exclusiva do DEV.");
+        }
+
+        competitionContextService.exigirOperavel(dto.getCompetitionId());
+
+        Competition competition = buscarCompetition(dto.getCompetitionId());
+        CompetitionCategory category = buscarCategory(dto.getCategoryId());
+        Team team = buscarTeam(dto.getTeamId());
+        Robot robot = buscarRobot(dto.getRobotId());
+
+        validarEstadoParaEntradaManual(competition);
+        validarDisponibilidade(competition, category, team, robot);
+        validarRobotDaEquipe(robot, team);
+        validarCompatibilidadeFisicaSumo(competition, category, robot, null);
+        validarDuplicidade(dto, null);
+
+        Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, true);
+        String motivo = normalizarObrigatorio(
+                justificativa,
+                "Informe a justificativa da entrada manual.");
+
+        Registration registration = new Registration();
+        preencher(registration, dto, competition, category, team, robot, competitors);
+        registration.setRequestedByUser(dev);
+        registration.setReviewedByUser(dev);
+        registration.setReviewedAt(LocalDateTime.now());
+        registration.setReviewReason(motivo);
+        registration.setStatus(StatusRegistration.APROVADA);
+        registration.setAtivo(true);
+
+        Registration salva = registrationRepository.save(registration);
+        statusHistoryService.registrar(
+                salva,
+                null,
+                StatusRegistration.APROVADA,
+                RegistrationStatusChangeType.ENTRADA_MANUAL,
+                motivo);
+
+        return new RegistrationDTO(salva);
+    }
+
+    @Transactional
     public RegistrationDTO criarPorParticipante(RegistrationDTO dto, UserAccount solicitante) {
         if (solicitante.getRole() != UserRole.PARTICIPANTE) {
             throw new IllegalArgumentException("Somente PARTICIPANTE pode enviar inscrição por este fluxo.");
