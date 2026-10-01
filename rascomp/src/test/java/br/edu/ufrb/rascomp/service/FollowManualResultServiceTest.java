@@ -3,6 +3,7 @@ package br.edu.ufrb.rascomp.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -80,9 +81,9 @@ class FollowManualResultServiceTest {
                 .findByCompetitionIdAndCategoryIdAndStatusAndAtivoTrueOrderByIdAsc(
                         10L, 20L, StatusRegistration.APROVADA))
                 .thenReturn(List.of(first, second, third));
-        when(registrationRepository.findById(1L)).thenReturn(Optional.of(first));
-        when(registrationRepository.findById(2L)).thenReturn(Optional.of(second));
-        when(registrationRepository.findById(3L)).thenReturn(Optional.of(third));
+        lenient().when(registrationRepository.findById(1L)).thenReturn(Optional.of(first));
+        lenient().when(registrationRepository.findById(2L)).thenReturn(Optional.of(second));
+        lenient().when(registrationRepository.findById(3L)).thenReturn(Optional.of(third));
     }
 
     @Test
