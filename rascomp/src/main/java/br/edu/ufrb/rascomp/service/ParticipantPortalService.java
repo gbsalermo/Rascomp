@@ -252,7 +252,10 @@ public class ParticipantPortalService {
     }
 
     @Transactional
-    public RegistrationDTO inscrever(Long teamId, ParticipantRegistrationRequest request) {
+    public RegistrationDTO inscrever(
+            Long teamId,
+            ParticipantRegistrationRequest request,
+            MultipartFile comprovante) {
         accessPolicyService.exigirEquipeDoParticipante(teamId);
         Robot robot = accessPolicyService.exigirRoboGerenciavelPeloParticipante(request.getRobotId());
         if (!robot.getTeam().getId().equals(teamId)) {
@@ -265,7 +268,15 @@ public class ParticipantPortalService {
         dto.setRobotId(request.getRobotId());
         dto.setCompetitorIds(request.getCompetitorIds());
         dto.setObservacao(request.getObservacao());
-        return registrationService.criarPorParticipante(dto, accessPolicyService.usuarioAtual());
+        RegistrationDTO criada =
+                registrationService.criarPorParticipante(dto, accessPolicyService.usuarioAtual());
+        return registrationService.anexarComprovantePorParticipante(criada.getId(), comprovante);
+    }
+
+    @Transactional(readOnly = true)
+    public RegistrationReceiptStorageService.ReceiptFile comprovanteInscricao(Long registrationId) {
+        accessPolicyService.exigirInscricaoVisivelAoParticipante(registrationId);
+        return registrationService.comprovanteDoParticipante(registrationId);
     }
 
     @Transactional
