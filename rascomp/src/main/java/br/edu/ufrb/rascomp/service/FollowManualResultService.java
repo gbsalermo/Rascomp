@@ -1,5 +1,7 @@
 package br.edu.ufrb.rascomp.service;
 
+import java.util.List;
+
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,16 +67,39 @@ public class FollowManualResultService {
         resolutionService.exigirPodeDecidirManualmente(
                 competition.getId(), category.getId());
 
-        Registration winner = registrationRepository.findById(request.getWinnerRegistrationId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Inscrição vencedora não encontrada: " + request.getWinnerRegistrationId()));
+        List<Registration> elegiveis = registrationRepository
+                .findByCompetitionIdAndCategoryIdAndStatusAndAtivoTrueOrderByIdAsc(
+                        competition.getId(),
+                        category.getId(),
+                        StatusRegistration.APROVADA);
 
-        if (!winner.getCompetition().getId().equals(competition.getId())
-                || !winner.getCategory().getId().equals(category.getId())
-                || !Boolean.TRUE.equals(winner.getAtivo())
-                || winner.getStatus() != StatusRegistration.APROVADA) {
-            throw new IllegalArgumentException(
-                    "A inscrição escolhida não é elegível para esta decisão de resultado.");
+        Registration winner = buscarElegivel(
+                request.getWinnerRegistrationId(),
+                competition,
+                category,
+                "campeão");
+
+        Registration second = request.getSecondRegistrationId() == null
+                ? null
+                : buscarElegivel(request.getSecondRegistrationId(), competition, category, "vice-campeão");
+
+        Registration third = request.getThirdRegistrationId() == null
+                ? null
+                : buscarElegivel(request.getThirdRegistrationId(), competition, category, "terceiro lugar");
+
+        if (elegiveis.size() >= 2 && second == null) {
+            throw new IllegalArgumentException("Defina também o vice-campeão.");
+        }
+        if (elegiveis.size() >= 3 && third == null) {
+            throw new IllegalArgumentException("Defina também o terceiro lugar.");
+        }
+
+        if (second != null && winner.getId().equals(second.getId())) {
+            throw new IllegalArgumentException("Campeão e vice-campeão devem ser inscrições diferentes.");
+        }
+        if (third != null && (winner.getId().equals(third.getId())
+                || (second != null && second.getId().equals(third.getId())))) {
+            throw new IllegalArgumentException("As posições do pódio devem usar inscrições diferentes.");
         }
 
         String justificativa = request.getJustificativa() == null
@@ -89,10 +114,32 @@ public class FollowManualResultService {
         result.setCompetition(competition);
         result.setCategory(category);
         result.setWinnerRegistration(winner);
+        result.setSecondRegistration(second);
+        result.setThirdRegistration(third);
         result.setDecidedByUser(operador);
         result.setJustificativa(justificativa);
 
         return new FollowManualResultDTO(repository.save(result));
+    }
+
+    private Registration buscarElegivel(
+            Long registrationId,
+            Competition competition,
+            CompetitionCategory category,
+            String posicao) {
+
+        Registration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Inscrição para " + posicao + " não encontrada: " + registrationId));
+
+        if (!registration.getCompetition().getId().equals(competition.getId())
+                || !registration.getCategory().getId().equals(category.getId())
+                || !Boolean.TRUE.equals(registration.getAtivo())
+                || registration.getStatus() != StatusRegistration.APROVADA) {
+            throw new IllegalArgumentException(
+                    "A inscrição escolhida para " + posicao + " não é elegível para esta decisão.");
+        }
+        return registration;
     }
 
     @Transactional(readOnly = true)
