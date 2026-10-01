@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.edu.ufrb.rascomp.dto.BracketDTO;
+import br.edu.ufrb.rascomp.dto.BracketRegenerationRequest;
 import br.edu.ufrb.rascomp.service.BracketGenerationService;
 import br.edu.ufrb.rascomp.service.BracketService;
 import br.edu.ufrb.rascomp.service.CompetitionContextService;
@@ -42,6 +43,17 @@ public class BracketController {
             @RequestParam Long categoryId) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(bracketGenerationService.gerar(competitionId, categoryId));
+    }
+
+    @PostMapping("/regenerar-excepcional")
+    @PreAuthorize("hasRole('DEV')")
+    public ResponseEntity<BracketDTO> regenerarExcepcional(
+            @Valid @RequestBody BracketRegenerationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(bracketGenerationService.regenerarExcepcionalDev(
+                        request.getCompetitionId(),
+                        request.getCategoryId(),
+                        request.getJustificativa()));
     }
 
     @GetMapping
