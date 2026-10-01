@@ -1847,3 +1847,17 @@ Após a bateria 1–56, foram implementadas as correções estruturais principai
 - melhorias anteriores de g/kg, juízes, BYE, filtros, chamada e bloqueio Follow fora de EM_ANDAMENTO.
 
 Estado: **CORREÇÕES IMPLEMENTADAS · RE-SMOKE PENDENTE**.
+
+
+## Revisão de identidade PARTICIPANTE — 30/09/2026
+
+Regra canônica revisada:
+
+- conta `PARTICIPANTE` representa pessoa competidora;
+- após associação a uma equipe deve existir exatamente um `Competitor` ligado à conta;
+- criação de equipe pelo participante cria também seu Competitor na mesma transação;
+- entrada manual DEV exige participante já associado a Competitor/equipe e deriva a equipe desse vínculo;
+- participante pode cadastrar instituição pelo Portal para não depender de catálogo prévio;
+- fluxo manual permanece exceção, não substitui o onboarding normal.
+
+Ingresso em equipe existente e aprovação do vínculo serão concluídos no BLOCO 4 e deverão criar o Competitor automaticamente.
