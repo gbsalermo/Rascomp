@@ -17,6 +17,7 @@ import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.MatchResult;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.TipoPartidaSumo;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.FollowManualResultRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
@@ -82,6 +83,16 @@ public class CompetitionResultsService {
             dto.setWinnerRegistrationId(manual.getWinnerRegistration().getId());
             dto.setWinnerRobotNome(manual.getWinnerRegistration().getRobot().getNome());
             dto.setWinnerTeamNome(manual.getWinnerRegistration().getTeam().getNome());
+            if (manual.getSecondRegistration() != null) {
+                dto.setSecondRegistrationId(manual.getSecondRegistration().getId());
+                dto.setSecondRobotNome(manual.getSecondRegistration().getRobot().getNome());
+                dto.setSecondTeamNome(manual.getSecondRegistration().getTeam().getNome());
+            }
+            if (manual.getThirdRegistration() != null) {
+                dto.setThirdRegistrationId(manual.getThirdRegistration().getId());
+                dto.setThirdRobotNome(manual.getThirdRegistration().getRobot().getNome());
+                dto.setThirdTeamNome(manual.getThirdRegistration().getTeam().getNome());
+            }
             dto.setResolutionType("DECISAO_ORGANIZACAO");
             dto.setResolutionReason(manual.getJustificativa());
             dto.setResolutionActorNome(manual.getDecidedByUser().getNome());
@@ -105,6 +116,22 @@ public class CompetitionResultsService {
         dto.setWinnerRobotNome(winner.getRobotNome());
         dto.setWinnerTeamNome(winner.getTeamNome());
         dto.setTempoFinalSegundos(winner.getTempoFinalSegundos());
+
+        if (ranking.size() > 1) {
+            RankingFollowDTO second = ranking.get(1);
+            dto.setSecondRegistrationId(second.getRegistrationId());
+            dto.setSecondRobotNome(second.getRobotNome());
+            dto.setSecondTeamNome(second.getTeamNome());
+            dto.setSecondTempoFinalSegundos(second.getTempoFinalSegundos());
+        }
+        if (ranking.size() > 2) {
+            RankingFollowDTO third = ranking.get(2);
+            dto.setThirdRegistrationId(third.getRegistrationId());
+            dto.setThirdRobotNome(third.getRobotNome());
+            dto.setThirdTeamNome(third.getTeamNome());
+            dto.setThirdTempoFinalSegundos(third.getTempoFinalSegundos());
+        }
+
         dto.setResolutionType("RANKING");
         dto.setExtraTakeAvailable(false);
         dto.setManualDecisionAvailable(false);
@@ -128,32 +155,56 @@ public class CompetitionResultsService {
 
         List<Match> matches =
                 matchRepository.findByBracketIdOrderByRodadaAscOrdemAsc(bracket.getId());
-        Integer ultimaRodada = matches.stream()
-                .map(Match::getRodada)
-                .filter(java.util.Objects::nonNull)
-                .max(Integer::compareTo)
-                .orElse(null);
-
-        if (ultimaRodada == null) return dto;
 
         Match finalMatch = matches.stream()
-                .filter(item -> ultimaRodada.equals(item.getRodada()))
-                .min(Comparator.comparing(Match::getOrdem))
+                .filter(item -> item.getTipoPartida() != TipoPartidaSumo.TERCEIRO_LUGAR)
+                .max(Comparator.comparing(Match::getRodada)
+                        .thenComparing(item -> -item.getOrdem()))
                 .orElse(null);
 
         if (finalMatch == null) return dto;
 
-        MatchResult result = matchResultRepository.findByMatchId(finalMatch.getId())
+        MatchResult finalResult = matchResultRepository.findByMatchId(finalMatch.getId())
                 .orElse(null);
-        if (result == null || result.getWinner() == null) return dto;
+        if (finalResult == null || finalResult.getWinner() == null) return dto;
+
+        Registration champion = finalResult.getWinner();
+        Registration vice = finalMatch.getRegistrationA() != null
+                && finalMatch.getRegistrationA().getId().equals(champion.getId())
+                ? finalMatch.getRegistrationB()
+                : finalMatch.getRegistrationA();
+
+        dto.setWinnerRegistrationId(champion.getId());
+        dto.setWinnerRobotNome(champion.getRobot().getNome());
+        dto.setWinnerTeamNome(champion.getTeam().getNome());
+        if (vice != null) {
+            dto.setSecondRegistrationId(vice.getId());
+            dto.setSecondRobotNome(vice.getRobot().getNome());
+            dto.setSecondTeamNome(vice.getTeam().getNome());
+        }
+        dto.setPontosA(finalResult.getPontosA());
+        dto.setPontosB(finalResult.getPontosB());
+        dto.setFinalMatchId(finalMatch.getId());
+
+        Match thirdMatch = matches.stream()
+                .filter(item -> item.getTipoPartida() == TipoPartidaSumo.TERCEIRO_LUGAR)
+                .findFirst()
+                .orElse(null);
+
+        if (thirdMatch != null) {
+            dto.setThirdPlaceMatchId(thirdMatch.getId());
+            MatchResult thirdResult = matchResultRepository.findByMatchId(thirdMatch.getId())
+                    .orElse(null);
+            if (thirdResult == null || thirdResult.getWinner() == null) {
+                dto.setStatus("PARCIAL");
+                return dto;
+            }
+            dto.setThirdRegistrationId(thirdResult.getWinner().getId());
+            dto.setThirdRobotNome(thirdResult.getWinner().getRobot().getNome());
+            dto.setThirdTeamNome(thirdResult.getWinner().getTeam().getNome());
+        }
 
         dto.setStatus("CONCLUIDO");
-        dto.setWinnerRegistrationId(result.getWinner().getId());
-        dto.setWinnerRobotNome(result.getWinner().getRobot().getNome());
-        dto.setWinnerTeamNome(result.getWinner().getTeam().getNome());
-        dto.setPontosA(result.getPontosA());
-        dto.setPontosB(result.getPontosB());
-        dto.setFinalMatchId(finalMatch.getId());
         return dto;
     }
 
