@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import br.edu.ufrb.rascomp.dto.CompetitorDTO;
 import br.edu.ufrb.rascomp.dto.ConfigFollowDTO;
+import br.edu.ufrb.rascomp.dto.InstitutionDTO;
 import br.edu.ufrb.rascomp.dto.ParticipantCompetitorRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantRegistrationRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantRobotRequest;
@@ -23,6 +24,7 @@ import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
+import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -30,6 +32,8 @@ import lombok.RequiredArgsConstructor;
 public class ParticipantPortalService {
 
     private final AccessPolicyService accessPolicyService;
+    private final CompetitorRepository competitorRepository;
+    private final InstitutionService institutionService;
     private final TeamService teamService;
     private final CompetitorService competitorService;
     private final RobotService robotService;
@@ -47,8 +51,37 @@ public class ParticipantPortalService {
 
     @Transactional
     public TeamDTO criarEquipe(ParticipantTeamRequest request) {
+        UserAccount usuario = accessPolicyService.usuarioAtual();
+
+        competitorRepository.findByUserAccountId(usuario.getId()).ifPresent(existing -> {
+            throw new IllegalArgumentException(
+                    "Sua conta já está associada à equipe " + existing.getTeam().getNome()
+                            + ". Um PARTICIPANTE deve possuir um único vínculo competitivo de equipe.");
+        });
+
         TeamDTO dto = teamDto(request);
-        return teamService.criarParaResponsavel(dto, accessPolicyService.usuarioAtual());
+        TeamDTO team = teamService.criarParaResponsavel(dto, usuario);
+
+        CompetitorDTO self = new CompetitorDTO();
+        self.setNome(usuario.getNome());
+        self.setEmail(usuario.getEmail());
+        self.setTelefone(usuario.getTelefone());
+        self.setTeamId(team.getId());
+        self.setUserAccountId(usuario.getId());
+        self.setAtivo(true);
+        competitorService.criar(self);
+
+        return team;
+    }
+
+    @Transactional
+    public InstitutionDTO criarInstituicao(InstitutionDTO request) {
+        UserAccount usuario = accessPolicyService.usuarioAtual();
+        if (usuario.getRole() != br.edu.ufrb.rascomp.model.Enum.UserRole.PARTICIPANTE) {
+            throw new IllegalArgumentException("Somente PARTICIPANTE pode cadastrar instituição por este fluxo.");
+        }
+        request.setAtivo(true);
+        return institutionService.criar(request);
     }
 
     @Transactional
