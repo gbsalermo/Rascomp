@@ -79,7 +79,7 @@ class TentativaSeguidorLinhaServiceTest {
                 .build();
 
         when(registrationRepository.findById(1L)).thenReturn(Optional.of(registration));
-        when(configFollowRepository.findByCompetitionCategoryId(3L)).thenReturn(Optional.of(config));
+        lenient().when(configFollowRepository.findByCompetitionCategoryId(3L)).thenReturn(Optional.of(config));
         lenient().when(followResolutionService.tomadaPermitida(9L, 3L, 1)).thenReturn(true);
         lenient().when(followResolutionService.tomadaPermitida(9L, 3L, 2)).thenReturn(true);
         lenient().when(followResolutionService.tomadaPermitida(9L, 3L, 3)).thenReturn(true);
