@@ -2026,4 +2026,89 @@ O job de MySQL/testdata foi atualizado para exercitar o fluxo real:
 - aprovação pelo fluxo administrativo;
 - presença na API pública somente após `APROVADA`.
 
-Estado documental deste checkpoint: **implementação concluída; execução do CI atual ainda precisa ser confirmada antes de marcar o 4.3 como validado. BLOCO 4.4 não iniciado.**
+Estado documental deste checkpoint histórico: **supersedido pela revisão canônica de 01/10/2026 antes da validação manual. BLOCO 4.3 foi reaberto; BLOCO 4.4 continua não iniciado.**
+
+
+---
+
+## Revisão canônica 01/10/2026 — inscrição pessoal + inscrição de Robot
+
+O modelo anterior de inscrição direta do Robot foi **supersedido antes da validação manual**.
+
+Agora existem duas aprovações independentes por Competition:
+
+```text
+Competitor → ParticipantCompetitionRegistration
+Robot      → Registration
+```
+
+Fluxo pessoal:
+
+```text
+Competitor
+→ Competition
+→ dados
+→ comprovante
+→ PENDENTE
+→ GESTAO aprova/rejeita
+```
+
+Fluxo do Robot:
+
+```text
+Robot
+→ Competition + Category
+→ 1+ competidores
+→ comprovante
+→ PENDENTE
+→ GESTAO aprova/rejeita
+```
+
+Invariantes:
+
+- pertencer à Team não depende de estar inscrito em Competition;
+- ser `RobotResponsible` não depende de estar inscrito em Competition;
+- cadastrar Robot não exige aprovação administrativa;
+- `Registration.competitors` deve conter apenas `RobotResponsible` ativos daquele Robot;
+- liderança da Team concede administração do cadastro, mas não responsabilidade competitiva automática;
+- o líder só pode constar como competidor de um Robot quando estiver explicitamente ligado a ele como `RobotResponsible`;
+- a inscrição do Robot pode ser enviada enquanto inscrições pessoais ainda estão `PENDENTE`;
+- a inscrição do Robot só pode ser `APROVADA` se todos os competidores selecionados possuírem inscrição pessoal `APROVADA` na mesma Competition;
+- aprovação pessoal e aprovação do Robot nunca propagam automaticamente uma para a outra;
+- comprovantes e auditorias das duas inscrições permanecem independentes.
+
+### UX da GESTAO
+
+Ao aprovar Competitor, mostrar os Robots pelos quais ele é responsável e o status das inscrições desses Robots na mesma Competition.
+
+Ao aprovar Robot, mostrar seus competidores selecionados e, para cada um, o status da inscrição pessoal na mesma Competition.
+
+A interface deve destacar dependências. O backend deve bloquear qualquer aprovação inconsistente mesmo se o request for adulterado.
+
+Exemplo bloqueado:
+
+```text
+Robot Vespa
+competidor selecionado = João
+João não é RobotResponsible do Vespa
+→ aprovação proibida
+```
+
+Exemplo bloqueado:
+
+```text
+Robot Vespa
+competidor = Gabriel
+Gabriel é RobotResponsible
+inscrição pessoal de Gabriel = PENDENTE
+→ Robot permanece PENDENTE
+```
+
+O fluxo manual DEV continua exceção auditável e deve formalizar as relações reais necessárias.
+
+Estado após esta revisão:
+
+```text
+BLOCO 4.3 = REABERTO / EM IMPLEMENTAÇÃO
+BLOCO 4.4 = NÃO INICIADO
+```
