@@ -7,6 +7,7 @@ import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoPartida;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.TipoPartidaSumo;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -30,6 +31,7 @@ public class MatchDTO {
     private String categoryNome;
     @NotNull @Min(1) private Integer rodada;
     @NotNull @Min(1) private Integer ordem;
+    private TipoPartidaSumo tipoPartida;
     private Long registrationAId;
     private StatusRegistration registrationAStatus;
     private Long robotAId;
@@ -60,6 +62,7 @@ public class MatchDTO {
         this.categoryNome = entity.getBracket().getCategory().getNome();
         this.rodada = entity.getRodada();
         this.ordem = entity.getOrdem();
+        this.tipoPartida = entity.getTipoPartida();
         preencherParticipanteA(entity.getRegistrationA());
         preencherParticipanteB(entity.getRegistrationB());
         this.dataHora = entity.getDataHora();
