@@ -52,6 +52,14 @@ public class FollowManualResult implements Serializable {
     @JoinColumn(name = "winner_registration_id", nullable = false)
     private Registration winnerRegistration;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "second_registration_id")
+    private Registration secondRegistration;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "third_registration_id")
+    private Registration thirdRegistration;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "decided_by_user_id", nullable = false)
     private UserAccount decidedByUser;
