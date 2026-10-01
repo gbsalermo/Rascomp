@@ -34,6 +34,7 @@ import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
+import br.edu.ufrb.rascomp.repository.RobotResponsibleRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,10 +45,13 @@ class RegistrationOwnershipServiceTest {
     @Mock private CompetitionCategoryRepository categoryRepository;
     @Mock private TeamRepository teamRepository;
     @Mock private RobotRepository robotRepository;
+    @Mock private RobotResponsibleRepository robotResponsibleRepository;
     @Mock private CompetitorRepository competitorRepository;
     @Mock private UserAccountService userAccountService;
     @Mock private CompetitionContextService competitionContextService;
     @Mock private RegistrationStatusHistoryService statusHistoryService;
+    @Mock private ParticipantCompetitionRegistrationService participantCompetitionRegistrationService;
+    @Mock private RegistrationReceiptStorageService receiptStorageService;
 
     @InjectMocks
     private RegistrationService service;
@@ -101,6 +105,8 @@ class RegistrationOwnershipServiceTest {
         when(teamRepository.findById(3L)).thenReturn(Optional.of(c.team));
         when(robotRepository.findById(4L)).thenReturn(Optional.of(c.robot));
         when(competitorRepository.findById(5L)).thenReturn(Optional.of(c.competitor));
+        when(robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(4L, 5L))
+                .thenReturn(true);
     }
 
     private RegistrationDTO dto(Long teamId, Long robotId, Long competitorId) {
