@@ -107,6 +107,8 @@ class MatchResultServiceTest {
                 "Vencedor registrado incorretamente pela mesa.");
 
         assertEquals(102L, corrected.getWinnerRegistrationId());
+        assertEquals(1, corrected.getPontosA());
+        assertEquals(2, corrected.getPontosB());
         assertEquals("Vencedor registrado incorretamente pela mesa.", corrected.getCorrectionReason());
         assertEquals(40L, corrected.getCorrectedByUserId());
         verify(bracketProgressionService).corrigirVencedor(match, a, b);
