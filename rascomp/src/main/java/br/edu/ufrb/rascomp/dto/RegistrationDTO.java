@@ -52,6 +52,9 @@ public class RegistrationDTO {
     @Size(max = 500)
     private String observacao;
 
+    private Boolean comprovanteDisponivel;
+    private String comprovanteNome;
+
     private Boolean ativo;
     private LocalDateTime dataCadastro;
 
@@ -87,6 +90,8 @@ public class RegistrationDTO {
         this.reviewReason = entity.getReviewReason();
         this.status = entity.getStatus();
         this.observacao = entity.getObservacao();
+        this.comprovanteDisponivel = entity.getPaymentReceiptStorageKey() != null;
+        this.comprovanteNome = entity.getPaymentReceiptOriginalName();
         this.ativo = entity.getAtivo();
         this.dataCadastro = entity.getDataCadastro();
     }
