@@ -19,17 +19,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 
-import br.edu.ufrb.rascomp.dto.CompetitorDTO;
 import br.edu.ufrb.rascomp.dto.ManualCompetitionEntryRequest;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.dto.RobotDTO;
+import br.edu.ufrb.rascomp.model.Competitor;
 import br.edu.ufrb.rascomp.model.Institution;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
-import br.edu.ufrb.rascomp.repository.TeamRepository;
 import br.edu.ufrb.rascomp.repository.UserAccountRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,9 +36,7 @@ class ManualCompetitionEntryServiceTest {
 
     @Mock private UserAccountService userAccountService;
     @Mock private UserAccountRepository userAccountRepository;
-    @Mock private TeamRepository teamRepository;
     @Mock private CompetitorRepository competitorRepository;
-    @Mock private CompetitorService competitorService;
     @Mock private RobotService robotService;
     @Mock private RegistrationService registrationService;
 
@@ -80,18 +77,18 @@ class ManualCompetitionEntryServiceTest {
     }
 
     @Test
-    void devPodeCriarCompetidorRoboEInscricaoManualAprovada() {
+    void devPodeCriarRoboEInscricaoManualParaCompetidorJaAssociado() {
         when(userAccountService.buscarAtual()).thenReturn(dev);
         when(userAccountRepository.findById(2L)).thenReturn(Optional.of(participant));
-        when(teamRepository.findById(4L)).thenReturn(Optional.of(team));
-        when(competitorRepository.findByUserAccountId(2L)).thenReturn(Optional.empty());
-        when(competitorRepository.findByEmailIgnoreCase(participant.getEmail())).thenReturn(Optional.empty());
 
-        CompetitorDTO competitor = new CompetitorDTO();
+        Competitor competitor = new Competitor();
         competitor.setId(30L);
-        competitor.setTeamId(4L);
-        competitor.setUserAccountId(2L);
-        when(competitorService.criar(any(CompetitorDTO.class))).thenReturn(competitor);
+        competitor.setNome(participant.getNome());
+        competitor.setEmail(participant.getEmail());
+        competitor.setTeam(team);
+        competitor.setUserAccount(participant);
+        competitor.setAtivo(true);
+        when(competitorRepository.findByUserAccountId(2L)).thenReturn(Optional.of(competitor));
 
         RobotDTO robot = new RobotDTO();
         robot.setId(40L);
@@ -112,6 +109,10 @@ class ManualCompetitionEntryServiceTest {
         assertEquals(50L, result.getId());
         assertEquals(StatusRegistration.APROVADA, result.getStatus());
 
+        ArgumentCaptor<RobotDTO> robotCaptor = ArgumentCaptor.forClass(RobotDTO.class);
+        verify(robotService).criar(robotCaptor.capture());
+        assertEquals(4L, robotCaptor.getValue().getTeamId());
+
         ArgumentCaptor<RegistrationDTO> registrationCaptor = ArgumentCaptor.forClass(RegistrationDTO.class);
         verify(registrationService).criarEntradaManualDev(
                 registrationCaptor.capture(),
@@ -127,6 +128,24 @@ class ManualCompetitionEntryServiceTest {
     }
 
     @Test
+    void devNaoPodeCriarEntradaManualParaParticipanteSemEquipeCompetitiva() {
+        when(userAccountService.buscarAtual()).thenReturn(dev);
+        when(userAccountRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(competitorRepository.findByUserAccountId(2L)).thenReturn(Optional.empty());
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.criar(request()));
+
+        assertEquals(
+                "O participante ainda não está associado a uma equipe. "
+                        + "Peça para ele criar ou ingressar na equipe antes de usar a entrada manual.",
+                error.getMessage());
+
+        verifyNoInteractions(robotService, registrationService);
+    }
+
+    @Test
     void gestaoNaoPodeUsarEntradaManualDev() {
         UserAccount gestao = new UserAccount();
         gestao.setRole(UserRole.GESTAO);
@@ -134,14 +153,13 @@ class ManualCompetitionEntryServiceTest {
         when(userAccountService.buscarAtual()).thenReturn(gestao);
 
         assertThrows(AccessDeniedException.class, () -> service.criar(request()));
-        verifyNoInteractions(userAccountRepository, teamRepository, competitorService, robotService, registrationService);
+        verifyNoInteractions(userAccountRepository, competitorRepository, robotService, registrationService);
     }
 
     private ManualCompetitionEntryRequest request() {
         ManualCompetitionEntryRequest request = new ManualCompetitionEntryRequest();
         request.setCompetitionId(10L);
         request.setCategoryId(20L);
-        request.setTeamId(4L);
         request.setParticipantUserId(2L);
         request.setRobotNome("Avulso");
         request.setRobotDescricao("Entrada tardia aprovada pela organização.");
