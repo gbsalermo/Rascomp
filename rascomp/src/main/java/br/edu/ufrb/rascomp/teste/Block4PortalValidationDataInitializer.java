@@ -101,13 +101,14 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
                 RESPONSIBLE_ROBOT,
                 "Robô do membro para validar inscrição normal pelo Portal.",
                 team);
-        garantirRobo(
+        Robot atlas = garantirRobo(
                 LEADER_ONLY_ROBOT,
                 "Robô visível ao líder, mas sem responsabilidade permanente do membro.",
                 team);
 
         garantirResponsabilidade(vespa, membro, membroUser);
         garantirResponsabilidade(vespa, apoio, liderUser);
+        garantirResponsabilidade(atlas, apoio, liderUser);
 
         CompetitionCategory follow = garantirCategoria(
                 FOLLOW_CATEGORY,
