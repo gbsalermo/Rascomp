@@ -289,7 +289,8 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
         competition.setDataInicio(hoje.plusDays(14));
         competition.setDataFim(hoje.plusDays(16));
         competition.setStatus(StatusCompetition.INSCRICOES_ABERTAS);
-        competition.setVigente(false);
+        competitionRepository.limparVigente();
+        competition.setVigente(true);
         competition.setAtivo(true);
         return competitionRepository.save(competition);
     }
