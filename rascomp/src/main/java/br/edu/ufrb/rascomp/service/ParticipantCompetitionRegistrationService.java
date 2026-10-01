@@ -182,6 +182,42 @@ public class ParticipantCompetitionRegistrationService {
     }
 
     @Transactional(readOnly = true)
+    public void exigirInscricaoIniciada(Long competitionId, Long competitorId) {
+        ParticipantCompetitionRegistration entity =
+                repository.findByCompetitionIdAndCompetitorId(competitionId, competitorId)
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                "Faça sua inscrição individual nesta competição antes de inscrever um robô."));
+
+        if (entity.getStatus() != ParticipantCompetitionRegistrationStatus.PENDENTE
+                && entity.getStatus() != ParticipantCompetitionRegistrationStatus.APROVADA) {
+            throw new IllegalArgumentException(
+                    "Sua inscrição individual precisa estar PENDENTE ou APROVADA para liberar a inscrição de robô.");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public void exigirTodosComInscricaoIniciada(
+            Long competitionId,
+            Collection<Competitor> competitors) {
+
+        List<String> semInscricaoValida = competitors.stream()
+                .filter(competitor -> repository
+                        .findByCompetitionIdAndCompetitorId(competitionId, competitor.getId())
+                        .map(entity -> entity.getStatus() == ParticipantCompetitionRegistrationStatus.PENDENTE
+                                || entity.getStatus() == ParticipantCompetitionRegistrationStatus.APROVADA)
+                        .orElse(false) == false)
+                .map(Competitor::getNome)
+                .toList();
+
+        if (!semInscricaoValida.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Todos os competidores selecionados para o robô precisam iniciar a própria inscrição "
+                            + "na mesma competição antes da inscrição do robô. Pendentes de cadastro: "
+                            + String.join(", ", semInscricaoValida));
+        }
+    }
+
+    @Transactional(readOnly = true)
     public boolean estaAprovado(Long competitionId, Long competitorId) {
         return repository.existsByCompetitionIdAndCompetitorIdAndStatusAndAtivoTrue(
                 competitionId,
