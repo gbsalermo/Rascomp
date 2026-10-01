@@ -1,5 +1,8 @@
 package br.edu.ufrb.rascomp.service;
 
+import java.util.Comparator;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,6 +12,7 @@ import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
 import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoPartida;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
+import br.edu.ufrb.rascomp.model.Enum.TipoPartidaSumo;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.MatchResultRepository;
@@ -33,9 +37,11 @@ public class BracketProgressionService {
 
         validarVencedorDaPartida(match, winner);
 
+        alimentarTerceiroLugarSeSemifinal(match, winner);
+
         Match proximaPartida = buscarProximaPartida(match);
         if (proximaPartida == null) {
-            finalizarChaveamento(match.getBracket());
+            tentarFinalizarChaveamento(match.getBracket());
             return;
         }
 
@@ -65,11 +71,12 @@ public class BracketProgressionService {
         Match proximaPartida = buscarProximaPartida(match);
         if (proximaPartida == null) {
             if (novoVencedor == null) reabrirChaveamento(match.getBracket());
-            else finalizarChaveamento(match.getBracket());
+            else tentarFinalizarChaveamento(match.getBracket());
             return;
         }
 
         validarProximaPartidaEditavel(proximaPartida);
+        corrigirTerceiroLugarSeSemifinal(match, vencedorAnterior, novoVencedor);
 
         if (match.getOrdem() % 2 != 0) {
             corrigirSlotA(proximaPartida, vencedorAnterior, novoVencedor);
@@ -110,6 +117,10 @@ public class BracketProgressionService {
     }
 
     private Match buscarProximaPartida(Match match) {
+        if (match.getTipoPartida() == TipoPartidaSumo.TERCEIRO_LUGAR) {
+            return null;
+        }
+
         int proximaRodada = match.getRodada() + 1;
         int proximaOrdem = (match.getOrdem() + 1) / 2;
 
@@ -203,10 +214,107 @@ public class BracketProgressionService {
         }
     }
 
-    private void finalizarChaveamento(Bracket bracket) {
+    private void tentarFinalizarChaveamento(Bracket bracket) {
+        List<Match> matches = matchRepository
+                .findByBracketIdOrderByRodadaAscOrdemAsc(bracket.getId());
+
+        Match finalPrincipal = matches.stream()
+                .filter(item -> item.getTipoPartida() != TipoPartidaSumo.TERCEIRO_LUGAR)
+                .max(Comparator.comparing(Match::getRodada)
+                        .thenComparing(item -> -item.getOrdem()))
+                .orElse(null);
+
+        if (finalPrincipal == null
+                || !matchResultRepository.existsByMatchId(finalPrincipal.getId())) {
+            return;
+        }
+
+        Match terceiroLugar = matches.stream()
+                .filter(item -> item.getTipoPartida() == TipoPartidaSumo.TERCEIRO_LUGAR)
+                .findFirst()
+                .orElse(null);
+
+        if (terceiroLugar != null
+                && terceiroLugar.getRegistrationA() != null
+                && terceiroLugar.getRegistrationB() != null
+                && !matchResultRepository.existsByMatchId(terceiroLugar.getId())) {
+            return;
+        }
+
         Bracket atual = buscarBracket(bracket.getId());
         atual.setStatus(StatusBracket.FINALIZADO);
         bracketRepository.save(atual);
+    }
+
+    private void alimentarTerceiroLugarSeSemifinal(Match match, Registration winner) {
+        Match terceiroLugar = buscarTerceiroLugar(match);
+        if (terceiroLugar == null || !ehSemifinal(match, terceiroLugar)) return;
+        if (match.getRegistrationA() == null || match.getRegistrationB() == null) return;
+
+        Registration loser = oponente(match, winner);
+        if (loser == null) return;
+
+        validarProximaPartidaEditavel(terceiroLugar);
+        if (match.getOrdem() == 1) {
+            preencherSlotA(terceiroLugar, loser);
+        } else {
+            preencherSlotB(terceiroLugar, loser);
+        }
+        atualizarStatus(terceiroLugar);
+        matchRepository.save(terceiroLugar);
+    }
+
+    private void corrigirTerceiroLugarSeSemifinal(
+            Match match,
+            Registration vencedorAnterior,
+            Registration novoVencedor) {
+
+        Match terceiroLugar = buscarTerceiroLugar(match);
+        if (terceiroLugar == null || !ehSemifinal(match, terceiroLugar)) return;
+        if (match.getRegistrationA() == null || match.getRegistrationB() == null) return;
+
+        validarProximaPartidaEditavel(terceiroLugar);
+
+        Registration perdedorAnterior = oponente(match, vencedorAnterior);
+        Registration novoPerdedor = oponente(match, novoVencedor);
+
+        if (match.getOrdem() == 1) {
+            corrigirSlotA(terceiroLugar, perdedorAnterior, novoPerdedor);
+        } else {
+            corrigirSlotB(terceiroLugar, perdedorAnterior, novoPerdedor);
+        }
+
+        atualizarStatus(terceiroLugar);
+        matchRepository.save(terceiroLugar);
+    }
+
+    private Match buscarTerceiroLugar(Match match) {
+        if (match.getTipoPartida() == TipoPartidaSumo.TERCEIRO_LUGAR) return null;
+
+        return matchRepository.findByBracketIdOrderByRodadaAscOrdemAsc(match.getBracket().getId())
+                .stream()
+                .filter(item -> item.getTipoPartida() == TipoPartidaSumo.TERCEIRO_LUGAR)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean ehSemifinal(Match match, Match terceiroLugar) {
+        return match.getTipoPartida() != TipoPartidaSumo.TERCEIRO_LUGAR
+                && match.getRodada() + 1 == terceiroLugar.getRodada()
+                && (match.getOrdem() == 1 || match.getOrdem() == 2);
+    }
+
+    private Registration oponente(Match match, Registration participante) {
+        if (participante == null) return null;
+        if (match.getRegistrationA() != null
+                && match.getRegistrationA().getId().equals(participante.getId())) {
+            return match.getRegistrationB();
+        }
+        if (match.getRegistrationB() != null
+                && match.getRegistrationB().getId().equals(participante.getId())) {
+            return match.getRegistrationA();
+        }
+        return null;
     }
 
     private void reabrirChaveamento(Bracket bracket) {
