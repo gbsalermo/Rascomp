@@ -120,6 +120,16 @@ public class RegistrationService {
         if (solicitante.getRole() != UserRole.PARTICIPANTE) {
             throw new IllegalArgumentException("Somente PARTICIPANTE pode enviar inscrição por este fluxo.");
         }
+
+        Competitor solicitanteCompetitor = competitorRepository
+                .findByUserAccountId(solicitante.getId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Associe sua conta a uma equipe antes de inscrever um robô."));
+
+        participantCompetitionRegistrationService.exigirInscricaoIniciada(
+                dto.getCompetitionId(),
+                solicitanteCompetitor.getId());
+
         return criarInterno(dto, solicitante, true);
     }
 
@@ -141,6 +151,12 @@ public class RegistrationService {
 
         Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, exigirCompetidor);
         validarCompetidoresResponsaveis(robot, competitors);
+
+        if (solicitante != null && solicitante.getRole() == UserRole.PARTICIPANTE) {
+            participantCompetitionRegistrationService.exigirTodosComInscricaoIniciada(
+                    competition.getId(),
+                    competitors);
+        }
 
         Registration registration = new Registration();
         preencher(registration, dto, competition, category, team, robot, competitors);
