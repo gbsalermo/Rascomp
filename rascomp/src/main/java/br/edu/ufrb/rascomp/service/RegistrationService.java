@@ -263,6 +263,7 @@ public class RegistrationService {
                             robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(
                                     registration.getRobot().getId(),
                                     competitor.getId()),
+                            registration.getCompetitors().contains(competitor),
                             pessoal == null ? null : pessoal.getId(),
                             pessoal == null ? null : pessoal.getStatus());
                 })
