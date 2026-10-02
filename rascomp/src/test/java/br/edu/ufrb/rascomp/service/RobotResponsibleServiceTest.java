@@ -21,6 +21,7 @@ import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.RobotResponsible;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
+import br.edu.ufrb.rascomp.model.Enum.RegistrationCompetitorChangeType;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
 import br.edu.ufrb.rascomp.repository.RobotResponsibleRepository;
@@ -130,7 +131,13 @@ class RobotResponsibleServiceTest {
 
         assertEquals(false, link.getAtivo());
         org.mockito.Mockito.verify(compositionService)
-                .sincronizarRobot(5L, leader, true);
+                .sinalizarMudancaResponsabilidade(
+                        5L,
+                        4L,
+                        RegistrationCompetitorChangeType.REMOVIDO,
+                        leader);
+        org.mockito.Mockito.verify(compositionService)
+                .sincronizarRobot(5L, leader, false);
     }
 
 }
