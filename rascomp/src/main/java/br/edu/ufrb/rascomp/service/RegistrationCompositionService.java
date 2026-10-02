@@ -74,6 +74,32 @@ public class RegistrationCompositionService {
     }
 
     @Transactional
+    public void sinalizarMudancaResponsabilidade(
+            Long robotId,
+            Long competitorId,
+            RegistrationCompetitorChangeType type,
+            UserAccount actor) {
+
+        List<Registration> registrations = registrationRepository.findByRobotIdAndStatusIn(
+                robotId,
+                List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA));
+
+        for (Registration registration : registrations) {
+            if (competicaoIniciada(registration)) {
+                continue;
+            }
+
+            Competitor competitor = robotResponsibleRepository
+                    .findByRobotIdAndCompetitorId(robotId, competitorId)
+                    .map(RobotResponsible::getCompetitor)
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Responsabilidade do robô não encontrada para o competidor: " + competitorId));
+
+            registrarMudanca(registration, competitor, type, actor);
+        }
+    }
+
+    @Transactional
     public void sincronizarRobot(Long robotId, UserAccount actor, boolean registrarMudancas) {
         List<Registration> registrations = registrationRepository.findByRobotIdAndStatusIn(
                 robotId,
@@ -311,6 +337,18 @@ public class RegistrationCompositionService {
             Competitor competitor,
             RegistrationCompetitorChangeType type,
             UserAccount actor) {
+
+        boolean jaPendente = changeRepository
+                .findTopByRegistrationIdAndCompetitorIdAndChangeTypeOrderByIdDesc(
+                        registration.getId(),
+                        competitor.getId(),
+                        type)
+                .map(existing -> existing.getStatus() == RegistrationCompetitorChangeStatus.PENDENTE_REVISAO)
+                .orElse(false);
+
+        if (jaPendente) {
+            return;
+        }
 
         RegistrationCompetitorChange change = new RegistrationCompetitorChange();
         change.setRegistration(registration);
