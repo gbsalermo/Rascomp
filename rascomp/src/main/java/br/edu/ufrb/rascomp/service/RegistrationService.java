@@ -122,20 +122,14 @@ public class RegistrationService {
             throw new IllegalArgumentException("Somente PARTICIPANTE pode enviar inscrição por este fluxo.");
         }
 
-        Team team = buscarTeam(dto.getTeamId());
-        boolean lider = team.getResponsibleUser() != null
-                && team.getResponsibleUser().getId().equals(solicitante.getId());
+        Competitor solicitanteCompetitor = competitorRepository
+                .findByUserAccountId(solicitante.getId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Associe sua conta a uma equipe antes de inscrever um robô."));
 
-        if (!lider) {
-            Competitor solicitanteCompetitor = competitorRepository
-                    .findByUserAccountId(solicitante.getId())
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Associe sua conta a uma equipe antes de inscrever um robô."));
-
-            participantCompetitionRegistrationService.exigirInscricaoIniciada(
-                    dto.getCompetitionId(),
-                    solicitanteCompetitor.getId());
-        }
+        participantCompetitionRegistrationService.exigirInscricaoIniciada(
+                dto.getCompetitionId(),
+                solicitanteCompetitor.getId());
 
         return criarInterno(dto, solicitante, false);
     }
@@ -288,12 +282,10 @@ public class RegistrationService {
         UserAccount atual = userAccountService.buscarAtual();
         boolean lider = registration.getTeam().getResponsibleUser() != null
                 && registration.getTeam().getResponsibleUser().getId().equals(atual.getId());
-        boolean responsavel = competitorRepository.findByUserAccountId(atual.getId())
-                .map(comp -> robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(
-                        registration.getRobot().getId(), comp.getId()))
-                .orElse(false);
+        boolean criador = registration.getRobot().getCreatedByUser() != null
+                && registration.getRobot().getCreatedByUser().getId().equals(atual.getId());
 
-        if (!lider && !responsavel) {
+        if (!lider && !criador) {
             throw new org.springframework.security.access.AccessDeniedException(
                     "Você não pode acessar o comprovante desta inscrição.");
         }
