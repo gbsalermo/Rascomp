@@ -10,6 +10,7 @@ public class RegistrationCompetitorContextDTO {
     private Long competitorId;
     private String competitorNome;
     private boolean robotResponsible;
+    private boolean officialCompetitor;
     private Long participantRegistrationId;
     private ParticipantCompetitionRegistrationStatus participantRegistrationStatus;
 }
