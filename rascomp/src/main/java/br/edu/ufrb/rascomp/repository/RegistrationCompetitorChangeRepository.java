@@ -16,6 +16,10 @@ public interface RegistrationCompetitorChangeRepository
 
     List<RegistrationCompetitorChange> findByRegistrationIdOrderByDataCadastroDesc(Long registrationId);
 
+    List<RegistrationCompetitorChange> findByRegistrationIdAndCompetitorIdOrderByIdDesc(
+            Long registrationId,
+            Long competitorId);
+
     List<RegistrationCompetitorChange> findByRegistrationCompetitionIdAndStatusOrderByDataCadastroDesc(
             Long competitionId,
             RegistrationCompetitorChangeStatus status);
