@@ -44,6 +44,15 @@ public class ParticipantCompetitionRegistrationController {
                 .body(service.criarParaParticipanteAtual(request, comprovante));
     }
 
+    @PostMapping(
+            value = "/{id}/correcao",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ParticipantCompetitionRegistrationDTO> reenviarCorrecao(
+            @PathVariable Long id,
+            @RequestPart("comprovante") MultipartFile comprovante) {
+        return ResponseEntity.ok(service.reenviarCorrecao(id, comprovante));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> cancelar(@PathVariable Long id) {
         service.cancelarMinha(id);
