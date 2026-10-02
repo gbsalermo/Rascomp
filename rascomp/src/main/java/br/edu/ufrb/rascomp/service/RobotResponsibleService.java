@@ -1,5 +1,6 @@
 package br.edu.ufrb.rascomp.service;
 
+import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -14,6 +15,7 @@ import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.RobotResponsible;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.RegistrationCompetitorChangeType;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
@@ -70,6 +72,7 @@ public class RobotResponsibleService {
     public List<RobotResponsibleDTO> definir(Long robotId, Set<Long> competitorIds) {
         Robot robot = accessPolicyService.exigirRoboDaEquipe(robotId);
         UserAccount lider = accessPolicyService.usuarioAtual();
+        exigirResponsabilidadeEditavel(robotId);
 
         Set<Long> ids = competitorIds == null
                 ? Set.of()
@@ -129,6 +132,27 @@ public class RobotResponsibleService {
 
         compositionService.sincronizarRobot(robotId, lider, false);
         return listar(robotId);
+    }
+
+    private void exigirResponsabilidadeEditavel(Long robotId) {
+        boolean bloqueada = registrationRepository
+                .findByRobotIdAndStatusIn(
+                        robotId,
+                        List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA))
+                .stream()
+                .map(registration -> registration.getCompetition())
+                .filter(competition -> competition.getStatus() != StatusCompetition.FINALIZADA
+                        && competition.getStatus() != StatusCompetition.CANCELADA)
+                .anyMatch(competition ->
+                        competition.getStatus() == StatusCompetition.EM_ANDAMENTO
+                                || (competition.getDataInicio() != null
+                                    && !LocalDate.now().isBefore(competition.getDataInicio())));
+
+        if (bloqueada) {
+            throw new IllegalArgumentException(
+                    "Os responsáveis do robô estão bloqueados porque existe competição já iniciada. "
+                            + "A composição não pode ser alterada durante a prova.");
+        }
     }
 
     @Transactional
