@@ -103,7 +103,7 @@ As **ETAPAS 1, 2 e 3 estão concluídas e validadas**. A **ETAPA 4 — Consolida
 ```text
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
-MYSQL + FLYWAY V1–V25                    ✅
+MYSQL + FLYWAY V1–V26                    ✅
 COMPETIÇÕES                              ✅ transições + prorrogação/reabertura
 EQUIPES / COMPETIDORES / ROBÔS           ✅
 INSCRIÇÕES + REVISÃO                     ✅ invariantes + cancelamento + híbridos
@@ -2073,7 +2073,7 @@ Invariantes:
 - liderança da Team concede administração do cadastro, mas não responsabilidade competitiva automática;
 - o líder só pode constar como competidor de um Robot quando estiver explicitamente ligado a ele como `RobotResponsible`;
 - a inscrição do Robot pode ser enviada enquanto inscrições pessoais ainda estão `PENDENTE`;
-- a inscrição do Robot só pode ser `APROVADA` se todos os competidores selecionados possuírem inscrição pessoal `APROVADA` na mesma Competition;
+- a inscrição do Robot pode ser `APROVADA` quando existir ao menos um responsável pessoalmente `APROVADO` na mesma Competition; responsáveis `PENDENTE` não bloqueiam outro elegível;
 - aprovação pessoal e aprovação do Robot nunca propagam automaticamente uma para a outra;
 - comprovantes e auditorias das duas inscrições permanecem independentes.
 
@@ -2184,7 +2184,7 @@ O 4.3 foi reaberto antes da validação manual e a implementação principal foi
 - metadata do comprovante pessoal;
 - metadata do comprovante da Registration do Robot.
 
-Migrations V1–V25 permanecem imutáveis. Próxima migration estrutural: **V26+**.
+Migrations V1–V25 permanecem imutáveis. Próxima migration estrutural: **V27+**.
 
 ### Inscrição pessoal
 
@@ -2433,3 +2433,43 @@ Regra de decisão:
 ```
 
 A rejeição pessoal nunca remove automaticamente o vínculo permanente `RobotResponsible`; ela apenas retira a elegibilidade naquela Competition.
+
+
+---
+
+## Checkpoint canônico 01/10/2026 — regras do participante / V26
+
+Fonte funcional específica cross-repo: frontend `docs/REGRAS_PARTICIPANTE.md`.
+
+Implementação consolidada no BLOCO 4.3:
+
+- V25 separa inscrição individual e Registration do Robot, com comprovantes independentes;
+- V26 adiciona `Robot.createdByUser`, auditoria/veto de composição, histórico da inscrição individual e histórico de liderança;
+- membro comum só inicia/administra Registration de Robot que ele cadastrou;
+- líder pode iniciar/administra Registration de qualquer Robot da própria Team;
+- responsabilidade N:N não transfere ownership da Registration;
+- Minha inscrição `PENDENTE` ou `APROVADA` libera o fluxo de Robot sem esperar análise;
+- composição oficial do Robot é derivada automaticamente dos responsáveis elegíveis;
+- **um único responsável pessoalmente APROVADO já basta para o Robot poder ser aprovado**;
+- responsáveis `PENDENTE` não bloqueiam outro aprovado;
+- aprovação posterior de responsável antes da prova o adiciona automaticamente à composição;
+- mudança de responsáveis antes da prova não devolve Robot aprovado para análise completa quando ainda existe elegível;
+- GESTAO recebe alteração de composição e pode MANTER/VETAR a mudança específica, com auditoria e justificativa no veto;
+- nova proposta posterior a veto é permitida;
+- se nenhum elegível existir, Robot permanece PENDENTE quando houver caso recuperável ou é REJEITADO automaticamente quando todos forem inelegíveis;
+- Robot rejeitado pode ser conscientemente reinscrito pelo líder/criador quando as condições voltarem a ser válidas;
+- líder atual não pode sofrer rejeição pessoal definitiva sem correção ou transferência DEV;
+- `CORRECAO_SOLICITADA` permite reenvio sem perder Team;
+- DEV pode transferir liderança para participante ativo da mesma Team com inscrição individual PENDENTE/APROVADA, com histórico;
+- durante Competition iniciada, mudanças normais de responsáveis/composição ficam bloqueadas.
+
+Bateria canônica: `docs/VALIDACAO_ETAPA4_BLOCO4.md`.
+
+Estado:
+
+```text
+4.3 → IMPLEMENTAÇÃO REVISADA / AGUARDANDO BUILD + VALIDAÇÃO MANUAL
+4.4 → NÃO INICIADO
+```
+
+Não considerar suíte/build verdes sem execução real nos heads atuais.
