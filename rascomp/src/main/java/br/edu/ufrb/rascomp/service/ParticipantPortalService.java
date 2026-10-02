@@ -158,7 +158,7 @@ public class ParticipantPortalService {
         UserAccount usuario = accessPolicyService.usuarioAtual();
 
         RobotDTO dto = robotDto(request, teamId);
-        RobotDTO criado = robotService.criar(dto);
+        RobotDTO criado = robotService.criar(dto, usuario);
         robotResponsibleService.associarCriador(criado.getId(), usuario);
         return criado;
     }
@@ -257,7 +257,7 @@ public class ParticipantPortalService {
             ParticipantRegistrationRequest request,
             MultipartFile comprovante) {
         accessPolicyService.exigirEquipeDoParticipante(teamId);
-        Robot robot = accessPolicyService.exigirRoboGerenciavelPeloParticipante(request.getRobotId());
+        Robot robot = accessPolicyService.exigirRoboInscrevivelPeloParticipante(request.getRobotId());
         if (!robot.getTeam().getId().equals(teamId)) {
             throw new IllegalArgumentException("O robô deve pertencer à equipe informada.");
         }
