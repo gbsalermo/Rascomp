@@ -13,6 +13,7 @@ import br.edu.ufrb.rascomp.model.Competitor;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.RobotResponsible;
 import br.edu.ufrb.rascomp.model.UserAccount;
+import br.edu.ufrb.rascomp.model.Enum.RegistrationCompetitorChangeType;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
@@ -91,24 +92,42 @@ public class RobotResponsibleService {
         List<RobotResponsible> atuais =
                 responsibleRepository.findByRobotIdOrderByCompetitorNomeAsc(robotId);
 
-        atuais.forEach(link -> {
+        for (RobotResponsible link : atuais) {
             boolean manterAtivo = ids.contains(link.getCompetitor().getId());
+            boolean mudou = Boolean.TRUE.equals(link.getAtivo()) != manterAtivo;
             link.setAtivo(manterAtivo);
             responsibleRepository.save(link);
-        });
+
+            if (mudou && !manterAtivo) {
+                compositionService.sinalizarMudancaResponsabilidade(
+                        robotId,
+                        link.getCompetitor().getId(),
+                        RegistrationCompetitorChangeType.REMOVIDO,
+                        lider);
+            }
+        }
 
         for (Competitor competitor : competitors) {
             RobotResponsible link = responsibleRepository
                     .findByRobotIdAndCompetitorId(robotId, competitor.getId())
                     .orElseGet(RobotResponsible::new);
+            boolean novoOuReativado = link.getId() == null || !Boolean.TRUE.equals(link.getAtivo());
             link.setRobot(robot);
             link.setCompetitor(competitor);
             link.setCreatedByUser(lider);
             link.setAtivo(true);
             responsibleRepository.save(link);
+
+            if (novoOuReativado) {
+                compositionService.sinalizarMudancaResponsabilidade(
+                        robotId,
+                        competitor.getId(),
+                        RegistrationCompetitorChangeType.ADICIONADO,
+                        lider);
+            }
         }
 
-        compositionService.sincronizarRobot(robotId, lider, true);
+        compositionService.sincronizarRobot(robotId, lider, false);
         return listar(robotId);
     }
 
