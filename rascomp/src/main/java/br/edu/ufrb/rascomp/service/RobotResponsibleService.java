@@ -30,6 +30,7 @@ public class RobotResponsibleService {
     private final RobotRepository robotRepository;
     private final RobotResponsibleRepository responsibleRepository;
     private final RegistrationRepository registrationRepository;
+    private final RegistrationCompositionService compositionService;
 
     @Transactional(readOnly = true)
     public List<RobotResponsibleDTO> listar(Long robotId) {
@@ -92,18 +93,6 @@ public class RobotResponsibleService {
 
         atuais.forEach(link -> {
             boolean manterAtivo = ids.contains(link.getCompetitor().getId());
-            if (Boolean.TRUE.equals(link.getAtivo()) && !manterAtivo) {
-                long usosAtivos = registrationRepository.countActiveByRobotAndCompetitor(
-                        robotId,
-                        link.getCompetitor().getId(),
-                        List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA));
-                if (usosAtivos > 0) {
-                    throw new IllegalArgumentException(
-                            "Não é possível remover " + link.getCompetitor().getNome()
-                                    + " da responsabilidade do robô enquanto existir inscrição PENDENTE "
-                                    + "ou APROVADA usando esse competidor. Regularize a inscrição primeiro.");
-                }
-            }
             link.setAtivo(manterAtivo);
             responsibleRepository.save(link);
         });
@@ -119,6 +108,7 @@ public class RobotResponsibleService {
             responsibleRepository.save(link);
         }
 
+        compositionService.sincronizarRobot(robotId, lider, true);
         return listar(robotId);
     }
 
