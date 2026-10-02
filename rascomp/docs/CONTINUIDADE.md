@@ -2146,12 +2146,15 @@ Regras de alteração posterior:
 
 - um Robot já cadastrado pode receber novos `RobotResponsible`;
 - um Competitor pode ser associado como responsável a vários Robots da própria Team;
-- adicionar/remover `RobotResponsible` altera a responsabilidade permanente, mas **não deve reescrever automaticamente** `Registration.competitors` de uma inscrição já criada;
-- uma `Registration` já `APROVADA` não perde aprovação apenas porque outro responsável permanente foi adicionado ao Robot;
-- para o novo responsável passar a compor aquela inscrição competitiva, ele precisa ser incluído explicitamente na `Registration`;
-- se a composição de uma Registration já aprovada for alterada, a alteração precisa voltar para análise da GESTAO antes de a nova composição ser considerada oficial;
-- a nova pessoa incluída na Registration precisa ser `RobotResponsible` e possuir inscrição pessoal `APROVADA` na mesma Competition;
-- remover responsabilidade permanente de alguém que ainda compõe uma Registration ativa deve ser bloqueado ou exigir regularização explícita, evitando uma Registration oficial apontar para pessoa que deixou de ser responsável pelo Robot.
+- antes do início da Competition, alterações feitas pelo líder em `RobotResponsible` devem refletir automaticamente na composição competitiva da Registration correspondente;
+- uma `Registration` já `APROVADA` **não volta para PENDENTE** só porque a composição foi ajustada antes da competição;
+- novo responsável com inscrição pessoal `APROVADA` na mesma Competition pode entrar automaticamente em `Registration.competitors`;
+- novo responsável cuja inscrição pessoal ainda esteja `PENDENTE` pode existir como `RobotResponsible`, mas só passa a integrar oficialmente a composição competitiva quando sua inscrição pessoal ficar `APROVADA`;
+- remover um responsável antes do início da competição remove automaticamente essa pessoa da composição competitiva daquela Registration;
+- a GESTAO recebe aviso/auditoria da alteração de composição e pode **vetar a mudança competitiva específica**, com justificativa, sem obrigar o Robot inteiro a passar por nova aprovação;
+- o veto da GESTAO afeta a associação competitiva daquela Competition/Registration; não precisa apagar o vínculo permanente `RobotResponsible`, que pode continuar válido para outras competições;
+- quando a Competition atingir `EM_ANDAMENTO` ou sua data de início, a composição `Registration.competitors` fica congelada no fluxo normal;
+- depois desse bloqueio, líder/participantes não podem ficar trocando responsáveis competitivos durante a prova.
 
 Portanto:
 
@@ -2337,3 +2340,46 @@ Regras:
 - para aprovar o Robot, todos os competidores selecionados precisam estar pessoalmente `APROVADOS`;
 - inscrição pessoal `REJEITADA` ou `CANCELADA` não libera nova inscrição de Robot;
 - o backend repete todas essas validações, independentemente da interface.
+
+
+### Regra revisada — sincronização automática da composição competitiva
+
+A regra anterior que exigia nova aprovação completa do Robot após alteração de responsáveis foi descartada.
+
+Fluxo canônico:
+
+```text
+Competition ainda não iniciou
++
+líder altera RobotResponsible
+↓
+sistema sincroniza Registration.competitors automaticamente
+↓
+Registration APROVADA permanece APROVADA
+↓
+GESTAO recebe aviso/auditoria
+↓
+GESTAO pode vetar a mudança específica com justificativa
+```
+
+Elegibilidade:
+
+- responsável com inscrição pessoal `APROVADA` entra automaticamente na composição oficial;
+- responsável com inscrição pessoal `PENDENTE` pode permanecer associado ao Robot, porém só entra oficialmente na composição competitiva quando sua inscrição pessoal for aprovada;
+- responsável removido antes do início da competição sai automaticamente da composição daquela Registration;
+- se a composição ficar sem nenhum competidor elegível, aplicam-se as regras de rejeição/regularização da Registration do Robot.
+
+Limite temporal:
+
+```text
+Competition.status == EM_ANDAMENTO
+OU
+data atual >= Competition.dataInicio
+
+→ Registration.competitors congelado
+→ líder/participantes não alteram composição pelo fluxo normal
+```
+
+A Gestão não precisa reaprender/reaprovar o Robot inteiro a cada ajuste. O controle é por **notificação + auditoria + veto justificado da alteração específica**.
+
+O veto administrativo é contextual à Competition/Registration. Ele não precisa apagar o vínculo permanente `RobotResponsible`, pois esse vínculo pode continuar relevante para futuras competições.
