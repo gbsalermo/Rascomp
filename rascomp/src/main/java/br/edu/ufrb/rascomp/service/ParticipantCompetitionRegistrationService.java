@@ -3,7 +3,6 @@ package br.edu.ufrb.rascomp.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.springframework.security.access.AccessDeniedException;
@@ -289,51 +288,6 @@ public class ParticipantCompetitionRegistrationService {
                 && entity.getStatus() != ParticipantCompetitionRegistrationStatus.APROVADA) {
             throw new IllegalArgumentException(
                     "Sua inscrição individual precisa estar PENDENTE ou APROVADA para liberar a inscrição de robô.");
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public void exigirTodosComInscricaoIniciada(
-            Long competitionId,
-            Collection<Competitor> competitors) {
-
-        List<String> semInscricaoValida = competitors.stream()
-                .filter(competitor -> repository
-                        .findByCompetitionIdAndCompetitorId(competitionId, competitor.getId())
-                        .map(entity -> entity.getStatus() == ParticipantCompetitionRegistrationStatus.PENDENTE
-                                || entity.getStatus() == ParticipantCompetitionRegistrationStatus.APROVADA)
-                        .orElse(false) == false)
-                .map(Competitor::getNome)
-                .toList();
-
-        if (!semInscricaoValida.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Todos os competidores selecionados para o robô precisam iniciar a própria inscrição "
-                            + "na mesma competição antes da inscrição do robô. Pendentes de cadastro: "
-                            + String.join(", ", semInscricaoValida));
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public boolean estaAprovado(Long competitionId, Long competitorId) {
-        return repository.existsByCompetitionIdAndCompetitorIdAndStatusAndAtivoTrue(
-                competitionId,
-                competitorId,
-                ParticipantCompetitionRegistrationStatus.APROVADA);
-    }
-
-    @Transactional(readOnly = true)
-    public void exigirTodosAprovados(Long competitionId, Collection<Competitor> competitors) {
-        List<String> pendentes = competitors.stream()
-                .filter(c -> !estaAprovado(competitionId, c.getId()))
-                .map(Competitor::getNome)
-                .toList();
-
-        if (!pendentes.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "A inscrição do robô só pode ser aprovada quando todos os competidores estiverem "
-                            + "com inscrição pessoal APROVADA na mesma competição. Pendentes: "
-                            + String.join(", ", pendentes));
         }
     }
 
