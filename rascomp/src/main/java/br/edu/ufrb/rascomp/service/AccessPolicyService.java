@@ -123,12 +123,13 @@ public class AccessPolicyService {
         UserAccount usuario = usuarioAtual();
 
         if (ehResponsavel(registration.getTeam(), usuario)
-                || usuarioEhResponsavelPeloRobo(registration.getRobot().getId(), usuario.getId())) {
+                || (registration.getRobot().getCreatedByUser() != null
+                    && registration.getRobot().getCreatedByUser().getId().equals(usuario.getId()))) {
             return registration;
         }
 
         throw new org.springframework.security.access.AccessDeniedException(
-                "Você não possui permissão para administrar a inscrição deste robô.");
+                "Somente o líder da equipe ou quem cadastrou o robô pode administrar esta inscrição.");
     }
 
     @Transactional(readOnly = true)
