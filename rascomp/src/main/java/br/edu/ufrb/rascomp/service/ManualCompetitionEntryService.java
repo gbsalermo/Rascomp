@@ -72,7 +72,7 @@ public class ManualCompetitionEntryService {
         robotRequest.setDescricao(request.getRobotDescricao());
         robotRequest.setTeamId(team.getId());
         robotRequest.setAtivo(true);
-        RobotDTO robot = robotService.criar(robotRequest);
+        RobotDTO robot = robotService.criar(robotRequest, participante);
         robotResponsibleService.associarManual(robot.getId(), competitor.getId(), dev);
 
         RegistrationDTO registration = new RegistrationDTO();
