@@ -8,5 +8,6 @@ public enum RegistrationStatusChangeType {
     DESISTENCIA,
     REATIVACAO,
     DESCLASSIFICACAO,
-    ENTRADA_MANUAL
+    ENTRADA_MANUAL,
+    AJUSTE_COMPOSICAO
 }
