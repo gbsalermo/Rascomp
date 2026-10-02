@@ -474,10 +474,26 @@ public class RegistrationService {
     @Transactional
     public RegistrationDTO reativarPorParticipante(Long id) {
         Registration registration = buscarRegistration(id);
-        if (registration.getStatus() != StatusRegistration.CANCELADA) {
+        if (registration.getStatus() != StatusRegistration.CANCELADA
+                && registration.getStatus() != StatusRegistration.REJEITADA) {
             throw new IllegalArgumentException(
-                    "O participante só pode reativar uma inscrição CANCELADA.");
+                    "O participante só pode reinscrever uma inscrição CANCELADA ou REJEITADA.");
         }
+
+        UserAccount atual = userAccountService.buscarAtual();
+        Competitor solicitante = competitorRepository.findByUserAccountId(atual.getId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Sua conta precisa estar associada à equipe para reinscrever o robô."));
+
+        participantCompetitionRegistrationService.exigirInscricaoIniciada(
+                registration.getCompetition().getId(),
+                solicitante.getId());
+
+        Set<Competitor> composicao = compositionService.prepararComposicaoInicial(
+                registration.getCompetition().getId(),
+                registration.getRobot().getId());
+        registration.setCompetitors(composicao);
+
         return reativarInterno(registration, true);
     }
 
