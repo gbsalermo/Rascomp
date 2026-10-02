@@ -58,6 +58,7 @@ public class RegistrationService {
     private final RegistrationStatusHistoryService statusHistoryService;
     private final ParticipantCompetitionRegistrationService participantCompetitionRegistrationService;
     private final RegistrationReceiptStorageService receiptStorageService;
+    private final RegistrationCompositionService compositionService;
 
     @Transactional
     public RegistrationDTO criar(RegistrationDTO dto) {
@@ -121,16 +122,22 @@ public class RegistrationService {
             throw new IllegalArgumentException("Somente PARTICIPANTE pode enviar inscrição por este fluxo.");
         }
 
-        Competitor solicitanteCompetitor = competitorRepository
-                .findByUserAccountId(solicitante.getId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Associe sua conta a uma equipe antes de inscrever um robô."));
+        Team team = buscarTeam(dto.getTeamId());
+        boolean lider = team.getResponsibleUser() != null
+                && team.getResponsibleUser().getId().equals(solicitante.getId());
 
-        participantCompetitionRegistrationService.exigirInscricaoIniciada(
-                dto.getCompetitionId(),
-                solicitanteCompetitor.getId());
+        if (!lider) {
+            Competitor solicitanteCompetitor = competitorRepository
+                    .findByUserAccountId(solicitante.getId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Associe sua conta a uma equipe antes de inscrever um robô."));
 
-        return criarInterno(dto, solicitante, true);
+            participantCompetitionRegistrationService.exigirInscricaoIniciada(
+                    dto.getCompetitionId(),
+                    solicitanteCompetitor.getId());
+        }
+
+        return criarInterno(dto, solicitante, false);
     }
 
     private RegistrationDTO criarInterno(
@@ -149,13 +156,14 @@ public class RegistrationService {
         validarCompatibilidadeFisicaSumo(competition, category, robot, null);
         validarDuplicidade(dto, null);
 
-        Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, exigirCompetidor);
-        validarCompetidoresResponsaveis(robot, competitors);
-
+        Set<Competitor> competitors;
         if (solicitante != null && solicitante.getRole() == UserRole.PARTICIPANTE) {
-            participantCompetitionRegistrationService.exigirTodosComInscricaoIniciada(
+            competitors = compositionService.prepararComposicaoInicial(
                     competition.getId(),
-                    competitors);
+                    robot.getId());
+        } else {
+            competitors = buscarCompetidores(dto.getCompetitorIds(), team, exigirCompetidor);
+            validarCompetidoresResponsaveis(robot, competitors);
         }
 
         Registration registration = new Registration();
@@ -241,7 +249,14 @@ public class RegistrationService {
         Registration registration = buscarRegistration(id);
         competitionContextService.exigirOperavel(registration.getCompetition().getId());
 
-        return registration.getCompetitors().stream()
+        java.util.Map<Long, Competitor> relacionados = new java.util.LinkedHashMap<>();
+        robotResponsibleRepository
+                .findByRobotIdAndAtivoTrueOrderByCompetitorNomeAsc(registration.getRobot().getId())
+                .forEach(link -> relacionados.put(link.getCompetitor().getId(), link.getCompetitor()));
+        registration.getCompetitors()
+                .forEach(competitor -> relacionados.putIfAbsent(competitor.getId(), competitor));
+
+        return relacionados.values().stream()
                 .map(competitor -> {
                     ParticipantCompetitionRegistration pessoal =
                             participantCompetitionRegistrationService.findByCompetitionAndCompetitor(
@@ -649,19 +664,19 @@ public class RegistrationService {
     }
 
     private void validarAprovacaoDoFluxoParticipante(Registration registration) {
-        if (registration.getCompetitors() == null || registration.getCompetitors().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "A inscrição do robô precisa possuir ao menos um competidor responsável.");
-        }
-
         if (registration.getPaymentReceiptStorageKey() == null) {
             throw new IllegalArgumentException(
                     "A inscrição do robô ainda não possui comprovante de pagamento.");
         }
 
-        participantCompetitionRegistrationService.exigirTodosAprovados(
-                registration.getCompetition().getId(),
-                registration.getCompetitors());
+        compositionService.sincronizarParaAprovacao(
+                registration,
+                userAccountService.buscarAtual());
+
+        if (registration.getCompetitors() == null || registration.getCompetitors().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "A inscrição do robô precisa possuir ao menos um responsável elegível e aprovado.");
+        }
     }
 
     private RegistrationReceiptStorageService.ReceiptFile carregarComprovante(
