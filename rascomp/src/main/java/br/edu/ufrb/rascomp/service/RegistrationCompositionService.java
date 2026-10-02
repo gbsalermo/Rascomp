@@ -190,6 +190,9 @@ public class RegistrationCompositionService {
         RegistrationCompetitorChange salva = changeRepository.save(change);
 
         sincronizarInterno(change.getRegistration(), reviewer, false);
+        if (request.getStatus() == RegistrationCompetitorChangeStatus.VETADA) {
+            restaurarSeVetoReverteuRejeicaoAutomatica(change.getRegistration());
+        }
         return new RegistrationCompetitorChangeDTO(salva);
     }
 
@@ -316,6 +319,35 @@ public class RegistrationCompositionService {
         change.setStatus(RegistrationCompetitorChangeStatus.PENDENTE_REVISAO);
         change.setActorUser(actor);
         changeRepository.save(change);
+    }
+
+    private void restaurarSeVetoReverteuRejeicaoAutomatica(Registration registration) {
+        if (registration.getStatus() != StatusRegistration.REJEITADA
+                || registration.getReviewReason() == null
+                || !registration.getReviewReason().startsWith("Inscrição rejeitada automaticamente")
+                || registration.getCompetitors().isEmpty()) {
+            return;
+        }
+
+        StatusRegistration destino = registration.getReviewedByUser() != null
+                && registration.getReviewedAt() != null
+                        ? StatusRegistration.APROVADA
+                        : StatusRegistration.PENDENTE;
+
+        StatusRegistration anterior = registration.getStatus();
+        registration.setStatus(destino);
+        registration.setReviewReason(null);
+        if (destino == StatusRegistration.PENDENTE) {
+            registration.setReviewedByUser(null);
+            registration.setReviewedAt(null);
+        }
+        registrationRepository.save(registration);
+        statusHistoryService.registrar(
+                registration,
+                anterior,
+                destino,
+                RegistrationStatusChangeType.AJUSTE_COMPOSICAO,
+                "Rejeição automática revertida porque a GESTAO vetou a alteração que removeria o último responsável elegível.");
     }
 
     private void reavaliarStatus(Registration registration) {
