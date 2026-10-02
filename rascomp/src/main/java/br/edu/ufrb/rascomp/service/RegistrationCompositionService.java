@@ -239,10 +239,15 @@ public class RegistrationCompositionService {
             }
         }
 
+        Set<Long> remocoesProcessadas = new java.util.HashSet<>();
         for (RegistrationCompetitorChange change :
                 changeRepository.findByRegistrationIdOrderByDataCadastroDesc(registration.getId())) {
             if (change.getChangeType() != RegistrationCompetitorChangeType.REMOVIDO
-                    || change.getStatus() != RegistrationCompetitorChangeStatus.VETADA) {
+                    || !remocoesProcessadas.add(change.getCompetitor().getId())) {
+                continue;
+            }
+
+            if (change.getStatus() != RegistrationCompetitorChangeStatus.VETADA) {
                 continue;
             }
 
