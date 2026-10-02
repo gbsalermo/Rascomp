@@ -9,6 +9,7 @@ import br.edu.ufrb.rascomp.dto.RobotDTO;
 import br.edu.ufrb.rascomp.model.Institution;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
+import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -23,6 +24,11 @@ public class RobotService {
 
     @Transactional
     public RobotDTO criar(RobotDTO dto) {
+        return criar(dto, null);
+    }
+
+    @Transactional
+    public RobotDTO criar(RobotDTO dto, UserAccount createdByUser) {
         normalizar(dto);
 
         Team team = buscarEquipe(dto.getTeamId());
@@ -33,6 +39,7 @@ public class RobotService {
 
         Robot robot = new Robot();
         preencherRobot(robot, dto, team);
+        robot.setCreatedByUser(createdByUser);
 
         robot.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
 
