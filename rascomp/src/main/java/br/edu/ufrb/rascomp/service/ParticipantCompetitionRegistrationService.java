@@ -131,6 +131,10 @@ public class ParticipantCompetitionRegistrationService {
 
         ParticipantCompetitionRegistration entity = buscar(id);
         competitionContextService.exigirOperavel(entity.getCompetition().getId());
+        if (competicaoIniciada(entity.getCompetition())) {
+            throw new IllegalArgumentException(
+                    "A inscrição pessoal não pode ser alterada pelo fluxo normal após o início da competição.");
+        }
 
         UserAccount revisor = userAccountService.buscarAtual();
         if (!revisor.getRole().podeOperarCompeticao()) {
