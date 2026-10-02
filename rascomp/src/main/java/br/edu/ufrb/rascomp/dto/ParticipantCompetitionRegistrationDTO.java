@@ -22,6 +22,7 @@ public class ParticipantCompetitionRegistrationDTO {
     private String competitorNome;
     private Long teamId;
     private String teamNome;
+    private Boolean teamLeader;
     private ParticipantCompetitionRegistrationStatus status;
     private String observacao;
     private Boolean comprovanteDisponivel;
@@ -44,6 +45,10 @@ public class ParticipantCompetitionRegistrationDTO {
         competitorNome = entity.getCompetitor().getNome();
         teamId = entity.getCompetitor().getTeam().getId();
         teamNome = entity.getCompetitor().getTeam().getNome();
+        teamLeader = entity.getCompetitor().getUserAccount() != null
+                && entity.getCompetitor().getTeam().getResponsibleUser() != null
+                && entity.getCompetitor().getUserAccount().getId()
+                        .equals(entity.getCompetitor().getTeam().getResponsibleUser().getId());
         status = entity.getStatus();
         observacao = entity.getObservacao();
         comprovanteDisponivel = entity.getPaymentReceiptStorageKey() != null;
