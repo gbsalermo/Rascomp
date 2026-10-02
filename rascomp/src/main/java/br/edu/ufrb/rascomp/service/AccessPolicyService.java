@@ -155,6 +155,25 @@ public class AccessPolicyService {
         return exigirRoboVisivelAoParticipante(robotId);
     }
 
+    @Transactional(readOnly = true)
+    public Robot exigirRoboInscrevivelPeloParticipante(Long robotId) {
+        Robot robot = robotRepository.findById(robotId)
+                .orElseThrow(() -> new EntityNotFoundException("Robô não encontrado: " + robotId));
+        UserAccount usuario = usuarioAtual();
+
+        if (ehResponsavel(robot.getTeam(), usuario)) {
+            return robot;
+        }
+
+        if (robot.getCreatedByUser() != null
+                && robot.getCreatedByUser().getId().equals(usuario.getId())) {
+            return robot;
+        }
+
+        throw new org.springframework.security.access.AccessDeniedException(
+                "Somente quem cadastrou o robô ou o líder da equipe pode iniciar a inscrição dele.");
+    }
+
     public boolean ehResponsavel(Team team, UserAccount usuario) {
         return team.getResponsibleUser() != null
                 && team.getResponsibleUser().getId().equals(usuario.getId());
