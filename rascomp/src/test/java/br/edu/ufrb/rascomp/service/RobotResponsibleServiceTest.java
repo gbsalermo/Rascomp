@@ -1,7 +1,6 @@
 package br.edu.ufrb.rascomp.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -22,9 +21,7 @@ import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.RobotResponsible;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
-import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
-import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
 import br.edu.ufrb.rascomp.repository.RobotResponsibleRepository;
 
@@ -35,7 +32,7 @@ class RobotResponsibleServiceTest {
     @Mock private CompetitorRepository competitorRepository;
     @Mock private RobotRepository robotRepository;
     @Mock private RobotResponsibleRepository responsibleRepository;
-    @Mock private RegistrationRepository registrationRepository;
+    @Mock private RegistrationCompositionService compositionService;
 
     @InjectMocks
     private RobotResponsibleService service;
@@ -88,7 +85,7 @@ class RobotResponsibleServiceTest {
 
 
     @Test
-    void naoDeveRemoverResponsavelUsadoEmInscricaoAtiva() {
+    void liderPodeAlterarResponsaveisAntesDaCompeticaoESincronizaComposicao() {
         UserAccount leader = new UserAccount();
         leader.setId(1L);
         leader.setNome("Líder");
@@ -126,16 +123,14 @@ class RobotResponsibleServiceTest {
         when(accessPolicyService.usuarioAtual()).thenReturn(leader);
         when(responsibleRepository.findByRobotIdOrderByCompetitorNomeAsc(5L))
                 .thenReturn(List.of(link));
-        when(registrationRepository.countActiveByRobotAndCompetitor(
-                5L,
-                4L,
-                List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA)))
-                .thenReturn(1L);
+        when(responsibleRepository.findByRobotIdAndAtivoTrueOrderByCompetitorNomeAsc(5L))
+                .thenReturn(List.of());
 
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> service.definir(5L, Set.of()));
+        service.definir(5L, Set.of());
 
-        assertEquals(true, ex.getMessage().contains("Regularize a inscrição"));
+        assertEquals(false, link.getAtivo());
+        org.mockito.Mockito.verify(compositionService)
+                .sincronizarRobot(5L, leader, true);
     }
+
 }
