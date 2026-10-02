@@ -18,6 +18,7 @@ import br.edu.ufrb.rascomp.dto.ParticipantRobotLinkDTO;
 import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.Competitor;
 import br.edu.ufrb.rascomp.model.ParticipantCompetitionRegistration;
+import br.edu.ufrb.rascomp.model.ParticipantRegistrationStatusHistory;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.ParticipantCompetitionRegistrationStatus;
@@ -26,6 +27,7 @@ import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.repository.ParticipantCompetitionRegistrationRepository;
+import br.edu.ufrb.rascomp.repository.ParticipantRegistrationStatusHistoryRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotResponsibleRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -43,6 +45,8 @@ public class ParticipantCompetitionRegistrationService {
     private final UserAccountService userAccountService;
     private final CompetitionContextService competitionContextService;
     private final RegistrationReceiptStorageService receiptStorageService;
+    private final ParticipantRegistrationStatusHistoryRepository statusHistoryRepository;
+    private final RegistrationCompositionService compositionService;
 
     @Transactional
     public ParticipantCompetitionRegistrationDTO criarParaParticipanteAtual(
@@ -87,7 +91,14 @@ public class ParticipantCompetitionRegistrationService {
         entity.setPaymentReceiptContentType(receipt.contentType());
         entity.setAtivo(true);
 
-        return toDto(repository.save(entity));
+        ParticipantCompetitionRegistration salva = repository.save(entity);
+        registrarHistorico(
+                salva,
+                null,
+                ParticipantCompetitionRegistrationStatus.PENDENTE,
+                usuario,
+                null);
+        return toDto(salva);
     }
 
     @Transactional(readOnly = true)
@@ -129,11 +140,24 @@ public class ParticipantCompetitionRegistrationService {
             throw new IllegalArgumentException("Somente inscrição pessoal PENDENTE pode ser analisada.");
         }
         if (request.getStatus() != ParticipantCompetitionRegistrationStatus.APROVADA
-                && request.getStatus() != ParticipantCompetitionRegistrationStatus.REJEITADA) {
-            throw new IllegalArgumentException("A análise deve aprovar ou rejeitar a inscrição pessoal.");
+                && request.getStatus() != ParticipantCompetitionRegistrationStatus.REJEITADA
+                && request.getStatus() != ParticipantCompetitionRegistrationStatus.CORRECAO_SOLICITADA) {
+            throw new IllegalArgumentException(
+                    "A análise deve aprovar, rejeitar ou solicitar correção da inscrição pessoal.");
         }
 
-        if (request.getStatus() == ParticipantCompetitionRegistrationStatus.REJEITADA) {
+        if (request.getStatus() == ParticipantCompetitionRegistrationStatus.REJEITADA
+                && ehLiderAtualDaEquipe(entity)) {
+            throw new IllegalArgumentException(
+                    "A inscrição do líder da equipe não pode ser rejeitada diretamente. "
+                            + "Solicite correção ao próprio líder ou peça ao DEV para transferir a liderança "
+                            + "para outro participante elegível antes da rejeição definitiva.");
+        }
+
+        ParticipantCompetitionRegistrationStatus anterior = entity.getStatus();
+
+        if (request.getStatus() == ParticipantCompetitionRegistrationStatus.REJEITADA
+                || request.getStatus() == ParticipantCompetitionRegistrationStatus.CORRECAO_SOLICITADA) {
             entity.setReviewReason(normalizarMotivo(request.getMotivo()));
         } else {
             entity.setReviewReason(null);
@@ -143,7 +167,16 @@ public class ParticipantCompetitionRegistrationService {
         entity.setReviewedByUser(revisor);
         entity.setReviewedAt(LocalDateTime.now());
         entity.setAtivo(true);
-        return toDto(repository.save(entity));
+
+        ParticipantCompetitionRegistration salva = repository.save(entity);
+        registrarHistorico(
+                salva,
+                anterior,
+                request.getStatus(),
+                revisor,
+                salva.getReviewReason());
+        compositionService.sincronizarPorInscricaoPessoal(salva, revisor);
+        return toDto(salva);
     }
 
     @Transactional
@@ -159,9 +192,69 @@ public class ParticipantCompetitionRegistrationService {
                     "A inscrição pessoal só pode ser cancelada diretamente enquanto estiver PENDENTE.");
         }
 
+        ParticipantCompetitionRegistrationStatus anterior = entity.getStatus();
         entity.setStatus(ParticipantCompetitionRegistrationStatus.CANCELADA);
         entity.setAtivo(false);
-        repository.save(entity);
+        ParticipantCompetitionRegistration salva = repository.save(entity);
+        registrarHistorico(
+                salva,
+                anterior,
+                ParticipantCompetitionRegistrationStatus.CANCELADA,
+                usuario,
+                null);
+        compositionService.sincronizarPorInscricaoPessoal(salva, usuario);
+    }
+
+    @Transactional
+    public ParticipantCompetitionRegistrationDTO reenviarCorrecao(
+            Long id,
+            MultipartFile comprovante) {
+
+        ParticipantCompetitionRegistration entity = buscar(id);
+        UserAccount usuario = userAccountService.buscarAtual();
+
+        if (!entity.getRequestedByUser().getId().equals(usuario.getId())) {
+            throw new AccessDeniedException(
+                    "Você não pode corrigir a inscrição pessoal de outra pessoa.");
+        }
+        if (entity.getStatus() != ParticipantCompetitionRegistrationStatus.CORRECAO_SOLICITADA) {
+            throw new IllegalArgumentException(
+                    "Somente inscrição com CORRECAO_SOLICITADA pode ser reenviada por este fluxo.");
+        }
+        if (competicaoIniciada(entity.getCompetition())) {
+            throw new IllegalArgumentException(
+                    "Não é possível corrigir a inscrição depois do início da competição.");
+        }
+
+        RegistrationReceiptStorageService.StoredReceipt receipt = receiptStorageService.armazenar(
+                "participante",
+                entity.getCompetition().getId(),
+                entity.getCompetitor().getId(),
+                comprovante);
+
+        if (entity.getPaymentReceiptStorageKey() != null) {
+            receiptStorageService.remover(entity.getPaymentReceiptStorageKey());
+        }
+
+        ParticipantCompetitionRegistrationStatus anterior = entity.getStatus();
+        entity.setPaymentReceiptStorageKey(receipt.storageKey());
+        entity.setPaymentReceiptOriginalName(receipt.originalFilename());
+        entity.setPaymentReceiptContentType(receipt.contentType());
+        entity.setStatus(ParticipantCompetitionRegistrationStatus.PENDENTE);
+        entity.setAtivo(true);
+        entity.setReviewedByUser(null);
+        entity.setReviewedAt(null);
+        entity.setReviewReason(null);
+
+        ParticipantCompetitionRegistration salva = repository.save(entity);
+        registrarHistorico(
+                salva,
+                anterior,
+                ParticipantCompetitionRegistrationStatus.PENDENTE,
+                usuario,
+                "Correção reenviada pelo participante.");
+        compositionService.sincronizarPorInscricaoPessoal(salva, usuario);
+        return toDto(salva);
     }
 
     @Transactional(readOnly = true)
@@ -316,6 +409,38 @@ public class ParticipantCompetitionRegistrationService {
         if (competition.getStatus() != StatusCompetition.INSCRICOES_ABERTAS || !dentroDaJanela) {
             throw new IllegalArgumentException("As inscrições não estão abertas para esta competição.");
         }
+    }
+
+    private boolean ehLiderAtualDaEquipe(ParticipantCompetitionRegistration entity) {
+        return entity.getCompetitor().getUserAccount() != null
+                && entity.getCompetitor().getTeam().getResponsibleUser() != null
+                && entity.getCompetitor().getUserAccount().getId()
+                        .equals(entity.getCompetitor().getTeam().getResponsibleUser().getId());
+    }
+
+    private boolean competicaoIniciada(Competition competition) {
+        if (competition.getStatus() == StatusCompetition.EM_ANDAMENTO
+                || competition.getStatus() == StatusCompetition.FINALIZADA
+                || competition.getStatus() == StatusCompetition.CANCELADA) {
+            return true;
+        }
+        return competition.getDataInicio() != null
+                && !LocalDate.now().isBefore(competition.getDataInicio());
+    }
+
+    private void registrarHistorico(
+            ParticipantCompetitionRegistration registration,
+            ParticipantCompetitionRegistrationStatus anterior,
+            ParticipantCompetitionRegistrationStatus novo,
+            UserAccount actor,
+            String motivo) {
+        ParticipantRegistrationStatusHistory history = new ParticipantRegistrationStatusHistory();
+        history.setParticipantRegistration(registration);
+        history.setPreviousStatus(anterior);
+        history.setNewStatus(novo);
+        history.setActorUser(actor);
+        history.setReason(motivo);
+        statusHistoryRepository.save(history);
     }
 
     private String normalizarMotivo(String motivo) {
