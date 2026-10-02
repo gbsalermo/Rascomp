@@ -68,7 +68,7 @@ jobs:
         working-directory: rascomp
         run: mvn -B -DskipTests package
 
-      - name: Boot Block 4.3 testdata and validate dual registration flow
+      - name: Boot Block 4.3 testdata and validate participant rules
         working-directory: rascomp
         env:
           TESTDATA_DB_URL: jdbc:mysql://127.0.0.1:3306/rascomp_b4_validation?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -91,65 +91,59 @@ jobs:
             if grep -q "CENARIO PORTAL PRONTO" portal-profile.log; then
               break
             fi
-
             if ! kill -0 "$APP_PID" 2>/dev/null; then
-              echo "Application stopped before the Block 4.3 scenario was ready."
               cat portal-profile.log
               exit 1
             fi
-
             if [ "$attempt" -eq 60 ]; then
-              echo "Timed out waiting for the Block 4.3 testdata profile."
               cat portal-profile.log
               exit 1
             fi
-
             sleep 2
           done
 
-          for marker in             "DEV: dev.b4@rascomp.local"             "GESTAO: gestao.b4@rascomp.local"             "LIDER: lider.b4@rascomp.local"             "MEMBRO: membro.b4@rascomp.local"             "APOIO: apoio.b4@rascomp.local"             "Membro responsável por: B4 · Vespa"             "Apoio responsável por: B4 · Vespa + B4 · Atlas"; do
-            if ! grep -q "$marker" portal-profile.log; then
-              echo "Block 4.3 profile missing expected marker: $marker"
-              cat portal-profile.log
-              exit 1
-            fi
+          for marker in             "DEV: dev.b4@rascomp.local"             "GESTAO: gestao.b4@rascomp.local"             "LIDER: lider.b4@rascomp.local"             "MEMBRO: membro.b4@rascomp.local"             "APOIO: apoio.b4@rascomp.local"             "Membro criou: B4 · Vespa"             "Apoio criou: B4 · Atlas"             "Apoio responsável por: B4 · Vespa + B4 · Atlas"; do
+            grep -q "$marker" portal-profile.log
           done
 
           login() {
             curl -fsS               -H "Content-Type: application/json"               -d "{\"email\":\"$1\",\"senha\":\"Rascomp@2026\",\"lembrarDeMim\":false}"               http://127.0.0.1:8080/api/v1/auth/login
           }
 
+          dev_login=$(login "dev.b4@rascomp.local")
+          management_login=$(login "gestao.b4@rascomp.local")
+          leader_login=$(login "lider.b4@rascomp.local")
           member_login=$(login "membro.b4@rascomp.local")
           support_login=$(login "apoio.b4@rascomp.local")
-          leader_login=$(login "lider.b4@rascomp.local")
-          management_login=$(login "gestao.b4@rascomp.local")
 
-          echo "$member_login" | jq -e '.usuario.role == "PARTICIPANTE"' >/dev/null
-          echo "$support_login" | jq -e '.usuario.role == "PARTICIPANTE"' >/dev/null
-          echo "$leader_login" | jq -e '.usuario.role == "PARTICIPANTE"' >/dev/null
-          echo "$management_login" | jq -e '.usuario.role == "GESTAO"' >/dev/null
-
+          dev_token=$(echo "$dev_login" | jq -r '.token')
+          management_token=$(echo "$management_login" | jq -r '.token')
+          leader_token=$(echo "$leader_login" | jq -r '.token')
           member_token=$(echo "$member_login" | jq -r '.token')
           support_token=$(echo "$support_login" | jq -r '.token')
-          leader_token=$(echo "$leader_login" | jq -r '.token')
-          management_token=$(echo "$management_login" | jq -r '.token')
+
+          member_user_id=$(echo "$member_login" | jq -er '.usuario.id')
+          support_user_id=$(echo "$support_login" | jq -er '.usuario.id')
 
           member_teams=$(curl -fsS             -H "Authorization: Bearer $member_token"             http://127.0.0.1:8080/api/v1/participante/equipes)
           team_id=$(echo "$member_teams" | jq -er '.[0].id')
 
           member_robots=$(curl -fsS             -H "Authorization: Bearer $member_token"             "http://127.0.0.1:8080/api/v1/participante/equipes/$team_id/robos")
-          echo "$member_robots" | jq -e 'length == 1 and .[0].nome == "B4 · Vespa"' >/dev/null
+          echo "$member_robots" | jq -e --argjson uid "$member_user_id"             'length == 1 and .[0].nome == "B4 · Vespa" and .[0].createdByUserId == $uid' >/dev/null
           robot_id=$(echo "$member_robots" | jq -er '.[0].id')
 
           support_robots=$(curl -fsS             -H "Authorization: Bearer $support_token"             "http://127.0.0.1:8080/api/v1/participante/equipes/$team_id/robos")
-          echo "$support_robots" | jq -e 'length == 2' >/dev/null
+          echo "$support_robots" | jq -e --argjson uid "$support_user_id"             'length == 2
+             and any(.[]; .nome == "B4 · Vespa" and .createdByUserId != $uid)
+             and any(.[]; .nome == "B4 · Atlas" and .createdByUserId == $uid)' >/dev/null
 
           leader_robots=$(curl -fsS             -H "Authorization: Bearer $leader_token"             "http://127.0.0.1:8080/api/v1/participante/equipes/$team_id/robos")
           echo "$leader_robots" | jq -e 'length == 2' >/dev/null
 
           responsibles=$(curl -fsS             -H "Authorization: Bearer $member_token"             "http://127.0.0.1:8080/api/v1/participante/robos/$robot_id/responsaveis")
-          competitor_ids=$(echo "$responsibles" | jq -c '[.[].competitorId]')
-          echo "$competitor_ids" | jq -e 'length == 2' >/dev/null
+          echo "$responsibles" | jq -e 'length == 2' >/dev/null
+          member_competitor_id=$(echo "$responsibles" | jq -er '.[] | select(.competitorNome == "Membro B4") | .competitorId')
+          support_competitor_id=$(echo "$responsibles" | jq -er '.[] | select(.competitorNome == "Apoio B4") | .competitorId')
 
           competitions=$(curl -fsS http://127.0.0.1:8080/api/v1/public/competicoes)
           competition_id=$(echo "$competitions" | jq -er '.[] | select(.status == "INSCRICOES_ABERTAS") | .id' | head -n 1)
@@ -158,53 +152,73 @@ jobs:
           category_id=$(echo "$categories" | jq -er '.[] | select(.modalidade == "FOLLOW_LINE") | .id' | head -n 1)
 
           printf '%%PDF-1.4\n%% RasComp CI receipt\n' > /tmp/receipt.pdf
-          jq -nc --argjson competitionId "$competition_id"             '{competitionId:$competitionId,observacao:"CI inscrição pessoal membro"}'             > /tmp/personal-member.json
-          jq -nc --argjson competitionId "$competition_id"             '{competitionId:$competitionId,observacao:"CI inscrição pessoal apoio"}'             > /tmp/personal-support.json
+
+          robot_payload=$(jq -nc             --argjson competitionId "$competition_id"             --argjson categoryId "$category_id"             --argjson robotId "$robot_id"             '{competitionId:$competitionId,categoryId:$categoryId,robotId:$robotId,observacao:"CI BLOCO 4.3 ownership"}')
+          echo "$robot_payload" > /tmp/robot-registration.json
+
+          # Sequência obrigatória: antes da inscrição individual, o robô não pode ser inscrito.
+          before_personal_code=$(curl -sS -o /tmp/before-personal.json -w "%{http_code}"             -H "Authorization: Bearer $member_token"             -F "dados=@/tmp/robot-registration.json;type=application/json"             -F "comprovante=@/tmp/receipt.pdf;type=application/pdf"             "http://127.0.0.1:8080/api/v1/participante/equipes/$team_id/inscricoes")
+          test "$before_personal_code" = "400"
+
+          jq -nc --argjson competitionId "$competition_id"             '{competitionId:$competitionId,observacao:"CI inscrição membro"}'             > /tmp/personal-member.json
+          jq -nc --argjson competitionId "$competition_id"             '{competitionId:$competitionId,observacao:"CI inscrição apoio"}'             > /tmp/personal-support.json
+          jq -nc --argjson competitionId "$competition_id"             '{competitionId:$competitionId,observacao:"CI inscrição líder"}'             > /tmp/personal-leader.json
 
           member_personal=$(curl -fsS             -H "Authorization: Bearer $member_token"             -F "dados=@/tmp/personal-member.json;type=application/json"             -F "comprovante=@/tmp/receipt.pdf;type=application/pdf"             http://127.0.0.1:8080/api/v1/participante/inscricoes-pessoais)
           support_personal=$(curl -fsS             -H "Authorization: Bearer $support_token"             -F "dados=@/tmp/personal-support.json;type=application/json"             -F "comprovante=@/tmp/receipt.pdf;type=application/pdf"             http://127.0.0.1:8080/api/v1/participante/inscricoes-pessoais)
+          leader_personal=$(curl -fsS             -H "Authorization: Bearer $leader_token"             -F "dados=@/tmp/personal-leader.json;type=application/json"             -F "comprovante=@/tmp/receipt.pdf;type=application/pdf"             http://127.0.0.1:8080/api/v1/participante/inscricoes-pessoais)
 
-          echo "$member_personal" | jq -e '.status == "PENDENTE" and .comprovanteDisponivel == true' >/dev/null
-          echo "$support_personal" | jq -e '.status == "PENDENTE" and .comprovanteDisponivel == true' >/dev/null
           member_personal_id=$(echo "$member_personal" | jq -er '.id')
           support_personal_id=$(echo "$support_personal" | jq -er '.id')
+          leader_personal_id=$(echo "$leader_personal" | jq -er '.id')
 
-          robot_payload=$(jq -nc             --argjson competitionId "$competition_id"             --argjson categoryId "$category_id"             --argjson robotId "$robot_id"             --argjson competitorIds "$competitor_ids"             '{competitionId:$competitionId,categoryId:$categoryId,robotId:$robotId,competitorIds:$competitorIds,observacao:"CI BLOCO 4.3 N:N"}')
-          echo "$robot_payload" > /tmp/robot-registration.json
+          echo "$member_personal" | jq -e '.status == "PENDENTE"' >/dev/null
+          echo "$support_personal" | jq -e '.status == "PENDENTE"' >/dev/null
+          echo "$leader_personal" | jq -e '.status == "PENDENTE" and .teamLeader == true' >/dev/null
+
+          # Apoio é responsável pelo Vespa, mas não o criou: não pode iniciar a inscrição dele.
+          support_via_vespa_code=$(curl -sS -o /tmp/support-vespa.json -w "%{http_code}"             -H "Authorization: Bearer $support_token"             -F "dados=@/tmp/robot-registration.json;type=application/json"             -F "comprovante=@/tmp/receipt.pdf;type=application/pdf"             "http://127.0.0.1:8080/api/v1/participante/equipes/$team_id/inscricoes")
+          test "$support_via_vespa_code" = "403"
 
           created=$(curl -fsS             -H "Authorization: Bearer $member_token"             -F "dados=@/tmp/robot-registration.json;type=application/json"             -F "comprovante=@/tmp/receipt.pdf;type=application/pdf"             "http://127.0.0.1:8080/api/v1/participante/equipes/$team_id/inscricoes")
-
           echo "$created" | jq -e '.status == "PENDENTE" and .comprovanteDisponivel == true' >/dev/null
           registration_id=$(echo "$created" | jq -er '.id')
 
-          public_before=$(curl -fsS             "http://127.0.0.1:8080/api/v1/public/inscricoes?competitionId=$competition_id")
-          echo "$public_before" | jq -e --argjson id "$registration_id" 'all(.[]; .id != $id)' >/dev/null
-
+          # Sem nenhum responsável aprovado, a Gestão não pode aprovar o robô.
           approval_payload=$(echo "$created" | jq '.status = "APROVADA"')
           early_approval_code=$(curl -sS -o /tmp/early-approval.json -w "%{http_code}"             -X PUT             -H "Authorization: Bearer $management_token"             -H "Content-Type: application/json"             -d "$approval_payload"             "http://127.0.0.1:8080/api/v1/inscricoes/$registration_id")
           test "$early_approval_code" = "400"
 
-          duplicate_code=$(curl -sS -o /tmp/duplicate-response.json -w "%{http_code}"             -H "Authorization: Bearer $member_token"             -F "dados=@/tmp/robot-registration.json;type=application/json"             -F "comprovante=@/tmp/receipt.pdf;type=application/pdf"             "http://127.0.0.1:8080/api/v1/participante/equipes/$team_id/inscricoes")
-          test "$duplicate_code" = "400"
-
-          participant_rows=$(curl -fsS             -H "Authorization: Bearer $management_token"             "http://127.0.0.1:8080/api/v1/inscricoes-participantes/por-competicao?competitionId=$competition_id")
-          echo "$participant_rows" | jq -e --argjson memberId "$member_personal_id" --argjson supportId "$support_personal_id"             'any(.[]; .id == $memberId and .status == "PENDENTE")
-             and any(.[]; .id == $supportId and .status == "PENDENTE")' >/dev/null
-
+          # Um aprovado já basta: Membro aprovado, Apoio ainda PENDENTE.
           curl -fsS             -X PATCH             -H "Authorization: Bearer $management_token"             -H "Content-Type: application/json"             -d '{"status":"APROVADA"}'             "http://127.0.0.1:8080/api/v1/inscricoes-participantes/$member_personal_id/revisao"             | jq -e '.status == "APROVADA"' >/dev/null
 
-          curl -fsS             -X PATCH             -H "Authorization: Bearer $management_token"             -H "Content-Type: application/json"             -d '{"status":"APROVADA"}'             "http://127.0.0.1:8080/api/v1/inscricoes-participantes/$support_personal_id/revisao"             | jq -e '.status == "APROVADA"' >/dev/null
-
-          context=$(curl -fsS             -H "Authorization: Bearer $management_token"             "http://127.0.0.1:8080/api/v1/inscricoes/$registration_id/contexto-competidores")
-          echo "$context" | jq -e             'length == 2
-             and all(.[]; .robotResponsible == true)
-             and all(.[]; .participantRegistrationStatus == "APROVADA")' >/dev/null
+          context_one=$(curl -fsS             -H "Authorization: Bearer $management_token"             "http://127.0.0.1:8080/api/v1/inscricoes/$registration_id/contexto-competidores")
+          echo "$context_one" | jq -e             'any(.[]; .competitorNome == "Membro B4" and .participantRegistrationStatus == "APROVADA")
+             and any(.[]; .competitorNome == "Apoio B4" and .participantRegistrationStatus == "PENDENTE")' >/dev/null
 
           approved=$(curl -fsS             -X PUT             -H "Authorization: Bearer $management_token"             -H "Content-Type: application/json"             -d "$approval_payload"             "http://127.0.0.1:8080/api/v1/inscricoes/$registration_id")
-          echo "$approved" | jq -e '.status == "APROVADA"' >/dev/null
+          echo "$approved" | jq -e '.status == "APROVADA" and (.competitorNomes | length) == 1' >/dev/null
 
           public_after=$(curl -fsS             "http://127.0.0.1:8080/api/v1/public/inscricoes?competitionId=$competition_id")
           echo "$public_after" | jq -e --argjson id "$registration_id" 'any(.[]; .id == $id)' >/dev/null
 
-          echo "Block 4.3 dual participant/robot registration flow validated successfully."
+          # Ao aprovar o Apoio antes do início, ele entra automaticamente na composição.
+          curl -fsS             -X PATCH             -H "Authorization: Bearer $management_token"             -H "Content-Type: application/json"             -d '{"status":"APROVADA"}'             "http://127.0.0.1:8080/api/v1/inscricoes-participantes/$support_personal_id/revisao"             | jq -e '.status == "APROVADA"' >/dev/null
+
+          registration_rows=$(curl -fsS             -H "Authorization: Bearer $management_token"             "http://127.0.0.1:8080/api/v1/inscricoes/por-competicao?competitionId=$competition_id")
+          echo "$registration_rows" | jq -e --argjson id "$registration_id"             'any(.[]; .id == $id and .status == "APROVADA" and (.competitorNomes | length) == 2)' >/dev/null
+
+          composition_changes=$(curl -fsS             -H "Authorization: Bearer $management_token"             "http://127.0.0.1:8080/api/v1/inscricoes/composicao/pendentes?competitionId=$competition_id")
+          echo "$composition_changes" | jq -e             'any(.[]; .competitorNome == "Apoio B4" and .changeType == "ADICIONADO" and .status == "PENDENTE_REVISAO")' >/dev/null
+
+          # Líder atual não pode ser rejeitado diretamente.
+          leader_reject_code=$(curl -sS -o /tmp/leader-reject.json -w "%{http_code}"             -X PATCH             -H "Authorization: Bearer $management_token"             -H "Content-Type: application/json"             -d '{"status":"REJEITADA","motivo":"CI proteção de liderança"}'             "http://127.0.0.1:8080/api/v1/inscricoes-participantes/$leader_personal_id/revisao")
+          test "$leader_reject_code" = "400"
+
+          # DEV transfere a liderança para Apoio, que já está aprovado.
+          curl -fsS             -X PATCH             -H "Authorization: Bearer $dev_token"             -H "Content-Type: application/json"             -d "{\"competitionId\":$competition_id,\"newResponsibleUserId\":$support_user_id,\"motivo\":\"CI troca de liderança antes de rejeitar líder anterior\"}"             "http://127.0.0.1:8080/api/v1/equipes/$team_id/lideranca"             | jq -e --argjson uid "$support_user_id" '.newUserId == $uid' >/dev/null
+
+          curl -fsS             -X PATCH             -H "Authorization: Bearer $management_token"             -H "Content-Type: application/json"             -d '{"status":"REJEITADA","motivo":"CI rejeição após troca de liderança"}'             "http://127.0.0.1:8080/api/v1/inscricoes-participantes/$leader_personal_id/revisao"             | jq -e '.status == "REJEITADA"' >/dev/null
+
+          echo "Block 4.3 participant rules flow validated successfully."
           tail -n 100 portal-profile.log
