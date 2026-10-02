@@ -102,11 +102,13 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
         Robot vespa = garantirRobo(
                 RESPONSIBLE_ROBOT,
                 "Robô do membro para validar inscrição normal pelo Portal.",
-                team);
+                team,
+                membroUser);
         Robot atlas = garantirRobo(
                 LEADER_ONLY_ROBOT,
-                "Robô visível ao líder, mas sem responsabilidade permanente do membro.",
-                team);
+                "Robô criado pelo Apoio para validar ownership separado de RobotResponsible.",
+                team,
+                apoioUser);
 
         garantirResponsabilidade(vespa, membro, membroUser);
         garantirResponsabilidade(vespa, apoio, apoioUser);
@@ -142,9 +144,11 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
         System.out.println("LIDER: " + LEADER_EMAIL + " / " + PASSWORD);
         System.out.println("MEMBRO: " + MEMBER_EMAIL + " / " + PASSWORD);
         System.out.println("APOIO: " + SUPPORT_EMAIL + " / " + PASSWORD);
+        System.out.println("Membro criou: " + RESPONSIBLE_ROBOT);
         System.out.println("Membro responsável por: " + RESPONSIBLE_ROBOT);
+        System.out.println("Apoio criou: " + LEADER_ONLY_ROBOT);
         System.out.println("Apoio responsável por: " + RESPONSIBLE_ROBOT + " + " + LEADER_ONLY_ROBOT);
-        System.out.println("Robô exclusivo da visão administrativa do líder: " + LEADER_ONLY_ROBOT);
+        System.out.println("Líder administra ambos sem ser criador automático.");
         System.out.println("Nenhuma Registration é pré-criada: o teste começa no Portal.");
         System.out.println("============================================================");
     }
@@ -203,7 +207,11 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
         return competitorRepository.save(competitor);
     }
 
-    private Robot garantirRobo(String nome, String descricao, Team team) {
+    private Robot garantirRobo(
+            String nome,
+            String descricao,
+            Team team,
+            UserAccount createdBy) {
         Robot robot = robotRepository.findAll().stream()
                 .filter(item -> nome.equalsIgnoreCase(item.getNome()))
                 .filter(item -> item.getTeam().getId().equals(team.getId()))
@@ -212,6 +220,7 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
         robot.setNome(nome);
         robot.setDescricao(descricao);
         robot.setTeam(team);
+        robot.setCreatedByUser(createdBy);
         robot.setAtivo(true);
         return robotRepository.save(robot);
     }
