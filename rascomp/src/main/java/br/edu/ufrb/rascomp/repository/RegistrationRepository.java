@@ -68,6 +68,22 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
             Long robotId,
             Collection<StatusRegistration> statuses);
 
+    List<Registration> findByRobotIdAndStatusIn(
+            Long robotId,
+            Collection<StatusRegistration> statuses);
+
+    @Query("""
+            select distinct r
+            from Registration r
+            join r.competitors c
+            where r.competition.id = :competitionId
+              and c.id = :competitorId
+            order by r.dataCadastro desc
+            """)
+    List<Registration> findByCompetitionIdAndCompetitorIdOrderByDataCadastroDesc(
+            @Param("competitionId") Long competitionId,
+            @Param("competitorId") Long competitorId);
+
     List<Registration> findByCompetitionIdAndRobotIdOrderByDataCadastroDesc(
             Long competitionId,
             Long robotId);
