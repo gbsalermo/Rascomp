@@ -65,6 +65,18 @@ class CompetitionLifecycleServiceTest {
     }
 
     @Test
+    void alterarStatusDeveAvancarSemReescreverDadosEstruturais() {
+        Competition competition = competition(StatusCompetition.INSCRICOES_ENCERRADAS);
+        when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
+        when(competitionRepository.save(any(Competition.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CompetitionDTO result = service.alterarStatus(1L, StatusCompetition.EM_ANDAMENTO);
+
+        assertEquals(StatusCompetition.EM_ANDAMENTO, result.getStatus());
+        assertEquals("RRC Teste", result.getNome());
+    }
+
+    @Test
     void naoDevePularDeInscricoesAbertasParaEmAndamento() {
         Competition competition = competition(StatusCompetition.INSCRICOES_ABERTAS);
         CompetitionDTO dto = dto(StatusCompetition.EM_ANDAMENTO);

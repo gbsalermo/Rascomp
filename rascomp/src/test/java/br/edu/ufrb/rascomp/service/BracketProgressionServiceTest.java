@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -21,6 +23,7 @@ import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.StatusBracket;
 import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoPartida;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
+import br.edu.ufrb.rascomp.model.Enum.TipoPartidaSumo;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.MatchResultRepository;
@@ -36,6 +39,56 @@ class BracketProgressionServiceTest {
 
     @InjectMocks
     private BracketProgressionService service;
+
+    @Test
+    void perdedoresDasSemifinaisDevemAlimentarDisputaDeTerceiroLugar() {
+        Registration a = registration(1L);
+        Registration b = registration(2L);
+        Registration c = registration(3L);
+        Registration d = registration(4L);
+
+        Bracket bracket = bracket(10L, StatusBracket.EM_ANDAMENTO);
+
+        Match semi1 = origem(bracket, a, b);
+        semi1.setRodada(1);
+        semi1.setOrdem(1);
+        semi1.setTipoPartida(TipoPartidaSumo.ELIMINATORIA);
+
+        Match semi2 = origem(bracket, c, d);
+        semi2.setId(12L);
+        semi2.setRodada(1);
+        semi2.setOrdem(2);
+        semi2.setTipoPartida(TipoPartidaSumo.ELIMINATORIA);
+
+        Match finalMatch = proxima(bracket, null, null);
+        finalMatch.setId(20L);
+        finalMatch.setRodada(2);
+        finalMatch.setOrdem(1);
+        finalMatch.setStatus(StatusMatch.AGUARDANDO_PARTICIPANTES);
+
+        Match thirdPlace = proxima(bracket, null, null);
+        thirdPlace.setId(21L);
+        thirdPlace.setRodada(2);
+        thirdPlace.setOrdem(2);
+        thirdPlace.setTipoPartida(TipoPartidaSumo.TERCEIRO_LUGAR);
+        thirdPlace.setStatus(StatusMatch.AGUARDANDO_PARTICIPANTES);
+
+        when(matchRepository.findByBracketIdOrderByRodadaAscOrdemAsc(10L))
+                .thenReturn(List.of(semi1, semi2, finalMatch, thirdPlace));
+        when(matchRepository.findByBracketIdAndRodadaAndOrdem(10L, 2, 1))
+                .thenReturn(Optional.of(finalMatch));
+
+        service.avancarVencedor(semi1, a);
+
+        assertSame(b, thirdPlace.getRegistrationA());
+        assertNull(thirdPlace.getRegistrationB());
+
+        service.avancarVencedor(semi2, d);
+
+        assertSame(c, thirdPlace.getRegistrationB());
+        assertEquals(StatusMatch.AGENDADA, thirdPlace.getStatus());
+        verify(matchRepository, times(2)).save(thirdPlace);
+    }
 
     @Test
     void deveTrocarVencedorPropagadoQuandoProximaPartidaNaoComecou() {

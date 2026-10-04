@@ -34,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 public class CompetitionRegistrationWindowService {
 
     private final CompetitionRepository competitionRepository;
+    private final CompetitionContextService competitionContextService;
     private final CompetitionRegistrationWindowChangeRepository changeRepository;
     private final BracketRepository bracketRepository;
     private final TentativaSeguidorLinhaRepository tentativaRepository;
@@ -46,7 +47,7 @@ public class CompetitionRegistrationWindowService {
     @Transactional
     public CompetitionRegistrationWindowChangeDTO alterar(Long competitionId, CompetitionRegistrationWindowChangeRequest request) {
         UserAccount atual = exigirOperadorCompeticao();
-        Competition competition = buscarCompetition(competitionId);
+        Competition competition = competitionContextService.exigirOperavel(competitionId);
 
         if (!Boolean.TRUE.equals(competition.getAtivo())) {
             throw new IllegalArgumentException("Competição inativa não pode ter inscrições prorrogadas ou reabertas.");
@@ -87,7 +88,7 @@ public class CompetitionRegistrationWindowService {
 
     @Transactional(readOnly = true)
     public List<CompetitionRegistrationWindowChangeDTO> historico(Long competitionId) {
-        buscarCompetition(competitionId);
+        competitionContextService.exigirOperavel(competitionId);
         return changeRepository.findByCompetitionIdOrderByDataCadastroDesc(competitionId)
                 .stream().map(CompetitionRegistrationWindowChangeDTO::new).toList();
     }

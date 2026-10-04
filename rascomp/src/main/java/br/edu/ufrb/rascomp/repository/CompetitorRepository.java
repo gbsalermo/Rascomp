@@ -21,6 +21,8 @@ public interface CompetitorRepository extends JpaRepository<Competitor, Long> {
 
     boolean existsByEmailIgnoreCase(String email);
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
+    long countByTeamIdAndAtivoTrue(Long teamId);
+
     boolean existsByUserAccountId(Long userAccountId);
     boolean existsByUserAccountIdAndIdNot(Long userAccountId, Long id);
 }

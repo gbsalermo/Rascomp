@@ -38,4 +38,10 @@ public class AuthController {
     public ResponseEntity<UserAccountDTO> me() {
         return ResponseEntity.ok(authService.me());
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        authService.logout();
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +57,7 @@ public class BracketHistoryTestDataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
+        autenticarOrganizacao();
         CompetitionCategory category = garantirCategoria();
         garantirConfigSumo(category);
 
@@ -96,6 +100,15 @@ public class BracketHistoryTestDataInitializer implements CommandLineRunner {
                 + alfa.getId() + ", " + beta.getId() + ", " + gama.getId() + ", " + delta.getId());
         System.out.println("Nenhuma chave foi gerada pelo seed: gere duas pela interface para validar o historico.");
         System.out.println("============================================================");
+        SecurityContextHolder.clearContext();
+    }
+
+    private void autenticarOrganizacao() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        "testdata-bracket-history",
+                        "not-used",
+                        java.util.List.of(new SimpleGrantedAuthority("ROLE_DEV"))));
     }
 
     private CompetitionCategory garantirCategoria() {

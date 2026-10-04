@@ -108,6 +108,59 @@ class SecurityAuthorizationFlowTest {
     }
 
     @Test
+    @WithMockUser(username = "gestao@rascomp.local", roles = "GESTAO")
+    void gestaoNaoDeveCriarNovaEdicao() throws Exception {
+        mockMvc.perform(post("/api/v1/competicoes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nome": "Edição indevida",
+                                  "inicioInscricoes": "2026-10-01",
+                                  "fimInscricoes": "2026-10-10",
+                                  "dataInicio": "2026-10-11",
+                                  "dataFim": "2026-10-12",
+                                  "status": "PLANEJADA",
+                                  "ativo": true
+                                }
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "gestao@rascomp.local", roles = "GESTAO")
+    void gestaoNaoDeveAdministrarCatalogosEstruturaisGlobais() throws Exception {
+        mockMvc.perform(get("/api/v1/equipes"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/v1/robos"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/v1/competidores"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/v1/equipes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nome": "Equipe indevida",
+                                  "institutionId": 1
+                                }
+                                """))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/v1/categorias")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nome": "Categoria indevida",
+                                  "modalidade": "FOLLOW_LINE",
+                                  "ativo": true
+                                }
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(username = "midia@rascomp.local", roles = "MIDIA")
     void midiaNaoDeveHerdarOperacaoCompetitivaNemAdministracaoDeUsuarios() throws Exception {
         mockMvc.perform(get("/api/v1/competicoes"))

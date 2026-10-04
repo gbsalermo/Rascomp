@@ -1,6 +1,6 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **19/09/2026**
+Última atualização: **01/10/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
@@ -28,7 +28,7 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2   ✅ concluída / validada
 ETAPA 3   ✅ concluída / validada
-ETAPA 4   ⏳ próxima / não iniciada — Consolidação funcional e polimento do MVP
+ETAPA 4   🚧 EM ANDAMENTO — BLOCO 3 ✅ / BLOCO 4.3 🧪 aguardando validação manual
 ```
 
 Blocos concluídos da ETAPA 1:
@@ -94,7 +94,7 @@ O Bloco 5 fechou a validação integrada da ETAPA 1:
 - total da suíte: **111 testes / 0 falhas / 0 erros / 0 skipped**;
 - `demo-profile` verde contra MySQL real + Flyway V12.
 
-As **ETAPAS 1, 2 e 3 estão concluídas e validadas**. O novo roadmap coloca a **ETAPA 4 — Consolidação funcional e polimento do MVP** como próxima etapa, ainda não iniciada.
+As **ETAPAS 1, 2 e 3 estão concluídas e validadas**. A **ETAPA 4 — Consolidação funcional e polimento do MVP** está em andamento. O BLOCO 3 foi concluído/validado; no BLOCO 4, 4.1 e 4.2 estão implementados e o 4.3 está implementado aguardando validação manual. O 4.4 não foi iniciado.
 
 ---
 
@@ -103,7 +103,7 @@ As **ETAPAS 1, 2 e 3 estão concluídas e validadas**. O novo roadmap coloca a *
 ```text
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
-MYSQL + FLYWAY V1–V13                    ✅
+MYSQL + FLYWAY V1–V26                    ✅
 COMPETIÇÕES                              ✅ transições + prorrogação/reabertura
 EQUIPES / COMPETIDORES / ROBÔS           ✅
 INSCRIÇÕES + REVISÃO                     ✅ invariantes + cancelamento + híbridos
@@ -123,7 +123,7 @@ SUICÍDIO/WO                              ✅
 CHAVES / BYE / PROGRESSÃO                ✅ Bloco 4 alinhado
 AGENDA OPERACIONAL DE PARTIDAS           ✅ separada da árvore lógica
 HISTÓRICO DE CHAVES                      ✅
-API PARTICIPANTE                         ✅ base + cancelamento/reativação
+API PARTICIPANTE                         ✅ equipe + robôs + inscrição normal PENDENTE
 API PÚBLICA                              ✅
 PROFILE TESTDATA                         ✅
 ```
@@ -138,7 +138,7 @@ Checkpoint automatizado atual confirmado no CI:
 H2 flowtest integrado ✅
 SecurityAuthorizationFlowTest ✅
 DemoShowcaseDataInitializerTest ✅
-MySQL + Flyway V13 + testdata ✅
+MySQL + Flyway V14 + testdata ✅
 ```
 
 O workflow também compilou a aplicação e inicializou o cenário completo `testdata` contra MySQL real.
@@ -266,7 +266,7 @@ Backend Tests #309
 0 falhas
 0 erros
 0 skipped
-MySQL + Flyway V13 + testdata ✅
+MySQL + Flyway V14 + testdata ✅
 ```
 
 # 6. Distinções de domínio
@@ -878,10 +878,10 @@ ETAPA 3 — matriz de permissões
 ├─ frontend                              ✅
 ├─ testes automatizados                  ✅
 ├─ MySQL/Flyway V13 + testdata           ✅
-└─ checkpoint prático dos quatro perfis  🚧 PENDENTE DO USUÁRIO
+└─ checkpoint prático dos quatro perfis  ✅ validado em 19/09/2026
 ```
 
-A ETAPA 4 é a próxima etapa, mas só deve ser iniciada após autorização explícita.
+A ETAPA 4 está em andamento. BLOCO 1 e BLOCO 2 estão concluídos e validados; BLOCO 3 — Operação competitiva é o próximo e ainda não foi iniciado.
 
 ## Checkpoint cross-repo da ETAPA 2 — 13/09/2026
 
@@ -1092,8 +1092,1472 @@ ETAPA 14 → testes físicos finais em aparelhos reais
 O backend deve permanecer estável durante esse trabalho, alterando contratos apenas se algum fluxo mobile revelar necessidade funcional real.
 
 
-## Decisões de roadmap sincronizadas — 29/09/2026
+## Checkpoint de início da ETAPA 4 — 22/09/2026
 
-- ETAPA 5: ferramentas DEV excepcionais para inclusão manual de robôs/competidores e fechamento/cancelamento auditável de chave com geração de nova chave quando necessário; preservar histórico e exigir motivo.
-- ETAPA 6: Futebol de Robôs com cronômetro operacional (2 min como referência atual, configurável), placar por gols e resultado oficial persistido.
-- Pós-produção: Follow Pro/Júnior permanece hipótese configurável pendente de confirmação; Follow atual continua categoria única.
+Branch de trabalho:
+
+```text
+etapa-4-consolidacao-mvp
+```
+
+Estado:
+
+- ETAPA 4 autorizada e iniciada;
+- BLOCO 1 em andamento;
+- baseline técnico, autenticação, Shell e UX global são o escopo atual;
+- ETAPA 5 permanece bloqueada;
+- nenhuma nova funcionalidade estrutural deve ser antecipada.
+
+
+## ETAPA 4 — BLOCO 1 — baseline 22/09/2026
+
+Branch: `etapa-4-consolidacao-mvp`.
+
+Checkpoint automatizado real:
+
+```text
+Backend Tests #325
+142 testes
+0 falhas
+0 erros
+0 skipped
+MySQL + Flyway V14 + testdata ✅
+Logins reais dos perfis testdata ✅
+```
+
+Foram adicionados testes de autenticação para:
+
+- normalização de e-mail no login;
+- persistência solicitada por `lembrarDeMim`;
+- validade maior do JWT quando `lembrarDeMim=true`;
+- invalidação do token quando o usuário é desativado.
+
+Nenhuma migration nova foi necessária. V1–V13 permanecem imutáveis; a V14 foi criada na ETAPA 4 para controle de sessão única. Próxima migration estrutural: V15+.
+
+
+## Decisão — recuperação e redefinição de senha
+
+O backend ainda não possui endpoint definitivo de recuperação de senha. A ETAPA 4 não deve introduzir uma solução parcial ou insegura.
+
+A implementação foi planejada para a **ETAPA 13 — Regras, Ajuda e Segurança**, incluindo solicitação não enumerável, token/código de uso único e expiração curta, invalidação segura, redefinição de senha, proteção contra abuso, política de sessão pós-reset, canal configurável de entrega e testes dos casos de token inválido/expirado/reutilizado e conta inativa.
+
+A ETAPA 14 fará a revisão de hardening e a ETAPA 15 repetirá os cenários na validação final.
+
+
+## ETAPA 4 — BLOCO 1 — política de sessão única
+
+Durante a validação prática foi identificado que a mesma conta permanecia autenticada simultaneamente em aparelhos diferentes.
+
+Decisão aplicada no BLOCO 1:
+
+```text
+uma conta → uma sessão ativa
+novo login → invalida token anterior
+logout → invalida a sessão ativa no servidor
+```
+
+Implementação:
+
+- V14 adiciona `user_accounts.session_version`;
+- cada novo login incrementa `session_version`;
+- o JWT carrega a versão da sessão;
+- o filtro só aceita token cuja versão coincida com a versão atual da conta;
+- logout incrementa novamente a versão;
+- novo login em outro aparelho faz o aparelho anterior receber 401 na próxima requisição;
+- frontend já trata 401 limpando estado e retornando ao login.
+
+V1–V13 permanecem imutáveis.
+
+
+### Recuperação assistida pelo DEV
+
+A ETAPA 13 deverá implementar recuperação de senha com dois caminhos complementares.
+
+Fluxo preferencial:
+
+- usuário solicita recuperação diretamente;
+- backend emite token/código de uso único e curta duração;
+- entrega por canal configurável, preferencialmente e-mail;
+- usuário define a nova senha sem intervenção humana.
+
+Fallback assistido:
+
+- usuário informa perda de acesso à organização;
+- DEV recebe/abre a ação administrativa após verificar a identidade por procedimento definido;
+- sistema emite ou registra uma credencial temporária;
+- credencial possui expiração curta e uso único;
+- primeiro login com credencial temporária força cadastro + confirmação de nova senha;
+- senha definitiva é conhecida somente pelo usuário;
+- emissão da credencial temporária é auditada;
+- redefinição invalida sessões anteriores conforme política de segurança.
+
+Não permitir reset silencioso para uma senha permanente conhecida pelo DEV.
+
+
+## Fechamento do BLOCO 1 da ETAPA 4 — 22/09/2026
+
+BLOCO 1 concluído e validado pelo usuário.
+
+Checkpoint final:
+
+```text
+Backend Tests #329
+142 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V14 + testdata ✅
+Frontend Checks #97 ✅
+```
+
+Consolidações backend do bloco:
+
+- autenticação revalidada;
+- sessão única por conta;
+- V14 adiciona `user_accounts.session_version`;
+- novo login invalida sessão anterior;
+- logout invalida sessão no servidor;
+- recuperação definitiva de senha permanece na ETAPA 13;
+- fluxo assistido por DEV será fallback auditável com credencial temporária e troca obrigatória.
+
+Próximo: BLOCO 2 — Gestão administrativa.
+
+
+## ETAPA 4 — Agenda competitiva e gestão de competidores
+
+Achados do BLOCO 2:
+
+### Agenda
+
+O backend atual possui agenda operacional para partidas de Sumô via `Match`:
+
+```text
+dataHora
+pista
+ordemExecucao
+statusConvocacao
+```
+
+Não existe equivalente de agendamento para uma tomada de Follow Line.
+
+A agenda futura deve ser multimodal e será modelada no BLOCO 3C:
+
+- Sumô → partidas/batalhas;
+- Follow Line → tomadas de tempo por categoria;
+- Dashboard deve consumir visão unificada, não usar Match como sinônimo de agenda.
+
+### Competidores
+
+O backend já possui `CompetitorController` e `CompetitorService` com:
+
+- listar todos/ativos;
+- buscar por id/e-mail;
+- listar por equipe;
+- criar/atualizar;
+- desativar/reativar.
+
+A lacuna é principalmente no frontend administrativo e foi alocada no BLOCO 2.4.
+
+Relacionamento atual:
+
+```text
+Competitor → Team
+Robot      → Team
+Registration → Robot + Competitor(s)
+```
+
+Portanto, detalhes de "robôs do competidor" devem ser derivados das Registration em que ele participa, e não por vínculo direto Competitor → Robot.
+
+
+### Agenda Follow — chamada geral da tomada
+
+Contrato funcional aprovado para implementação futura no BLOCO 3C:
+
+```text
+Follow:
+Category + tomada + dataHora + pista + ordem + estado da chamada
+→ contém/coordena convocações individuais das Registration da categoria
+→ ausência de uma inscrição na sua vez registra AusenciaTomadaSeguidorLinha
+
+Sumô:
+Match + dataHora + pista/dohyo + ordemExecucao + statusConvocacao
+→ rounds permanecem internos ao Match
+```
+
+A tela unificada de Agenda será a visão organizacional principal; Follow e Sumô manterão edição contextual de suas próprias atividades.
+
+
+## ETAPA 4 — BLOCO 2.2 — contexto da competição
+
+Foi introduzido `CompetitionContextService` para centralizar a edição operável.
+
+Política:
+
+```text
+DEV    → qualquer edição
+GESTAO → somente competição vigente
+```
+
+A vigente não é mais inferida por status. O DEV a define explicitamente e o backend persiste essa escolha.
+
+Proteções aplicadas:
+
+- listagem de competições filtrada para GESTAO;
+- busca por id fora da vigente bloqueada para GESTAO;
+- criação, PUT estrutural, desativação e reativação DEV-only;
+- transição de status separada em endpoint explícito;
+- prorrogação/reabertura e histórico de janela passam pelo contexto operável.
+
+A identificação de DEV/GESTAO no `CompetitionContextService` usa authorities do Spring Security, compatível com JWT real e testes de segurança.
+
+Cobertura adicionada:
+- DEV vê todas as edições;
+- GESTAO vê somente vigente;
+- GESTAO não opera histórica;
+- DEV pode operar histórica;
+- transição explícita de status;
+- GESTAO não cria nova edição.
+
+
+### Checkpoint técnico — BLOCO 2.2
+
+```text
+Backend Tests #342 ✅
+149 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V14 + testdata ✅
+Frontend Checks #114 ✅
+```
+
+A regra de competição vigente está pronta para validação prática com DEV e GESTAO.
+
+
+### Ajuste pós-validação — V15
+
+A validação prática da 2.2 mostrou que a competição vigente precisa ser uma escolha explícita do DEV.
+
+V15 adiciona:
+
+```text
+competitions.vigente BOOLEAN NOT NULL DEFAULT FALSE
+```
+
+Regras:
+
+- apenas DEV define a competição vigente;
+- a troca limpa a flag anterior e marca a nova edição;
+- GESTAO lista e opera somente a edição marcada;
+- status não troca a vigente automaticamente;
+- finalização oficial (`FINALIZADA`) é DEV-only;
+- GESTAO pode operar transições anteriores permitidas;
+- criação de competição não altera a vigente automaticamente.
+
+Próxima migration estrutural: V16+.
+
+
+### Semântica de contexto — foco DEV x vigente global
+
+O backend persiste somente o conceito global de **competição vigente**.
+
+O conceito de **competição em foco** é local ao frontend do DEV e não é uma decisão de domínio.
+
+```text
+DEV troca foco local     → nenhum efeito global
+DEV define vigente       → atualiza competitions.vigente
+GESTAO                    → opera somente competitions.vigente = true
+```
+
+Permissões do ciclo:
+
+- criar competição: DEV;
+- abrir inscrições: DEV | GESTAO;
+- encerrar inscrições: DEV | GESTAO;
+- iniciar competição: DEV | GESTAO;
+- finalizar competição: DEV;
+- definir competição vigente: DEV.
+
+
+## ETAPA 4 — BLOCO 2 — implementação administrativa concluída
+
+O escopo implementado está pronto para validação manual, mas o bloco ainda não está encerrado.
+
+### Identidades / usuários
+
+- `PUT /api/v1/usuarios/{id}` permite DEV editar nome, e-mail e telefone;
+- PARTICIPANTE permanece PARTICIPANTE;
+- e-mail duplicado é bloqueado;
+- alterar e-mail incrementa `session_version`;
+- desativar conta incrementa `session_version`;
+- conta autenticada não pode se desativar;
+- último DEV ativo continua protegido.
+
+### Catálogo administrativo contextual
+
+Foi criado `CompetitionAdminCatalogService` e:
+
+```text
+GET /api/v1/competicoes/{id}/catalogo-administrativo
+GET /api/v1/competicoes/{id}/robos/{robotId}/fotos
+```
+
+O catálogo deriva Teams, Competitors e Robots das Registration da edição.
+
+Regras:
+
+- DEV pode consultar catálogos globais;
+- GESTAO usa apenas a vigente;
+- GETs administrativos globais de Team/Robot/Competitor são DEV-only;
+- POST/PUT/DELETE/reactivação administrativa de Team/Robot/Competitor são DEV-only;
+- mutações de CompetitionCategory e RobotImage no namespace administrativo são DEV-only;
+- Portal do Participante mantém endpoints próprios para ações autorizadas do líder.
+
+### Inscrições
+
+`RegistrationService` passou a exigir `CompetitionContextService` nas operações administrativas:
+
+- criar administrativamente;
+- buscar por id;
+- listar por competição;
+- atualizar/revisar;
+- cancelar;
+- reativar.
+
+Listagens globais e por status são DEV-only.
+
+`RegistrationCancellationRequestService` também restringe GESTAO à competição vigente para listar, aprovar e rejeitar solicitações.
+
+### Checkpoint
+
+```text
+Backend Tests #371 ✅
+155 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V15 + testdata ✅
+Frontend Checks #137 ✅
+```
+
+V1–V15 permanecem imutáveis. Próxima migration estrutural: V16+.
+
+### Decisões de produto encerradas
+
+- `CompetitionCategory` permanece global;
+- UserAccount PARTICIPANTE sincroniza identidade e ativo/inativo com Competitor vinculado;
+- Team/Robot/Registration não sofrem cascata automática;
+- catálogo de categorias permanece DEV-only.
+
+BLOCO 2 validado e encerrado. BLOCO 3 é o próximo checkpoint e ainda não foi iniciado.
+
+
+## ETAPA 4 — BLOCO 2 — correções finais pós-validação
+
+Correções backend:
+
+- `CompetitionAdminCatalogService.buscar()` agora é `@Transactional(readOnly = true)`, evitando LazyInitializationException na montagem de TeamDTO/RobotDTO/CompetitorDTO;
+- V16 adiciona `registrations.review_reason VARCHAR(500)`;
+- REJEITADA exige motivo;
+- reativação administrativa de CANCELADA/REJEITADA exige status INSCRICOES_ABERTAS, mas não repete a restrição de datas históricas;
+- reativação pelo participante continua exigindo a janela temporal válida;
+- rejeição de solicitação de cancelamento exige resposta;
+- UserAccount PARTICIPANTE sincroniza nome/e-mail/telefone/ativo com Competitor vinculado;
+- Competitor ligado a conta PARTICIPANTE não pode ser ativado/desativado diretamente pelo CompetitorService;
+- reativação da conta é bloqueada se Team/Institution estiver inativa;
+- UserAccountDTO expõe metadados do vínculo para permitir aviso de equipe sem competidores ativos;
+- teste integrado `CompetitionAdminCatalogFlowTest` cobre o catálogo com relações LAZY reais.
+
+Decisões consolidadas:
+
+- CompetitionCategory permanece global;
+- nenhuma associação Competition ↔ Category será criada no BLOCO 2;
+- catálogo de categorias é DEV-only;
+- desativar PARTICIPANTE também desativa Competitor, mas não Team/Robot/Registration;
+- ausência de competidores ativos gera alerta administrativo; não existe cascata destrutiva automática.
+
+DESCLASSIFICADA:
+- Sumô já aplica automaticamente após esgotar tentativas de inspeção sem aprovação;
+- demais regras/manualização ficam no BLOCO 3.
+
+V1–V18 imutáveis. Próxima migration estrutural: V19+.
+
+
+### Checkpoint pós-correções
+
+```text
+Backend Tests #388 ✅
+161 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V16 + testdata ✅
+Frontend Checks #149 ✅
+```
+
+Próxima migration estrutural: V18+.
+
+
+## ETAPA 4 — BLOCO 2 — auditoria final V17
+
+V17 cria a tabela `registration_status_history`.
+
+Cada transição auditada registra:
+
+- Registration;
+- status anterior;
+- novo status;
+- tipo da mudança;
+- UserAccount responsável quando disponível;
+- motivo;
+- data/hora.
+
+Tipos atuais:
+
+```text
+CRIACAO
+APROVACAO
+REJEICAO
+CANCELAMENTO
+DESISTENCIA
+REATIVACAO
+DESCLASSIFICACAO
+```
+
+Integrações:
+
+- RegistrationService registra criação, revisão, cancelamento/desistência e reativação;
+- InspecaoSumoService registra a desclassificação automática por esgotamento das tentativas de inspeção;
+- solicitações de cancelamento aprovadas propagam o motivo original do participante;
+- `GET /api/v1/inscricoes/{id}/historico-status` respeita CompetitionContextService;
+- não há backfill fictício das transições anteriores à V17.
+
+Checkpoint:
+
+```text
+Backend Tests #414 ✅
+161 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V17 + testdata ✅
+Frontend Checks #164 ✅
+```
+
+V1–V18 imutáveis. Próxima migration estrutural: V19+.
+
+
+## Fechamento formal do BLOCO 2 — 23/09/2026
+
+Validação manual final aprovada pelo usuário.
+
+Resultado:
+
+```text
+BLOCO 2 — Gestão administrativa
+✅ CONCLUÍDO
+✅ VALIDADO
+```
+
+Backend consolidado:
+
+- competição vigente persistida;
+- contexto DEV/GESTAO protegido no backend;
+- usuários/participantes com regras de identidade consolidadas;
+- catálogos administrativos contextualizados;
+- inscrições, cancelamentos, reativações e auditoria V17;
+- UserAccount PARTICIPANTE sincronizado com Competitor vinculado;
+- categorias globais DEV-only;
+- histórico de status e solicitações de cancelamento preservados.
+
+Checkpoint final:
+
+```text
+Backend Tests #415 ✅
+161 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V17 + testdata ✅
+Frontend Checks #170 ✅
+```
+
+V1–V18 permanecem imutáveis. Próxima migration estrutural: V19+.
+
+Próximo: BLOCO 3 — Operação competitiva, ainda não iniciado.
+
+
+## ETAPA 4 — BLOCO 3 / 3A Follow Line
+
+Primeiro checkpoint do BLOCO 3.
+
+Hardening aplicado ao Follow:
+
+- `TentativaSeguidorLinhaService` exige CompetitionContextService em criação, leitura, atualização e exclusão;
+- listagem por contexto valida competitionId;
+- atualização de tentativa não pode trocar a Registration original;
+- `AusenciaTomadaSeguidorLinhaService` exige CompetitionContextService para registrar/listar ausência;
+- `RankingFollowController` valida CompetitionContextService no endpoint administrativo;
+- `RankingFollowService` permanece reutilizável pelo endpoint público, portanto a restrição administrativa não foi colocada dentro do service;
+- fluxo integrado comprova GESTAO bloqueada fora da competição vigente e DEV livre para operar outra edição permitida.
+
+Checkpoint:
+
+```text
+Backend Tests #429 ✅
+162 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V17 + testdata ✅
+Frontend Checks #177 ✅
+```
+
+Nenhuma migration nova foi necessária. V1–V17 permanecem imutáveis; próxima migration estrutural V18+.
+
+Agenda Follow continua na 3C.
+
+
+## ETAPA 4 — BLOCO 3 implementado
+
+As frentes Follow, Sumô e Chaves/Agenda/Resultados estão implementadas e aguardam validação manual final.
+
+### Agenda competitiva V18
+
+V18 cria:
+
+```text
+follow_take_schedules
+follow_take_schedule_entries
+```
+
+Contrato:
+
+```text
+FOLLOW_LINE
+Competition + Category + Tomada
+→ chamada geral
+→ data/hora
+→ pista
+→ ordem
+→ status
+→ fila de Registration
+
+SUMO
+Match
+→ dataHora
+→ pista
+→ ordemExecucao
+→ statusConvocacao
+```
+
+`CompetitionAgendaService` unifica os dois tipos.
+
+Regras protegidas:
+
+- CompetitionContextService em toda operação administrativa do BLOCO 3;
+- chamada Follow única por competição/categoria/tomada;
+- fila criada/sincronizada a partir de inscrições APROVADAS e ativas;
+- registro histórico de fila não é apagado quando inscrição fica indisponível;
+- inscrição indisponível não pode receber nova convocação;
+- CONCLUIDA/AUSENTE/EM_EXECUCAO não podem ser forjados pelo endpoint genérico de convocação;
+- conclusão e ausência vêm do domínio competitivo;
+- chamada FINALIZADA/CANCELADA é somente leitura;
+- tentativa e ausência sincronizam automaticamente a fila;
+- partida futura AGUARDANDO_PARTICIPANTES não aparece como batalha real na Agenda;
+- Match EM_ANDAMENTO/FINALIZADA prevalece sobre status de convocação na Agenda.
+
+### Resultados
+
+- Follow: vencedor somente quando todas as tomadas dos participantes ativos/aprovados estiverem encerradas por tentativas ou ausência;
+- ranking parcial não é apresentado como campeão;
+- Sumô: vencedor da final da chave atual;
+- desclassificação/desistência podem resolver administrativamente uma partida quando exatamente um lado está indisponível;
+- resolução administrativa preserva a árvore e não cria round fictício.
+
+### Desclassificação
+
+- automática ao esgotar inspeções quando aplicável;
+- manual por DEV/GESTAO com motivo obrigatório;
+- auditada em `registration_status_history`;
+- inscrição permanece no histórico;
+- partidas comprometidas usam resolução administrativa específica.
+
+### Checkpoint
+
+```text
+Backend Tests #493 ✅
+166 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V18 + testdata ✅
+Frontend Checks #213 ✅
+```
+
+V1–V18 imutáveis. Próxima migration estrutural: V19+.
+
+Decisões ainda abertas para o fechamento manual:
+
+1. restringir ou não tentativa/ausência Follow exclusivamente a Competition EM_ANDAMENTO;
+2. ✅ RESOLVIDO — categoria Follow sem tentativa classificável oferece Tomada Extra ou decisão administrativa auditada.
+
+BLOCO 3 não deve ser marcado como validado antes do reteste manual.
+
+
+## ETAPA 4 — BLOCO 3 — resolução Follow sem classificação
+
+Regra fechada em 24/09/2026.
+
+Quando o programa normal do Follow termina sem qualquer tentativa válida/classificável:
+
+- nenhum vencedor é inferido automaticamente;
+- a organização pode criar uma Tomada Extra;
+- ou pode registrar decisão administrativa do vencedor.
+
+### Tomada Extra
+
+- número excepcional = `ConfigFollow.numeroTomadas + 1`;
+- não altera `ConfigFollow.numeroTomadas`;
+- é criada explicitamente em `POST /api/v1/agenda-follow/tomada-extra`;
+- reutiliza `FollowTakeSchedule`/fila/convocação da V18;
+- tentativas e ausências só aceitam a tomada extra se a chamada excepcional estiver autorizada/ativa;
+- Agenda identifica explicitamente `Tomada Extra N`;
+- ranking usa normalmente uma tentativa classificável feita na extra.
+
+### Decisão administrativa
+
+V19 cria `follow_manual_results`:
+
+- competition;
+- category;
+- winnerRegistration;
+- decidedByUser;
+- justificativa;
+- dataCadastro;
+- unique por Competition + Category.
+
+Endpoint:
+
+```text
+POST /api/v1/resultados-competicao/follow/decisao-organizacao
+```
+
+Regras:
+
+- somente DEV/GESTAO;
+- mesma competição/categoria;
+- Registration ativa e APROVADA;
+- justificativa obrigatória;
+- só após programa encerrado sem tentativa classificável;
+- se existir Tomada Extra ativa, a decisão espera a extra encerrar/cancelar;
+- checkpoints são evidência operacional, nunca cálculo automático de vencedor;
+- não é criado tempo fictício.
+
+`CompetitionResultsService` devolve metadados de resolução e trata resultado manual como oficial da categoria.
+
+Checkpoint:
+
+```text
+Backend Tests #517 ✅
+169 testes / 0 falhas / 0 erros / 0 skipped
+MySQL + Flyway V19 + testdata ✅
+Frontend Checks #224 ✅
+```
+
+V1–V19 imutáveis. Próxima migration estrutural: V20+.
+
+Única decisão restante para o fechamento manual do BLOCO 3: bloquear ou não tentativa/ausência Follow fora de Competition `EM_ANDAMENTO`.
+
+
+## Checkpoint de QA manual do BLOCO 3 — 29/09/2026
+
+A bateria manual foi pausada após o teste 23 para eliminar o excesso de dados de demonstração e tornar os cenários reproduzíveis.
+
+O profile `testdata` agora usa banco dedicado `rascomp_b3_validation`, desliga os seeds antigos e habilita somente `Block3ValidationDataInitializer`.
+
+Cenário único:
+
+- competição `ETAPA 4 · BLOCO 3 · VALIDAÇÃO`, vigente e em andamento;
+- `B3 · Follow Operação`: 4 robôs livres;
+- `B3 · Follow Exceção`: programa normal encerrado sem tentativa classificável para Tomada Extra/decisão administrativa;
+- `B3 · Mini Sumô RC`: 5 inscritos aptos na chave + 2 sem inspeção;
+- uma chave histórica + uma vigente, com BYE;
+- contas `dev.b3@rascomp.local` e `gestao.b3@rascomp.local`, senha `Rascomp@2026`.
+
+Seeds antigos permanecem disponíveis no código, mas ficam desligados neste profile. O `DataInitializer` base ganhou flag `rascomp.seed.base` (default true) para poder ser desligado somente no cenário de QA.
+
+
+## Fechamento manual do BLOCO 3 — 30/09/2026
+
+A bateria 1–56 foi percorrida. Regra pendente de janela operacional foi encerrada: tentativas e ausências Follow passam a exigir `Competition.status == EM_ANDAMENTO`.
+
+Pódio oficial consolidado como requisito:
+
+- Follow normal/extra: posições 1–3 do ranking;
+- Follow sem tentativa classificável: decisão administrativa deve definir pódio ordenado, com justificativa/auditoria e sem criar tempo fictício;
+- Sumô: campeão = vencedor da final, vice = perdedor da final, 3º = vencedor de disputa própria entre os perdedores das semifinais.
+
+A disputa de terceiro lugar, correção DEV auditável, estado derivado ELIMINADO, independência da tela Chaves e histórico/pódio consolidado em Resultados são correções necessárias antes de marcar o BLOCO 3 como CONCLUÍDO.
+
+
+## ETAPA 4 / BLOCO 3 — correções finais para re-smoke — 30/09/2026
+
+Novos fluxos de domínio:
+
+### Entrada manual DEV
+
+`ManualCompetitionEntryService` implementa:
+
+```text
+UserAccount PARTICIPANTE ativa
+→ Competitor existente ou criado/vinculado na Team escolhida
+→ Robot criado na Team
+→ Registration APROVADA
+→ RegistrationStatusHistory = ENTRADA_MANUAL
+```
+
+A operação exige DEV + justificativa e pode ocorrer com inscrições abertas/encerradas ou competição `EM_ANDAMENTO`, sem reabrir inscrições públicas.
+
+No Sumô, a inspeção continua obrigatória. No Follow, a nova inscrição pode entrar na sincronização das próximas chamadas.
+
+### Regeneração excepcional de chave
+
+V20 adiciona auditoria em `brackets` (`generation_reason`, `generated_by_user_id`).
+
+DEV pode regenerar durante `EM_ANDAMENTO` com justificativa somente enquanto a chave atual não tiver atividade competitiva real. A chave anterior vira histórica; nunca é apagada.
+
+### Terceiro lugar
+
+V21 adiciona `matches.match_type`:
+
+- `ELIMINATORIA`;
+- `TERCEIRO_LUGAR`.
+
+A geração cria a disputa de 3º para chaves com semifinais. Os perdedores das duas semifinais alimentam automaticamente seus slots. Correções seguras de semifinal também corrigem o participante correspondente na disputa de 3º.
+
+### Pódio Follow
+
+V22 amplia `follow_manual_results` com segundo e terceiro lugares. Ranking normal/extra usa as três primeiras posições; decisão administrativa exige pódio ordenado conforme quantidade de elegíveis.
+
+### Correção extrema DEV
+
+V23 audita correções de `match_results` com motivo, DEV e data/hora. A operação:
+
+- preserva os rounds originais;
+- altera o vencedor consolidado;
+- mantém o placar coerente;
+- corrige propagação/3º lugar quando seguro;
+- bloqueia se a dependência seguinte já iniciou.
+
+A bateria automatizada ganhou cobertura para entrada manual, regeneração excepcional, terceiro lugar, pódio manual e correção DEV.
+
+
+## Correções finais implementadas — aguardando re-smoke
+
+Após a bateria 1–56, foram implementadas as correções estruturais principais:
+
+- entrada manual DEV de participante/robô vinculada a conta PARTICIPANTE + equipe/competidor;
+- inscrição manual já aprovada e auditada;
+- Follow: novo robô entra nas próximas filas/tomadas após sincronização;
+- Sumô: novo robô exige inspeção antes de entrar em nova chave;
+- regeneração excepcional DEV de chave com justificativa e histórico, bloqueada após atividade competitiva real;
+- Chaves passou a exibir a árvore no próprio módulo;
+- correção excepcional DEV de resultado Sumô com justificativa, auditoria e proteção de dependências;
+- pódio completo em Resultados;
+- decisão administrativa Follow passou a aceitar 1º/2º/3º;
+- disputa de 3º lugar Sumô criada junto da chave e alimentada pelos perdedores das semifinais;
+- estado competitivo derivado (Campeão, Vice, 3º, Eliminado etc.) no Sumô;
+- melhorias anteriores de g/kg, juízes, BYE, filtros, chamada e bloqueio Follow fora de EM_ANDAMENTO.
+
+Estado: **CORREÇÕES IMPLEMENTADAS · RE-SMOKE PENDENTE**.
+
+
+## Revisão de identidade PARTICIPANTE — 30/09/2026
+
+Regra canônica revisada:
+
+- conta `PARTICIPANTE` representa pessoa competidora;
+- após associação a uma equipe deve existir exatamente um `Competitor` ligado à conta;
+- criação de equipe pelo participante cria também seu Competitor na mesma transação;
+- entrada manual DEV exige participante já associado a Competitor/equipe e deriva a equipe desse vínculo;
+- participante pode cadastrar instituição pelo Portal para não depender de catálogo prévio;
+- fluxo manual permanece exceção, não substitui o onboarding normal.
+
+Ingresso em equipe existente e aprovação do vínculo serão concluídos no BLOCO 4 e deverão criar o Competitor automaticamente.
+
+
+## Fronteira BLOCO 3 → BLOCO 4 — 30/09/2026
+
+O domínio de operação competitiva do BLOCO 3 está congelado. Convites, ingresso em equipe e responsabilidade de robôs passam ao BLOCO 4.
+
+BLOCO 4 deve consolidar:
+- convite/aceite e solicitação/aprovação de ingresso em equipe;
+- `PARTICIPANTE → Competitor → Team`;
+- vínculo N:N `Robot ↔ Competitor responsável`;
+- visibilidade "Meus robôs" por responsabilidade, enquanto o líder administra todos;
+- associação de responsáveis pelo líder ao criar/editar robôs;
+- inscrição usando os responsáveis como sugestão inicial, sem confundir responsabilidade permanente com competidores daquela Registration.
+
+O cadastro manual DEV permanece apenas como contingência operacional descoberta no BLOCO 3.
+
+
+## BLOCO 4 iniciado — 01/10/2026
+
+V24 adiciona:
+- `team_membership_requests`;
+- `robot_responsibles`.
+
+4.1 implementado:
+- CONVITE líder → participante;
+- SOLICITACAO participante → equipe;
+- aceite/aprovação cria/reaproveita Competitor vinculado à UserAccount e Team;
+- conta já associada a outra equipe é bloqueada.
+
+4.2 base implementada:
+- RobotResponsible;
+- criador do robô vira responsável inicial;
+- líder pode definir responsáveis;
+- autorização/visibilidade do membro passa a usar responsabilidade por robô.
+
+
+---
+
+## ETAPA 4 / BLOCO 4.3 — inscrição normal pelo Portal — 01/10/2026
+
+### Regra consolidada
+
+```text
+Team possui Robot
+Robot possui RobotResponsible (N:N com Competitor)
+
+RobotResponsible
+≠
+Registration.competitors
+```
+
+Responsabilidade permanente pelo robô continua separada da composição específica de uma inscrição.
+
+Fluxo normal:
+
+```text
+PARTICIPANTE associado a Team
+→ escolhe Competition com inscrições abertas
+→ escolhe Robot gerenciável
+→ escolhe Category
+→ responsáveis permanentes vêm como sugestão inicial
+→ ajusta competidores ativos da mesma Team
+→ envia
+→ Registration = PENDENTE
+→ GESTAO aprova/rejeita
+→ somente APROVADA vira participação oficial
+```
+
+### Autorização
+
+`ParticipantPortalService.inscrever(...)` não exige mais que o usuário seja líder.
+
+Agora:
+
+- líder pode administrar qualquer Robot da própria Team;
+- membro comum pode administrar Robot quando possui `RobotResponsible` ativo;
+- estar apenas em `Registration.competitors` permite visualizar aquela participação, mas não concede administração permanente do Robot;
+- cancelamento, reativação e solicitação de cancelamento pelo Portal usam a mesma regra de administração do Robot.
+
+### Reuso do domínio existente
+
+O 4.3 não criou segundo fluxo de Registration.
+
+Continua usando `RegistrationService.criarPorParticipante(...)`, portanto permanecem centralizadas:
+
+- janela e estado de inscrições;
+- vínculo Robot → Team;
+- Competitor ativo e pertencente à Team;
+- ao menos um competidor;
+- duplicidade Competition + Category + Robot;
+- compatibilidade física do Sumô;
+- criação em `PENDENTE`;
+- histórico de status.
+
+O fluxo administrativo de aprovação/rejeição também não foi duplicado.
+
+### Listagem do membro
+
+Para membro comum, o Portal reúne e deduplica:
+
+1. Registration em que sua UserAccount está entre os competidores específicos;
+2. Registration dos Robots pelos quais possui responsabilidade permanente.
+
+O líder continua recebendo todas as inscrições da equipe.
+
+### Testes automatizados adicionados
+
+`ParticipantPortalServiceTest`:
+- membro responsável pode enviar inscrição sem ser líder;
+- listagem reúne participação específica + responsabilidade por Robot sem duplicar.
+
+`AccessPolicyServiceTest`:
+- responsável permanente pode administrar a Registration do Robot;
+- membro sem responsabilidade permanente não pode administrá-la.
+
+As suítes pré-existentes de `RegistrationService` preservam cobertura de PENDENTE e invariantes de equipe.
+
+### Profile `testdata` do 4.3
+
+O profile passou a usar banco dedicado:
+
+```text
+rascomp_b4_validation
+```
+
+Initializer:
+
+```text
+Block4PortalValidationDataInitializer
+```
+
+Contas:
+
+```text
+dev.b4@rascomp.local
+gestao.b4@rascomp.local
+lider.b4@rascomp.local
+membro.b4@rascomp.local
+senha: Rascomp@2026
+```
+
+Cenário principal:
+
+- Competition `ETAPA 4 · BLOCO 4.3 · INSCRIÇÕES`, vigente e com inscrições abertas;
+- Team `B4 · Equipe Portal`;
+- `B4 · Vespa` sob responsabilidade de Membro B4 + Apoio B4;
+- `B4 · Atlas` disponível ao líder, mas não ao membro comum;
+- categorias Follow, Mini Sumô RC e Sumô 3 kg RC;
+- nenhuma Registration pré-criada.
+
+O initializer do BLOCO 3 permanece no código, porém desativado no profile atual.
+
+### CI do 4.3
+
+O job de MySQL/testdata foi atualizado para exercitar o fluxo real:
+
+- login de membro/líder/GESTAO;
+- visibilidade diferente de Robots;
+- criação via endpoint PARTICIPANTE;
+- status `PENDENTE`;
+- ausência na API pública antes da aprovação;
+- bloqueio de duplicidade;
+- aprovação pelo fluxo administrativo;
+- presença na API pública somente após `APROVADA`.
+
+Estado documental deste checkpoint histórico: **supersedido pela revisão canônica de 01/10/2026 antes da validação manual. BLOCO 4.3 foi reaberto; BLOCO 4.4 continua não iniciado.**
+
+
+---
+
+## Revisão canônica 01/10/2026 — inscrição pessoal + inscrição de Robot
+
+O modelo anterior de inscrição direta do Robot foi **supersedido antes da validação manual**.
+
+Agora existem duas aprovações independentes por Competition:
+
+```text
+Competitor → ParticipantCompetitionRegistration
+Robot      → Registration
+```
+
+Fluxo pessoal:
+
+```text
+Competitor
+→ Competition
+→ dados
+→ comprovante
+→ PENDENTE
+→ GESTAO aprova/rejeita
+```
+
+Fluxo do Robot:
+
+```text
+Robot
+→ Competition + Category
+→ 1+ competidores
+→ comprovante
+→ PENDENTE
+→ GESTAO aprova/rejeita
+```
+
+Invariantes:
+
+- pertencer à Team não depende de estar inscrito em Competition;
+- ser `RobotResponsible` não depende de estar inscrito em Competition;
+- cadastrar Robot não exige aprovação administrativa;
+- `Registration.competitors` deve conter apenas `RobotResponsible` ativos daquele Robot;
+- liderança da Team concede administração do cadastro, mas não responsabilidade competitiva automática;
+- o líder só pode constar como competidor de um Robot quando estiver explicitamente ligado a ele como `RobotResponsible`;
+- a inscrição do Robot pode ser enviada enquanto inscrições pessoais ainda estão `PENDENTE`;
+- a inscrição do Robot pode ser `APROVADA` quando existir ao menos um responsável pessoalmente `APROVADO` na mesma Competition; responsáveis `PENDENTE` não bloqueiam outro elegível;
+- aprovação pessoal e aprovação do Robot nunca propagam automaticamente uma para a outra;
+- comprovantes e auditorias das duas inscrições permanecem independentes.
+
+### UX da GESTAO
+
+Ao aprovar Competitor, mostrar os Robots pelos quais ele é responsável e o status das inscrições desses Robots na mesma Competition.
+
+Ao aprovar Robot, mostrar seus competidores selecionados e, para cada um, o status da inscrição pessoal na mesma Competition.
+
+A interface deve destacar dependências. O backend deve bloquear qualquer aprovação inconsistente mesmo se o request for adulterado.
+
+Exemplo bloqueado:
+
+```text
+Robot Vespa
+competidor selecionado = João
+João não é RobotResponsible do Vespa
+→ aprovação proibida
+```
+
+Exemplo bloqueado:
+
+```text
+Robot Vespa
+competidor = Gabriel
+Gabriel é RobotResponsible
+inscrição pessoal de Gabriel = PENDENTE
+→ Robot permanece PENDENTE
+```
+
+O fluxo manual DEV continua exceção auditável e deve formalizar as relações reais necessárias.
+
+Estado após esta revisão:
+
+```text
+BLOCO 4.3 = REABERTO / EM IMPLEMENTAÇÃO
+BLOCO 4.4 = NÃO INICIADO
+```
+
+
+### Cardinalidade N:N Robot ↔ Competitor
+
+A relação de responsabilidade é obrigatoriamente **muitos-para-muitos**:
+
+```text
+1 Robot
+→ 1..N RobotResponsible
+
+1 Competitor
+→ 0..N Robots como RobotResponsible
+```
+
+Exemplos válidos:
+
+```text
+Vespa
+→ Gabriel
+→ João
+→ Maria
+
+Gabriel
+→ Vespa
+→ Atlas
+→ LineBot
+```
+
+As exigências de aprovação definem apenas o mínimo necessário para uma participação válida; elas **não limitam** Robot a um único Competitor nem Competitor a um único Robot.
+
+Regras de alteração posterior:
+
+- um Robot já cadastrado pode receber novos `RobotResponsible`;
+- um Competitor pode ser associado como responsável a vários Robots da própria Team;
+- antes do início da Competition, alterações feitas pelo líder em `RobotResponsible` devem refletir automaticamente na composição competitiva da Registration correspondente;
+- uma `Registration` já `APROVADA` **não volta para PENDENTE** só porque a composição foi ajustada antes da competição;
+- novo responsável com inscrição pessoal `APROVADA` na mesma Competition pode entrar automaticamente em `Registration.competitors`;
+- novo responsável cuja inscrição pessoal ainda esteja `PENDENTE` pode existir como `RobotResponsible`, mas só passa a integrar oficialmente a composição competitiva quando sua inscrição pessoal ficar `APROVADA`;
+- remover um responsável antes do início da competição remove automaticamente essa pessoa da composição competitiva daquela Registration;
+- a GESTAO recebe aviso/auditoria da alteração de composição e pode **vetar a mudança competitiva específica**, com justificativa, sem obrigar o Robot inteiro a passar por nova aprovação;
+- o veto da GESTAO afeta a associação competitiva daquela Competition/Registration; não precisa apagar o vínculo permanente `RobotResponsible`, que pode continuar válido para outras competições;
+- quando a Competition atingir `EM_ANDAMENTO` ou sua data de início, a composição `Registration.competitors` fica congelada no fluxo normal;
+- depois desse bloqueio, líder/participantes não podem ficar trocando responsáveis competitivos durante a prova.
+
+Portanto:
+
+```text
+RobotResponsible
+= vínculo permanente N:N
+
+Registration.competitors
+= recorte competitivo daquele Robot naquela Competition/Category
+```
+
+
+---
+
+## Checkpoint 01/10/2026 — BLOCO 4.3 / inscrição dupla e N:N implementados
+
+> **Histórico superado pelas regras V26/V27.** A fonte funcional atual está no frontend `docs/REGRAS_PARTICIPANTE.md`.
+
+O 4.3 foi reaberto antes da validação manual e a implementação principal foi alinhada ao fluxo real definido com o cliente.
+
+### Migration V25
+
+`V25__participant_competition_registration_and_payment_receipts.sql` adiciona:
+
+- `participant_competition_registrations`;
+- unicidade `Competition + Competitor`;
+- status pessoal `PENDENTE | APROVADA | REJEITADA | CANCELADA`;
+- solicitante/revisor/data/motivo;
+- metadata do comprovante pessoal;
+- metadata do comprovante da Registration do Robot.
+
+Migrations V1–V25 permanecem imutáveis. Próxima migration estrutural: **V27+**.
+
+### Inscrição pessoal
+
+Fluxo:
+
+```text
+PARTICIPANTE associado a Competitor/Team
+→ Competition com inscrições abertas
+→ comprovante
+→ ParticipantCompetitionRegistration PENDENTE
+→ GESTAO aprova/rejeita
+```
+
+A associação à Team e a responsabilidade por Robot continuam independentes desta aprovação.
+
+### Inscrição de Robot
+
+Fluxo normal:
+
+```text
+Robot
+→ Competition + Category
+→ selecionar 1..N RobotResponsible
+→ comprovante próprio
+→ Registration PENDENTE
+→ GESTAO analisa
+```
+
+A aprovação exige simultaneamente:
+
+- pelo menos um competidor;
+- todos os `Registration.competitors` são `RobotResponsible` ativos do Robot;
+- todos possuem inscrição pessoal `APROVADA` na mesma Competition;
+- comprovante do Robot presente;
+- invariantes anteriores de Registration preservadas.
+
+A Registration pode ser enviada enquanto as inscrições pessoais estão PENDENTE; apenas a aprovação fica bloqueada.
+
+### Relação N:N
+
+```text
+Robot → 1..N RobotResponsible
+Competitor → 0..N Robots
+```
+
+O cenário QA passa a provar os dois sentidos:
+
+```text
+Vespa → Membro B4 + Apoio B4
+Apoio B4 → Vespa + Atlas
+```
+
+Adicionar responsabilidade permanente não reescreve uma Registration existente.
+
+Remover um `RobotResponsible` usado em Registration `PENDENTE` ou `APROVADA` é bloqueado até regularização.
+
+O fluxo manual DEV formaliza a responsabilidade escolhida antes de criar a entrada competitiva excepcional.
+
+### Aprovação cruzada na GESTAO
+
+A interface administrativa passa a mostrar:
+
+```text
+Competitor → Robots associados + status das inscrições dos Robots
+Robot → Competitors selecionados + status da inscrição pessoal
+```
+
+Os comprovantes da pessoa e do Robot são independentes e podem ser consultados pela GESTAO.
+
+O frontend antecipa bloqueios para UX, mas o backend repete as validações no momento da aprovação.
+
+### Storage de comprovantes
+
+Storage local atual:
+
+```text
+./uploads/registration-receipts
+```
+
+Formatos aceitos:
+
+- PDF;
+- JPEG;
+- PNG;
+- WEBP.
+
+Limite: 10 MB.
+
+O diretório `uploads/` já permanece ignorado pelo Git.
+
+### QA automatizado preparado
+
+O profile `testdata` usa:
+
+```text
+membro.b4@rascomp.local → Vespa
+apoio.b4@rascomp.local  → Vespa + Atlas
+lider.b4@rascomp.local  → administra a Team
+gestao.b4@rascomp.local → aprovação
+```
+
+O job `portal-testdata` foi atualizado para:
+
+1. criar duas inscrições pessoais PENDENTE com comprovante;
+2. criar Vespa PENDENTE com dois RobotResponsible;
+3. comprovar que aprovação precoce do Robot falha;
+4. aprovar as duas pessoas;
+5. confirmar contexto cruzado;
+6. aprovar o Robot;
+7. confirmar que apenas APROVADA entra na API pública.
+
+Também foram adicionados/adaptados testes unitários e de fluxo para inscrição pessoal, comprovante, responsabilidade e remoção protegida.
+
+### Estado
+
+```text
+BLOCO 4.3
+→ implementação principal adiantada
+→ build/CI atual ainda NÃO confirmado
+→ validação manual ainda NÃO realizada
+
+BLOCO 4.4
+→ NÃO INICIADO
+```
+
+A bateria manual canônica está em `docs/VALIDACAO_ETAPA4_BLOCO4.md`.
+
+
+### Sequenciamento obrigatório — inscrição pessoal antes do robô
+
+Para garantir cadastro separado e em ordem sem obrigar o participante a aguardar análise administrativa:
+
+```text
+1. PARTICIPANTE envia Minha inscrição
+   → ParticipantCompetitionRegistration = PENDENTE
+
+2. A existência da inscrição pessoal PENDENTE ou APROVADA
+   → libera Inscrever robô
+
+3. PARTICIPANTE envia Registration do Robot
+   → Registration = PENDENTE
+
+4. GESTAO analisa
+   → primeiro aprova as pessoas
+   → depois pode aprovar o Robot
+```
+
+Regras:
+
+- antes de existir inscrição pessoal `PENDENTE` ou `APROVADA` na Competition, o botão de inscrição de Robot fica bloqueado;
+- não é necessário aguardar a aprovação pessoal para criar a inscrição do Robot;
+- cada responsável considerado para a competição precisa possuir inscrição pessoal na mesma Competition;
+- para aprovar o Robot, é suficiente existir **pelo menos um** responsável com inscrição pessoal `APROVADA`;
+- responsáveis `PENDENTE` não bloqueiam a aprovação do Robot, mas ainda não entram na composição oficial;
+- responsáveis `REJEITADA` ou `CANCELADA` não entram na composição oficial e também não bloqueiam o Robot enquanto existir pelo menos um responsável `APROVADA`;
+- inscrição pessoal `REJEITADA` ou `CANCELADA` não libera nova inscrição de Robot;
+- o backend repete todas essas validações, independentemente da interface.
+
+
+### Regra revisada — sincronização automática da composição competitiva
+
+A regra anterior que exigia nova aprovação completa do Robot após alteração de responsáveis foi descartada.
+
+Fluxo canônico:
+
+```text
+Competition ainda não iniciou
++
+líder altera RobotResponsible
+↓
+sistema sincroniza Registration.competitors automaticamente
+↓
+Registration APROVADA permanece APROVADA
+↓
+GESTAO recebe aviso/auditoria
+↓
+GESTAO pode vetar a mudança específica com justificativa
+```
+
+Elegibilidade:
+
+- responsável com inscrição pessoal `APROVADA` entra automaticamente na composição oficial;
+- responsável com inscrição pessoal `PENDENTE` pode permanecer associado ao Robot, porém só entra oficialmente na composição competitiva quando sua inscrição pessoal for aprovada;
+- responsável removido antes do início da competição sai automaticamente da composição daquela Registration;
+- se a composição ficar sem nenhum competidor elegível, aplicam-se as regras de rejeição/regularização da Registration do Robot.
+
+Limite temporal:
+
+```text
+Competition.status == EM_ANDAMENTO
+OU
+data atual >= Competition.dataInicio
+
+→ Registration.competitors congelado
+→ líder/participantes não alteram composição pelo fluxo normal
+```
+
+A Gestão não precisa reaprender/reaprovar o Robot inteiro a cada ajuste. O controle é por **notificação + auditoria + veto justificado da alteração específica**.
+
+O veto administrativo é contextual à Competition/Registration. Ele não precisa apagar o vínculo permanente `RobotResponsible`, pois esse vínculo pode continuar relevante para futuras competições.
+
+
+### Regra consolidada — aprovação do Robot com elegibilidade parcial
+
+A aprovação da Registration do Robot **não exige aprovação pessoal de todos os RobotResponsible**.
+
+Exemplo:
+
+```text
+Vespa
+├─ Gabriel → REJEITADA
+├─ João    → PENDENTE
+└─ Maria   → APROVADA
+```
+
+Resultado:
+
+```text
+Maria é responsável elegível ✅
+→ Vespa pode ser APROVADO
+```
+
+Composição oficial naquele instante:
+
+```text
+Registration.competitors
+└─ Maria
+```
+
+Gabriel permanece fora da composição oficial porque sua inscrição pessoal foi rejeitada.
+
+João continua associado ao Robot como `RobotResponsible`, porém não integra a composição oficial enquanto sua inscrição pessoal estiver `PENDENTE`. Se João for aprovado antes do início da Competition, ele entra automaticamente na composição e a GESTAO recebe aviso/auditoria da alteração.
+
+Regra de decisão:
+
+```text
+>= 1 responsável com inscrição pessoal APROVADA
+→ Robot pode ser APROVADO
+
+0 APROVADOS + existe ao menos 1 PENDENTE
+→ Robot permanece PENDENTE
+
+0 APROVADOS + todos os responsáveis REJEITADOS/CANCELADOS
+→ Robot Registration é REJEITADA automaticamente
+→ motivo: sem responsável elegível
+```
+
+A rejeição pessoal nunca remove automaticamente o vínculo permanente `RobotResponsible`; ela apenas retira a elegibilidade naquela Competition.
+
+
+---
+
+## Checkpoint canônico 01/10/2026 — regras do participante / V26
+
+Fonte funcional específica cross-repo: frontend `docs/REGRAS_PARTICIPANTE.md`.
+
+Implementação consolidada no BLOCO 4.3:
+
+- V25 separa inscrição individual e Registration do Robot, com comprovantes independentes;
+- V26 adiciona `Robot.createdByUser`, auditoria/veto de composição, histórico da inscrição individual e histórico de liderança;
+- membro comum só inicia/administra Registration de Robot que ele cadastrou;
+- líder pode iniciar/administra Registration de qualquer Robot da própria Team;
+- responsabilidade N:N não transfere ownership da Registration;
+- Minha inscrição `PENDENTE` ou `APROVADA` libera o fluxo de Robot sem esperar análise;
+- composição oficial do Robot é derivada automaticamente dos responsáveis elegíveis;
+- **um único responsável pessoalmente APROVADO já basta para o Robot poder ser aprovado**;
+- responsáveis `PENDENTE` não bloqueiam outro aprovado;
+- aprovação posterior de responsável antes da prova o adiciona automaticamente à composição;
+- mudança de responsáveis antes da prova não devolve Robot aprovado para análise completa quando ainda existe elegível;
+- GESTAO recebe alteração de composição e pode MANTER/VETAR a mudança específica, com auditoria e justificativa no veto;
+- nova proposta posterior a veto é permitida;
+- se nenhum elegível existir, Robot permanece PENDENTE quando houver caso recuperável ou é REJEITADO automaticamente quando todos forem inelegíveis;
+- Robot rejeitado pode ser conscientemente reinscrito pelo líder/criador quando as condições voltarem a ser válidas;
+- líder atual não pode sofrer rejeição pessoal definitiva sem correção ou transferência DEV;
+- `CORRECAO_SOLICITADA` permite reenvio sem perder Team;
+- DEV pode transferir liderança para participante ativo da mesma Team com inscrição individual PENDENTE/APROVADA, com histórico;
+- durante Competition iniciada, mudanças normais de responsáveis/composição ficam bloqueadas.
+
+Bateria canônica: `docs/VALIDACAO_ETAPA4_BLOCO4.md`.
+
+Estado:
+
+```text
+4.3 → IMPLEMENTAÇÃO REVISADA / AGUARDANDO BUILD + VALIDAÇÃO MANUAL
+4.4 → NÃO INICIADO
+```
+
+Não considerar suíte/build verdes sem execução real nos heads atuais.
+
+
+---
+
+## Checkpoint pós-bateria manual — 03/10/2026
+
+A bateria principal do BLOCO 4.3 foi executada até o Teste 40. Os testes 35–40 foram validados após correção do isolamento do profile `testdata`.
+
+Os achados da bateria geraram uma rodada focal de correções:
+
+- V27 adiciona `registrations.robot_description` para preservar a descrição enviada com a inscrição do Robot;
+- criador/líder podem editar nome e descrição simples do Robot;
+- cadastro de Robot pode ser removido/desativado com segurança quando não houver Registration PENDENTE/APROVADA;
+- duplicidade de nome dentro da mesma Team permanece protegida por serviço + constraint;
+- seção de inscrições de Robot e alertas receberam maior destaque;
+- cards da GESTAO agora identificam explicitamente métricas de **Robots**;
+- filtro de Competition foi movido para o topo da página Inscrições;
+- aba do navegador passou a usar título por perfil;
+- líder da Team passou a ser identificado no Portal, Competidores e análise de inscrição pessoal;
+- reinclusão de responsável gera novo evento de composição;
+- veto de remoção restaura `RobotResponsible`;
+- veto de adição desfaz a associação;
+- mudanças não vetadas não exigem aprovação: são consolidadas automaticamente ao iniciar a Competition;
+- edição comum da Competition não altera status;
+- ciclo operacional obrigatório permanece `INSCRICOES_ABERTAS → INSCRICOES_ENCERRADAS → EM_ANDAMENTO`;
+- entrada manual DEV em `EM_ANDAMENTO` continua excepcional, justificada e auditada, exigindo PARTICIPANTE já associado a Team;
+- criação administrativa completa de pessoa/competidor sem vínculo prévio continua no roadmap da ferramenta DEV ampliada.
+
+Validação focal vigente: frontend `docs/VALIDACAO_ETAPA4_BLOCO4.md`, seção **Bateria curta de regressão dos achados (R1–R15)**.
+
+Estado:
+
+```text
+BLOCO 4.3
+→ bateria 1–40 executada
+→ correções pós-bateria implementadas
+→ AGUARDANDO regressão R1–R15 + build/testes automatizados
+
+BLOCO 4.4
+→ NÃO INICIADO
+```
+
+Migrations atuais: **V1–V27**. Próxima migration estrutural: **V28+**.
+
+
+### Ajustes finais pós-regressão — 03/10/2026
+
+- Entrada manual DEV agora suporta conta PARTICIPANTE existente ainda sem Competitor/Team.
+- DEV seleciona Team; o backend cria o vínculo competitivo e uma ParticipantCompetitionRegistration APROVADA com histórico.
+- O fluxo de Robot avulso reaproveita a mesma resolução de vínculo e garante também a inscrição pessoal manual antes de Robot + Registration.
+- Participante já vinculado não pode ser transferido silenciosamente de Team pela entrada manual.
+- A exceção funciona em Competition operável, inclusive EM_ANDAMENTO para DEV.
+- Essa operação não altera automaticamente Registration.competitors já congelado durante a prova.
+
+
+---
+
+## Encerramento final da ETAPA 4 — 03/10/2026
+
+```text
+ETAPA 4             ✅ CONCLUÍDA / VALIDADA / MERGE AUTORIZADO
+Bateria Portal      ✅ 1–40
+Regressão final     ✅ R1–R17
+Migrations          V1–V27
+Próxima migration   V28+
+```
+
+Domínio final validado:
+- inscrição individual separada de Registration do Robot;
+- RobotResponsible N:N separado de ownership;
+- elegibilidade parcial para aprovação de Robot;
+- composição automática + veto auditável;
+- congelamento no início da Competition;
+- proteção/troca de líder;
+- edição/remoção segura de Robot;
+- entrada manual DEV de participante e Robot;
+- conta PARTICIPANTE sem Team pode receber vínculo Competitor → Team pelo fluxo excepcional;
+- entrada tardia não altera silenciosamente composição congelada.
+
+Fonte funcional cross-repo: frontend `docs/REGRAS_PARTICIPANTE.md`.
+
+Histórico de QA: frontend `docs/VALIDACAO_ETAPA4_BLOCO4.md`.
+
+O antigo 4.4 foi retirado da ETAPA 4. O próximo trabalho de Landing será consolidado futuramente com a entrega pública já prevista, após decisão específica de roadmap.
+
+Não declarar CI remoto verde: não havia execução nova registrada do GitHub Actions nos heads finais.

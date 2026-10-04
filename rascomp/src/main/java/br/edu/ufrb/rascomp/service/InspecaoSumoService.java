@@ -13,6 +13,7 @@ import br.edu.ufrb.rascomp.model.InspecaoSumo;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.ConfigSumoRepository;
 import br.edu.ufrb.rascomp.repository.InspecaoSumoRepository;
@@ -27,10 +28,13 @@ public class InspecaoSumoService {
     private final InspecaoSumoRepository inspecaoRepository;
     private final RegistrationRepository registrationRepository;
     private final ConfigSumoRepository configSumoRepository;
+    private final RegistrationStatusHistoryService statusHistoryService;
+    private final CompetitionContextService competitionContextService;
 
     @Transactional
     public InspecaoSumoDTO registrar(InspecaoSumoDTO dto) {
         Registration registration = buscarRegistration(dto.getRegistrationId());
+        exigirContexto(registration);
         validarRegistration(registration);
 
         ConfigSumo config = buscarConfig(registration);
@@ -59,8 +63,15 @@ public class InspecaoSumoService {
         InspecaoSumo salva = inspecaoRepository.save(inspecao);
 
         if (!aprovada && numeroTentativa == config.getMaxTentativasInspecao()) {
+            StatusRegistration statusAnterior = registration.getStatus();
             registration.setStatus(StatusRegistration.DESCLASSIFICADA);
-            registrationRepository.save(registration);
+            Registration atualizada = registrationRepository.save(registration);
+            statusHistoryService.registrar(
+                    atualizada,
+                    statusAnterior,
+                    StatusRegistration.DESCLASSIFICADA,
+                    RegistrationStatusChangeType.DESCLASSIFICACAO,
+                    "Limite máximo de tentativas de inspeção de Sumô atingido sem aprovação.");
         }
 
         return new InspecaoSumoDTO(salva);
@@ -68,12 +79,15 @@ public class InspecaoSumoService {
 
     @Transactional(readOnly = true)
     public InspecaoSumoDTO buscarPorId(Long id) {
-        return new InspecaoSumoDTO(buscarInspecao(id));
+        InspecaoSumo inspecao = buscarInspecao(id);
+        exigirContexto(inspecao.getRegistration());
+        return new InspecaoSumoDTO(inspecao);
     }
 
     @Transactional(readOnly = true)
     public List<InspecaoSumoDTO> listarPorInscricao(Long registrationId) {
-        buscarRegistration(registrationId);
+        Registration registration = buscarRegistration(registrationId);
+        exigirContexto(registration);
         return inspecaoRepository.findByRegistrationIdOrderByNumeroTentativaAsc(registrationId)
                 .stream()
                 .map(InspecaoSumoDTO::new)
@@ -81,8 +95,21 @@ public class InspecaoSumoService {
     }
 
     @Transactional(readOnly = true)
+    public List<InspecaoSumoDTO> listarPorContexto(Long competitionId, Long categoryId) {
+        competitionContextService.exigirOperavel(competitionId);
+        return inspecaoRepository
+                .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
+                        competitionId,
+                        categoryId)
+                .stream()
+                .map(InspecaoSumoDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public InspecaoSumoDTO buscarUltimaPorInscricao(Long registrationId) {
-        buscarRegistration(registrationId);
+        Registration registration = buscarRegistration(registrationId);
+        exigirContexto(registration);
         return inspecaoRepository.findFirstByRegistrationIdOrderByNumeroTentativaDesc(registrationId)
                 .map(InspecaoSumoDTO::new)
                 .orElseThrow(() -> new EntityNotFoundException("Nenhuma inspeção encontrada para a inscrição: " + registrationId));
@@ -91,6 +118,7 @@ public class InspecaoSumoService {
     @Transactional(readOnly = true)
     public boolean estaAptaParaCompetir(Long registrationId) {
         Registration registration = buscarRegistration(registrationId);
+        exigirContexto(registration);
         validarModalidade(registration);
         ConfigSumo config = buscarConfig(registration);
 
@@ -104,6 +132,10 @@ public class InspecaoSumoService {
         }
 
         return inspecaoRepository.existsByRegistrationIdAndAprovadaTrue(registrationId);
+    }
+
+    private void exigirContexto(Registration registration) {
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
     }
 
     private void validarRegistration(Registration registration) {

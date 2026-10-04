@@ -26,6 +26,9 @@ public class BracketDTO {
     private StatusBracket status;
     private Boolean ativo;
     private Boolean atual;
+    private String generationReason;
+    private Long generatedByUserId;
+    private String generatedByUserNome;
     private LocalDateTime dataCadastro;
 
     public BracketDTO(Bracket entity) {
@@ -38,6 +41,11 @@ public class BracketDTO {
         this.status = entity.getStatus();
         this.ativo = entity.getAtivo();
         this.atual = entity.getAtual();
+        this.generationReason = entity.getGenerationReason();
+        if (entity.getGeneratedByUser() != null) {
+            this.generatedByUserId = entity.getGeneratedByUser().getId();
+            this.generatedByUserNome = entity.getGeneratedByUser().getNome();
+        }
         this.dataCadastro = entity.getDataCadastro();
     }
 }

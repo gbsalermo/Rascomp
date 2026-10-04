@@ -49,6 +49,7 @@ class CompetitionIntegrityFlowTest extends IntegrationFlowTestSupport {
 
     @Test
     void falhaAoGerarChaveEmEstadoInvalidoNaoPodePersistirEstruturaParcial() {
+        organizacaoAutenticada();
         Competition competition = competition(StatusCompetition.INSCRICOES_ABERTAS);
         CompetitionCategory category = sumoCategory();
 

@@ -56,6 +56,13 @@ public class Bracket implements Serializable {
     @Column(nullable = false)
     private Boolean atual = true;
 
+    @Column(name = "generation_reason", length = 500)
+    private String generationReason;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "generated_by_user_id")
+    private UserAccount generatedByUser;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime dataCadastro;

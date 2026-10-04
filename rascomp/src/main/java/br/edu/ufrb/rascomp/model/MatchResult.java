@@ -50,6 +50,16 @@ public class MatchResult implements Serializable {
     @Column(length = 500)
     private String observacao;
 
+    @Column(name = "correction_reason", length = 500)
+    private String correctionReason;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "corrected_by_user_id")
+    private UserAccount correctedByUser;
+
+    @Column(name = "corrected_at")
+    private LocalDateTime correctedAt;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime dataCadastro;

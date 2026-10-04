@@ -35,6 +35,9 @@ public class RegistrationDTO {
     private Long robotId;
     private String robotNome;
 
+    @Size(max = 500)
+    private String robotDescricao;
+
     private List<Long> competitorIds;
     private List<String> competitorNomes;
 
@@ -44,10 +47,16 @@ public class RegistrationDTO {
     private String reviewedByUserNome;
     private LocalDateTime reviewedAt;
 
+    @Size(max = 500)
+    private String reviewReason;
+
     private StatusRegistration status;
 
     @Size(max = 500)
     private String observacao;
+
+    private Boolean comprovanteDisponivel;
+    private String comprovanteNome;
 
     private Boolean ativo;
     private LocalDateTime dataCadastro;
@@ -62,6 +71,7 @@ public class RegistrationDTO {
         this.teamNome = entity.getTeam().getNome();
         this.robotId = entity.getRobot().getId();
         this.robotNome = entity.getRobot().getNome();
+        this.robotDescricao = entity.getRobotDescription();
 
         this.competitorIds = entity.getCompetitors().stream()
                 .map(competitor -> competitor.getId())
@@ -81,8 +91,11 @@ public class RegistrationDTO {
         }
 
         this.reviewedAt = entity.getReviewedAt();
+        this.reviewReason = entity.getReviewReason();
         this.status = entity.getStatus();
         this.observacao = entity.getObservacao();
+        this.comprovanteDisponivel = entity.getPaymentReceiptStorageKey() != null;
+        this.comprovanteNome = entity.getPaymentReceiptOriginalName();
         this.ativo = entity.getAtivo();
         this.dataCadastro = entity.getDataCadastro();
     }

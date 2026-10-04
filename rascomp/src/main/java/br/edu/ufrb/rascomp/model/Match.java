@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoPartida;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
+import br.edu.ufrb.rascomp.model.Enum.TipoPartidaSumo;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -52,6 +53,10 @@ public class Match implements Serializable {
 
     @Column(nullable = false)
     private Integer ordem;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "match_type", nullable = false, length = 24)
+    private TipoPartidaSumo tipoPartida = TipoPartidaSumo.ELIMINATORIA;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "registration_a_id")

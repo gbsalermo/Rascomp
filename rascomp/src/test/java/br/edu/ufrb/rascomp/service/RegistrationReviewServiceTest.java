@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -29,6 +30,7 @@ import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
@@ -51,6 +53,8 @@ class RegistrationReviewServiceTest {
     @Mock private RobotRepository robotRepository;
     @Mock private CompetitorRepository competitorRepository;
     @Mock private UserAccountService userAccountService;
+    @Mock private CompetitionContextService competitionContextService;
+    @Mock private RegistrationStatusHistoryService statusHistoryService;
 
     @InjectMocks private RegistrationService service;
 
@@ -128,6 +132,12 @@ class RegistrationReviewServiceTest {
         assertEquals(StatusRegistration.APROVADA, result.getStatus());
         assertEquals(organizacao.getId(), registration.getReviewedByUser().getId());
         assertNotNull(registration.getReviewedAt());
+        verify(statusHistoryService).registrar(
+                registration,
+                StatusRegistration.PENDENTE,
+                StatusRegistration.APROVADA,
+                RegistrationStatusChangeType.APROVACAO,
+                null);
     }
 
     @Test
@@ -143,11 +153,31 @@ class RegistrationReviewServiceTest {
         UserAccount organizacao = user(92L, UserRole.DEV);
         when(userAccountService.buscarAtual()).thenReturn(organizacao);
 
-        service.atualizar(6L, dto(StatusRegistration.REJEITADA));
+        RegistrationDTO rejeicao = dto(StatusRegistration.REJEITADA);
+        rejeicao.setReviewReason("Documentação competitiva incompleta");
+        service.atualizar(6L, rejeicao);
 
         assertEquals(StatusRegistration.REJEITADA, registration.getStatus());
+        assertEquals("Documentação competitiva incompleta", registration.getReviewReason());
         assertEquals(92L, registration.getReviewedByUser().getId());
         assertNotNull(registration.getReviewedAt());
+        verify(statusHistoryService).registrar(
+                registration,
+                StatusRegistration.PENDENTE,
+                StatusRegistration.REJEITADA,
+                RegistrationStatusChangeType.REJEICAO,
+                "Documentação competitiva incompleta");
+    }
+
+    @Test
+    void rejeicaoDeveExigirMotivo() {
+        when(userAccountService.buscarAtual()).thenReturn(user(93L, UserRole.DEV));
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.atualizar(6L, dto(StatusRegistration.REJEITADA)));
+
+        assertEquals("Informe o motivo da rejeição da inscrição.", ex.getMessage());
     }
 
     private RegistrationDTO dto(StatusRegistration status) {

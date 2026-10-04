@@ -22,9 +22,11 @@ public class CompetitionJudgeService {
     private final CompetitionJudgeRepository judgeRepository;
     private final CompetitionRepository competitionRepository;
     private final UserAccountRepository userAccountRepository;
+    private final CompetitionContextService competitionContextService;
 
     @Transactional
     public CompetitionJudgeDTO criar(CompetitionJudgeDTO dto) {
+        competitionContextService.exigirOperavel(dto.getCompetitionId());
         Competition competition = buscarCompetition(dto.getCompetitionId());
         if (!Boolean.TRUE.equals(competition.getAtivo())) {
             throw new IllegalArgumentException("Não é possível cadastrar juiz em competição inativa.");
@@ -39,6 +41,7 @@ public class CompetitionJudgeService {
 
     @Transactional(readOnly = true)
     public List<CompetitionJudgeDTO> listar(Long competitionId, boolean apenasAtivos) {
+        competitionContextService.exigirOperavel(competitionId);
         buscarCompetition(competitionId);
         return (apenasAtivos
                 ? judgeRepository.findByCompetitionIdAndAtivoTrueOrderByNomeAsc(competitionId)
@@ -49,6 +52,7 @@ public class CompetitionJudgeService {
     @Transactional
     public CompetitionJudgeDTO atualizar(Long id, CompetitionJudgeDTO dto) {
         CompetitionJudge judge = buscarJudge(id);
+        competitionContextService.exigirOperavel(judge.getCompetition().getId());
         if (dto.getCompetitionId() != null && !judge.getCompetition().getId().equals(dto.getCompetitionId())) {
             throw new IllegalArgumentException("O juiz não pode ser transferido entre competições pelo fluxo comum.");
         }
@@ -60,6 +64,7 @@ public class CompetitionJudgeService {
     @Transactional
     public void desativar(Long id) {
         CompetitionJudge judge = buscarJudge(id);
+        competitionContextService.exigirOperavel(judge.getCompetition().getId());
         judge.setAtivo(false);
         judgeRepository.save(judge);
     }

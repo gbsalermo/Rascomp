@@ -27,6 +27,7 @@ import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.TipoPartidaSumo;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
@@ -45,7 +46,9 @@ class BracketGenerationScaleTest {
     @Mock private BracketIntegrityService bracketIntegrityService;
     @Mock private InspecaoSumoService inspecaoSumoService;
 
-    @InjectMocks private BracketGenerationService service;
+        @Mock private CompetitionContextService competitionContextService;
+
+@InjectMocks private BracketGenerationService service;
 
     private Competition competition;
     private CompetitionCategory category;
@@ -90,12 +93,15 @@ class BracketGenerationScaleTest {
 
         service.gerar(10L, 20L);
 
-        assertEquals(31, saved.size(), "Chave de 32 deve possuir 31 partidas no total");
-        assertEquals(16, countRound(1));
-        assertEquals(8, countRound(2));
-        assertEquals(4, countRound(3));
-        assertEquals(2, countRound(4));
-        assertEquals(1, countRound(5));
+        assertEquals(32, saved.size(), "Chave de 32 possui 31 eliminatórias + disputa de 3º lugar");
+        assertEquals(16, countEliminationRound(1));
+        assertEquals(8, countEliminationRound(2));
+        assertEquals(4, countEliminationRound(3));
+        assertEquals(2, countEliminationRound(4));
+        assertEquals(1, countEliminationRound(5));
+        assertEquals(1, saved.stream()
+                .filter(m -> m.getTipoPartida() == TipoPartidaSumo.TERCEIRO_LUGAR)
+                .count());
         assertEquals(0, saved.stream().filter(m -> m.getStatus() == StatusMatch.BYE).count());
         verify(bracketIntegrityService).validarEstadoParaGeracao(competition);
         verify(bracketProgressionService, never()).avancarBye(any(Match.class));
@@ -108,15 +114,21 @@ class BracketGenerationScaleTest {
 
         service.gerar(10L, 20L);
 
-        assertEquals(15, saved.size());
-        assertEquals(8, countRound(1));
+        assertEquals(16, saved.size());
+        assertEquals(8, countEliminationRound(1));
+        assertEquals(1, saved.stream()
+                .filter(m -> m.getTipoPartida() == TipoPartidaSumo.TERCEIRO_LUGAR)
+                .count());
         assertEquals(6, saved.stream().filter(m -> m.getStatus() == StatusMatch.BYE).count());
         assertEquals(2, saved.stream().filter(m -> m.getRodada() == 1 && m.getStatus() == StatusMatch.AGENDADA).count());
         verify(bracketProgressionService, org.mockito.Mockito.times(6)).avancarBye(any(Match.class));
     }
 
-    private long countRound(int round) {
-        return saved.stream().filter(m -> m.getRodada() == round).count();
+    private long countEliminationRound(int round) {
+        return saved.stream()
+                .filter(m -> m.getRodada() == round)
+                .filter(m -> m.getTipoPartida() != TipoPartidaSumo.TERCEIRO_LUGAR)
+                .count();
     }
 
     private List<Registration> registrations(int total) {

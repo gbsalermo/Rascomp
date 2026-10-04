@@ -85,12 +85,27 @@ public class Registration implements Serializable {
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
 
+    @Column(name = "review_reason", length = 500)
+    private String reviewReason;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private StatusRegistration status;
 
     @Column(length = 500)
     private String observacao;
+
+    @Column(name = "robot_description", length = 500)
+    private String robotDescription;
+
+    @Column(name = "payment_receipt_storage_key", length = 500)
+    private String paymentReceiptStorageKey;
+
+    @Column(name = "payment_receipt_original_name", length = 255)
+    private String paymentReceiptOriginalName;
+
+    @Column(name = "payment_receipt_content_type", length = 100)
+    private String paymentReceiptContentType;
 
     @Column(nullable = false)
     private Boolean ativo = true;

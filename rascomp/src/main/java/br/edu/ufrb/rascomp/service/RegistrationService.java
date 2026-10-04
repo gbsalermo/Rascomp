@@ -8,16 +8,20 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import br.edu.ufrb.rascomp.dto.RegistrationCompetitorContextDTO;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Competitor;
+import br.edu.ufrb.rascomp.model.ParticipantCompetitionRegistration;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
@@ -29,6 +33,7 @@ import br.edu.ufrb.rascomp.repository.InspecaoSumoRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
+import br.edu.ufrb.rascomp.repository.RobotResponsibleRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
 import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -38,20 +43,77 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RegistrationService {
     private final RegistrationRepository registrationRepository;
+    private final CompetitionContextService competitionContextService;
     private final CompetitionRepository competitionRepository;
     private final CompetitionCategoryRepository categoryRepository;
     private final TeamRepository teamRepository;
     private final RobotRepository robotRepository;
+    private final RobotResponsibleRepository robotResponsibleRepository;
     private final CompetitorRepository competitorRepository;
     private final UserAccountService userAccountService;
     private final TentativaSeguidorLinhaRepository tentativaRepository;
     private final AusenciaTomadaSeguidorLinhaRepository ausenciaFollowRepository;
     private final InspecaoSumoRepository inspecaoSumoRepository;
     private final MatchRepository matchRepository;
+    private final RegistrationStatusHistoryService statusHistoryService;
+    private final ParticipantCompetitionRegistrationService participantCompetitionRegistrationService;
+    private final RegistrationReceiptStorageService receiptStorageService;
+    private final RegistrationCompositionService compositionService;
 
     @Transactional
     public RegistrationDTO criar(RegistrationDTO dto) {
-        return criarInterno(dto, null, false);
+        competitionContextService.exigirOperavel(dto.getCompetitionId());
+        return criarInterno(dto, null, true);
+    }
+
+    @Transactional
+    public RegistrationDTO criarEntradaManualDev(
+            RegistrationDTO dto,
+            UserAccount dev,
+            String justificativa) {
+
+        if (dev == null || dev.getRole() != UserRole.DEV) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "A entrada manual de participante/robô é exclusiva do DEV.");
+        }
+
+        competitionContextService.exigirOperavel(dto.getCompetitionId());
+
+        Competition competition = buscarCompetition(dto.getCompetitionId());
+        CompetitionCategory category = buscarCategory(dto.getCategoryId());
+        Team team = buscarTeam(dto.getTeamId());
+        Robot robot = buscarRobot(dto.getRobotId());
+
+        validarEstadoParaEntradaManual(competition);
+        validarDisponibilidade(competition, category, team, robot);
+        validarRobotDaEquipe(robot, team);
+        validarCompatibilidadeFisicaSumo(competition, category, robot, null);
+        validarDuplicidade(dto, null);
+
+        Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, true);
+        validarCompetidoresResponsaveis(robot, competitors);
+        String motivo = normalizarObrigatorio(
+                justificativa,
+                "Informe a justificativa da entrada manual.");
+
+        Registration registration = new Registration();
+        preencher(registration, dto, competition, category, team, robot, competitors);
+        registration.setRequestedByUser(dev);
+        registration.setReviewedByUser(dev);
+        registration.setReviewedAt(LocalDateTime.now());
+        registration.setReviewReason(motivo);
+        registration.setStatus(StatusRegistration.APROVADA);
+        registration.setAtivo(true);
+
+        Registration salva = registrationRepository.save(registration);
+        statusHistoryService.registrar(
+                salva,
+                null,
+                StatusRegistration.APROVADA,
+                RegistrationStatusChangeType.ENTRADA_MANUAL,
+                motivo);
+
+        return new RegistrationDTO(salva);
     }
 
     @Transactional
@@ -59,7 +121,17 @@ public class RegistrationService {
         if (solicitante.getRole() != UserRole.PARTICIPANTE) {
             throw new IllegalArgumentException("Somente PARTICIPANTE pode enviar inscrição por este fluxo.");
         }
-        return criarInterno(dto, solicitante, true);
+
+        Competitor solicitanteCompetitor = competitorRepository
+                .findByUserAccountId(solicitante.getId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Associe sua conta a uma equipe antes de inscrever um robô."));
+
+        participantCompetitionRegistrationService.exigirInscricaoIniciada(
+                dto.getCompetitionId(),
+                solicitanteCompetitor.getId());
+
+        return criarInterno(dto, solicitante, false);
     }
 
     private RegistrationDTO criarInterno(
@@ -78,14 +150,29 @@ public class RegistrationService {
         validarCompatibilidadeFisicaSumo(competition, category, robot, null);
         validarDuplicidade(dto, null);
 
-        Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, exigirCompetidor);
+        Set<Competitor> competitors;
+        if (solicitante != null && solicitante.getRole() == UserRole.PARTICIPANTE) {
+            competitors = compositionService.prepararComposicaoInicial(
+                    competition.getId(),
+                    robot.getId());
+        } else {
+            competitors = buscarCompetidores(dto.getCompetitorIds(), team, exigirCompetidor);
+            validarCompetidoresResponsaveis(robot, competitors);
+        }
 
         Registration registration = new Registration();
         preencher(registration, dto, competition, category, team, robot, competitors);
         registration.setRequestedByUser(solicitante);
         registration.setStatus(StatusRegistration.PENDENTE);
         registration.setAtivo(true);
-        return new RegistrationDTO(registrationRepository.save(registration));
+        Registration salva = registrationRepository.save(registration);
+        statusHistoryService.registrar(
+                salva,
+                null,
+                StatusRegistration.PENDENTE,
+                RegistrationStatusChangeType.CRIACAO,
+                null);
+        return new RegistrationDTO(salva);
     }
 
     @Transactional(readOnly = true)
@@ -115,12 +202,107 @@ public class RegistrationService {
     }
 
     @Transactional(readOnly = true)
+    public List<RegistrationDTO> listarPorEquipeERobos(Long teamId, List<Long> robotIds) {
+        buscarTeam(teamId);
+        if (robotIds == null || robotIds.isEmpty()) {
+            return List.of();
+        }
+        return registrationRepository
+                .findByTeamIdAndRobotIdInOrderByDataCadastroDesc(teamId, robotIds)
+                .stream()
+                .map(RegistrationDTO::new)
+                .toList();
+    }
+
+    @Transactional
+    public RegistrationDTO anexarComprovantePorParticipante(Long id, MultipartFile comprovante) {
+        Registration registration = buscarRegistration(id);
+        if (registration.getStatus() != StatusRegistration.PENDENTE) {
+            throw new IllegalArgumentException(
+                    "O comprovante só pode ser enviado enquanto a inscrição do robô estiver PENDENTE.");
+        }
+
+        RegistrationReceiptStorageService.StoredReceipt receipt = receiptStorageService.armazenar(
+                "robo",
+                registration.getCompetition().getId(),
+                registration.getId(),
+                comprovante);
+
+        if (registration.getPaymentReceiptStorageKey() != null) {
+            receiptStorageService.remover(registration.getPaymentReceiptStorageKey());
+        }
+
+        registration.setPaymentReceiptStorageKey(receipt.storageKey());
+        registration.setPaymentReceiptOriginalName(receipt.originalFilename());
+        registration.setPaymentReceiptContentType(receipt.contentType());
+        return new RegistrationDTO(registrationRepository.save(registration));
+    }
+
+    @Transactional(readOnly = true)
+    public List<RegistrationCompetitorContextDTO> contextoCompetidores(Long id) {
+        Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
+
+        java.util.Map<Long, Competitor> relacionados = new java.util.LinkedHashMap<>();
+        robotResponsibleRepository
+                .findByRobotIdAndAtivoTrueOrderByCompetitorNomeAsc(registration.getRobot().getId())
+                .forEach(link -> relacionados.put(link.getCompetitor().getId(), link.getCompetitor()));
+        registration.getCompetitors()
+                .forEach(competitor -> relacionados.putIfAbsent(competitor.getId(), competitor));
+
+        return relacionados.values().stream()
+                .map(competitor -> {
+                    ParticipantCompetitionRegistration pessoal =
+                            participantCompetitionRegistrationService.findByCompetitionAndCompetitor(
+                                    registration.getCompetition().getId(),
+                                    competitor.getId());
+
+                    return new RegistrationCompetitorContextDTO(
+                            competitor.getId(),
+                            competitor.getNome(),
+                            robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(
+                                    registration.getRobot().getId(),
+                                    competitor.getId()),
+                            registration.getCompetitors().contains(competitor),
+                            pessoal == null ? null : pessoal.getId(),
+                            pessoal == null ? null : pessoal.getStatus());
+                })
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public RegistrationReceiptStorageService.ReceiptFile comprovanteAdministrativo(Long id) {
+        Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
+        return carregarComprovante(registration);
+    }
+
+    @Transactional(readOnly = true)
+    public RegistrationReceiptStorageService.ReceiptFile comprovanteDoParticipante(Long id) {
+        Registration registration = buscarRegistration(id);
+        UserAccount atual = userAccountService.buscarAtual();
+        boolean lider = registration.getTeam().getResponsibleUser() != null
+                && registration.getTeam().getResponsibleUser().getId().equals(atual.getId());
+        boolean criador = registration.getRobot().getCreatedByUser() != null
+                && registration.getRobot().getCreatedByUser().getId().equals(atual.getId());
+
+        if (!lider && !criador) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Você não pode acessar o comprovante desta inscrição.");
+        }
+        return carregarComprovante(registration);
+    }
+
+    @Transactional(readOnly = true)
     public RegistrationDTO buscarPorId(Long id) {
-        return new RegistrationDTO(buscarRegistration(id));
+        Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
+        return new RegistrationDTO(registration);
     }
 
     @Transactional(readOnly = true)
     public List<RegistrationDTO> listarPorCompeticao(Long competitionId) {
+        competitionContextService.exigirOperavel(competitionId);
         buscarCompetition(competitionId);
         return registrationRepository.findByCompetitionIdOrderByDataCadastroDesc(competitionId)
                 .stream().map(RegistrationDTO::new).toList();
@@ -135,6 +317,7 @@ public class RegistrationService {
     @Transactional
     public RegistrationDTO atualizar(Long id, RegistrationDTO dto) {
         Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
         validarEdicaoComum(registration, dto);
 
         Competition competition = buscarCompetition(dto.getCompetitionId());
@@ -148,21 +331,51 @@ public class RegistrationService {
         validarDuplicidade(dto, id);
 
         Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, false);
+        validarCompetidoresResponsaveis(robot, competitors);
         preencher(registration, dto, competition, category, team, robot, competitors);
 
-        if (dto.getStatus() != null && dto.getStatus() != registration.getStatus()) {
-            validarTransicaoDeRevisao(registration, dto.getStatus());
-            aplicarRevisaoSeNecessario(registration, dto.getStatus());
-            registration.setStatus(dto.getStatus());
+        StatusRegistration statusAnterior = registration.getStatus();
+        StatusRegistration novoStatus = dto.getStatus();
+
+        if (novoStatus != null && novoStatus != statusAnterior) {
+            validarTransicaoDeRevisao(registration, novoStatus);
+            if (novoStatus == StatusRegistration.APROVADA) {
+                validarAprovacaoDoFluxoParticipante(registration);
+            }
+            aplicarRevisaoSeNecessario(registration, novoStatus);
+
+            if (novoStatus == StatusRegistration.REJEITADA) {
+                registration.setReviewReason(normalizarObrigatorio(
+                        dto.getReviewReason(),
+                        "Informe o motivo da rejeição da inscrição."));
+            } else {
+                registration.setReviewReason(null);
+            }
+
+            registration.setStatus(novoStatus);
         }
 
         registration.setAtivo(true);
-        return new RegistrationDTO(registrationRepository.save(registration));
+        Registration salva = registrationRepository.save(registration);
+
+        if (novoStatus != null && novoStatus != statusAnterior) {
+            statusHistoryService.registrar(
+                    salva,
+                    statusAnterior,
+                    novoStatus,
+                    novoStatus == StatusRegistration.APROVADA
+                            ? RegistrationStatusChangeType.APROVACAO
+                            : RegistrationStatusChangeType.REJEICAO,
+                    salva.getReviewReason());
+        }
+
+        return new RegistrationDTO(salva);
     }
 
     @Transactional
     public void deletar(Long id) {
         Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
         StatusRegistration status = registration.getStatus();
 
         if (status == StatusRegistration.PENDENTE) {
@@ -195,6 +408,11 @@ public class RegistrationService {
 
     @Transactional
     public RegistrationDTO cancelarAprovadaPorSolicitacao(Long id) {
+        return cancelarAprovadaPorSolicitacao(id, null);
+    }
+
+    @Transactional
+    public RegistrationDTO cancelarAprovadaPorSolicitacao(Long id, String motivo) {
         Registration registration = buscarRegistration(id);
         if (registration.getStatus() != StatusRegistration.APROVADA || !Boolean.TRUE.equals(registration.getAtivo())) {
             throw new IllegalArgumentException("A inscrição precisa estar APROVADA e ativa para concluir a solicitação.");
@@ -202,44 +420,115 @@ public class RegistrationService {
         StatusRegistration destino = possuiAtividadeCompetitiva(registration.getId())
                 ? StatusRegistration.DESISTENTE
                 : StatusRegistration.CANCELADA;
-        cancelar(registration, destino);
+        cancelar(registration, destino, motivo);
         return new RegistrationDTO(registration);
+    }
+
+    @Transactional
+    public RegistrationDTO desclassificar(Long id, String motivo) {
+        Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
+
+        if (registration.getStatus() != StatusRegistration.APROVADA
+                || !Boolean.TRUE.equals(registration.getAtivo())) {
+            throw new IllegalArgumentException(
+                    "Somente inscrição APROVADA e ativa pode ser desclassificada.");
+        }
+
+        if (registration.getCompetition().getStatus() == StatusCompetition.FINALIZADA
+                || registration.getCompetition().getStatus() == StatusCompetition.CANCELADA) {
+            throw new IllegalArgumentException(
+                    "Não é possível desclassificar inscrição de competição encerrada ou cancelada pelo fluxo comum.");
+        }
+
+        String justificativa = normalizarObrigatorio(
+                motivo,
+                "Informe o motivo da desclassificação.");
+
+        StatusRegistration anterior = registration.getStatus();
+        registration.setStatus(StatusRegistration.DESCLASSIFICADA);
+        Registration salva = registrationRepository.save(registration);
+
+        statusHistoryService.registrar(
+                salva,
+                anterior,
+                StatusRegistration.DESCLASSIFICADA,
+                RegistrationStatusChangeType.DESCLASSIFICACAO,
+                justificativa);
+
+        return new RegistrationDTO(salva);
     }
 
     @Transactional
     public RegistrationDTO reativar(Long id) {
         Registration registration = buscarRegistration(id);
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
         if (registration.getStatus() != StatusRegistration.CANCELADA
                 && registration.getStatus() != StatusRegistration.REJEITADA) {
             throw new IllegalArgumentException(
                     "Somente inscrições CANCELADAS ou REJEITADAS podem ser reabertas pela organização.");
         }
-        return reativarInterno(registration);
+        return reativarInterno(registration, false);
     }
 
     @Transactional
     public RegistrationDTO reativarPorParticipante(Long id) {
         Registration registration = buscarRegistration(id);
-        if (registration.getStatus() != StatusRegistration.CANCELADA) {
+        if (registration.getStatus() != StatusRegistration.CANCELADA
+                && registration.getStatus() != StatusRegistration.REJEITADA) {
             throw new IllegalArgumentException(
-                    "O participante só pode reativar uma inscrição CANCELADA.");
+                    "O participante só pode reinscrever uma inscrição CANCELADA ou REJEITADA.");
         }
-        return reativarInterno(registration);
+
+        UserAccount atual = userAccountService.buscarAtual();
+        Competitor solicitante = competitorRepository.findByUserAccountId(atual.getId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Sua conta precisa estar associada à equipe para reinscrever o robô."));
+
+        participantCompetitionRegistrationService.exigirInscricaoIniciada(
+                registration.getCompetition().getId(),
+                solicitante.getId());
+
+        Set<Competitor> composicao = compositionService.prepararComposicaoInicial(
+                registration.getCompetition().getId(),
+                registration.getRobot().getId());
+        registration.setCompetitors(composicao);
+
+        return reativarInterno(registration, true);
     }
 
-    private RegistrationDTO reativarInterno(Registration registration) {
+    private RegistrationDTO reativarInterno(Registration registration, boolean exigirPeriodoCalendario) {
+        StatusRegistration statusAnterior = registration.getStatus();
         validarDisponibilidade(
                 registration.getCompetition(), registration.getCategory(),
                 registration.getTeam(), registration.getRobot());
-        validarInscricoesAbertas(registration.getCompetition());
+
+        if (registration.getCompetition().getStatus() != StatusCompetition.INSCRICOES_ABERTAS) {
+            throw new IllegalArgumentException("As inscrições não estão abertas para esta competição.");
+        }
+        if (exigirPeriodoCalendario) {
+            validarInscricoesAbertas(registration.getCompetition());
+        }
+
         validarCompatibilidadeFisicaSumo(
                 registration.getCompetition(), registration.getCategory(), registration.getRobot(), registration.getId());
+        validarCompetidoresResponsaveis(registration.getRobot(), registration.getCompetitors());
 
         registration.setAtivo(true);
         registration.setStatus(StatusRegistration.PENDENTE);
         registration.setReviewedByUser(null);
         registration.setReviewedAt(null);
-        return new RegistrationDTO(registrationRepository.save(registration));
+        registration.setReviewReason(null);
+        Registration salva = registrationRepository.save(registration);
+        statusHistoryService.registrar(
+                salva,
+                statusAnterior,
+                StatusRegistration.PENDENTE,
+                RegistrationStatusChangeType.REATIVACAO,
+                exigirPeriodoCalendario
+                        ? "Reativação solicitada pelo participante."
+                        : "Reativação administrativa da inscrição.");
+        return new RegistrationDTO(salva);
     }
 
     private void validarEdicaoComum(Registration registration, RegistrationDTO dto) {
@@ -262,9 +551,30 @@ public class RegistrationService {
     }
 
     private void cancelar(Registration registration, StatusRegistration statusDestino) {
+        cancelar(registration, statusDestino, null);
+    }
+
+    private void cancelar(
+            Registration registration,
+            StatusRegistration statusDestino,
+            String motivo) {
+        StatusRegistration statusAnterior = registration.getStatus();
         registration.setAtivo(false);
         registration.setStatus(statusDestino);
-        registrationRepository.save(registration);
+        Registration salva = registrationRepository.save(registration);
+
+        statusHistoryService.registrar(
+                salva,
+                statusAnterior,
+                statusDestino,
+                statusDestino == StatusRegistration.DESISTENTE
+                        ? RegistrationStatusChangeType.DESISTENCIA
+                        : RegistrationStatusChangeType.CANCELAMENTO,
+                motivo != null && !motivo.isBlank()
+                        ? motivo
+                        : (statusDestino == StatusRegistration.DESISTENTE
+                                ? "Saída após atividade competitiva registrada."
+                                : null));
     }
 
     private boolean possuiAtividadeCompetitiva(Long registrationId) {
@@ -344,12 +654,78 @@ public class RegistrationService {
         return result;
     }
 
+    private void validarCompetidoresResponsaveis(Robot robot, Set<Competitor> competitors) {
+        if (competitors == null || competitors.isEmpty()) {
+            return;
+        }
+
+        List<String> invalidos = competitors.stream()
+                .filter(competitor -> !robotResponsibleRepository
+                        .existsByRobotIdAndCompetitorIdAndAtivoTrue(robot.getId(), competitor.getId()))
+                .map(Competitor::getNome)
+                .toList();
+
+        if (!invalidos.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "A inscrição do robô só pode usar competidores associados como responsáveis "
+                            + "permanentes deste robô. Não associados: " + String.join(", ", invalidos));
+        }
+    }
+
+    private void validarAprovacaoDoFluxoParticipante(Registration registration) {
+        if (registration.getPaymentReceiptStorageKey() == null) {
+            throw new IllegalArgumentException(
+                    "A inscrição do robô ainda não possui comprovante de pagamento.");
+        }
+
+        compositionService.sincronizarParaAprovacao(
+                registration,
+                userAccountService.buscarAtual());
+
+        if (registration.getCompetitors() == null || registration.getCompetitors().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "A inscrição do robô precisa possuir ao menos um responsável elegível e aprovado.");
+        }
+    }
+
+    private RegistrationReceiptStorageService.ReceiptFile carregarComprovante(
+            Registration registration) {
+        if (registration.getPaymentReceiptStorageKey() == null) {
+            throw new EntityNotFoundException("A inscrição do robô não possui comprovante anexado.");
+        }
+        return receiptStorageService.carregar(
+                registration.getPaymentReceiptStorageKey(),
+                registration.getPaymentReceiptContentType(),
+                registration.getPaymentReceiptOriginalName());
+    }
+
     private void validarDisponibilidade(Competition c, CompetitionCategory category, Team team, Robot robot) {
         if (!Boolean.TRUE.equals(c.getAtivo())) throw new IllegalArgumentException("Competição inativa.");
         if (!Boolean.TRUE.equals(category.getAtivo())) throw new IllegalArgumentException("Categoria inativa.");
         if (!Boolean.TRUE.equals(team.getAtivo())) throw new IllegalArgumentException("Equipe inativa.");
         if (!Boolean.TRUE.equals(team.getInstitution().getAtivo())) throw new IllegalArgumentException("Instituição inativa.");
         if (!Boolean.TRUE.equals(robot.getAtivo())) throw new IllegalArgumentException("Robô inativo.");
+    }
+
+    private String normalizarObrigatorio(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(message);
+        }
+        String normalized = value.trim();
+        if (normalized.length() > 500) {
+            throw new IllegalArgumentException("O motivo deve ter no máximo 500 caracteres.");
+        }
+        return normalized;
+    }
+
+    private void validarEstadoParaEntradaManual(Competition competition) {
+        StatusCompetition status = competition.getStatus();
+        if (status == StatusCompetition.PLANEJADA
+                || status == StatusCompetition.FINALIZADA
+                || status == StatusCompetition.CANCELADA) {
+            throw new IllegalArgumentException(
+                    "Entrada manual só é permitida em competição com inscrições abertas/encerradas ou EM_ANDAMENTO.");
+        }
     }
 
     private void validarInscricoesAbertas(Competition competition) {
@@ -414,6 +790,12 @@ public class RegistrationService {
         registration.setTeam(team);
         registration.setRobot(robot);
         registration.setCompetitors(competitors);
+        String robotDescricao = dto.getRobotDescricao();
+        if (robotDescricao == null || robotDescricao.isBlank()) {
+            robotDescricao = robot.getDescricao();
+        }
+        registration.setRobotDescription(
+                robotDescricao == null || robotDescricao.isBlank() ? null : robotDescricao.trim());
         registration.setObservacao(dto.getObservacao());
     }
 }

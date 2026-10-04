@@ -20,6 +20,8 @@ import java.util.Set;
 import javax.imageio.ImageIO;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -133,6 +135,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         UserAccount organizacao = usuariosDemo.get(0);
         UserAccount participante = usuariosDemo.get(3);
         UserAccount membro = usuariosDemo.get(4);
+        autenticarOrganizacao(organizacao);
 
         Institution ras = garantirInstituicao("RAS-DEMO", "Instituição Demo RAS UFRB");
         Institution visitante = garantirInstituicao("ROBODEMO", "Instituto de Robótica Demo");
@@ -195,6 +198,15 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         System.out.println("MEMBRO: " + MEMBER_EMAIL + " / " + DEMO_PASSWORD);
         System.out.println("Destaques: Follow 2/3 tomadas, Sumô parcial, BYEs e chave completa de 32 robôs.");
         System.out.println("============================================================");
+        SecurityContextHolder.clearContext();
+    }
+
+    private void autenticarOrganizacao(UserAccount user) {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        user,
+                        user.getPassword(),
+                        user.getAuthorities()));
     }
 
     List<UserAccount> garantirUsuariosDeAcesso() {

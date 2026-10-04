@@ -26,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class RegistrationCancellationRequestService {
 
     private final RegistrationCancellationRequestRepository requestRepository;
+    private final CompetitionContextService competitionContextService;
     private final RegistrationRepository registrationRepository;
     private final RegistrationService registrationService;
     private final UserAccountService userAccountService;
@@ -67,6 +68,12 @@ public class RegistrationCancellationRequestService {
 
     @Transactional(readOnly = true)
     public List<RegistrationCancellationRequestDTO> listar(Long competitionId, StatusCancellationRequest status) {
+        if (competitionId != null) {
+            competitionContextService.exigirOperavel(competitionId);
+        } else if (!ehDevAtual()) {
+            throw new AccessDeniedException("A GESTÃO deve consultar solicitações dentro da competição vigente.");
+        }
+
         List<RegistrationCancellationRequest> requests;
         if (competitionId != null && status != null) {
             requests = requestRepository.findByRegistrationCompetitionIdAndStatusOrderByDataCadastroDesc(competitionId, status);
@@ -86,9 +93,12 @@ public class RegistrationCancellationRequestService {
     @Transactional
     public RegistrationCancellationRequestDTO aprovar(Long requestId, String resposta) {
         RegistrationCancellationRequest request = buscarPendente(requestId);
+        competitionContextService.exigirOperavel(request.getRegistration().getCompetition().getId());
         UserAccount revisor = exigirOperadorCompeticao();
 
-        registrationService.cancelarAprovadaPorSolicitacao(request.getRegistration().getId());
+        registrationService.cancelarAprovadaPorSolicitacao(
+                request.getRegistration().getId(),
+                request.getMotivo());
         concluir(request, StatusCancellationRequest.APROVADA, revisor, resposta);
         return new RegistrationCancellationRequestDTO(requestRepository.save(request));
     }
@@ -96,8 +106,13 @@ public class RegistrationCancellationRequestService {
     @Transactional
     public RegistrationCancellationRequestDTO rejeitar(Long requestId, String resposta) {
         RegistrationCancellationRequest request = buscarPendente(requestId);
+        competitionContextService.exigirOperavel(request.getRegistration().getCompetition().getId());
         UserAccount revisor = exigirOperadorCompeticao();
-        concluir(request, StatusCancellationRequest.REJEITADA, revisor, resposta);
+        concluir(
+                request,
+                StatusCancellationRequest.REJEITADA,
+                revisor,
+                normalizarObrigatorio(resposta, "Informe a justificativa para rejeitar o cancelamento."));
         return new RegistrationCancellationRequestDTO(requestRepository.save(request));
     }
 
@@ -123,6 +138,15 @@ public class RegistrationCancellationRequestService {
             throw new IllegalArgumentException("A inscrição não está mais APROVADA e ativa para receber esta decisão.");
         }
         return request;
+    }
+
+    private boolean ehDevAtual() {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        return authentication != null
+                && authentication.isAuthenticated()
+                && authentication.getAuthorities().stream()
+                        .anyMatch(authority -> "ROLE_DEV".equals(authority.getAuthority()));
     }
 
     private UserAccount exigirOperadorCompeticao() {

@@ -33,6 +33,8 @@ public class RobotDTO {
     private Long institutionId;
     private String institutionNome;
     private String institutionSigla;
+    private Long createdByUserId;
+    private String createdByUserNome;
     private Boolean ativo;
     private LocalDateTime dataCadastro;
     
@@ -45,6 +47,10 @@ public class RobotDTO {
         this.institutionId = entity.getTeam().getInstitution().getId();
         this.institutionNome = entity.getTeam().getInstitution().getNome();
         this.institutionSigla = entity.getTeam().getInstitution().getSigla();
+        if (entity.getCreatedByUser() != null) {
+            this.createdByUserId = entity.getCreatedByUser().getId();
+            this.createdByUserNome = entity.getCreatedByUser().getNome();
+        }
         this.ativo = entity.getAtivo();
         this.dataCadastro = entity.getDataCadastro();
     }

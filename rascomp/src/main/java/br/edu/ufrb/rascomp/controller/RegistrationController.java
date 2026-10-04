@@ -1,9 +1,15 @@
 package br.edu.ufrb.rascomp.controller;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -15,9 +21,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.edu.ufrb.rascomp.dto.ManualCompetitionEntryRequest;
+import br.edu.ufrb.rascomp.dto.RegistrationCompetitorContextDTO;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
+import br.edu.ufrb.rascomp.dto.RegistrationDisqualificationDTO;
+import br.edu.ufrb.rascomp.dto.RegistrationStatusHistoryDTO;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.service.ManualCompetitionEntryService;
+import br.edu.ufrb.rascomp.service.RegistrationReceiptStorageService;
 import br.edu.ufrb.rascomp.service.RegistrationService;
+import br.edu.ufrb.rascomp.service.RegistrationStatusHistoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -26,6 +39,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RegistrationController {
     private final RegistrationService registrationService;
+    private final RegistrationStatusHistoryService statusHistoryService;
+    private final ManualCompetitionEntryService manualCompetitionEntryService;
+
+    @PostMapping("/entrada-manual")
+    @PreAuthorize("hasRole('DEV')")
+    public ResponseEntity<RegistrationDTO> entradaManual(
+            @Valid @RequestBody ManualCompetitionEntryRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(manualCompetitionEntryService.criar(request));
+    }
 
     @PostMapping
     public ResponseEntity<RegistrationDTO> criar(@Valid @RequestBody RegistrationDTO dto) {
@@ -33,8 +56,35 @@ public class RegistrationController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<RegistrationDTO>> listar(@RequestParam(defaultValue = "false") boolean apenasAtivas) {
         return ResponseEntity.ok(registrationService.listar(apenasAtivas));
+    }
+
+    @GetMapping("/{id}/historico-status")
+    public ResponseEntity<List<RegistrationStatusHistoryDTO>> historicoStatus(@PathVariable Long id) {
+        return ResponseEntity.ok(statusHistoryService.listar(id));
+    }
+
+    @GetMapping("/{id}/contexto-competidores")
+    public ResponseEntity<List<RegistrationCompetitorContextDTO>> contextoCompetidores(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(registrationService.contextoCompetidores(id));
+    }
+
+    @GetMapping("/{id}/comprovante")
+    public ResponseEntity<Resource> comprovante(@PathVariable Long id) {
+        RegistrationReceiptStorageService.ReceiptFile file =
+                registrationService.comprovanteAdministrativo(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.contentType()))
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.inline()
+                                .filename(file.filename(), StandardCharsets.UTF_8)
+                                .build()
+                                .toString())
+                .body(file.resource());
     }
 
     @GetMapping("/{id}")
@@ -48,6 +98,7 @@ public class RegistrationController {
     }
 
     @GetMapping("/por-status")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<RegistrationDTO>> listarPorStatus(@RequestParam StatusRegistration status) {
         return ResponseEntity.ok(registrationService.listarPorStatus(status));
     }
@@ -61,6 +112,13 @@ public class RegistrationController {
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         registrationService.deletar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/desclassificar")
+    public ResponseEntity<RegistrationDTO> desclassificar(
+            @PathVariable Long id,
+            @Valid @RequestBody RegistrationDisqualificationDTO dto) {
+        return ResponseEntity.ok(registrationService.desclassificar(id, dto.getMotivo()));
     }
 
     @PatchMapping("/{id}/reativar")

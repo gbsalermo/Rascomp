@@ -50,7 +50,9 @@ class RoundSumoServiceTest {
     @Mock private MatchResultService matchResultService;
     @Mock private BracketProgressionService bracketProgressionService;
 
-    @InjectMocks private RoundSumoService service;
+        @Mock private CompetitionContextService competitionContextService;
+
+@InjectMocks private RoundSumoService service;
 
     private Match match;
     private Registration a;
@@ -62,8 +64,12 @@ class RoundSumoServiceTest {
     void setup() {
         CompetitionCategory category = CompetitionCategory.builder()
                 .id(5L).nome("Mini Sumô").modalidade(Modalidade.SUMO).ativo(true).build();
+        br.edu.ufrb.rascomp.model.Competition competition = new br.edu.ufrb.rascomp.model.Competition();
+        competition.setId(99L);
+
         Bracket bracket = new Bracket();
         bracket.setId(30L);
+        bracket.setCompetition(competition);
         bracket.setCategory(category);
         bracket.setAtual(true);
         bracket.setAtivo(true);

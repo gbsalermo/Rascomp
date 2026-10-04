@@ -26,6 +26,7 @@ import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.SumoPhysicalClass;
@@ -50,6 +51,8 @@ class RegistrationIntegrityServiceTest {
     @Mock private RobotRepository robotRepository;
     @Mock private CompetitorRepository competitorRepository;
     @Mock private UserAccountService userAccountService;
+    @Mock private CompetitionContextService competitionContextService;
+    @Mock private RegistrationStatusHistoryService statusHistoryService;
     @Mock private TentativaSeguidorLinhaRepository tentativaRepository;
     @Mock private AusenciaTomadaSeguidorLinhaRepository ausenciaFollowRepository;
     @Mock private InspecaoSumoRepository inspecaoSumoRepository;
@@ -113,12 +116,31 @@ class RegistrationIntegrityServiceTest {
     }
 
     @Test
-    void reativacaoDeveRespeitarJanelaDeInscricoes() {
+    void organizacaoPodeReativarQuandoStatusEstaAbertoMesmoComDataCalendarioAntiga() {
+        registration.setStatus(StatusRegistration.CANCELADA);
+        registration.setAtivo(false);
+        competition.setFimInscricoes(LocalDate.now().minusDays(1));
+        when(registrationRepository.save(any(Registration.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        RegistrationDTO result = service.reativar(1L);
+
+        assertEquals(StatusRegistration.PENDENTE, result.getStatus());
+        assertEquals(true, result.getAtivo());
+        verify(statusHistoryService).registrar(
+                registration,
+                StatusRegistration.CANCELADA,
+                StatusRegistration.PENDENTE,
+                RegistrationStatusChangeType.REATIVACAO,
+                "Reativação administrativa da inscrição.");
+    }
+
+    @Test
+    void participanteContinuaRespeitandoPeriodoCalendarioNaReativacao() {
         registration.setStatus(StatusRegistration.CANCELADA);
         registration.setAtivo(false);
         competition.setFimInscricoes(LocalDate.now().minusDays(1));
 
-        assertThrows(IllegalArgumentException.class, () -> service.reativar(1L));
+        assertThrows(IllegalArgumentException.class, () -> service.reativarPorParticipante(1L));
 
         assertEquals(StatusRegistration.CANCELADA, registration.getStatus());
         verify(registrationRepository, never()).save(any());
@@ -149,28 +171,46 @@ class RegistrationIntegrityServiceTest {
     @Test
     void organizacaoCancelaAprovadaSemHistoricoComoCancelada() {
         registration.setStatus(StatusRegistration.APROVADA);
+        when(registrationRepository.save(any(Registration.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.deletar(1L);
 
         assertEquals(StatusRegistration.CANCELADA, registration.getStatus());
         assertEquals(false, registration.getAtivo());
+        verify(statusHistoryService).registrar(
+                registration,
+                StatusRegistration.APROVADA,
+                StatusRegistration.CANCELADA,
+                RegistrationStatusChangeType.CANCELAMENTO,
+                null);
     }
 
     @Test
     void organizacaoMarcaComoDesistenteQuandoJaExisteAtividadeCompetitiva() {
         registration.setStatus(StatusRegistration.APROVADA);
         when(tentativaRepository.existsByRegistrationId(1L)).thenReturn(true);
+        when(registrationRepository.save(any(Registration.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.deletar(1L);
 
         assertEquals(StatusRegistration.DESISTENTE, registration.getStatus());
         assertEquals(false, registration.getAtivo());
+        verify(statusHistoryService).registrar(
+                registration,
+                StatusRegistration.APROVADA,
+                StatusRegistration.DESISTENTE,
+                RegistrationStatusChangeType.DESISTENCIA,
+                "Saída após atividade competitiva registrada.");
     }
 
     @Test
     void ausenciaDeTomadaFollowTambemContaComoAtividadeCompetitiva() {
         registration.setStatus(StatusRegistration.APROVADA);
         when(ausenciaFollowRepository.existsByRegistrationId(1L)).thenReturn(true);
+        when(registrationRepository.save(any(Registration.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.deletar(1L);
 

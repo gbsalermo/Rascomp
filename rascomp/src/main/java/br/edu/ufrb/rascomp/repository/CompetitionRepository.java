@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -18,10 +19,15 @@ public interface CompetitionRepository extends JpaRepository<Competition, Long> 
     List<Competition> findAllByOrderByDataInicioDesc();
     List<Competition> findByAtivoTrueOrderByDataInicioDesc();
     List<Competition> findByStatusOrderByDataInicioDesc(StatusCompetition status);
+    Optional<Competition> findFirstByVigenteTrueAndAtivoTrue();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Competition c where c.id = :id")
     Optional<Competition> findByIdForUpdate(@Param("id") Long id);
+
+    @Modifying
+    @Query("update Competition c set c.vigente = false where c.vigente = true")
+    int limparVigente();
 
     boolean existsByNomeIgnoreCase(String nome);
     boolean existsByNomeIgnoreCaseAndIdNot(String nome, Long id);

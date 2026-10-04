@@ -1,6 +1,6 @@
 # Dossiê do Projeto RasComp — Ponteiro
 
-Última revisão: **19/09/2026**
+Última revisão: **03/10/2026**
 
 O Dossiê Mestre canônico e cross-repo está em:
 
@@ -25,10 +25,12 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
 ETAPA 3  ✅ concluída / validada
-ETAPA 4  ⏳ próxima / não iniciada — Consolidação funcional e polimento do MVP
+ETAPA 4  ✅ concluída / validada — merge autorizado em 03/10/2026
 ```
 
-As ETAPAS 1, 2 e 3 estão encerradas/validadas. O roadmap foi reorganizado por maturidade do produto e a ETAPA 4 — Consolidação funcional e polimento do MVP — é a próxima etapa, ainda não iniciada.
+A fonte canônica cross-repo registra a bateria Portal 1–40 e regressão R1–R17 como concluídas. Migrations atuais: V1–V27.
+
+O antigo BLOCO 4.4 foi retirado da ETAPA 4. O polimento da Landing será consolidado futuramente com o trabalho já previsto de Landing/Galeria/conteúdo público; nome, numeração e escopo final serão decididos após o merge desta etapa.
 
 Checkpoint backend:
 
@@ -114,6 +116,119 @@ O login já possui tratamento responsivo dedicado; Gestão e Portal do Participa
 A ETAPA 14 permanece como validação física/hardening em aparelhos reais.
 
 
-## Decisões competitivas futuras — 29/09/2026
+## Checkpoint de início da ETAPA 4 — 22/09/2026
 
-Foram incorporadas ao planejamento cross-repo três decisões: (1) ETAPA 5 terá ferramentas DEV auditáveis para inclusão manual excepcional de robôs/competidores e para encerramento/cancelamento de chave seguido de geração de nova chave quando uma correção estrutural exigir; (2) ETAPA 6 de Futebol de Robôs terá cronômetro operacional, com 2 minutos como referência atual/configurável, e placar por gols persistido como resultado oficial; (3) Follow Pro/Júnior fica reservado à pós-produção e só será ativado se a competição confirmar essa divisão, mantendo Follow como categoria única no MVP atual.
+Branch de trabalho:
+
+```text
+etapa-4-consolidacao-mvp
+```
+
+Estado:
+
+- ETAPA 4 autorizada e iniciada;
+- BLOCO 1 em andamento;
+- baseline técnico, autenticação, Shell e UX global são o escopo atual;
+- ETAPA 5 permanece bloqueada;
+- nenhuma nova funcionalidade estrutural deve ser antecipada.
+
+
+## ETAPA 4 — checkpoint 22/09/2026
+
+BLOCO 1 da ETAPA 4 concluído em 22/09/2026.
+
+Mudanças estruturais relevantes:
+
+- V14 adiciona versão de sessão à conta;
+- JWT é validado também contra a versão de sessão;
+- política atual: uma sessão ativa por conta;
+- logout invalida a sessão do servidor;
+- fluxo definitivo de recuperação de senha permanece reservado à ETAPA 13.
+
+Validação final do bloco: Backend Tests #329, 142 testes verdes, MySQL/Flyway V14/testdata verdes e Frontend Checks #97 verde.
+
+Próximo: BLOCO 2 — Gestão administrativa.
+
+
+## ETAPA 4 — BLOCO 2 — checkpoint administrativo
+
+Implementação concluída, ainda não validada para fechamento.
+
+Principais decisões técnicas:
+
+- V15 persiste a competição vigente;
+- DEV focus local não altera a vigente;
+- GESTAO opera somente a vigente;
+- edição cadastral de UserAccount é DEV-only e não converte PARTICIPANTE;
+- catálogos administrativos históricos/globais de equipe, robô e competidor são DEV-only;
+- GESTAO consome catálogo derivado das inscrições da vigente;
+- mutações estruturais administrativas são DEV-only;
+- inscrição/cancelamento/reativação aplicam contexto da competição no backend.
+
+Validação automatizada: Backend Tests #371 com 155 testes verdes + MySQL/Flyway V15/testdata; Frontend Checks #137 verde.
+
+Pendências de produto: associação explícita Competition ↔ Category e semântica de impacto da desativação de conta PARTICIPANTE sobre Competitor.
+
+
+## ETAPA 4 — BLOCO 2 encerrado
+
+BLOCO 2 validado pelo usuário em 23/09/2026.
+
+- Backend Tests #415 ✅;
+- 161 testes verdes;
+- MySQL/Flyway V17/testdata ✅;
+- Frontend Checks #170 ✅.
+
+Próximo: BLOCO 3 — Operação competitiva.
+
+
+## ETAPA 4 — início do BLOCO 3
+
+BLOCO 3 iniciado pela frente 3A — Follow Line.
+
+Primeiro hardening:
+
+- CompetitionContextService aplicado às operações administrativas do Follow;
+- GESTAO restrita à vigente;
+- DEV pode operar sua edição em foco;
+- ranking público permanece independente do contexto administrativo;
+- tentativa existente não pode ser transferida para outra inscrição por update.
+
+Checkpoint de código: Backend Tests #429 ✅, 162 testes verdes, MySQL/Flyway V17/testdata ✅ e Frontend Checks #177 ✅.
+
+
+## ETAPA 4 — BLOCO 3 implementado
+
+3A Follow Line, 3B Sumô e 3C Chaves/Agenda/Resultados estão implementados.
+
+Backend consolidado:
+
+- CompetitionContextService em operação competitiva;
+- V18 com agenda de chamadas/tomadas Follow;
+- CompetitionAgendaService unificando Follow + Match;
+- CompetitionResultsService consolidando vencedores;
+- desclassificação manual e automática auditada;
+- resolução administrativa preservando chave;
+- guardas de fila/convocação e estados encerrados;
+- partidas futuras sem participantes fora da Agenda real.
+
+Checkpoint: Backend Tests #493 ✅, 166 testes, MySQL/Flyway V18/testdata ✅, Frontend Checks #213 ✅.
+
+Próxima migration estrutural: V19+.
+
+
+## Fechamento da ETAPA 4 — 03/10/2026
+
+Este arquivo continua sendo apenas um ponteiro. O estado final oficial está em:
+
+```text
+gbsalermo/Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
+gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md
+```
+
+ETAPA 4: **CONCLUÍDA / VALIDADA**.
+
+Decisões futuras preservadas:
+- ferramenta DEV para correção/regeneração auditável de chave;
+- Futebol de Robôs com placar e referência atual de 2 minutos;
+- Follow Pro/Júnior somente em pós-produção, se confirmado.

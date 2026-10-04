@@ -14,11 +14,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 
 import br.edu.ufrb.rascomp.model.Competitor;
+import br.edu.ufrb.rascomp.model.Registration;
+import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
+import br.edu.ufrb.rascomp.repository.RobotResponsibleRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,6 +31,7 @@ class AccessPolicyServiceTest {
     @Mock private TeamRepository teamRepository;
     @Mock private CompetitorRepository competitorRepository;
     @Mock private RobotRepository robotRepository;
+    @Mock private RobotResponsibleRepository robotResponsibleRepository;
     @Mock private RegistrationRepository registrationRepository;
 
     @InjectMocks
@@ -66,6 +70,75 @@ class AccessPolicyServiceTest {
         when(competitorRepository.findByUserAccountId(5L)).thenReturn(Optional.of(competitor));
 
         assertEquals(9L, service.exigirEquipeDoParticipante(9L).getId());
+    }
+
+    @Test
+    void membroResponsavelPeloRoboPodeGerenciarInscricaoMesmoSemSerLider() {
+        UserAccount atual = usuario(5L);
+        UserAccount lider = usuario(6L);
+
+        Team team = new Team();
+        team.setId(9L);
+        team.setResponsibleUser(lider);
+
+        Competitor competitor = new Competitor();
+        competitor.setId(20L);
+        competitor.setUserAccount(atual);
+        competitor.setTeam(team);
+        competitor.setAtivo(true);
+
+        Robot robot = new Robot();
+        robot.setId(30L);
+        robot.setTeam(team);
+        robot.setAtivo(true);
+
+        Registration registration = new Registration();
+        registration.setId(40L);
+        registration.setTeam(team);
+        registration.setRobot(robot);
+
+        when(userAccountService.buscarAtual()).thenReturn(atual);
+        when(registrationRepository.findById(40L)).thenReturn(Optional.of(registration));
+        when(competitorRepository.findByUserAccountId(5L)).thenReturn(Optional.of(competitor));
+        when(robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(30L, 20L))
+                .thenReturn(true);
+
+        assertEquals(40L, service.exigirInscricaoGerenciavelPeloParticipante(40L).getId());
+    }
+
+    @Test
+    void membroSemResponsabilidadePeloRoboNaoPodeGerenciarInscricao() {
+        UserAccount atual = usuario(5L);
+        UserAccount lider = usuario(6L);
+
+        Team team = new Team();
+        team.setId(9L);
+        team.setResponsibleUser(lider);
+
+        Competitor competitor = new Competitor();
+        competitor.setId(20L);
+        competitor.setUserAccount(atual);
+        competitor.setTeam(team);
+        competitor.setAtivo(true);
+
+        Robot robot = new Robot();
+        robot.setId(30L);
+        robot.setTeam(team);
+        robot.setAtivo(true);
+
+        Registration registration = new Registration();
+        registration.setId(40L);
+        registration.setTeam(team);
+        registration.setRobot(robot);
+
+        when(userAccountService.buscarAtual()).thenReturn(atual);
+        when(registrationRepository.findById(40L)).thenReturn(Optional.of(registration));
+        when(competitorRepository.findByUserAccountId(5L)).thenReturn(Optional.of(competitor));
+        when(robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(30L, 20L))
+                .thenReturn(false);
+
+        assertThrows(AccessDeniedException.class,
+                () -> service.exigirInscricaoGerenciavelPeloParticipante(40L));
     }
 
     @Test

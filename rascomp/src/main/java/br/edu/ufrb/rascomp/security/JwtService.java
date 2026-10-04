@@ -38,6 +38,7 @@ public class JwtService {
                 .subject(usuario.getEmail())
                 .claim("role", usuario.getRole().name())
                 .claim("userId", usuario.getId())
+                .claim("sessionVersion", usuario.getSessionVersion() == null ? 0L : usuario.getSessionVersion())
                 .issuedAt(agora)
                 .expiration(expiracao)
                 .signWith(chave())
@@ -50,8 +51,15 @@ public class JwtService {
 
     public boolean tokenValido(String token, UserAccount usuario) {
         Claims claims = claims(token);
+        Object sessionVersionClaim = claims.get("sessionVersion");
+        long tokenSessionVersion = sessionVersionClaim instanceof Number
+                ? ((Number) sessionVersionClaim).longValue()
+                : -1L;
+        long currentSessionVersion = usuario.getSessionVersion() == null ? 0L : usuario.getSessionVersion();
+
         return usuario.getEmail().equalsIgnoreCase(claims.getSubject())
                 && claims.getExpiration().after(new Date())
+                && tokenSessionVersion == currentSessionVersion
                 && usuario.isEnabled();
     }
 

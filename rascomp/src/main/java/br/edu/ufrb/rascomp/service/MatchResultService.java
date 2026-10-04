@@ -9,11 +9,16 @@ import br.edu.ufrb.rascomp.dto.MatchResultDTO;
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.MatchResult;
 import br.edu.ufrb.rascomp.model.Registration;
+import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
+import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.model.Enum.StatusRoundSumo;
+import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.MatchResultRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
+import br.edu.ufrb.rascomp.repository.RoundSumoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +29,9 @@ public class MatchResultService {
     private final MatchRepository matchRepository;
     private final RegistrationRepository registrationRepository;
     private final BracketProgressionService bracketProgressionService;
+    private final RoundSumoRepository roundSumoRepository;
+    private final CompetitionContextService competitionContextService;
+    private final UserAccountService userAccountService;
 
     @Transactional
     public MatchResultDTO criar(MatchResultDTO dto) {
@@ -97,6 +105,146 @@ public class MatchResultService {
 
         String observacao = "Decisão do juiz " + judgeNome + ": " + justificativa;
         return salvarResultado(match, winner, vitoriasA, vitoriasB, observacao);
+    }
+
+    @Transactional
+    public MatchResultDTO resolverIndisponibilidadeAdministrativa(Long matchId) {
+        Match match = buscarMatch(matchId);
+        competitionContextService.exigirOperavel(match.getBracket().getCompetition().getId());
+        validarBracketOperavel(match);
+
+        if (!Boolean.TRUE.equals(match.getAtivo())) {
+            throw new IllegalArgumentException("A partida deve estar ativa.");
+        }
+        if (match.getBracket().getCategory().getModalidade() != Modalidade.SUMO) {
+            throw new IllegalArgumentException("A resolução administrativa deste fluxo é exclusiva do Sumô.");
+        }
+        if (match.getRegistrationA() == null || match.getRegistrationB() == null) {
+            throw new IllegalArgumentException("A partida precisa possuir os dois participantes para resolução administrativa.");
+        }
+        if (match.getStatus() == StatusMatch.FINALIZADA
+                || match.getStatus() == StatusMatch.CANCELADA
+                || match.getStatus() == StatusMatch.BYE) {
+            throw new IllegalArgumentException("A partida já está encerrada ou não exige resolução administrativa.");
+        }
+        if (resultRepository.existsByMatchId(match.getId())) {
+            throw new IllegalArgumentException("A partida já possui resultado consolidado.");
+        }
+
+        Registration a = match.getRegistrationA();
+        Registration b = match.getRegistrationB();
+        boolean aIndisponivel = indisponivelCompetitivamente(a);
+        boolean bIndisponivel = indisponivelCompetitivamente(b);
+
+        if (aIndisponivel == bIndisponivel) {
+            throw new IllegalArgumentException(
+                    aIndisponivel
+                            ? "Os dois participantes estão indisponíveis. Use uma correção administrativa excepcional."
+                            : "Nenhum participante está DESCLASSIFICADO ou DESISTENTE.");
+        }
+
+        Registration winner = aIndisponivel ? b : a;
+        Registration loser = aIndisponivel ? a : b;
+
+        int vitoriasA = contarVitorias(match, a);
+        int vitoriasB = contarVitorias(match, b);
+        String motivo = loser.getStatus() == StatusRegistration.DESCLASSIFICADA
+                ? "Vitória administrativa por desclassificação de " + loser.getRobot().getNome() + "."
+                : "Vitória administrativa por desistência de " + loser.getRobot().getNome() + ".";
+
+        return salvarResultado(match, winner, vitoriasA, vitoriasB, motivo);
+    }
+
+    private boolean indisponivelCompetitivamente(Registration registration) {
+        return registration.getStatus() == StatusRegistration.DESCLASSIFICADA
+                || registration.getStatus() == StatusRegistration.DESISTENTE;
+    }
+
+    private int contarVitorias(Match match, Registration registration) {
+        return Math.toIntExact(roundSumoRepository.findByMatchIdOrderByNumeroRoundAsc(match.getId())
+                .stream()
+                .filter(round -> round.getStatus() == StatusRoundSumo.FINALIZADO)
+                .filter(round -> round.getWinner() != null
+                        && round.getWinner().getId().equals(registration.getId()))
+                .count());
+    }
+
+    @Transactional
+    public MatchResultDTO corrigirExcepcionalDev(
+            Long matchId,
+            Long winnerRegistrationId,
+            String justificativa) {
+
+        UserAccount dev = userAccountService.buscarAtual();
+        if (dev.getRole() != UserRole.DEV) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "A correção excepcional de resultado é exclusiva do DEV.");
+        }
+
+        Match match = buscarMatch(matchId);
+        competitionContextService.exigirOperavel(match.getBracket().getCompetition().getId());
+        validarBracketOperavel(match);
+
+        if (match.getBracket().getCategory().getModalidade() != Modalidade.SUMO) {
+            throw new IllegalArgumentException("A correção excepcional deste fluxo é exclusiva do Sumô.");
+        }
+
+        MatchResult result = resultRepository.findByMatchId(matchId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Resultado não encontrado para a partida: " + matchId));
+
+        Registration novoVencedor = buscarWinnerOpcional(winnerRegistrationId);
+        if (novoVencedor == null) {
+            throw new IllegalArgumentException("Informe o novo vencedor.");
+        }
+
+        boolean participanteA = match.getRegistrationA() != null
+                && match.getRegistrationA().getId().equals(novoVencedor.getId());
+        boolean participanteB = match.getRegistrationB() != null
+                && match.getRegistrationB().getId().equals(novoVencedor.getId());
+        if (!participanteA && !participanteB) {
+            throw new IllegalArgumentException("O novo vencedor deve participar da partida.");
+        }
+
+        String motivo = justificativa == null ? "" : justificativa.trim();
+        if (motivo.isBlank()) {
+            throw new IllegalArgumentException("Informe a justificativa da correção excepcional.");
+        }
+        if (motivo.length() > 500) motivo = motivo.substring(0, 500);
+
+        Registration vencedorAnterior = result.getWinner();
+        if (vencedorAnterior != null && vencedorAnterior.getId().equals(novoVencedor.getId())) {
+            throw new IllegalArgumentException("O vencedor informado já é o vencedor atual da partida.");
+        }
+
+        // Corrige a propagação apenas se nenhuma dependência seguinte já tiver atividade.
+        bracketProgressionService.corrigirVencedor(match, vencedorAnterior, novoVencedor);
+
+        result.setWinner(novoVencedor);
+
+        // Mantém o placar consolidado coerente com o vencedor corrigido.
+        // Em empate técnico/decisão de juiz, os pontos permanecem iguais.
+        if (result.getPontosA() != null
+                && result.getPontosB() != null
+                && !result.getPontosA().equals(result.getPontosB())) {
+
+            boolean novoVencedorEhA = match.getRegistrationA() != null
+                    && match.getRegistrationA().getId().equals(novoVencedor.getId());
+            boolean placarFavoreceA = result.getPontosA() > result.getPontosB();
+
+            if (novoVencedorEhA != placarFavoreceA) {
+                Integer pontosA = result.getPontosA();
+                result.setPontosA(result.getPontosB());
+                result.setPontosB(pontosA);
+            }
+        }
+
+        result.setCorrectionReason(motivo);
+        result.setCorrectedByUser(dev);
+        result.setCorrectedAt(java.time.LocalDateTime.now());
+
+        MatchResult salvo = resultRepository.save(result);
+        return new MatchResultDTO(salvo);
     }
 
     @Transactional(readOnly = true)

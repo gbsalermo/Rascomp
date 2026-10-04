@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.edu.ufrb.rascomp.dto.RankingFollowDTO;
+import br.edu.ufrb.rascomp.service.CompetitionContextService;
 import br.edu.ufrb.rascomp.service.RankingFollowService;
 import lombok.RequiredArgsConstructor;
 
@@ -18,12 +19,14 @@ import lombok.RequiredArgsConstructor;
 public class RankingFollowController {
 
     private final RankingFollowService rankingFollowService;
+    private final CompetitionContextService competitionContextService;
 
     @GetMapping
     public ResponseEntity<List<RankingFollowDTO>> gerarRanking(
             @RequestParam Long competitionId,
             @RequestParam Long categoryId) {
 
+        competitionContextService.exigirOperavel(competitionId);
         return ResponseEntity.ok(rankingFollowService.gerarRanking(competitionId, categoryId));
     }
 }

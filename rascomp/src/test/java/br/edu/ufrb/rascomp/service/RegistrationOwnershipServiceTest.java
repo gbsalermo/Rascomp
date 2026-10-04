@@ -2,13 +2,14 @@ package br.edu.ufrb.rascomp.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,12 +30,17 @@ import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
+import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionCategoryRepository;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
+import br.edu.ufrb.rascomp.repository.InspecaoSumoRepository;
+import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
+import br.edu.ufrb.rascomp.repository.RobotResponsibleRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
+import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
 
 @ExtendWith(MockitoExtension.class)
 class RegistrationOwnershipServiceTest {
@@ -44,18 +50,32 @@ class RegistrationOwnershipServiceTest {
     @Mock private CompetitionCategoryRepository categoryRepository;
     @Mock private TeamRepository teamRepository;
     @Mock private RobotRepository robotRepository;
+    @Mock private RobotResponsibleRepository robotResponsibleRepository;
     @Mock private CompetitorRepository competitorRepository;
     @Mock private UserAccountService userAccountService;
+    @Mock private CompetitionContextService competitionContextService;
+    @Mock private RegistrationStatusHistoryService statusHistoryService;
+    @Mock private ParticipantCompetitionRegistrationService participantCompetitionRegistrationService;
+    @Mock private RegistrationReceiptStorageService receiptStorageService;
+    @Mock private RegistrationCompositionService compositionService;
+    @Mock private TentativaSeguidorLinhaRepository tentativaRepository;
+    @Mock private AusenciaTomadaSeguidorLinhaRepository ausenciaFollowRepository;
+    @Mock private InspecaoSumoRepository inspecaoSumoRepository;
+    @Mock private MatchRepository matchRepository;
 
     @InjectMocks
     private RegistrationService service;
 
     @Test
-    void participanteDeveCriarInscricaoPendenteComSolicitanteECompetidores() {
-        Cenário c = cenario();
-        RegistrationDTO dto = dto(c.team.getId(), c.robot.getId(), c.competitor.getId());
+    void participanteDeveCriarInscricaoPendenteComComposicaoDerivada() {
+        Cenario c = cenario();
+        RegistrationDTO dto = dto(c.team.getId(), c.robot.getId());
 
         prepararRepositorios(c);
+        when(competitorRepository.findByUserAccountId(c.user.getId()))
+                .thenReturn(Optional.of(c.competitor));
+        when(compositionService.prepararComposicaoInicial(1L, 4L))
+                .thenReturn(Set.of(c.competitor));
         when(registrationRepository.existsByCompetitionIdAndCategoryIdAndRobotId(1L, 2L, 4L))
                 .thenReturn(false);
         when(registrationRepository.save(any(Registration.class))).thenAnswer(invocation -> {
@@ -73,45 +93,41 @@ class RegistrationOwnershipServiceTest {
     }
 
     @Test
-    void participanteNaoPodeInscreverCompetidorDeOutraEquipe() {
-        Cenário c = cenario();
-        Team outraEquipe = new Team();
-        outraEquipe.setId(99L);
-        outraEquipe.setAtivo(true);
-        outraEquipe.setInstitution(c.institution);
-        c.competitor.setTeam(outraEquipe);
+    void participanteNaoPodeInscreverRoboAntesDeIniciarInscricaoIndividual() {
+        Cenario c = cenario();
+        RegistrationDTO dto = dto(c.team.getId(), c.robot.getId());
 
-        RegistrationDTO dto = dto(c.team.getId(), c.robot.getId(), c.competitor.getId());
-        prepararRepositorios(c);
-        when(registrationRepository.existsByCompetitionIdAndCategoryIdAndRobotId(1L, 2L, 4L))
-                .thenReturn(false);
+        when(teamRepository.findById(c.team.getId())).thenReturn(Optional.of(c.team));
+        when(competitorRepository.findByUserAccountId(c.user.getId()))
+                .thenReturn(Optional.of(c.competitor));
+        doThrow(new IllegalArgumentException("Faça sua inscrição individual"))
+                .when(participantCompetitionRegistrationService)
+                .exigirInscricaoIniciada(1L, c.competitor.getId());
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.criarPorParticipante(dto, c.user));
 
-        assertTrue(ex.getMessage().contains("equipe informada"));
+        assertEquals(true, ex.getMessage().contains("inscrição individual"));
     }
 
-    private void prepararRepositorios(Cenário c) {
+    private void prepararRepositorios(Cenario c) {
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(c.competition));
         when(categoryRepository.findById(2L)).thenReturn(Optional.of(c.category));
         when(teamRepository.findById(3L)).thenReturn(Optional.of(c.team));
         when(robotRepository.findById(4L)).thenReturn(Optional.of(c.robot));
-        when(competitorRepository.findById(5L)).thenReturn(Optional.of(c.competitor));
     }
 
-    private RegistrationDTO dto(Long teamId, Long robotId, Long competitorId) {
+    private RegistrationDTO dto(Long teamId, Long robotId) {
         RegistrationDTO dto = new RegistrationDTO();
         dto.setCompetitionId(1L);
         dto.setCategoryId(2L);
         dto.setTeamId(teamId);
         dto.setRobotId(robotId);
-        dto.setCompetitorIds(List.of(competitorId));
         return dto;
     }
 
-    private Cenário cenario() {
+    private Cenario cenario() {
         Institution institution = new Institution();
         institution.setId(10L);
         institution.setNome("UFRB");
@@ -120,8 +136,8 @@ class RegistrationOwnershipServiceTest {
 
         UserAccount user = new UserAccount();
         user.setId(7L);
-        user.setNome("Responsável");
-        user.setEmail("responsavel@teste.com");
+        user.setNome("Participante");
+        user.setEmail("participante@teste.com");
         user.setRole(UserRole.PARTICIPANTE);
         user.setAtivo(true);
 
@@ -129,13 +145,13 @@ class RegistrationOwnershipServiceTest {
         team.setId(3L);
         team.setNome("Equipe A");
         team.setInstitution(institution);
-        team.setResponsibleUser(user);
         team.setAtivo(true);
 
         Robot robot = new Robot();
         robot.setId(4L);
-        robot.setNome("Robô A");
+        robot.setNome("Robo A");
         robot.setTeam(team);
+        robot.setCreatedByUser(user);
         robot.setAtivo(true);
 
         Competitor competitor = new Competitor();
@@ -143,6 +159,7 @@ class RegistrationOwnershipServiceTest {
         competitor.setNome("Competidor A");
         competitor.setEmail("competidor@teste.com");
         competitor.setTeam(team);
+        competitor.setUserAccount(user);
         competitor.setAtivo(true);
 
         Competition competition = new Competition();
@@ -152,6 +169,8 @@ class RegistrationOwnershipServiceTest {
         competition.setStatus(StatusCompetition.INSCRICOES_ABERTAS);
         competition.setInicioInscricoes(LocalDate.now().minusDays(1));
         competition.setFimInscricoes(LocalDate.now().plusDays(1));
+        competition.setDataInicio(LocalDate.now().plusDays(5));
+        competition.setDataFim(LocalDate.now().plusDays(6));
 
         CompetitionCategory category = CompetitionCategory.builder()
                 .id(2L)
@@ -160,10 +179,10 @@ class RegistrationOwnershipServiceTest {
                 .ativo(true)
                 .build();
 
-        return new Cenário(institution, user, team, robot, competitor, competition, category);
+        return new Cenario(institution, user, team, robot, competitor, competition, category);
     }
 
-    private record Cenário(
+    private record Cenario(
             Institution institution,
             UserAccount user,
             Team team,

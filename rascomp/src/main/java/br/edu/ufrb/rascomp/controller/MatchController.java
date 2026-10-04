@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.edu.ufrb.rascomp.dto.MatchAgendaDTO;
 import br.edu.ufrb.rascomp.dto.MatchDTO;
+import br.edu.ufrb.rascomp.service.BracketService;
+import br.edu.ufrb.rascomp.service.CompetitionContextService;
 import br.edu.ufrb.rascomp.service.MatchService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MatchController {
     private final MatchService matchService;
+    private final BracketService bracketService;
+    private final CompetitionContextService competitionContextService;
 
     @PostMapping
     public ResponseEntity<MatchDTO> criar(@Valid @RequestBody MatchDTO dto) {
@@ -33,17 +38,22 @@ public class MatchController {
     }
     
     @GetMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<MatchDTO>> listar() {
         return ResponseEntity.ok(matchService.listarTodos());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<MatchDTO> buscarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(matchService.buscarPorId(id));
+        MatchDTO dto = matchService.buscarPorId(id);
+        competitionContextService.exigirOperavel(dto.getCompetitionId());
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/por-chaveamento")
     public ResponseEntity<List<MatchDTO>> listarPorChaveamento(@RequestParam Long bracketId) {
+        var bracket = bracketService.buscarPorId(bracketId);
+        competitionContextService.exigirOperavel(bracket.getCompetitionId());
         return ResponseEntity.ok(matchService.listarPorChaveamento(bracketId));
     }
 

@@ -11,6 +11,7 @@ import br.edu.ufrb.rascomp.model.ConfigFollow;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.TentativaSeguidorLinha;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
@@ -27,26 +28,40 @@ public class TentativaSeguidorLinhaService {
     private final RegistrationRepository registrationRepository;
     private final ConfigFollowRepository configFollowRepository;
     private final AusenciaTomadaSeguidorLinhaRepository ausenciaRepository;
+    private final CompetitionContextService competitionContextService;
+    private final FollowTakeScheduleService followTakeScheduleService;
+    private final FollowResolutionService followResolutionService;
 
     @Transactional
     public TentativaSeguidorLinhaDTO criar(TentativaSeguidorLinhaDTO dto) {
         Registration registration = buscarRegistration(dto.getRegistrationId());
+        exigirContexto(registration);
         validarRegistration(registration);
 
         ConfigFollow config = buscarConfigFollow(registration);
-        validarLimites(dto, config);
+        validarLimites(dto, config, registration);
         validarEstadoCompetitivo(dto);
         validarTomadaDisponivel(dto);
         validarDuplicidade(dto, null);
 
         TentativaSeguidorLinha tentativa = new TentativaSeguidorLinha();
         preencher(tentativa, dto, registration, determinarValidade(dto, config));
-        return new TentativaSeguidorLinhaDTO(tentativaRepository.save(tentativa));
+        TentativaSeguidorLinha salva = tentativaRepository.save(tentativa);
+
+        long totalTomada = tentativaRepository.countByRegistrationIdAndTomada(
+                registration.getId(), dto.getTomada());
+        followTakeScheduleService.registrarTentativa(
+                registration,
+                dto.getTomada(),
+                totalTomada >= config.getTentativasPorTomada());
+
+        return new TentativaSeguidorLinhaDTO(salva);
     }
 
     @Transactional(readOnly = true)
     public List<TentativaSeguidorLinhaDTO> listarPorInscricao(Long registrationId) {
-        buscarRegistration(registrationId);
+        Registration registration = buscarRegistration(registrationId);
+        exigirContexto(registration);
         return tentativaRepository
                 .findByRegistrationIdOrderByTomadaAscNumeroTentativaAsc(registrationId)
                 .stream()
@@ -56,6 +71,7 @@ public class TentativaSeguidorLinhaService {
 
     @Transactional(readOnly = true)
     public List<TentativaSeguidorLinhaDTO> listarPorContexto(Long competitionId, Long categoryId) {
+        competitionContextService.exigirOperavel(competitionId);
         return tentativaRepository
                 .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
                         competitionId,
@@ -67,31 +83,62 @@ public class TentativaSeguidorLinhaService {
 
     @Transactional(readOnly = true)
     public TentativaSeguidorLinhaDTO buscarPorId(Long id) {
-        return new TentativaSeguidorLinhaDTO(buscarTentativa(id));
+        TentativaSeguidorLinha tentativa = buscarTentativa(id);
+        exigirContexto(tentativa.getRegistration());
+        return new TentativaSeguidorLinhaDTO(tentativa);
     }
 
     @Transactional
     public TentativaSeguidorLinhaDTO atualizar(Long id, TentativaSeguidorLinhaDTO dto) {
         TentativaSeguidorLinha tentativa = buscarTentativa(id);
+        exigirContexto(tentativa.getRegistration());
+
         Registration registration = buscarRegistration(dto.getRegistrationId());
+        exigirContexto(registration);
+
+        if (!tentativa.getRegistration().getId().equals(registration.getId())) {
+            throw new IllegalArgumentException(
+                    "Uma tentativa existente não pode ser transferida para outra inscrição.");
+        }
+
         validarRegistration(registration);
 
         ConfigFollow config = buscarConfigFollow(registration);
-        validarLimites(dto, config);
+        validarLimites(dto, config, registration);
         validarEstadoCompetitivo(dto);
         validarTomadaDisponivel(dto);
         validarDuplicidade(dto, id);
 
         preencher(tentativa, dto, registration, determinarValidade(dto, config));
-        return new TentativaSeguidorLinhaDTO(tentativaRepository.save(tentativa));
+        TentativaSeguidorLinha salva = tentativaRepository.save(tentativa);
+
+        long totalTomada = tentativaRepository.countByRegistrationIdAndTomada(
+                registration.getId(), dto.getTomada());
+        followTakeScheduleService.registrarTentativa(
+                registration,
+                dto.getTomada(),
+                totalTomada >= config.getTentativasPorTomada());
+
+        return new TentativaSeguidorLinhaDTO(salva);
     }
 
     @Transactional
     public void deletar(Long id) {
-        tentativaRepository.delete(buscarTentativa(id));
+        TentativaSeguidorLinha tentativa = buscarTentativa(id);
+        exigirContexto(tentativa.getRegistration());
+        tentativaRepository.delete(tentativa);
+    }
+
+    private void exigirContexto(Registration registration) {
+        competitionContextService.exigirOperavel(registration.getCompetition().getId());
     }
 
     private void validarRegistration(Registration registration) {
+        if (registration.getCompetition() == null
+                || registration.getCompetition().getStatus() != StatusCompetition.EM_ANDAMENTO) {
+            throw new IllegalArgumentException(
+                    "Tentativas de Follow só podem ser registradas com a competição EM_ANDAMENTO.");
+        }
         if (!Boolean.TRUE.equals(registration.getAtivo()) || registration.getStatus() != StatusRegistration.APROVADA) {
             throw new IllegalArgumentException("A inscrição deve estar ativa e aprovada.");
         }
@@ -107,10 +154,17 @@ public class TentativaSeguidorLinhaService {
                         "Configuração de Seguidor de Linha não encontrada para a categoria: " + categoryId));
     }
 
-    private void validarLimites(TentativaSeguidorLinhaDTO dto, ConfigFollow config) {
-        if (dto.getTomada() == null || dto.getTomada() < 1 || dto.getTomada() > config.getNumeroTomadas()) {
+    private void validarLimites(
+            TentativaSeguidorLinhaDTO dto,
+            ConfigFollow config,
+            Registration registration) {
+
+        if (!followResolutionService.tomadaPermitida(
+                registration.getCompetition().getId(),
+                registration.getCategory().getId(),
+                dto.getTomada())) {
             throw new IllegalArgumentException(
-                    "Tomada inválida. Esta categoria permite tomadas de 1 até " + config.getNumeroTomadas() + ".");
+                    "Tomada inválida. Use uma tomada normal ou uma Tomada Extra previamente autorizada.");
         }
 
         if (dto.getNumeroTentativa() == null
@@ -149,6 +203,13 @@ public class TentativaSeguidorLinhaService {
 
         if (concluida && !possuiTempo) {
             throw new IllegalArgumentException("Tentativa concluída deve possuir tempo registrado.");
+        }
+
+        if (concluida
+                && dto.getTempoSegundos() != null
+                && dto.getTempoSegundos().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(
+                    "Tentativa concluída deve possuir tempo maior que zero. Inicie o cronômetro ou informe um tempo válido.");
         }
 
         if (valida && !possuiTempo) {

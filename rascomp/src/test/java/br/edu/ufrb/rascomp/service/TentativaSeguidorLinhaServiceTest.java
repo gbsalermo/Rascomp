@@ -3,6 +3,7 @@ package br.edu.ufrb.rascomp.service;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -16,11 +17,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
+import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.ConfigFollow;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.TentativaSeguidorLinha;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.AusenciaTomadaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
@@ -34,8 +37,12 @@ class TentativaSeguidorLinhaServiceTest {
     @Mock private RegistrationRepository registrationRepository;
     @Mock private ConfigFollowRepository configFollowRepository;
     @Mock private AusenciaTomadaSeguidorLinhaRepository ausenciaRepository;
+    @Mock private CompetitionContextService competitionContextService;
 
-    @InjectMocks
+        @Mock private FollowTakeScheduleService followTakeScheduleService;
+    @Mock private FollowResolutionService followResolutionService;
+
+@InjectMocks
     private TentativaSeguidorLinhaService service;
 
     private Registration registration;
@@ -49,8 +56,14 @@ class TentativaSeguidorLinhaServiceTest {
                 .ativo(true)
                 .build();
 
+        Competition competition = new Competition();
+        competition.setId(9L);
+        competition.setAtivo(true);
+        competition.setStatus(StatusCompetition.EM_ANDAMENTO);
+
         registration = new Registration();
         registration.setId(1L);
+        registration.setCompetition(competition);
         registration.setCategory(category);
         registration.setStatus(StatusRegistration.APROVADA);
         registration.setAtivo(true);
@@ -66,13 +79,30 @@ class TentativaSeguidorLinhaServiceTest {
                 .build();
 
         when(registrationRepository.findById(1L)).thenReturn(Optional.of(registration));
-        when(configFollowRepository.findByCompetitionCategoryId(3L)).thenReturn(Optional.of(config));
+        lenient().when(configFollowRepository.findByCompetitionCategoryId(3L)).thenReturn(Optional.of(config));
+        lenient().when(followResolutionService.tomadaPermitida(9L, 3L, 1)).thenReturn(true);
+        lenient().when(followResolutionService.tomadaPermitida(9L, 3L, 2)).thenReturn(true);
+        lenient().when(followResolutionService.tomadaPermitida(9L, 3L, 3)).thenReturn(true);
+    }
+
+    @Test
+    void deveRejeitarTentativaQuandoCompeticaoNaoEstaEmAndamento() {
+        registration.getCompetition().setStatus(StatusCompetition.FINALIZADA);
+        assertThrows(IllegalArgumentException.class, () -> service.criar(tentativaBase()));
     }
 
     @Test
     void deveRejeitarTomadaAcimaDoLimiteConfigurado() {
         TentativaSeguidorLinhaDTO dto = tentativaBase();
         dto.setTomada(4);
+
+        assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
+    }
+
+    @Test
+    void deveRejeitarTentativaConcluidaComTempoZero() {
+        TentativaSeguidorLinhaDTO dto = tentativaBase();
+        dto.setTempoSegundos(BigDecimal.ZERO);
 
         assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
     }

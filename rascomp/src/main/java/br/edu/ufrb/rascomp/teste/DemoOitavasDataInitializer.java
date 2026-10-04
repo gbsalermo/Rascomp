@@ -8,6 +8,9 @@ import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -95,6 +98,7 @@ public class DemoOitavasDataInitializer {
 
         UserAccount organizacao = userAccountRepository.findByEmailIgnoreCase(ORGANIZATION_EMAIL)
                 .orElseThrow(() -> new IllegalStateException("Usuário de organização da demonstração não encontrado."));
+        autenticarOrganizacao(organizacao);
 
         Bracket bracket = chaveAtualComOitavas(competition.getId(), category.getId());
         if (bracket == null && competition.getStatus() != StatusCompetition.INSCRICOES_ENCERRADAS) {
@@ -130,6 +134,15 @@ public class DemoOitavasDataInitializer {
 
         System.out.println("RASCOMP · DEMO SUMÔ: chave ao vivo com " + oitavas
                 + " confrontos de oitavas; quartas já formadas: " + quartasAgendadas + ".");
+        SecurityContextHolder.clearContext();
+    }
+
+    private void autenticarOrganizacao(UserAccount user) {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        user,
+                        user.getPassword(),
+                        java.util.List.of(new SimpleGrantedAuthority("ROLE_DEV"))));
     }
 
     private Team garantirEquipe(int indice, Institution institution) {

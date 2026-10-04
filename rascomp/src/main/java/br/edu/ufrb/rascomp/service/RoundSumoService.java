@@ -37,10 +37,12 @@ public class RoundSumoService {
     private final InspecaoSumoService inspecaoSumoService;
     private final MatchResultService matchResultService;
     private final BracketProgressionService bracketProgressionService;
+    private final CompetitionContextService competitionContextService;
 
     @Transactional
     public RoundSumoDTO registrar(RoundSumoDTO dto) {
         Match match = buscarMatch(dto.getMatchId());
+        exigirContexto(match);
         validarPartida(match);
 
         ConfigSumo config = buscarConfig(match);
@@ -96,6 +98,7 @@ public class RoundSumoService {
     @Transactional
     public List<RoundSumoDTO> registrarBatalha(BatalhaSumoDTO dto) {
         Match match = buscarMatch(dto.getMatchId());
+        exigirContexto(match);
         validarPartida(match);
 
         List<RoundSumoDTO> registrados = new ArrayList<>();
@@ -116,12 +119,15 @@ public class RoundSumoService {
 
     @Transactional(readOnly = true)
     public RoundSumoDTO buscarPorId(Long id) {
-        return new RoundSumoDTO(buscarRound(id));
+        RoundSumo round = buscarRound(id);
+        exigirContexto(round.getMatch());
+        return new RoundSumoDTO(round);
     }
 
     @Transactional(readOnly = true)
     public List<RoundSumoDTO> listarPorPartida(Long matchId) {
-        buscarMatch(matchId);
+        Match match = buscarMatch(matchId);
+        exigirContexto(match);
         return roundRepository.findByMatchIdOrderByNumeroRoundAsc(matchId)
                 .stream()
                 .map(RoundSumoDTO::new)
@@ -174,6 +180,10 @@ public class RoundSumoService {
                 vencedorAutomatico,
                 StatusRoundSumo.FINALIZADO,
                 MotivoResultadoRoundSumo.PENALIDADES);
+    }
+
+    private void exigirContexto(Match match) {
+        competitionContextService.exigirOperavel(match.getBracket().getCompetition().getId());
     }
 
     private void validarPartida(Match match) {

@@ -61,11 +61,19 @@ abstract class IntegrationFlowTestSupport {
     }
 
     protected UserAccount organizacaoAutenticada() {
+        return autenticarOperador(UserRole.DEV, "Organizacao", "org");
+    }
+
+    protected UserAccount gestaoAutenticada() {
+        return autenticarOperador(UserRole.GESTAO, "Gestao", "gestao");
+    }
+
+    private UserAccount autenticarOperador(UserRole role, String nomePrefixo, String emailPrefixo) {
         UserAccount user = new UserAccount();
-        user.setNome(unique("Organizacao"));
-        user.setEmail(unique("org").toLowerCase() + "@flow.local");
+        user.setNome(unique(nomePrefixo));
+        user.setEmail(unique(emailPrefixo).toLowerCase() + "@flow.local");
         user.setPasswordHash("not-used-in-flow-test");
-        user.setRole(UserRole.DEV);
+        user.setRole(role);
         user.setAtivo(true);
         user = userAccountRepository.save(user);
 

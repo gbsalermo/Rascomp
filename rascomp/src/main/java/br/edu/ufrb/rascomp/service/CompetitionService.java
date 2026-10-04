@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 public class CompetitionService {
 
     private final CompetitionRepository competitionRepository;
+    private final RegistrationCompositionService registrationCompositionService;
+    private final UserAccountService userAccountService;
 
     @Transactional
     public CompetitionDTO criar(CompetitionDTO dto) {
@@ -59,13 +61,33 @@ public class CompetitionService {
         validarDatas(dto);
         validarNomeDuplicado(dto.getNome(), id);
 
-        StatusCompetition novoStatus = dto.getStatus() != null ? dto.getStatus() : competition.getStatus();
-        validarTransicaoStatus(competition.getStatus(), novoStatus);
+        if (dto.getStatus() != null && dto.getStatus() != competition.getStatus()) {
+            throw new IllegalArgumentException(
+                    "O status da competição só pode ser alterado pelas ações operacionais específicas.");
+        }
         validarAtivoNoFluxoComum(dto.getAtivo());
 
+        StatusCompetition statusAtual = competition.getStatus();
         preencher(competition, dto);
-        competition.setStatus(novoStatus);
+        competition.setStatus(statusAtual);
         if (dto.getAtivo() != null) competition.setAtivo(dto.getAtivo());
+        return new CompetitionDTO(competitionRepository.save(competition));
+    }
+
+    @Transactional
+    public CompetitionDTO alterarStatus(Long id, StatusCompetition novoStatus) {
+        if (novoStatus == null) {
+            throw new IllegalArgumentException("Informe o novo status da competição.");
+        }
+
+        Competition competition = buscarCompetition(id);
+        validarTransicaoStatus(competition.getStatus(), novoStatus);
+        if (novoStatus == StatusCompetition.EM_ANDAMENTO) {
+            registrationCompositionService.consolidarPendentesDaCompeticao(
+                    competition.getId(),
+                    userAccountService.buscarAtual());
+        }
+        competition.setStatus(novoStatus);
         return new CompetitionDTO(competitionRepository.save(competition));
     }
 

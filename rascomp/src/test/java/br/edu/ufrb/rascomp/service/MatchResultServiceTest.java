@@ -18,16 +18,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.edu.ufrb.rascomp.dto.MatchResultDTO;
 import br.edu.ufrb.rascomp.model.Bracket;
+import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Match;
 import br.edu.ufrb.rascomp.model.MatchResult;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
+import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
+import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.MatchResultRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
+import br.edu.ufrb.rascomp.repository.RoundSumoRepository;
 
 @ExtendWith(MockitoExtension.class)
 class MatchResultServiceTest {
@@ -36,9 +40,79 @@ class MatchResultServiceTest {
     @Mock private MatchRepository matchRepository;
     @Mock private RegistrationRepository registrationRepository;
     @Mock private BracketProgressionService bracketProgressionService;
+    @Mock private RoundSumoRepository roundSumoRepository;
+    @Mock private CompetitionContextService competitionContextService;
+    @Mock private UserAccountService userAccountService;
 
     @InjectMocks
     private MatchResultService service;
+
+    @Test
+    void devPodeCorrigirVencedorAntesDaDependenciaSeguinteComecar() {
+        Competition competition = new Competition();
+        competition.setId(1L);
+
+        CompetitionCategory category = new CompetitionCategory();
+        category.setModalidade(Modalidade.SUMO);
+
+        Bracket bracket = new Bracket();
+        bracket.setId(10L);
+        bracket.setCompetition(competition);
+        bracket.setCategory(category);
+        bracket.setAtivo(true);
+        bracket.setAtual(true);
+
+        Robot robotA = new Robot();
+        robotA.setNome("Atlas");
+        Registration a = new Registration();
+        a.setId(101L);
+        a.setRobot(robotA);
+
+        Robot robotB = new Robot();
+        robotB.setNome("Boreal");
+        Registration b = new Registration();
+        b.setId(102L);
+        b.setRobot(robotB);
+
+        Match match = new Match();
+        match.setId(20L);
+        match.setBracket(bracket);
+        match.setRegistrationA(a);
+        match.setRegistrationB(b);
+        match.setStatus(StatusMatch.FINALIZADA);
+        match.setAtivo(true);
+
+        MatchResult persisted = new MatchResult();
+        persisted.setId(30L);
+        persisted.setMatch(match);
+        persisted.setWinner(a);
+        persisted.setPontosA(2);
+        persisted.setPontosB(1);
+
+        UserAccount dev = new UserAccount();
+        dev.setId(40L);
+        dev.setNome("DEV");
+        dev.setRole(UserRole.DEV);
+        dev.setAtivo(true);
+
+        when(userAccountService.buscarAtual()).thenReturn(dev);
+        when(matchRepository.findById(20L)).thenReturn(Optional.of(match));
+        when(resultRepository.findByMatchId(20L)).thenReturn(Optional.of(persisted));
+        when(registrationRepository.findById(102L)).thenReturn(Optional.of(b));
+        when(resultRepository.save(any(MatchResult.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MatchResultDTO corrected = service.corrigirExcepcionalDev(
+                20L,
+                102L,
+                "Vencedor registrado incorretamente pela mesa.");
+
+        assertEquals(102L, corrected.getWinnerRegistrationId());
+        assertEquals(1, corrected.getPontosA());
+        assertEquals(2, corrected.getPontosB());
+        assertEquals("Vencedor registrado incorretamente pela mesa.", corrected.getCorrectionReason());
+        assertEquals(40L, corrected.getCorrectedByUserId());
+        verify(bracketProgressionService).corrigirVencedor(match, a, b);
+    }
 
     @Test
     void deveBloquearCriacaoManualDeResultadoParaSumo() {

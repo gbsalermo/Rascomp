@@ -35,7 +35,9 @@ class BracketServiceTest {
     @Mock private CompetitionCategoryRepository categoryRepository;
     @Mock private BracketIntegrityService bracketIntegrityService;
 
-    @InjectMocks
+        @Mock private CompetitionContextService competitionContextService;
+
+@InjectMocks
     private BracketService service;
 
     @Test

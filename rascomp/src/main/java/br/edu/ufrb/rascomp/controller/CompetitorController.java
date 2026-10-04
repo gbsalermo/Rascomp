@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -28,6 +29,7 @@ public class CompetitorController {
     private final CompetitorService competitorService;
 
     @PostMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<CompetitorDTO> criar(
             @Valid @RequestBody CompetitorDTO dto) {
 
@@ -37,6 +39,7 @@ public class CompetitorController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<CompetitorDTO>> listar(
             @RequestParam(defaultValue = "false") boolean apenasAtivos) {
 
@@ -48,6 +51,7 @@ public class CompetitorController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<CompetitorDTO> buscarPorId(
             @PathVariable Long id) {
 
@@ -57,6 +61,7 @@ public class CompetitorController {
     }
 
     @GetMapping("/por-email")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<CompetitorDTO> buscarPorEmail(
             @RequestParam String email) {
 
@@ -66,6 +71,7 @@ public class CompetitorController {
     }
 
     @GetMapping("/por-equipe")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<List<CompetitorDTO>> listarPorEquipe(
             @RequestParam Long teamId,
             @RequestParam(defaultValue = "false") boolean apenasAtivos) {
@@ -76,6 +82,7 @@ public class CompetitorController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<CompetitorDTO> atualizar(
             @PathVariable Long id,
             @Valid @RequestBody CompetitorDTO dto) {
@@ -86,6 +93,7 @@ public class CompetitorController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<Void> deletar(
             @PathVariable Long id) {
 
@@ -94,6 +102,7 @@ public class CompetitorController {
     }
 
     @PatchMapping("/{id}/reativar")
+    @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<CompetitorDTO> reativar(
             @PathVariable Long id) {
 

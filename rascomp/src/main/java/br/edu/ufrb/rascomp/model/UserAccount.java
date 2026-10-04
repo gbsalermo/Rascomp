@@ -60,6 +60,9 @@ public class UserAccount implements UserDetails, Serializable {
     @Column(name = "ultimo_login")
     private LocalDateTime ultimoLogin;
 
+    @Column(name = "session_version", nullable = false)
+    private Long sessionVersion = 0L;
+
     @CreationTimestamp
     @Column(name = "data_cadastro", nullable = false, updatable = false)
     private LocalDateTime dataCadastro;

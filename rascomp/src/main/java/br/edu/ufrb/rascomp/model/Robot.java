@@ -50,6 +50,10 @@ public class Robot implements Serializable {
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_user_id")
+    private UserAccount createdByUser;
+
     @Column(nullable = false)
     private Boolean ativo = true;
 
