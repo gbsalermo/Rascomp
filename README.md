@@ -343,7 +343,7 @@ fluxos integrados H2                      ✅
 MySQL + Flyway V13 + profile testdata     ✅
 ```
 
-As ETAPAS 1, 2 e 3 estão concluídas/validadas. O roadmap foi reorganizado por maturidade do produto. A **ETAPA 4 — Consolidação funcional e polimento do MVP** está em andamento, com BLOCOS 1 e 2 validados e BLOCO 3 implementado aguardando validação; o deploy passa a ser a ETAPA 16, última etapa do ciclo. O roadmap também possui um **checkpoint transversal de Otimização Mobile do MVP** dentro da PRIORIDADE 1. Ele acompanha as interfaces revisadas/criadas nas ETAPAS 4, 7, 8 e 9 e deve estar concluído antes da ETAPA 10; hoje, apenas o login possui tratamento responsivo dedicado já revisado.
+As ETAPAS 1–4 estão concluídas/validadas. O próximo ciclo é o **TRILHO V1 BETA**: Landing → infraestrutura cloud/banco → cadastro/acesso/inscrições reais → estabilização. Depois disso, o roadmap oficial é retomado em ambiente não-prod. A ETAPA 16 passa a representar consolidação/hardening final da produção, não o primeiro go-live. O roadmap também possui um **checkpoint transversal de Otimização Mobile do MVP** dentro da PRIORIDADE 1. Ele acompanha as interfaces revisadas/criadas nas ETAPAS 4, 7, 8 e 9 e deve estar concluído antes da ETAPA 10; hoje, apenas o login possui tratamento responsivo dedicado já revisado.
 
 <p align="right">(<a href="#readme-top">voltar ao topo ⬆</a>)</p>
 
