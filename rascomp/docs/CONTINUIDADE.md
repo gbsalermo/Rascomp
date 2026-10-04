@@ -2171,6 +2171,8 @@ Registration.competitors
 
 ## Checkpoint 01/10/2026 — BLOCO 4.3 / inscrição dupla e N:N implementados
 
+> **Histórico superado pelas regras V26/V27.** A fonte funcional atual está no frontend `docs/REGRAS_PARTICIPANTE.md`.
+
 O 4.3 foi reaberto antes da validação manual e a implementação principal foi alinhada ao fluxo real definido com o cliente.
 
 ### Migration V25
@@ -2473,3 +2475,46 @@ Estado:
 ```
 
 Não considerar suíte/build verdes sem execução real nos heads atuais.
+
+
+---
+
+## Checkpoint pós-bateria manual — 03/10/2026
+
+A bateria principal do BLOCO 4.3 foi executada até o Teste 40. Os testes 35–40 foram validados após correção do isolamento do profile `testdata`.
+
+Os achados da bateria geraram uma rodada focal de correções:
+
+- V27 adiciona `registrations.robot_description` para preservar a descrição enviada com a inscrição do Robot;
+- criador/líder podem editar nome e descrição simples do Robot;
+- cadastro de Robot pode ser removido/desativado com segurança quando não houver Registration PENDENTE/APROVADA;
+- duplicidade de nome dentro da mesma Team permanece protegida por serviço + constraint;
+- seção de inscrições de Robot e alertas receberam maior destaque;
+- cards da GESTAO agora identificam explicitamente métricas de **Robots**;
+- filtro de Competition foi movido para o topo da página Inscrições;
+- aba do navegador passou a usar título por perfil;
+- líder da Team passou a ser identificado no Portal, Competidores e análise de inscrição pessoal;
+- reinclusão de responsável gera novo evento de composição;
+- veto de remoção restaura `RobotResponsible`;
+- veto de adição desfaz a associação;
+- mudanças não vetadas não exigem aprovação: são consolidadas automaticamente ao iniciar a Competition;
+- edição comum da Competition não altera status;
+- ciclo operacional obrigatório permanece `INSCRICOES_ABERTAS → INSCRICOES_ENCERRADAS → EM_ANDAMENTO`;
+- entrada manual DEV em `EM_ANDAMENTO` continua excepcional, justificada e auditada, exigindo PARTICIPANTE já associado a Team;
+- criação administrativa completa de pessoa/competidor sem vínculo prévio continua no roadmap da ferramenta DEV ampliada.
+
+Validação focal vigente: frontend `docs/VALIDACAO_ETAPA4_BLOCO4.md`, seção **Bateria curta de regressão dos achados (R1–R15)**.
+
+Estado:
+
+```text
+BLOCO 4.3
+→ bateria 1–40 executada
+→ correções pós-bateria implementadas
+→ AGUARDANDO regressão R1–R15 + build/testes automatizados
+
+BLOCO 4.4
+→ NÃO INICIADO
+```
+
+Migrations atuais: **V1–V27**. Próxima migration estrutural: **V28+**.
