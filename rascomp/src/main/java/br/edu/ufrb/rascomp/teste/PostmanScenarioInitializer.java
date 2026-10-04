@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +41,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Component
 @RequiredArgsConstructor
+@Profile("!testdata")
 @ConditionalOnProperty(name = "rascomp.seed.postman", havingValue = "true")
 public class PostmanScenarioInitializer implements CommandLineRunner {
 
