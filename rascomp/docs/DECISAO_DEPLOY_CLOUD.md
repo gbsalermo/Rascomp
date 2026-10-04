@@ -1,6 +1,6 @@
 # RasComp — Decisão de Deploy em Nuvem
 
-No roadmap reorganizado, esta decisão será executada na **ETAPA 16 — Deploy**, depois da ETAPA 15 de validação final.
+Atualização 03/10/2026: o primeiro deploy foi antecipado para o **TRILHO V1 BETA**. A arquitetura abaixo continua como referência técnica; a ETAPA 16 passa a representar consolidação final da produção.
 
 A decisão congelada do primeiro deploy é mantida como documento canônico no repositório de frontend:
 

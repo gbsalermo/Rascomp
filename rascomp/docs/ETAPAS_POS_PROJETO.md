@@ -42,3 +42,39 @@ Não iniciar uma nova etapa com base neste ponteiro; consultar sempre o roadmap 
 - Backend checkpoint: `rascomp/docs/CONTINUIDADE.md`
 - Dossiê cross-repo: `gbsalermo/Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md`
 - Regras do participante: `gbsalermo/Rascomp-FRONT/docs/REGRAS_PARTICIPANTE.md`
+
+---
+
+## Trilho prioritário V1 Beta
+
+A ordem canônica está no frontend `docs/ETAPAS_POS_PROJETO.md`.
+
+Resumo:
+
+```text
+V1-BETA A — Landing
+V1-BETA B — produção/cloud + banco
+V1-BETA C — cadastro/acesso/inscrições reais
+V1-BETA D — smoke/estabilização
+→ retorno ao roadmap oficial
+```
+
+Após a Beta, qualquer evolução deve ocorrer fora de produção e só ser promovida após testes.
+
+## Gate obrigatório antes de inscrições reais
+
+Consultar o roadmap canônico do frontend. Resumo bloqueante:
+
+```text
+banco persistente
+backup/restore
+Flyway
+storage de comprovantes
+contas verificadas reais
+Competition/categorias/janela
+smoke conta nova do zero
+```
+
+Ajustes Gerais DEV avançados não bloqueiam o primeiro go-live.
+
+A V1 Beta também antecipa inscrição simples de Futebol de Robôs sem Robot próprio obrigatório. O domínio da partida fica para a ETAPA 6.

@@ -1,6 +1,6 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **01/10/2026**
+Última atualização: **03/10/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
@@ -24,77 +24,18 @@ rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md
 # 1. Marco atual
 
 ```text
-ETAPA 0  ✅ concluída / validada
-ETAPA 1  ✅ concluída / validada
-ETAPA 2   ✅ concluída / validada
-ETAPA 3   ✅ concluída / validada
-ETAPA 4   🚧 EM ANDAMENTO — BLOCO 3 ✅ / BLOCO 4.3 🧪 aguardando validação manual
+ETAPAS 0–4    ✅ concluídas / validadas
+V1-BETA A     🚧 próxima — Landing pública
+V1-BETA B     ⏳ cloud + MySQL + storage/secrets
+V1-BETA C     ⏳ acesso/inscrições reais
+V1-BETA D     ⏳ smoke + estabilização
 ```
 
-Blocos concluídos da ETAPA 1:
+O roadmap oficial será retomado após a publicação/estabilização da V1 Beta.
 
-```text
-Bloco 1 — Competition + Registration ✅
-Bloco 2 — Follow Line                 ✅
-Bloco 3 — Sumô                        ✅
-Bloco 4 — Chaves                      ✅
-Bloco 5 — Fluxos integrados           ✅
-```
+Ajustes Gerais DEV avançados são pós-Beta e não bloqueiam o primeiro go-live.
 
-O Bloco 1 consolidou ciclo da competição, inscrições, cancelamento/desistência, prorrogação/reabertura e compatibilidade física de robôs híbridos.
-
-O Bloco 2 consolidou o contrato operacional do Follow:
-
-- exatamente 3 tomadas × 3 tentativas;
-- estados coerentes de tentativa;
-- tempo máximo por tentativa;
-- penalidade temporal configurável;
-- cronômetro operacional no frontend;
-- tomada perdida por ausência como evento próprio e auditável;
-- checkpoints apenas informativos;
-- ranking preservado pela melhor tentativa válida da tomada e melhor tomada do robô;
-- initializers/testdata alinhados.
-
-O Bloco 3 consolidou o contrato operacional do Sumô:
-
-- inspeção humana `APTO/INAPTO`;
-- peso medido apenas informativo/auditável;
-- modo de controle `AUTONOMO | RC` por categoria;
-- 3 rounds regulares / 2 vitórias;
-- rounds extras limitados e justificados;
-- `FALHA_INICIALIZACAO` como motivo explícito sem consequência automática escolhida pelo sistema;
-- juiz cadastrado no contexto da competição;
-- decisão final de juiz identificada e justificada após esgotar os rounds disponíveis;
-- initializers/testdata alinhados ao novo contrato;
-- Flyway V11.
-
-O Bloco 4 consolidou a integridade do chaveamento:
-
-- geração/regeneração comum somente em `INSCRICOES_ENCERRADAS`;
-- BYE automático não é tratado como disputa competitiva real;
-- regeneração bloqueada depois de round, resultado ou partida realmente iniciada/finalizada;
-- chave marcada `EM_ANDAMENTO` quando começa uma disputa real;
-- estrutura lógica protegida contra edição comum após geração;
-- agenda operacional separada da árvore competitiva;
-- correção segura do vencedor propagado enquanto a próxima dependência ainda não começou;
-- correção comum bloqueada depois que a partida dependente possui atividade competitiva;
-- initializers/testdata alinhados à nova sequência;
-- Flyway V12.
-
-O Bloco 5 fechou a validação integrada da ETAPA 1:
-
-- profile de teste `flowtest` com H2 em memória, services reais e repositories JPA reais;
-- `CompetitionLifecycleFlowTest`;
-- `RegistrationFlowTest`;
-- `FollowCompetitionFlowTest`;
-- `SumoCompetitionFlowTest`;
-- `CompetitionIntegrityFlowTest`;
-- verificação explícita de rollback: batalha com primeiro round válido e segundo inválido não persiste nenhum round nem alteração parcial;
-- verificação de operações inválidas preservando o estado anterior;
-- total da suíte: **111 testes / 0 falhas / 0 erros / 0 skipped**;
-- `demo-profile` verde contra MySQL real + Flyway V12.
-
-As **ETAPAS 1, 2 e 3 estão concluídas e validadas**. A **ETAPA 4 — Consolidação funcional e polimento do MVP** está em andamento. O BLOCO 3 foi concluído/validado; no BLOCO 4, 4.1 e 4.2 estão implementados e o 4.3 está implementado aguardando validação manual. O 4.4 não foi iniciado.
+Migrations atuais: **V1–V27**. Próxima migration estrutural: **V28+**.
 
 ---
 
@@ -2561,3 +2502,92 @@ Histórico de QA: frontend `docs/VALIDACAO_ETAPA4_BLOCO4.md`.
 O antigo 4.4 foi retirado da ETAPA 4. O próximo trabalho de Landing será consolidado futuramente com a entrega pública já prevista, após decisão específica de roadmap.
 
 Não declarar CI remoto verde: não havia execução nova registrada do GitHub Actions nos heads finais.
+
+---
+
+## Próximo ciclo — V1 Beta em produção
+
+A primeira publicação real foi antecipada para um trilho Beta.
+
+Ordem:
+
+```text
+Landing
+→ backend/API em cloud
+→ MySQL de produção
+→ autenticação e inscrições reais
+→ smoke/estabilização
+→ retorno ao roadmap oficial
+```
+
+Política obrigatória após a Beta:
+
+```text
+branch → staging/homologação → testes → merge → produção
+```
+
+Produção não é ambiente de desenvolvimento.
+
+Requisitos mínimos do backend para abertura:
+- profile de produção sem testdata;
+- banco separado;
+- Flyway aplicado de forma controlada;
+- secrets externos ao código;
+- CORS/URLs HTTPS;
+- healthcheck/logs;
+- backup/restore mínimo;
+- bootstrap seguro de DEV;
+- storage/configuração necessária a comprovantes e mídia sem depender do ambiente local.
+
+### Gate backend da V1 Beta
+
+Não liberar inscrições reais até confirmar:
+
+- banco MySQL de produção persistente;
+- backup + estratégia de restore;
+- Flyway íntegro no banco real;
+- comprovantes em storage persistente, nunca filesystem efêmero;
+- contas verificadas reais de DEV/GESTAO;
+- Competition/categorias/janela corretas;
+- profile de produção sem testdata/demo;
+- smoke ponta a ponta com uma conta nova criada do zero.
+
+Ajustes Gerais DEV avançados não bloqueiam este gate.
+
+#### Futebol de Robôs — contrato mínimo da Beta
+
+A Beta deve aceitar uma inscrição em categoria Futebol **sem Robot próprio obrigatório**, porque o Robot pode ser fornecido/atribuído pela organização.
+
+O backend não deve criar Robot fictício apenas para atender a FK atual.
+
+Nesta frente implementar apenas o mínimo necessário para criar/revisar a inscrição. Partida, gols, cronômetro, desempate, chaveamento, inspeção e penalidades permanecem na ETAPA 6.
+
+
+### Portabilidade da infraestrutura Beta
+
+A V1-BETA B pode ser provisionada inicialmente em uma conta temporária do mantenedor para acelerar o go-live.
+
+Isso é **provisório**.
+
+A infraestrutura deve ser configurada desde o início para permitir migração posterior para:
+
+```text
+conta própria do projeto/organização
++
+domínio próprio
++
+secrets próprios
++
+banco/storage próprios
+```
+
+Regras:
+
+- não hardcodar IDs, URLs ou credenciais da conta temporária no código;
+- domínio/API/frontend devem ser configuráveis;
+- secrets devem permanecer externos ao repositório;
+- banco e object storage devem possuir estratégia de exportação/migração;
+- DNS/TLS devem permitir troca de conta/provedor sem alteração do domínio funcional da aplicação;
+- documentar recursos criados, ownership e passos de transferência.
+
+A conta temporária não pode virar dependência estrutural permanente.
