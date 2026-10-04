@@ -16,8 +16,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.edu.ufrb.rascomp.dto.ManualParticipantEntryRequest;
 import br.edu.ufrb.rascomp.dto.ParticipantCompetitionRegistrationDTO;
 import br.edu.ufrb.rascomp.dto.ParticipantCompetitionRegistrationReviewRequest;
+import br.edu.ufrb.rascomp.service.ManualCompetitionEntryService;
 import br.edu.ufrb.rascomp.service.ParticipantCompetitionRegistrationService;
 import br.edu.ufrb.rascomp.service.RegistrationReceiptStorageService;
 import jakarta.validation.Valid;
@@ -29,6 +31,15 @@ import lombok.RequiredArgsConstructor;
 public class ParticipantCompetitionRegistrationAdminController {
 
     private final ParticipantCompetitionRegistrationService service;
+    private final ManualCompetitionEntryService manualCompetitionEntryService;
+
+    @org.springframework.web.bind.annotation.PostMapping("/entrada-manual")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('DEV')")
+    public ResponseEntity<ParticipantCompetitionRegistrationDTO> entradaManual(
+            @Valid @RequestBody ManualParticipantEntryRequest request) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(manualCompetitionEntryService.criarParticipante(request));
+    }
 
     @GetMapping("/por-competicao")
     public ResponseEntity<List<ParticipantCompetitionRegistrationDTO>> listar(
