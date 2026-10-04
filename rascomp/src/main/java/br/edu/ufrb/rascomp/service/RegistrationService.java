@@ -790,6 +790,12 @@ public class RegistrationService {
         registration.setTeam(team);
         registration.setRobot(robot);
         registration.setCompetitors(competitors);
+        String robotDescricao = dto.getRobotDescricao();
+        if (robotDescricao == null || robotDescricao.isBlank()) {
+            robotDescricao = robot.getDescricao();
+        }
+        registration.setRobotDescription(
+                robotDescricao == null || robotDescricao.isBlank() ? null : robotDescricao.trim());
         registration.setObservacao(dto.getObservacao());
     }
 }
