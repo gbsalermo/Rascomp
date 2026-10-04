@@ -89,7 +89,7 @@ class ParticipantPortalServiceTest {
         when(accessPolicyService.exigirEquipeDoParticipante(10L)).thenReturn(team);
         when(accessPolicyService.usuarioAtual()).thenReturn(lider);
         when(accessPolicyService.ehResponsavel(team, lider)).thenReturn(true);
-        when(robotService.listarPorEquipe(10L, false)).thenReturn(List.of(chronos, titan));
+        when(robotService.listarPorEquipe(10L, true)).thenReturn(List.of(chronos, titan));
 
         List<RobotDTO> resultado = service.robos(10L);
 
@@ -115,7 +115,7 @@ class ParticipantPortalServiceTest {
         List<RobotDTO> resultado = service.robos(10L);
 
         assertEquals(List.of(100L, 102L), resultado.stream().map(RobotDTO::getId).toList());
-        verify(robotService, never()).listarPorEquipe(10L, false);
+        verify(robotService, never()).listarPorEquipe(10L, true);
         verify(registrationService, never()).listarPorEquipeEParticipante(10L, 2L);
     }
 
@@ -145,7 +145,7 @@ class ParticipantPortalServiceTest {
     }
 
     @Test
-    void membroResponsavelPeloRoboDevePoderEnviarInscricaoPendente() {
+    void criadorDoRoboDevePoderEnviarInscricaoPendente() {
         UserAccount lider = usuario(1L);
         UserAccount membro = usuario(2L);
         membro.setRole(UserRole.PARTICIPANTE);
@@ -166,7 +166,7 @@ class ParticipantPortalServiceTest {
         RegistrationDTO criada = inscricao(300L, 100L);
 
         when(accessPolicyService.exigirEquipeDoParticipante(10L)).thenReturn(team);
-        when(accessPolicyService.exigirRoboGerenciavelPeloParticipante(100L)).thenReturn(robot);
+        when(accessPolicyService.exigirRoboInscrevivelPeloParticipante(100L)).thenReturn(robot);
         when(accessPolicyService.usuarioAtual()).thenReturn(membro);
         when(registrationService.criarPorParticipante(any(RegistrationDTO.class), org.mockito.ArgumentMatchers.eq(membro)))
                 .thenReturn(criada);
