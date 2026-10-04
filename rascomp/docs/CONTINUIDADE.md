@@ -2518,3 +2518,13 @@ BLOCO 4.4
 ```
 
 Migrations atuais: **V1–V27**. Próxima migration estrutural: **V28+**.
+
+
+### Ajustes finais pós-regressão — 03/10/2026
+
+- Entrada manual DEV agora suporta conta PARTICIPANTE existente ainda sem Competitor/Team.
+- DEV seleciona Team; o backend cria o vínculo competitivo e uma ParticipantCompetitionRegistration APROVADA com histórico.
+- O fluxo de Robot avulso reaproveita a mesma resolução de vínculo e garante também a inscrição pessoal manual antes de Robot + Registration.
+- Participante já vinculado não pode ser transferido silenciosamente de Team pela entrada manual.
+- A exceção funciona em Competition operável, inclusive EM_ANDAMENTO para DEV.
+- Essa operação não altera automaticamente Registration.competitors já congelado durante a prova.
