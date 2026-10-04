@@ -2561,3 +2561,39 @@ Histórico de QA: frontend `docs/VALIDACAO_ETAPA4_BLOCO4.md`.
 O antigo 4.4 foi retirado da ETAPA 4. O próximo trabalho de Landing será consolidado futuramente com a entrega pública já prevista, após decisão específica de roadmap.
 
 Não declarar CI remoto verde: não havia execução nova registrada do GitHub Actions nos heads finais.
+
+---
+
+## Próximo ciclo — V1 Beta em produção
+
+A primeira publicação real foi antecipada para um trilho Beta.
+
+Ordem:
+
+```text
+Landing
+→ backend/API em cloud
+→ MySQL de produção
+→ autenticação e inscrições reais
+→ smoke/estabilização
+→ retorno ao roadmap oficial
+```
+
+Política obrigatória após a Beta:
+
+```text
+branch → staging/homologação → testes → merge → produção
+```
+
+Produção não é ambiente de desenvolvimento.
+
+Requisitos mínimos do backend para abertura:
+- profile de produção sem testdata;
+- banco separado;
+- Flyway aplicado de forma controlada;
+- secrets externos ao código;
+- CORS/URLs HTTPS;
+- healthcheck/logs;
+- backup/restore mínimo;
+- bootstrap seguro de DEV;
+- storage/configuração necessária a comprovantes e mídia sem depender do ambiente local.
