@@ -1,6 +1,6 @@
 # Dossiê do Projeto RasComp — Ponteiro
 
-Última revisão: **19/09/2026**
+Última revisão: **03/10/2026**
 
 O Dossiê Mestre canônico e cross-repo está em:
 
@@ -25,10 +25,12 @@ ETAPA 0  ✅ concluída / validada
 ETAPA 1  ✅ concluída / validada
 ETAPA 2  ✅ concluída / validada
 ETAPA 3  ✅ concluída / validada
-ETAPA 4   🚧 EM ANDAMENTO — BLOCO 3 IMPLEMENTADO / AGUARDANDO VALIDAÇÃO
+ETAPA 4  ✅ concluída / validada — merge autorizado em 03/10/2026
 ```
 
-As ETAPAS 1, 2 e 3 estão encerradas/validadas. A ETAPA 4 está em andamento; BLOCO 2 administrativo concluído/validado e BLOCO 3 completamente implementado, aguardando validação manual.
+A fonte canônica cross-repo registra a bateria Portal 1–40 e regressão R1–R17 como concluídas. Migrations atuais: V1–V27.
+
+O antigo BLOCO 4.4 foi retirado da ETAPA 4. O polimento da Landing será consolidado futuramente com o trabalho já previsto de Landing/Galeria/conteúdo público; nome, numeração e escopo final serão decididos após o merge desta etapa.
 
 Checkpoint backend:
 
@@ -213,3 +215,20 @@ Backend consolidado:
 Checkpoint: Backend Tests #493 ✅, 166 testes, MySQL/Flyway V18/testdata ✅, Frontend Checks #213 ✅.
 
 Próxima migration estrutural: V19+.
+
+
+## Fechamento da ETAPA 4 — 03/10/2026
+
+Este arquivo continua sendo apenas um ponteiro. O estado final oficial está em:
+
+```text
+gbsalermo/Rascomp-FRONT/docs/DOSSIE_PROJETO_RASCOMP.md
+gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md
+```
+
+ETAPA 4: **CONCLUÍDA / VALIDADA**.
+
+Decisões futuras preservadas:
+- ferramenta DEV para correção/regeneração auditável de chave;
+- Futebol de Robôs com placar e referência atual de 2 minutos;
+- Follow Pro/Júnior somente em pós-produção, se confirmado.
