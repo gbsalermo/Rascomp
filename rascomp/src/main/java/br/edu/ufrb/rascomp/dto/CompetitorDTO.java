@@ -42,6 +42,7 @@ public class CompetitorDTO {
 
     private Long userAccountId;
     private String userAccountNome;
+    private Boolean teamLeader;
 
     private Boolean ativo;
     private LocalDateTime dataCadastro;
@@ -60,6 +61,11 @@ public class CompetitorDTO {
         if (entity.getUserAccount() != null) {
             this.userAccountId = entity.getUserAccount().getId();
             this.userAccountNome = entity.getUserAccount().getNome();
+            this.teamLeader = entity.getTeam().getResponsibleUser() != null
+                    && entity.getTeam().getResponsibleUser().getId()
+                            .equals(entity.getUserAccount().getId());
+        } else {
+            this.teamLeader = false;
         }
 
         this.ativo = entity.getAtivo();
