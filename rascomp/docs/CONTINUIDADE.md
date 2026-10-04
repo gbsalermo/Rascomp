@@ -2528,3 +2528,36 @@ Migrations atuais: **V1–V27**. Próxima migration estrutural: **V28+**.
 - Participante já vinculado não pode ser transferido silenciosamente de Team pela entrada manual.
 - A exceção funciona em Competition operável, inclusive EM_ANDAMENTO para DEV.
 - Essa operação não altera automaticamente Registration.competitors já congelado durante a prova.
+
+
+---
+
+## Encerramento final da ETAPA 4 — 03/10/2026
+
+```text
+ETAPA 4             ✅ CONCLUÍDA / VALIDADA / MERGE AUTORIZADO
+Bateria Portal      ✅ 1–40
+Regressão final     ✅ R1–R17
+Migrations          V1–V27
+Próxima migration   V28+
+```
+
+Domínio final validado:
+- inscrição individual separada de Registration do Robot;
+- RobotResponsible N:N separado de ownership;
+- elegibilidade parcial para aprovação de Robot;
+- composição automática + veto auditável;
+- congelamento no início da Competition;
+- proteção/troca de líder;
+- edição/remoção segura de Robot;
+- entrada manual DEV de participante e Robot;
+- conta PARTICIPANTE sem Team pode receber vínculo Competitor → Team pelo fluxo excepcional;
+- entrada tardia não altera silenciosamente composição congelada.
+
+Fonte funcional cross-repo: frontend `docs/REGRAS_PARTICIPANTE.md`.
+
+Histórico de QA: frontend `docs/VALIDACAO_ETAPA4_BLOCO4.md`.
+
+O antigo 4.4 foi retirado da ETAPA 4. O próximo trabalho de Landing será consolidado futuramente com a entrega pública já prevista, após decisão específica de roadmap.
+
+Não declarar CI remoto verde: não havia execução nova registrada do GitHub Actions nos heads finais.
