@@ -2597,3 +2597,26 @@ Requisitos mínimos do backend para abertura:
 - backup/restore mínimo;
 - bootstrap seguro de DEV;
 - storage/configuração necessária a comprovantes e mídia sem depender do ambiente local.
+
+### Gate backend da V1 Beta
+
+Não liberar inscrições reais até confirmar:
+
+- banco MySQL de produção persistente;
+- backup + estratégia de restore;
+- Flyway íntegro no banco real;
+- comprovantes em storage persistente, nunca filesystem efêmero;
+- contas verificadas reais de DEV/GESTAO;
+- Competition/categorias/janela corretas;
+- profile de produção sem testdata/demo;
+- smoke ponta a ponta com uma conta nova criada do zero.
+
+Ajustes Gerais DEV avançados não bloqueiam este gate.
+
+#### Futebol de Robôs — contrato mínimo da Beta
+
+A Beta deve aceitar uma inscrição em categoria Futebol **sem Robot próprio obrigatório**, porque o Robot pode ser fornecido/atribuído pela organização.
+
+O backend não deve criar Robot fictício apenas para atender a FK atual.
+
+Nesta frente implementar apenas o mínimo necessário para criar/revisar a inscrição. Partida, gols, cronômetro, desempate, chaveamento, inspeção e penalidades permanecem na ETAPA 6.
