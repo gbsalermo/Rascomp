@@ -147,6 +147,7 @@ public class ParticipantCompetitionRegistrationService {
                 ParticipantCompetitionRegistrationStatus.APROVADA,
                 dev,
                 entity.getReviewReason());
+        compositionService.sincronizarPorInscricaoPessoal(salva, dev);
 
         return toDto(salva);
     }
