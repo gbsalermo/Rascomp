@@ -376,42 +376,24 @@ A documentação técnica detalhada permanece separada da apresentação do proj
   Gestão de competições de robótica — IEEE RAS UFRB
 </div>
 
+---
 
-### Estado pós-projeto
+## 🚀 Estado atual
 
-ETAPA 4 — BLOCO 1 concluído e validado em 22/09/2026.
+```text
+ETAPAS 0–4  ✅ concluídas / validadas
 
-- Backend Tests #329: 142 testes verdes;
-- MySQL + Flyway V14 + testdata: verde;
-- sessão única e logout remoto consolidados;
-- próximo passo: BLOCO 2 — Gestão administrativa.
+TRILHO V1 BETA
+A — Landing pública                     🚧 próxima
+B — cloud + MySQL + storage/secrets    ⏳
+C — cadastro/acesso/inscrições reais   ⏳
+D — smoke + estabilização              ⏳
+```
 
-A ordem canônica das etapas permanece em `Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`.
+Migrations atuais: **V1–V27**. Próxima migration estrutural: **V28+**.
 
+Antes da abertura real de inscrições, são bloqueantes: banco persistente, backup/restore, Flyway íntegro, storage persistente de comprovantes, contas verificadas reais, Competition/categorias/janela corretas e smoke com conta nova criada do zero.
 
-### Estado atual — ETAPA 4
+Ajustes Gerais DEV avançados ficam para depois do primeiro go-live.
 
-BLOCO 2 concluído e validado em 23/09/2026.
-
-- Frontend Checks #137 ✅
-- Backend Tests #371 ✅ — 155 testes verdes
-- MySQL + Flyway V15 + testdata ✅
-- próxima migration estrutural: V16+
-
-Estado atual: BLOCO 3 — Operação competitiva implementado e aguardando validação manual final.
-
-
-### BLOCO 3 — Operação competitiva implementada
-
-Follow Line, Sumô e Chaves/Agenda/Resultados foram consolidados na ETAPA 4.
-
-- Agenda unificada Follow + Sumô;
-- chamadas e filas Follow;
-- V18 aplicada;
-- desclassificação auditada;
-- Resultados por categoria;
-- Dashboard integrado à Agenda.
-
-Checkpoint: Backend Tests #493 ✅ (166 testes), MySQL/Flyway V18/testdata ✅ e Frontend Checks #213 ✅.
-
-Aguardando validação manual do BLOCO 3 antes de seguir na ETAPA 4.
+Roadmap canônico: `Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`.
