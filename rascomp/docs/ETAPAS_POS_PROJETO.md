@@ -60,3 +60,21 @@ V1-BETA D — smoke/estabilização
 ```
 
 Após a Beta, qualquer evolução deve ocorrer fora de produção e só ser promovida após testes.
+
+## Gate obrigatório antes de inscrições reais
+
+Consultar o roadmap canônico do frontend. Resumo bloqueante:
+
+```text
+banco persistente
+backup/restore
+Flyway
+storage de comprovantes
+contas verificadas reais
+Competition/categorias/janela
+smoke conta nova do zero
+```
+
+Ajustes Gerais DEV avançados não bloqueiam o primeiro go-live.
+
+A V1 Beta também antecipa inscrição simples de Futebol de Robôs sem Robot próprio obrigatório. O domínio da partida fica para a ETAPA 6.
