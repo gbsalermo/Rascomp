@@ -2591,3 +2591,36 @@ Regras:
 - documentar recursos criados, ownership e passos de transferência.
 
 A conta temporária não pode virar dependência estrutural permanente.
+
+
+### Gate técnico antes da primeira competição oficial
+
+A Beta online não substitui hardening/capacidade.
+
+Antes do primeiro RRC oficial no RasComp:
+
+- revisar SQL injection e toda construção de query;
+- validar autorização/ownership em endpoints;
+- aplicar/testar rate limiting e proteção de rajadas;
+- limitar payloads/uploads;
+- revisar timeouts e pool de conexões;
+- validar menor privilégio do usuário MySQL;
+- configurar logs/observabilidade;
+- executar carga genérica;
+- executar cenário realista com **300–500 participantes**.
+
+O cenário 300–500 deve incluir concorrência entre:
+
+```text
+inscrições + comprovantes
+GESTAO aprovando
+consultas do Portal
+Follow registrando tempos
+Sumô registrando rounds/partidas
+chaves/progressão
+ranking/resultados públicos
+```
+
+Medir p50/p95/p99, erros, CPU/memória, MySQL/pool, timeouts e recuperação.
+
+Falha de carga, corrupção, corrida ou proteção inadequada bloqueia o uso na primeira competição oficial até correção e repetição dos testes.
