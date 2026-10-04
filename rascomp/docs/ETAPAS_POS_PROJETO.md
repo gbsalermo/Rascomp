@@ -78,3 +78,14 @@ smoke conta nova do zero
 Ajustes Gerais DEV avançados não bloqueiam o primeiro go-live.
 
 A V1 Beta também antecipa inscrição simples de Futebol de Robôs sem Robot próprio obrigatório. O domínio da partida fica para a ETAPA 6.
+
+
+## Gate pré-competição oficial — segurança e carga
+
+Além do gate da V1 Beta, consultar no roadmap canônico:
+
+- ETAPA 14 — hardening de segurança + preparação dos cenários de carga;
+- ETAPA 15 — carga genérica + simulação de competição com 300–500 participantes;
+- checkpoint obrigatório antes da primeira competição oficial.
+
+Escopo inclui proteção contra injection, autenticação abusiva, rajadas/rate limiting e validação de integridade sob concorrência em inscrições, Follow, Sumô, chaves e rankings.
