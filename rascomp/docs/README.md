@@ -81,11 +81,11 @@ CONTINUIDADE.md
 ```text
 backend = fonte de verdade de domínio/autorização
 banco ativo = MySQL
-V1–V13 = migrations imutáveis
-V14+ = próxima mudança estrutural
+V1–V27 = migrations existentes/imutáveis
+V28+ = próxima mudança estrutural
 roles atuais = DEV | GESTAO | MIDIA | PARTICIPANTE
-ETAPA 1 = concluída / validada
-ETAPA 2 = concluída / validada
+ETAPAS 0–4 = concluídas / validadas
+próximo ciclo = TRILHO V1 BETA
 ```
 
 Checkpoint automatizado atual da branch da ETAPA 4:
@@ -117,17 +117,28 @@ Esses itens foram executados na ETAPA 2 sem antecipação durante a ETAPA 1.
 
 ## Próximo trabalho
 
-Checkpoint atual: **ETAPA 4 — Consolidação funcional e polimento do MVP 🚧**. **BLOCO 2 concluído e validado**; **BLOCO 3 — Operação competitiva** totalmente implementado e aguardando validação manual final. A validação final de permissões permanece incorporada à ETAPA 15.
+```text
+V1-BETA A — Landing pública
+→ V1-BETA B — cloud + banco/storage
+→ V1-BETA C — acesso/inscrições reais
+→ V1-BETA D — estabilização
+```
 
-## Roadmap reorganizado — 19/09/2026
+Ajustes Gerais DEV avançados são pós-Beta e não bloqueiam o primeiro go-live.
 
-- PRIORIDADE 1 / ETAPAS 4–10: finalizar e polir o MVP;
-- PRIORIDADE 2 / ETAPAS 11–15: adições, portabilidade, hardening e validação;
-- ETAPA 16: deploy, última etapa.
+Antes de abrir inscrições reais: banco persistente, backup/restore, Flyway, storage de comprovantes, contas verificadas reais, Competition/categorias/janela corretas e smoke com conta nova do zero.
+
+
+## Roadmap vigente — atualização 03/10/2026
+
+- primeiro go-live antecipado pelo TRILHO V1 BETA;
+- roadmap oficial retomado após estabilização;
+- produção recebe somente versões validadas;
+- ETAPA 16 passa a representar consolidação/hardening final, não o primeiro deploy.
 
 A fonte canônica detalhada permanece em `gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`.
 
 
 ### `CHECKPOINT_ASSINATURA_PESSOAL.md`
 
-Acabamento autoral opcional do backend. Não é etapa própria; se adotado, deve ser preparado no fechamento da ETAPA 15 antes do deploy final da ETAPA 16.
+Acabamento autoral opcional do backend. Não é etapa própria; se adotado, continua opcional e pode ser preparado no fechamento da ETAPA 15 antes da consolidação final da produção.
