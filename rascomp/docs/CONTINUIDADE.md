@@ -2657,3 +2657,23 @@ Nunca executar cloud e local como dois bancos graváveis independentes e depois 
 #### Cloudflare
 
 Evitar exigir Worker para cada request dinâmica apenas por conveniência de roteamento. Limites/preços vigentes devem ser conferidos novamente na V1-BETA B; a operação do backend não deve ficar presa a uma quota diária específica.
+
+
+### Segunda via oficial — servidor local + Tunnel
+
+Além do backend hospedado em cloud, o RasComp deve suportar operação oficial com:
+
+```text
+Cloudflare Tunnel
+→ Spring Boot local
+→ MySQL local
+→ storage local
+```
+
+A aplicação continua acessível pela internet através do domínio/Tunnel e também pode ser acessada pela LAN.
+
+Essa via pode ser escolhida caso os testes de carga mostrem pouca confiança na capacidade/limites da infraestrutura cloud ou no caminho que utilize Workers.
+
+Nenhuma regra de negócio pode depender exclusivamente da VIA A.
+
+A troca deve ser feita por configuração/profile, não por alteração de código.
