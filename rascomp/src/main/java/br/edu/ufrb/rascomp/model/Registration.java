@@ -95,6 +95,9 @@ public class Registration implements Serializable {
     @Column(length = 500)
     private String observacao;
 
+    @Column(name = "robot_description", length = 500)
+    private String robotDescription;
+
     @Column(name = "payment_receipt_storage_key", length = 500)
     private String paymentReceiptStorageKey;
 
