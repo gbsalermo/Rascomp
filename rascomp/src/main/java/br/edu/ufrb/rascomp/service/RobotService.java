@@ -10,6 +10,8 @@ import br.edu.ufrb.rascomp.model.Institution;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
+import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,6 +23,7 @@ public class RobotService {
 
     private final RobotRepository robotRepository;
     private final TeamRepository teamRepository;
+    private final RegistrationRepository registrationRepository;
 
     @Transactional
     public RobotDTO criar(RobotDTO dto) {
@@ -111,6 +114,19 @@ public class RobotService {
     @Transactional
     public void deletar(Long id) {
         Robot robot = buscarRobot(id);
+
+        boolean possuiInscricaoAtiva = !registrationRepository
+                .findByRobotIdAndStatusIn(
+                        id,
+                        List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA))
+                .isEmpty();
+
+        if (possuiInscricaoAtiva) {
+            throw new IllegalArgumentException(
+                    "Este robô possui inscrição PENDENTE ou APROVADA. "
+                            + "Cancele/regularize a inscrição antes de remover o cadastro.");
+        }
+
         robot.setAtivo(false);
         robotRepository.save(robot);
     }
