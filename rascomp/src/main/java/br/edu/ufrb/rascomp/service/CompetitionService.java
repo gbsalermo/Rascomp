@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 public class CompetitionService {
 
     private final CompetitionRepository competitionRepository;
+    private final RegistrationCompositionService registrationCompositionService;
+    private final UserAccountService userAccountService;
 
     @Transactional
     public CompetitionDTO criar(CompetitionDTO dto) {
@@ -77,6 +79,11 @@ public class CompetitionService {
 
         Competition competition = buscarCompetition(id);
         validarTransicaoStatus(competition.getStatus(), novoStatus);
+        if (novoStatus == StatusCompetition.EM_ANDAMENTO) {
+            registrationCompositionService.consolidarPendentesDaCompeticao(
+                    competition.getId(),
+                    userAccountService.buscarAtual());
+        }
         competition.setStatus(novoStatus);
         return new CompetitionDTO(competitionRepository.save(competition));
     }
