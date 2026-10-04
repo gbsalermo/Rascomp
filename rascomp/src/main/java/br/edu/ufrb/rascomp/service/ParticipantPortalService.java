@@ -165,7 +165,7 @@ public class ParticipantPortalService {
 
     @Transactional
     public RobotDTO atualizarRobo(Long robotId, ParticipantRobotRequest request) {
-        Robot atual = accessPolicyService.exigirRoboGerenciavelPeloParticipante(robotId);
+        Robot atual = accessPolicyService.exigirRoboInscrevivelPeloParticipante(robotId);
         RobotDTO dto = robotDto(request, atual.getTeam().getId());
         dto.setAtivo(atual.getAtivo());
         return robotService.atualizar(robotId, dto);
@@ -185,7 +185,7 @@ public class ParticipantPortalService {
 
     @Transactional
     public void removerRobo(Long robotId) {
-        accessPolicyService.exigirRoboDaEquipe(robotId);
+        accessPolicyService.exigirRoboInscrevivelPeloParticipante(robotId);
         robotService.deletar(robotId);
     }
 
@@ -267,6 +267,7 @@ public class ParticipantPortalService {
         dto.setTeamId(teamId);
         dto.setRobotId(request.getRobotId());
         dto.setCompetitorIds(request.getCompetitorIds());
+        dto.setRobotDescricao(request.getRobotDescricao());
         dto.setObservacao(request.getObservacao());
         RegistrationDTO criada =
                 registrationService.criarPorParticipante(dto, accessPolicyService.usuarioAtual());
