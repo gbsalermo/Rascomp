@@ -146,7 +146,7 @@ public class ParticipantPortalService {
         UserAccount usuario = accessPolicyService.usuarioAtual();
 
         if (accessPolicyService.ehResponsavel(team, usuario)) {
-            return robotService.listarPorEquipe(teamId, false);
+            return robotService.listarPorEquipe(teamId, true);
         }
 
         return robotResponsibleService.listarRobosDoCompetidorAtual(teamId);
