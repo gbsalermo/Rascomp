@@ -95,7 +95,7 @@ public class RegistrationCompositionService {
                     .orElseThrow(() -> new EntityNotFoundException(
                             "Responsabilidade do robô não encontrada para o competidor: " + competitorId));
 
-            registrarMudanca(registration, competitor, type, actor);
+            registrarMudancaExplicita(registration, competitor, type, actor);
         }
     }
 
@@ -215,11 +215,40 @@ public class RegistrationCompositionService {
         change.setReason(normalizarOpcional(request.getMotivo()));
         RegistrationCompetitorChange salva = changeRepository.save(change);
 
+        if (request.getStatus() == RegistrationCompetitorChangeStatus.VETADA) {
+            RobotResponsible link = robotResponsibleRepository
+                    .findByRobotIdAndCompetitorId(
+                            change.getRegistration().getRobot().getId(),
+                            change.getCompetitor().getId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Vínculo de responsabilidade não encontrado para reverter o veto."));
+
+            link.setAtivo(change.getChangeType() == RegistrationCompetitorChangeType.REMOVIDO);
+            robotResponsibleRepository.save(link);
+        }
+
         sincronizarInterno(change.getRegistration(), reviewer, false);
         if (request.getStatus() == RegistrationCompetitorChangeStatus.VETADA) {
             restaurarSeVetoReverteuRejeicaoAutomatica(change.getRegistration());
         }
         return new RegistrationCompetitorChangeDTO(salva);
+    }
+
+    @Transactional
+    public void consolidarPendentesDaCompeticao(Long competitionId, UserAccount actor) {
+        List<RegistrationCompetitorChange> pendentes =
+                changeRepository.findByRegistrationCompetitionIdAndStatusOrderByDataCadastroDesc(
+                        competitionId,
+                        RegistrationCompetitorChangeStatus.PENDENTE_REVISAO);
+
+        LocalDateTime agora = LocalDateTime.now();
+        for (RegistrationCompetitorChange change : pendentes) {
+            change.setStatus(RegistrationCompetitorChangeStatus.MANTIDA);
+            change.setReviewedByUser(actor);
+            change.setReviewedAt(agora);
+            change.setReason("Consolidada automaticamente no início da competição por ausência de veto.");
+            changeRepository.save(change);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -330,6 +359,21 @@ public class RegistrationCompositionService {
                         actor);
             }
         }
+    }
+
+    private void registrarMudancaExplicita(
+            Registration registration,
+            Competitor competitor,
+            RegistrationCompetitorChangeType type,
+            UserAccount actor) {
+
+        RegistrationCompetitorChange change = new RegistrationCompetitorChange();
+        change.setRegistration(registration);
+        change.setCompetitor(competitor);
+        change.setChangeType(type);
+        change.setStatus(RegistrationCompetitorChangeStatus.PENDENTE_REVISAO);
+        change.setActorUser(actor);
+        changeRepository.save(change);
     }
 
     private void registrarMudanca(
