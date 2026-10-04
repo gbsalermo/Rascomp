@@ -19,6 +19,8 @@ public class ManualCompetitionEntryRequest {
     @NotNull
     private Long participantUserId;
 
+    private Long teamId;
+
     @NotBlank
     @Size(max = 120)
     private String robotNome;
