@@ -61,12 +61,15 @@ public class CompetitionService {
         validarDatas(dto);
         validarNomeDuplicado(dto.getNome(), id);
 
-        StatusCompetition novoStatus = dto.getStatus() != null ? dto.getStatus() : competition.getStatus();
-        validarTransicaoStatus(competition.getStatus(), novoStatus);
+        if (dto.getStatus() != null && dto.getStatus() != competition.getStatus()) {
+            throw new IllegalArgumentException(
+                    "O status da competição só pode ser alterado pelas ações operacionais específicas.");
+        }
         validarAtivoNoFluxoComum(dto.getAtivo());
 
+        StatusCompetition statusAtual = competition.getStatus();
         preencher(competition, dto);
-        competition.setStatus(novoStatus);
+        competition.setStatus(statusAtual);
         if (dto.getAtivo() != null) competition.setAtivo(dto.getAtivo());
         return new CompetitionDTO(competitionRepository.save(competition));
     }
