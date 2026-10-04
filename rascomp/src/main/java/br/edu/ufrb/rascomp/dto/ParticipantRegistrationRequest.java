@@ -22,5 +22,8 @@ public class ParticipantRegistrationRequest {
     private List<@NotNull Long> competitorIds;
 
     @Size(max = 500)
+    private String robotDescricao;
+
+    @Size(max = 500)
     private String observacao;
 }
