@@ -100,6 +100,57 @@ public class ParticipantCompetitionRegistrationService {
         return toDto(salva);
     }
 
+    @Transactional
+    public ParticipantCompetitionRegistrationDTO criarEntradaManualDev(
+            Long competitionId,
+            Competitor competitor,
+            UserAccount dev,
+            String justificativa) {
+
+        if (dev == null || dev.getRole() != UserRole.DEV) {
+            throw new AccessDeniedException(
+                    "A entrada manual de participante é exclusiva do DEV.");
+        }
+
+        competitionContextService.exigirOperavel(competitionId);
+        Competition competition = buscarCompetition(competitionId);
+        String motivo = normalizarMotivo(justificativa);
+
+        ParticipantCompetitionRegistration entity = repository
+                .findByCompetitionIdAndCompetitorId(competitionId, competitor.getId())
+                .orElse(null);
+
+        ParticipantCompetitionRegistrationStatus anterior = null;
+        if (entity == null) {
+            entity = new ParticipantCompetitionRegistration();
+            entity.setCompetition(competition);
+            entity.setCompetitor(competitor);
+            entity.setRequestedByUser(dev);
+        } else {
+            anterior = entity.getStatus();
+            if (anterior == ParticipantCompetitionRegistrationStatus.APROVADA) {
+                return toDto(entity);
+            }
+        }
+
+        entity.setReviewedByUser(dev);
+        entity.setReviewedAt(LocalDateTime.now());
+        entity.setReviewReason("Entrada manual DEV: " + motivo);
+        entity.setObservacao("Participante incluído manualmente pelo DEV.");
+        entity.setStatus(ParticipantCompetitionRegistrationStatus.APROVADA);
+        entity.setAtivo(true);
+
+        ParticipantCompetitionRegistration salva = repository.save(entity);
+        registrarHistorico(
+                salva,
+                anterior,
+                ParticipantCompetitionRegistrationStatus.APROVADA,
+                dev,
+                entity.getReviewReason());
+
+        return toDto(salva);
+    }
+
     @Transactional(readOnly = true)
     public List<ParticipantCompetitionRegistrationDTO> minhas() {
         UserAccount usuario = userAccountService.buscarAtual();
