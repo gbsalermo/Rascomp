@@ -2624,3 +2624,36 @@ ranking/resultados públicos
 Medir p50/p95/p99, erros, CPU/memória, MySQL/pool, timeouts e recuperação.
 
 Falha de carga, corrupção, corrida ou proteção inadequada bloqueia o uso na primeira competição oficial até correção e repetição dos testes.
+
+
+### Modo local é requisito permanente
+
+O backend deve continuar executável fora da cloud:
+
+```text
+Spring Boot local
+→ MySQL local/LAN
+→ storage local
+```
+
+Cloudflare, R2 e o provedor MySQL de produção não podem contaminar as regras de domínio com dependências obrigatórias.
+
+A configuração deve continuar por ambiente/profile.
+
+#### Contingência no dia da competição
+
+Antes da primeira competição oficial:
+
+- restaurar um snapshot representativo em MySQL local;
+- disponibilizar uploads necessários localmente;
+- subir Spring Boot em máquina da organização;
+- permitir acesso da Gestão/Portal pela LAN;
+- executar smoke de inscrições existentes, Follow, Sumô, chaves e ranking;
+- documentar mudança de URLs/variáveis;
+- definir fonte de verdade durante o modo contingência.
+
+Nunca executar cloud e local como dois bancos graváveis independentes e depois tentar "juntar" manualmente.
+
+#### Cloudflare
+
+Evitar exigir Worker para cada request dinâmica apenas por conveniência de roteamento. Limites/preços vigentes devem ser conferidos novamente na V1-BETA B; a operação do backend não deve ficar presa a uma quota diária específica.
