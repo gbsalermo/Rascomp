@@ -182,9 +182,13 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         prepararPendenciasDashboard(live, followCategory, miniCategory, visitante, organizacao);
         prepararHistoricoCompleto(history, historyCategory, visitante, organizacao);
 
+        competitionRepository.limparVigente();
         live.setStatus(StatusCompetition.EM_ANDAMENTO);
+        live.setVigente(true);
         competitionRepository.save(live);
+
         history.setStatus(StatusCompetition.FINALIZADA);
+        history.setVigente(false);
         competitionRepository.save(history);
 
         System.out.println("============================================================");
@@ -325,6 +329,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         item.setDataFim(hoje.plusDays(1));
         item.setStatus(StatusCompetition.INSCRICOES_ENCERRADAS);
         item.setAtivo(true);
+        item.setVigente(false);
         return competitionRepository.save(item);
     }
 
