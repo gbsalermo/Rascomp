@@ -74,6 +74,8 @@ public class ParticipantCompetitionRegistrationService {
                     "Você já possui uma inscrição pessoal nesta competição. Reabra ou acompanhe a inscrição existente.");
         }
 
+        var registrationLot = registrationLotService.resolverParaNovaInscricao(competition);
+
         RegistrationReceiptStorageService.StoredReceipt receipt = receiptStorageService.armazenar(
                 "participante",
                 competition.getId(),
@@ -82,7 +84,7 @@ public class ParticipantCompetitionRegistrationService {
 
         ParticipantCompetitionRegistration entity = new ParticipantCompetitionRegistration();
         entity.setCompetition(competition);
-        entity.setRegistrationLot(registrationLotService.resolverParaNovaInscricao(competition));
+        entity.setRegistrationLot(registrationLot);
         entity.setCompetitor(competitor);
         entity.setRequestedByUser(usuario);
         entity.setStatus(ParticipantCompetitionRegistrationStatus.PENDENTE);
