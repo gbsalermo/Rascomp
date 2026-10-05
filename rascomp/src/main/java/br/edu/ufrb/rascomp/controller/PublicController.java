@@ -29,6 +29,7 @@ import br.edu.ufrb.rascomp.dto.RobotImageDTO;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.service.PublicQueryService;
 import br.edu.ufrb.rascomp.service.RobotImageService;
+import br.edu.ufrb.rascomp.service.TeamLogoService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -37,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 public class PublicController {
 
     private final PublicQueryService publicQueryService;
+    private final TeamLogoService teamLogoService;
 
     @GetMapping("/competicoes")
     public ResponseEntity<List<CompetitionDTO>> competicoes() {
@@ -57,6 +59,19 @@ public class PublicController {
     @GetMapping("/equipes")
     public ResponseEntity<List<PublicTeamDTO>> equipes() {
         return ResponseEntity.ok(publicQueryService.equipes());
+    }
+
+    @GetMapping("/equipes/{teamId}/logo")
+    public ResponseEntity<Resource> logoEquipe(@PathVariable Long teamId) {
+        TeamLogoService.TeamLogoFile file = teamLogoService.carregarPublico(teamId);
+        ContentDisposition disposition = ContentDisposition.inline()
+                .filename(file.filename(), StandardCharsets.UTF_8)
+                .build();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(file.resource());
     }
 
     @GetMapping("/competidores")
