@@ -15,6 +15,7 @@ import br.edu.ufrb.rascomp.dto.FollowTakeScheduleDTO;
 import br.edu.ufrb.rascomp.dto.FollowTakeScheduleEntryDTO;
 import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.dto.PublicCompetitorDTO;
+import br.edu.ufrb.rascomp.dto.PublicCompetitionCategoryResultDTO;
 import br.edu.ufrb.rascomp.dto.PublicRegistrationDTO;
 import br.edu.ufrb.rascomp.dto.PublicRobotDTO;
 import br.edu.ufrb.rascomp.dto.PublicTeamDTO;
@@ -50,6 +51,7 @@ public class PublicQueryService {
     private final FollowTakeScheduleRepository followTakeScheduleRepository;
     private final FollowTakeScheduleEntryRepository followTakeScheduleEntryRepository;
     private final RankingFollowService rankingFollowService;
+    private final CompetitionResultsService competitionResultsService;
     private final BracketService bracketService;
     private final MatchService matchService;
     private final MatchResultService matchResultService;
@@ -112,6 +114,14 @@ public class PublicQueryService {
 
     public List<RankingFollowDTO> rankingFollow(Long competitionId, Long categoryId) {
         return rankingFollowService.gerarRanking(competitionId, categoryId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PublicCompetitionCategoryResultDTO> podios(Long competitionId) {
+        return competitionResultsService.listarPublico(competitionId)
+                .stream()
+                .map(PublicCompetitionCategoryResultDTO::new)
+                .toList();
     }
 
     @Transactional(readOnly = true)
