@@ -46,6 +46,7 @@ public class ParticipantCompetitionRegistrationService {
     private final RegistrationReceiptStorageService receiptStorageService;
     private final ParticipantRegistrationStatusHistoryRepository statusHistoryRepository;
     private final RegistrationCompositionService compositionService;
+    private final RegistrationLotService registrationLotService;
 
     @Transactional
     public ParticipantCompetitionRegistrationDTO criarParaParticipanteAtual(
@@ -81,6 +82,7 @@ public class ParticipantCompetitionRegistrationService {
 
         ParticipantCompetitionRegistration entity = new ParticipantCompetitionRegistration();
         entity.setCompetition(competition);
+        entity.setRegistrationLot(registrationLotService.resolverParaNovaInscricao(competition));
         entity.setCompetitor(competitor);
         entity.setRequestedByUser(usuario);
         entity.setStatus(ParticipantCompetitionRegistrationStatus.PENDENTE);
