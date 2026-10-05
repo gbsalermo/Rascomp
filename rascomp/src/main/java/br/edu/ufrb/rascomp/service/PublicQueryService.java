@@ -11,6 +11,9 @@ import br.edu.ufrb.rascomp.dto.CompetitionDTO;
 import br.edu.ufrb.rascomp.dto.InstitutionDTO;
 import br.edu.ufrb.rascomp.dto.MatchDTO;
 import br.edu.ufrb.rascomp.dto.MatchResultDTO;
+import br.edu.ufrb.rascomp.dto.FollowTakeScheduleDTO;
+import br.edu.ufrb.rascomp.dto.FollowTakeScheduleEntryDTO;
+import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.dto.PublicCompetitorDTO;
 import br.edu.ufrb.rascomp.dto.PublicRegistrationDTO;
 import br.edu.ufrb.rascomp.dto.PublicRobotDTO;
@@ -21,6 +24,9 @@ import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
+import br.edu.ufrb.rascomp.repository.FollowTakeScheduleEntryRepository;
+import br.edu.ufrb.rascomp.repository.FollowTakeScheduleRepository;
+import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotImageRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
@@ -40,6 +46,9 @@ public class PublicQueryService {
     private final RobotRepository robotRepository;
     private final RobotImageRepository robotImageRepository;
     private final RegistrationRepository registrationRepository;
+    private final TentativaSeguidorLinhaRepository tentativaSeguidorLinhaRepository;
+    private final FollowTakeScheduleRepository followTakeScheduleRepository;
+    private final FollowTakeScheduleEntryRepository followTakeScheduleEntryRepository;
     private final RankingFollowService rankingFollowService;
     private final BracketService bracketService;
     private final MatchService matchService;
@@ -103,6 +112,49 @@ public class PublicQueryService {
 
     public List<RankingFollowDTO> rankingFollow(Long competitionId, Long categoryId) {
         return rankingFollowService.gerarRanking(competitionId, categoryId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TentativaSeguidorLinhaDTO> tentativasFollow(Long competitionId, Long categoryId) {
+        return tentativaSeguidorLinhaRepository
+                .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
+                        competitionId, categoryId)
+                .stream()
+                .map(TentativaSeguidorLinhaDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<FollowTakeScheduleDTO> agendaFollow(Long competitionId, Long categoryId) {
+        return followTakeScheduleRepository
+                .findByCompetitionIdAndCategoryIdAndAtivoTrueOrderByTomadaAsc(competitionId, categoryId)
+                .stream()
+                .map(schedule -> {
+                    FollowTakeScheduleDTO dto = new FollowTakeScheduleDTO(schedule);
+                    dto.setTotalFila(Math.toIntExact(
+                            followTakeScheduleEntryRepository
+                                    .findByScheduleIdOrderByOrdemConvocacaoAsc(schedule.getId())
+                                    .size()));
+                    dto.setConcluidos(Math.toIntExact(
+                            followTakeScheduleEntryRepository.countByScheduleIdAndStatus(
+                                    schedule.getId(),
+                                    br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoFollow.CONCLUIDA)));
+                    dto.setAusentes(Math.toIntExact(
+                            followTakeScheduleEntryRepository.countByScheduleIdAndStatus(
+                                    schedule.getId(),
+                                    br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoFollow.AUSENTE)));
+                    return dto;
+                })
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<FollowTakeScheduleEntryDTO> filaFollow(Long scheduleId) {
+        return followTakeScheduleEntryRepository
+                .findByScheduleIdOrderByOrdemConvocacaoAsc(scheduleId)
+                .stream()
+                .map(FollowTakeScheduleEntryDTO::new)
+                .toList();
     }
 
     public List<BracketDTO> chaveamentos(Long competitionId) {
