@@ -30,10 +30,12 @@ import br.edu.ufrb.rascomp.dto.PublicRobotDTO;
 import br.edu.ufrb.rascomp.dto.PublicTeamDTO;
 import br.edu.ufrb.rascomp.dto.RankingFollowDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
+import br.edu.ufrb.rascomp.dto.RegistrationLotDTO;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.service.PublicQueryService;
 import br.edu.ufrb.rascomp.service.RobotImageService;
 import br.edu.ufrb.rascomp.service.TeamLogoService;
+import br.edu.ufrb.rascomp.service.RegistrationLotService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -43,6 +45,7 @@ public class PublicController {
 
     private final PublicQueryService publicQueryService;
     private final TeamLogoService teamLogoService;
+    private final RegistrationLotService registrationLotService;
 
     @GetMapping("/competicoes")
     public ResponseEntity<List<CompetitionDTO>> competicoes() {
@@ -110,6 +113,12 @@ public class PublicController {
     @GetMapping("/inscricoes")
     public ResponseEntity<List<PublicRegistrationDTO>> inscricoes(@RequestParam Long competitionId) {
         return ResponseEntity.ok(publicQueryService.inscricoes(competitionId));
+    }
+
+    @GetMapping("/competicoes/{competitionId}/lote-atual")
+    public ResponseEntity<RegistrationLotDTO> loteAtual(@PathVariable Long competitionId) {
+        RegistrationLotDTO lote = registrationLotService.buscarAtualPublico(competitionId);
+        return lote == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(lote);
     }
 
     @GetMapping("/podios")
