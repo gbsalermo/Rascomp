@@ -62,6 +62,10 @@ public class CompetitionResultsService {
                     "Resultados públicos indisponíveis para a competição: " + competitionId);
         }
 
+        if (competition.getStatus() != br.edu.ufrb.rascomp.model.Enum.StatusCompetition.EM_ANDAMENTO) {
+            return List.of();
+        }
+
         return consolidar(competitionId);
     }
 
