@@ -24,6 +24,7 @@ import br.edu.ufrb.rascomp.dto.FollowTakeScheduleDTO;
 import br.edu.ufrb.rascomp.dto.FollowTakeScheduleEntryDTO;
 import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.dto.PublicCompetitorDTO;
+import br.edu.ufrb.rascomp.dto.PublicCompetitionCategoryResultDTO;
 import br.edu.ufrb.rascomp.dto.PublicRegistrationDTO;
 import br.edu.ufrb.rascomp.dto.PublicRobotDTO;
 import br.edu.ufrb.rascomp.dto.PublicTeamDTO;
@@ -109,6 +110,12 @@ public class PublicController {
     @GetMapping("/inscricoes")
     public ResponseEntity<List<PublicRegistrationDTO>> inscricoes(@RequestParam Long competitionId) {
         return ResponseEntity.ok(publicQueryService.inscricoes(competitionId));
+    }
+
+    @GetMapping("/podios")
+    public ResponseEntity<List<PublicCompetitionCategoryResultDTO>> podios(
+            @RequestParam Long competitionId) {
+        return ResponseEntity.ok(publicQueryService.podios(competitionId));
     }
 
     @GetMapping("/ranking/seguidor-linha")
