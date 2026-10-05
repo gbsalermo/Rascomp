@@ -44,6 +44,15 @@ public class Team implements Serializable {
     @JoinColumn(name = "responsible_user_id")
     private UserAccount responsibleUser;
 
+    @Column(name = "logo_storage_key", length = 500)
+    private String logoStorageKey;
+
+    @Column(name = "logo_original_filename", length = 255)
+    private String logoOriginalFilename;
+
+    @Column(name = "logo_content_type", length = 100)
+    private String logoContentType;
+
     @Column(nullable = false)
     private Boolean ativo = true;
 
