@@ -22,6 +22,8 @@ public class RegistrationDTO {
     @NotNull
     private Long competitionId;
     private String competitionNome;
+    private Long registrationLotId;
+    private String registrationLotNome;
 
     @NotNull
     private Long categoryId;
@@ -65,6 +67,10 @@ public class RegistrationDTO {
         this.id = entity.getId();
         this.competitionId = entity.getCompetition().getId();
         this.competitionNome = entity.getCompetition().getNome();
+        if (entity.getRegistrationLot() != null) {
+            this.registrationLotId = entity.getRegistrationLot().getId();
+            this.registrationLotNome = entity.getRegistrationLot().getNome();
+        }
         this.categoryId = entity.getCategory().getId();
         this.categoryNome = entity.getCategory().getNome();
         this.teamId = entity.getTeam().getId();
