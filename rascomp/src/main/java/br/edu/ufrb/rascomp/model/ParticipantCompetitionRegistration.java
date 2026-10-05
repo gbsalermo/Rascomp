@@ -47,6 +47,10 @@ public class ParticipantCompetitionRegistration implements Serializable {
     @JoinColumn(name = "competition_id", nullable = false)
     private Competition competition;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "registration_lot_id")
+    private RegistrationLot registrationLot;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "competitor_id", nullable = false)
     private Competitor competitor;
