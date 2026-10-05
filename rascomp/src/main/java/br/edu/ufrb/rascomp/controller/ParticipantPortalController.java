@@ -121,6 +121,18 @@ public class ParticipantPortalController {
         return ResponseEntity.ok(portalService.atualizarEquipe(teamId, request));
     }
 
+    @PutMapping(value = "/equipes/{teamId}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<TeamDTO> atualizarLogoEquipe(
+            @PathVariable Long teamId,
+            @RequestParam("arquivo") MultipartFile arquivo) {
+        return ResponseEntity.ok(portalService.atualizarLogoEquipe(teamId, arquivo));
+    }
+
+    @DeleteMapping("/equipes/{teamId}/logo")
+    public ResponseEntity<TeamDTO> removerLogoEquipe(@PathVariable Long teamId) {
+        return ResponseEntity.ok(portalService.removerLogoEquipe(teamId));
+    }
+
     @GetMapping("/equipes/{teamId}/competidores")
     public ResponseEntity<List<CompetitorDTO>> competidores(@PathVariable Long teamId) {
         return ResponseEntity.ok(portalService.competidores(teamId));
