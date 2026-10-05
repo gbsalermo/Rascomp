@@ -20,6 +20,9 @@ import br.edu.ufrb.rascomp.dto.CompetitionDTO;
 import br.edu.ufrb.rascomp.dto.InstitutionDTO;
 import br.edu.ufrb.rascomp.dto.MatchDTO;
 import br.edu.ufrb.rascomp.dto.MatchResultDTO;
+import br.edu.ufrb.rascomp.dto.FollowTakeScheduleDTO;
+import br.edu.ufrb.rascomp.dto.FollowTakeScheduleEntryDTO;
+import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.dto.PublicCompetitorDTO;
 import br.edu.ufrb.rascomp.dto.PublicRegistrationDTO;
 import br.edu.ufrb.rascomp.dto.PublicRobotDTO;
@@ -113,6 +116,26 @@ public class PublicController {
             @RequestParam Long competitionId,
             @RequestParam Long categoryId) {
         return ResponseEntity.ok(publicQueryService.rankingFollow(competitionId, categoryId));
+    }
+
+    @GetMapping("/follow/tentativas")
+    public ResponseEntity<List<TentativaSeguidorLinhaDTO>> tentativasFollow(
+            @RequestParam Long competitionId,
+            @RequestParam Long categoryId) {
+        return ResponseEntity.ok(publicQueryService.tentativasFollow(competitionId, categoryId));
+    }
+
+    @GetMapping("/follow/agenda")
+    public ResponseEntity<List<FollowTakeScheduleDTO>> agendaFollow(
+            @RequestParam Long competitionId,
+            @RequestParam Long categoryId) {
+        return ResponseEntity.ok(publicQueryService.agendaFollow(competitionId, categoryId));
+    }
+
+    @GetMapping("/follow/agenda/{scheduleId}/fila")
+    public ResponseEntity<List<FollowTakeScheduleEntryDTO>> filaFollow(
+            @PathVariable Long scheduleId) {
+        return ResponseEntity.ok(publicQueryService.filaFollow(scheduleId));
     }
 
     @GetMapping("/chaveamentos")
