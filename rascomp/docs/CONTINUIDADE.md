@@ -35,7 +35,7 @@ O roadmap oficial será retomado após a publicação/estabilização da V1 Beta
 
 Ajustes Gerais DEV avançados são pós-Beta e não bloqueiam o primeiro go-live.
 
-Migrations atuais: **V1–V27**. Próxima migration estrutural: **V28+**.
+Migrations atuais: **V1–V28**. Próxima migration estrutural: **V29+**.
 
 ---
 
@@ -47,6 +47,7 @@ OWNERSHIP PARTICIPANTE                   ✅
 MYSQL + FLYWAY V1–V26                    ✅
 COMPETIÇÕES                              ✅ transições + prorrogação/reabertura
 EQUIPES / COMPETIDORES / ROBÔS           ✅
+LOGO PÚBLICA DA EQUIPE                   ✅ V28 + upload pelo líder + endpoint público
 INSCRIÇÕES + REVISÃO                     ✅ invariantes + cancelamento + híbridos
 FOTOS DOS ROBÔS                          ✅
 FOLLOW LINE                              ✅ contrato RRC operacional
@@ -2677,3 +2678,25 @@ Essa via pode ser escolhida caso os testes de carga mostrem pouca confiança na 
 Nenhuma regra de negócio pode depender exclusivamente da VIA A.
 
 A troca deve ser feita por configuração/profile, não por alteração de código.
+
+
+---
+
+## Logo pública de equipe — Beta A
+
+Implementada para permitir que a Landing identifique visualmente as equipes participantes.
+
+Fluxo:
+
+```text
+líder da Team
+→ PUT /api/v1/participante/equipes/{teamId}/logo
+→ JPEG/PNG/WEBP até 5 MB
+→ TEAM_LOGOS_DIR
+→ teams.logo_*
+→ PublicTeamDTO.logoUrl
+→ GET /api/v1/public/equipes/{teamId}/logo
+→ Landing
+```
+
+A logo é opcional. A ausência não bloqueia cadastro, inscrição ou competição.
