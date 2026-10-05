@@ -2733,3 +2733,35 @@ Rascomp@2026
 ```
 
 A flag permanece `false` por padrão e não deve ser ativada em produção.
+
+
+### Pódio público por categoria — 05/10/2026
+
+A Landing passa a consumir uma projeção pública consolidada dos resultados oficiais:
+
+```text
+GET /api/v1/public/podios?competitionId={id}
+```
+
+Contrato público:
+
+- somente leitura;
+- disponível durante o ciclo público e preenchido em `EM_ANDAMENTO`;
+- retorna apenas identificação da categoria/modalidade e 1º, 2º e 3º colocados;
+- não expõe justificativas, ator de decisão ou metadados administrativos;
+- `podiumCompleto=true` somente quando as três posições estiverem definidas;
+- Sumô reutiliza Final + disputa de 3º lugar;
+- Follow reutiliza ranking oficial ou decisão administrativa já consolidada pelo domínio.
+
+Regra de apresentação da Landing:
+
+```text
+pódio incompleto
+→ continua exibindo ranking/chave/histórico
+
+1º + 2º + 3º definidos
+→ esconde o histórico como destaque daquela categoria
+→ mostra somente o pódio oficial
+```
+
+A regra é independente por categoria; uma modalidade pode já exibir pódio enquanto outra continua em disputa.
