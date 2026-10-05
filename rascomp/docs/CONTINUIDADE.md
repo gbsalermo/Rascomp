@@ -2700,3 +2700,36 @@ líder da Team
 ```
 
 A logo é opcional. A ausência não bloqueia cadastro, inscrição ou competição.
+
+
+---
+
+## Showcase completo para validação da Landing
+
+Existe um cenário local opt-in preparado por `DemoShowcaseDataInitializer`.
+
+Ativação:
+
+```text
+RASCOMP_DEMO_SHOWCASE_ENABLED=true
+```
+
+Ao iniciar o backend com a flag habilitada, o cenário cria/garante:
+
+- `RRC 2026 · Demonstração ao vivo` como competição `EM_ANDAMENTO` e `vigente=true`;
+- várias equipes e robôs com inscrições aprovadas;
+- mistura de equipes com logo pública e equipes sem logo, para validar o fallback da Landing;
+- Follow Line com ranking e tentativas/tomadas já registradas;
+- Mini Sumô com 16 participantes e chave parcialmente avançada;
+- Sumô 3 kg com 10 participantes e BYEs;
+- inscrições pendentes e rejeitadas para validar Gestão;
+- histórico finalizado com chave completa de 32 robôs;
+- usuários demo DEV, GESTAO, MIDIA e PARTICIPANTE.
+
+Senha comum dos usuários demo:
+
+```text
+Rascomp@2026
+```
+
+A flag permanece `false` por padrão e não deve ser ativada em produção.
