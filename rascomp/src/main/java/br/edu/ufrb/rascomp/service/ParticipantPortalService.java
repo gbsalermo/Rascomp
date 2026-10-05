@@ -41,6 +41,7 @@ public class ParticipantPortalService {
     private final CompetitorRepository competitorRepository;
     private final InstitutionService institutionService;
     private final TeamService teamService;
+    private final TeamLogoService teamLogoService;
     private final CompetitorService competitorService;
     private final RobotService robotService;
     private final RobotResponsibleService robotResponsibleService;
@@ -96,6 +97,16 @@ public class ParticipantPortalService {
         accessPolicyService.exigirEquipeDoResponsavel(teamId);
         TeamDTO dto = teamDto(request);
         return teamService.atualizarComoResponsavel(teamId, dto, accessPolicyService.usuarioAtual());
+    }
+
+    public TeamDTO atualizarLogoEquipe(Long teamId, MultipartFile arquivo) {
+        accessPolicyService.exigirEquipeDoResponsavel(teamId);
+        return teamLogoService.atualizar(teamId, arquivo);
+    }
+
+    public TeamDTO removerLogoEquipe(Long teamId) {
+        accessPolicyService.exigirEquipeDoResponsavel(teamId);
+        return teamLogoService.remover(teamId);
     }
 
     @Transactional(readOnly = true)
