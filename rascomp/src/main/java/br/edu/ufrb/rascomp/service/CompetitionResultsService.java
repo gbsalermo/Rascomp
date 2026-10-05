@@ -19,6 +19,7 @@ import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.TipoPartidaSumo;
 import br.edu.ufrb.rascomp.repository.BracketRepository;
+import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.FollowManualResultRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.MatchResultRepository;
@@ -30,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class CompetitionResultsService {
 
     private final RegistrationRepository registrationRepository;
+    private final CompetitionRepository competitionRepository;
     private final BracketRepository bracketRepository;
     private final MatchRepository matchRepository;
     private final MatchResultRepository matchResultRepository;
@@ -41,7 +43,29 @@ public class CompetitionResultsService {
     @Transactional(readOnly = true)
     public List<CompetitionCategoryResultDTO> listar(Long competitionId) {
         competitionContextService.exigirOperavel(competitionId);
+        return consolidar(competitionId);
+    }
 
+    @Transactional(readOnly = true)
+    public List<CompetitionCategoryResultDTO> listarPublico(Long competitionId) {
+        var competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
+                        "Competição não encontrada com o id: " + competitionId));
+
+        boolean statusPublico = switch (competition.getStatus()) {
+            case INSCRICOES_ABERTAS, INSCRICOES_ENCERRADAS, EM_ANDAMENTO -> true;
+            default -> false;
+        };
+
+        if (!Boolean.TRUE.equals(competition.getAtivo()) || !statusPublico) {
+            throw new jakarta.persistence.EntityNotFoundException(
+                    "Resultados públicos indisponíveis para a competição: " + competitionId);
+        }
+
+        return consolidar(competitionId);
+    }
+
+    private List<CompetitionCategoryResultDTO> consolidar(Long competitionId) {
         Map<Long, CompetitionCategory> categorias = new LinkedHashMap<>();
         for (Registration registration :
                 registrationRepository.findByCompetitionIdOrderByDataCadastroDesc(competitionId)) {
