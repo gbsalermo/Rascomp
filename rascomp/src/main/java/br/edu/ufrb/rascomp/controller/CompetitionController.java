@@ -21,11 +21,13 @@ import br.edu.ufrb.rascomp.dto.CompetitionDTO;
 import br.edu.ufrb.rascomp.dto.CompetitionRegistrationWindowChangeDTO;
 import br.edu.ufrb.rascomp.dto.CompetitionRegistrationWindowChangeRequest;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
+import br.edu.ufrb.rascomp.dto.RegistrationLotDTO;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.service.CompetitionAdminCatalogService;
 import br.edu.ufrb.rascomp.service.CompetitionContextService;
 import br.edu.ufrb.rascomp.service.CompetitionRegistrationWindowService;
 import br.edu.ufrb.rascomp.service.CompetitionService;
+import br.edu.ufrb.rascomp.service.RegistrationLotService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -37,6 +39,7 @@ public class CompetitionController {
     private final CompetitionContextService competitionContextService;
     private final CompetitionAdminCatalogService competitionAdminCatalogService;
     private final CompetitionRegistrationWindowService registrationWindowService;
+    private final RegistrationLotService registrationLotService;
 
     @PostMapping
     @PreAuthorize("hasRole('DEV')")
@@ -123,5 +126,33 @@ public class CompetitionController {
     @GetMapping("/{id}/historico-inscricoes")
     public ResponseEntity<List<CompetitionRegistrationWindowChangeDTO>> historicoInscricoes(@PathVariable Long id) {
         return ResponseEntity.ok(registrationWindowService.historico(id));
+    }
+
+    @GetMapping("/{id}/lotes")
+    public ResponseEntity<List<RegistrationLotDTO>> lotes(@PathVariable Long id) {
+        return ResponseEntity.ok(registrationLotService.listar(id));
+    }
+
+    @PostMapping("/{id}/lotes")
+    public ResponseEntity<RegistrationLotDTO> criarLote(
+            @PathVariable Long id,
+            @Valid @RequestBody RegistrationLotDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(registrationLotService.criar(id, dto));
+    }
+
+    @PutMapping("/{id}/lotes/{lotId}")
+    public ResponseEntity<RegistrationLotDTO> atualizarLote(
+            @PathVariable Long id,
+            @PathVariable Long lotId,
+            @Valid @RequestBody RegistrationLotDTO dto) {
+        return ResponseEntity.ok(registrationLotService.atualizar(id, lotId, dto));
+    }
+
+    @DeleteMapping("/{id}/lotes/{lotId}")
+    public ResponseEntity<Void> removerLote(
+            @PathVariable Long id,
+            @PathVariable Long lotId) {
+        registrationLotService.remover(id, lotId);
+        return ResponseEntity.noContent().build();
     }
 }
