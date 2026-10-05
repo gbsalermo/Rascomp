@@ -128,6 +128,9 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
     @Value("${app.storage.robot-images-dir:./uploads/robots}")
     private String robotImagesDirectory;
 
+    @Value("${app.storage.team-logos-dir:./uploads/team-logos}")
+    private String teamLogosDirectory;
+
     @Override
     @Transactional
     public void run(String... args) {
@@ -141,6 +144,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         Institution visitante = garantirInstituicao("ROBODEMO", "Instituto de Robótica Demo");
 
         Team teamParticipante = garantirEquipe("Equipe Demo RAS", ras, participante);
+        garantirLogoEquipeDemo(teamParticipante, "RAS DEMO", new Color(79, 25, 103));
         Competitor lider = garantirCompetidor("Líder Demo", PARTICIPANT_EMAIL, teamParticipante, participante);
         Competitor suporte = garantirCompetidor("Suporte Demo", "suporte.demo@rascomp.local", teamParticipante, null);
         Competitor membroFollow = garantirCompetidor("Membro Demo", MEMBER_EMAIL, teamParticipante, membro);
@@ -400,6 +404,12 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         String[] marcas = { "38.420", "40.210", "43.150", "45.800", "49.100" };
         for (int i = 0; i < nomes.length; i++) {
             Team team = garantirEquipe("Equipe Follow Demo " + (i + 1), i % 2 == 0 ? ras : visitante, null);
+            if (i < 2) {
+                garantirLogoEquipeDemo(
+                        team,
+                        "FOLLOW " + (i + 1),
+                        i == 0 ? new Color(159, 15, 59) : new Color(36, 112, 87));
+            }
             Robot robot = garantirRobo(nomes[i], team, "Robô de ranking pré-estabelecido.");
             Registration reg = garantirInscricao(
                     competition, category, team, robot, Set.of(), StatusRegistration.APROVADA,
@@ -573,6 +583,46 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
 
     private Long id(Registration registration) {
         return registration == null ? null : registration.getId();
+    }
+
+    private void garantirLogoEquipeDemo(Team team, String label, Color background) {
+        if (team.getLogoStorageKey() != null && !team.getLogoStorageKey().isBlank()) return;
+
+        String storageKey = team.getId() + "/demo-showcase.png";
+        Path root = Paths.get(teamLogosDirectory).toAbsolutePath().normalize();
+        Path target = root.resolve(storageKey).normalize();
+
+        if (!target.startsWith(root)) {
+            throw new IllegalArgumentException("Caminho de logo demo inválido.");
+        }
+
+        try {
+            Files.createDirectories(target.getParent());
+
+            BufferedImage image = new BufferedImage(420, 420, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = image.createGraphics();
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g.setColor(background);
+            g.fillRect(0, 0, 420, 420);
+            g.setColor(new Color(255, 255, 255, 42));
+            g.fillOval(210, -70, 300, 300);
+            g.fillOval(-110, 230, 280, 280);
+            g.setColor(Color.WHITE);
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 44));
+            g.drawString(label, 34, 215);
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
+            g.drawString("RASCOMP · TEAM", 36, 252);
+            g.dispose();
+
+            ImageIO.write(image, "png", target.toFile());
+        } catch (IOException ex) {
+            throw new IllegalStateException("Não foi possível gerar a logo de equipe da demonstração.", ex);
+        }
+
+        team.setLogoStorageKey(storageKey);
+        team.setLogoOriginalFilename("team-" + team.getId() + "-demo.png");
+        team.setLogoContentType("image/png");
+        teamRepository.save(team);
     }
 
     private void garantirFotoDemo(Robot robot, String label, Color background) {
