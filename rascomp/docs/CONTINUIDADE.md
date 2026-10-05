@@ -2765,3 +2765,56 @@ pódio incompleto
 ```
 
 A regra é independente por categoria; uma modalidade pode já exibir pódio enquanto outra continua em disputa.
+
+
+### Lotes de inscrição — 05/10/2026
+
+Implementação funcional adicionada antes da V1-BETA B.
+
+Modelo:
+
+```text
+Competition
+→ 0..N RegistrationLot
+   → nome
+   → dataInicio
+   → dataFim
+   → ativo
+```
+
+Regras:
+
+- lote é uma janela temporal nomeada dentro do período geral de inscrições;
+- lotes ativos da mesma competição não podem se sobrepor;
+- configuração permitida em `PLANEJADA` e `INSCRICOES_ABERTAS`;
+- depois do encerramento das inscrições/início da competição, lotes ficam somente para consulta;
+- lotes não criam preço/taxa automaticamente;
+- se a competição não possuir lotes, o fluxo de inscrição continua compatível e sem lote;
+- se existir pelo menos um lote ativo, nova inscrição normal exige que exista um lote vigente na data atual;
+- inscrição pessoal e inscrição de robô preservam `registration_lot_id` como histórico;
+- entrada manual DEV não depende de lote vigente;
+- remoção de lote é lógica (`ativo=false`) para não destruir histórico.
+
+Migrations:
+
+```text
+V29__add_registration_lots.sql
+V30__allow_reused_registration_lot_names.sql
+```
+
+Endpoints operacionais:
+
+```text
+GET    /api/v1/competicoes/{id}/lotes
+POST   /api/v1/competicoes/{id}/lotes
+PUT    /api/v1/competicoes/{id}/lotes/{lotId}
+DELETE /api/v1/competicoes/{id}/lotes/{lotId}
+```
+
+Endpoint público:
+
+```text
+GET /api/v1/public/competicoes/{competitionId}/lote-atual
+```
+
+A Landing usa esse endpoint no Hero competitivo. Nenhum nome de lote é hardcoded.
