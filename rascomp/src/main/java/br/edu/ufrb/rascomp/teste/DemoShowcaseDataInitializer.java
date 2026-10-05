@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.ufrb.rascomp.dto.BracketDTO;
+import br.edu.ufrb.rascomp.dto.FollowTakeScheduleDTO;
 import br.edu.ufrb.rascomp.dto.InspecaoSumoDTO;
 import br.edu.ufrb.rascomp.dto.RoundSumoDTO;
 import br.edu.ufrb.rascomp.model.Bracket;
@@ -48,6 +49,8 @@ import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.MotivoResultadoRoundSumo;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
+import br.edu.ufrb.rascomp.model.Enum.StatusChamadaFollow;
+import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoFollow;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.StatusRoundSumo;
@@ -61,6 +64,8 @@ import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
 import br.edu.ufrb.rascomp.repository.ConfigSumoRepository;
 import br.edu.ufrb.rascomp.repository.InstitutionRepository;
+import br.edu.ufrb.rascomp.repository.FollowTakeScheduleEntryRepository;
+import br.edu.ufrb.rascomp.repository.FollowTakeScheduleRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotImageRepository;
@@ -71,6 +76,7 @@ import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.UserAccountRepository;
 import br.edu.ufrb.rascomp.service.BracketGenerationService;
 import br.edu.ufrb.rascomp.service.InspecaoSumoService;
+import br.edu.ufrb.rascomp.service.FollowTakeScheduleService;
 import br.edu.ufrb.rascomp.service.RoundSumoService;
 import lombok.RequiredArgsConstructor;
 
@@ -120,7 +126,10 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
     private final BracketRepository bracketRepository;
     private final MatchRepository matchRepository;
     private final RoundSumoRepository roundRepository;
+    private final FollowTakeScheduleRepository followTakeScheduleRepository;
+    private final FollowTakeScheduleEntryRepository followTakeScheduleEntryRepository;
     private final InspecaoSumoService inspecaoSumoService;
+    private final FollowTakeScheduleService followTakeScheduleService;
     private final BracketGenerationService bracketGenerationService;
     private final RoundSumoService roundSumoService;
     private final PasswordEncoder passwordEncoder;
@@ -190,6 +199,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         live.setStatus(StatusCompetition.EM_ANDAMENTO);
         live.setVigente(true);
         competitionRepository.save(live);
+        prepararAgendaFollowAoVivo(live, followCategory);
 
         history.setStatus(StatusCompetition.FINALIZADA);
         history.setVigente(false);
@@ -419,6 +429,60 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
             if (i < 3) {
                 tentativa(reg, 2, 1, new BigDecimal(marcas[i]).add(new BigDecimal("1.100")).toPlainString(), 5, i == 1 ? 1 : 0, true, true, null);
             }
+        }
+    }
+
+    private void prepararAgendaFollowAoVivo(
+            Competition competition,
+            CompetitionCategory category) {
+
+        List<br.edu.ufrb.rascomp.model.FollowTakeSchedule> schedules =
+                followTakeScheduleRepository
+                        .findByCompetitionIdAndCategoryIdAndAtivoTrueOrderByTomadaAsc(
+                                competition.getId(), category.getId());
+
+        br.edu.ufrb.rascomp.model.FollowTakeSchedule tomada2 = schedules.stream()
+                .filter(item -> Integer.valueOf(2).equals(item.getTomada()))
+                .findFirst()
+                .orElseGet(() -> {
+                    FollowTakeScheduleDTO dto = new FollowTakeScheduleDTO();
+                    dto.setCompetitionId(competition.getId());
+                    dto.setCategoryId(category.getId());
+                    dto.setTomada(2);
+                    dto.setDataHora(LocalDateTime.now().minusMinutes(10));
+                    dto.setPista("Pista Follow A");
+                    dto.setOrdemExecucao(1);
+                    dto.setStatus(StatusChamadaFollow.EM_ANDAMENTO);
+                    FollowTakeScheduleDTO created = followTakeScheduleService.criar(dto);
+                    return followTakeScheduleRepository.findById(created.getId()).orElseThrow();
+                });
+
+        tomada2.setStatus(StatusChamadaFollow.EM_ANDAMENTO);
+        followTakeScheduleRepository.save(tomada2);
+
+        List<br.edu.ufrb.rascomp.model.FollowTakeScheduleEntry> queue =
+                followTakeScheduleEntryRepository
+                        .findByScheduleIdOrderByOrdemConvocacaoAsc(tomada2.getId());
+
+        if (!queue.isEmpty()) {
+            queue.get(0).setStatus(StatusConvocacaoFollow.EM_EXECUCAO);
+            followTakeScheduleEntryRepository.save(queue.get(0));
+        }
+        if (queue.size() > 1) {
+            queue.get(1).setStatus(StatusConvocacaoFollow.CONVOCADA);
+            followTakeScheduleEntryRepository.save(queue.get(1));
+        }
+
+        if (schedules.stream().noneMatch(item -> Integer.valueOf(3).equals(item.getTomada()))) {
+            FollowTakeScheduleDTO dto = new FollowTakeScheduleDTO();
+            dto.setCompetitionId(competition.getId());
+            dto.setCategoryId(category.getId());
+            dto.setTomada(3);
+            dto.setDataHora(LocalDateTime.now().plusMinutes(45));
+            dto.setPista("Pista Follow A");
+            dto.setOrdemExecucao(2);
+            dto.setStatus(StatusChamadaFollow.AGENDADA);
+            followTakeScheduleService.criar(dto);
         }
     }
 
