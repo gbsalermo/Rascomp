@@ -81,8 +81,8 @@ CONTINUIDADE.md
 ```text
 backend = fonte de verdade de domínio/autorização
 banco ativo = MySQL
-V1–V27 = migrations existentes/imutáveis
-V28+ = próxima mudança estrutural
+V1–V28 = migrations existentes/imutáveis
+V29+ = próxima mudança estrutural
 roles atuais = DEV | GESTAO | MIDIA | PARTICIPANTE
 ETAPAS 0–4 = concluídas / validadas
 próximo ciclo = TRILHO V1 BETA
