@@ -1,6 +1,6 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **03/10/2026**
+Última atualização: **05/10/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
@@ -25,8 +25,8 @@ rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md
 
 ```text
 ETAPAS 0–4    ✅ concluídas / validadas
-V1-BETA A     🚧 próxima — Landing pública
-V1-BETA B     ⏳ cloud + MySQL + storage/secrets
+V1-BETA A     ✅ concluída / validada — Landing pública
+V1-BETA B     ⏭️ próxima — planejar identidade/e-mail + cloud + MySQL + storage/secrets
 V1-BETA C     ⏳ acesso/inscrições reais
 V1-BETA D     ⏳ smoke + estabilização
 ```
@@ -35,7 +35,7 @@ O roadmap oficial será retomado após a publicação/estabilização da V1 Beta
 
 Ajustes Gerais DEV avançados são pós-Beta e não bloqueiam o primeiro go-live.
 
-Migrations atuais: **V1–V28**. Próxima migration estrutural: **V29+**.
+Migrations atuais: **V1–V30**. Próxima migration estrutural: **V31+**.
 
 ---
 
@@ -44,7 +44,7 @@ Migrations atuais: **V1–V28**. Próxima migration estrutural: **V29+**.
 ```text
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
-MYSQL + FLYWAY V1–V26                    ✅
+MYSQL + FLYWAY V1–V30                    ✅ schema versionado
 COMPETIÇÕES                              ✅ transições + prorrogação/reabertura
 EQUIPES / COMPETIDORES / ROBÔS           ✅
 LOGO PÚBLICA DA EQUIPE                   ✅ V28 + upload pelo líder + endpoint público
@@ -2849,3 +2849,38 @@ lotes
 ```
 
 Nenhum ajuste adicional é necessário neste checkpoint.
+
+
+## Checkpoint de transição — V1-BETA A → V1-BETA B — 05/10/2026
+
+A **V1-BETA A está concluída e validada**. A próxima fase é a **V1-BETA B**, mas seu desenvolvimento ainda não foi iniciado.
+
+Antes do primeiro commit da B, deve haver uma decisão explícita sobre identidade e acesso real. O primeiro checkpoint obrigatório da B será:
+
+```text
+conta criada
+→ e-mail real verificável
+→ verificação de e-mail
+→ ativação da conta
+→ login
+→ recuperação segura de senha
+```
+
+Objetivos:
+
+- reduzir contas descartáveis/falsas sem exigir dados pessoais desnecessários;
+- garantir que o usuário controle de fato o endereço de e-mail informado;
+- permitir recuperação de senha sem intervenção manual como fluxo principal;
+- não expor se um e-mail existe no sistema;
+- tokens/códigos de verificação e recuperação devem ser de uso único e expirar;
+- não armazenar token de recuperação reutilizável em texto puro;
+- DEV pode continuar com fluxo assistido excepcional, auditado, sem conhecer a senha definitiva;
+- a escolha do provedor de envio de e-mail será decidida antes da implementação.
+
+Requisito operacional imediato para discussão da B:
+
+- permitir acesso remoto funcional ao RasComp em ambiente de teste/homologação já no início da fase;
+- esse acesso não significa abrir inscrições reais nem declarar produção;
+- manter modo local e contingência por servidor local + Cloudflare Tunnel como opções oficiais.
+
+**Não iniciar a implementação da V1-BETA B antes dessa decisão de arquitetura/identidade.**
