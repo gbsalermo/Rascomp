@@ -60,6 +60,12 @@ public class CompetitionContextService {
         return new CompetitionDTO(competitionRepository.save(target));
     }
 
+    @Transactional
+    public void removerVigente() {
+        exigirDev();
+        competitionRepository.limparVigente();
+    }
+
     @Transactional(readOnly = true)
     public Competition exigirPodeAlterarStatus(Long competitionId, br.edu.ufrb.rascomp.model.Enum.StatusCompetition novoStatus) {
         UserRole role = exigirOperador();

@@ -3021,3 +3021,41 @@ POST /api/v1/auth/internal-account/activate
 ```
 
 Conta PARTICIPANTE continua usando cadastro público + verificação de e-mail normal.
+
+
+---
+
+## Estado sem competição vigente — 06/10/2026
+
+A ausência de competição vigente é um estado operacional válido.
+
+Regras:
+
+```text
+DEV
+→ pode manter uma edição apenas como foco local
+→ pode definir uma edição como vigente
+→ pode remover a vigente explicitamente
+
+GESTAO
+→ pode autenticar e navegar pelo sistema sem competição vigente
+→ recebe lista vazia de competições operáveis
+→ operações competitivas continuam exigindo uma vigente
+
+LANDING / portal
+→ /api/v1/public/competicoes retorna somente a competição:
+   vigente=true
+   ativo=true
+   status público: INSCRICOES_ABERTAS | INSCRICOES_ENCERRADAS | EM_ANDAMENTO
+→ sem competição nessas condições, retorna []
+→ nenhuma edição antiga/futura é escolhida por fallback
+```
+
+Endpoint DEV para voltar ao modo sem competição vigente:
+
+```text
+DELETE /api/v1/competicoes/vigente
+→ 204
+```
+
+Finalizar, cancelar ou desativar uma competição também remove sua marcação `vigente`, evitando que uma edição encerrada volte a aparecer como contexto operacional após reativação/reload.
