@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -71,6 +72,16 @@ class JwtServiceTest {
         assertFalse(jwtService.tokenValido(token, usuario));
     }
 
+    @Test
+    void tokenDeveSerInvalidoQuandoEmailNaoEstiverVerificado() {
+        UserAccount usuario = usuario();
+        String token = jwtService.gerarToken(usuario, false);
+
+        usuario.setEmailVerificadoEm(null);
+
+        assertFalse(jwtService.tokenValido(token, usuario));
+    }
+
     private long duracao(Claims claims) {
         Date issuedAt = claims.getIssuedAt();
         Date expiration = claims.getExpiration();
@@ -92,6 +103,7 @@ class JwtServiceTest {
         usuario.setEmail("usuario@exemplo.com");
         usuario.setRole(UserRole.PARTICIPANTE);
         usuario.setAtivo(true);
+        usuario.setEmailVerificadoEm(LocalDateTime.now());
         usuario.setSessionVersion(1L);
         return usuario;
     }

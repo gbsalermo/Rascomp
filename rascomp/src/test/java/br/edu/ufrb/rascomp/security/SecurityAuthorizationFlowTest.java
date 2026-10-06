@@ -1,5 +1,7 @@
 package br.edu.ufrb.rascomp.security;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -9,11 +11,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
+import br.edu.ufrb.rascomp.model.Enum.UserRole;
+import br.edu.ufrb.rascomp.repository.UserAccountRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -23,8 +27,13 @@ class SecurityAuthorizationFlowTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private UserAccountRepository userAccountRepository;
+
     @Test
     void cadastroPublicoDeveSempreCriarParticipanteMesmoSeRoleForEnviada() throws Exception {
+        String email = "cadastro.publico@rascomp.local";
+
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -36,7 +45,11 @@ class SecurityAuthorizationFlowTest {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.usuario.role").value("PARTICIPANTE"));
+                .andExpect(jsonPath("$.email").value(email));
+
+        var conta = userAccountRepository.findByEmailIgnoreCase(email).orElseThrow();
+        assertEquals(UserRole.PARTICIPANTE, conta.getRole());
+        assertFalse(conta.isEmailVerified());
     }
 
     @Test
@@ -53,7 +66,8 @@ class SecurityAuthorizationFlowTest {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.role").value("GESTAO"));
+                .andExpect(jsonPath("$.role").value("GESTAO"))
+                .andExpect(jsonPath("$.emailVerificado").value(true));
     }
 
     @Test
