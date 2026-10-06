@@ -70,20 +70,14 @@ API PÚBLICA                              ✅
 PROFILE TESTDATA                         ✅
 ```
 
-Checkpoint automatizado atual confirmado no CI:
+Checkpoint automatizado final da V1-BETA A:
 
 ```text
-135 testes
-0 falhas
-0 erros
-0 skipped
-H2 flowtest integrado ✅
-SecurityAuthorizationFlowTest ✅
-DemoShowcaseDataInitializerTest ✅
-MySQL + Flyway V14 + testdata ✅
+Backend Tests #527
+211 testes / 0 falhas / 0 erros / 0 skipped ✅
+portal-testdata ✅
+compilação da aplicação ✅
 ```
-
-O workflow também compilou a aplicação e inicializou o cenário completo `testdata` contra MySQL real.
 
 ---
 
@@ -2884,3 +2878,30 @@ Requisito operacional imediato para discussão da B:
 - manter modo local e contingência por servidor local + Cloudflare Tunnel como opções oficiais.
 
 **Não iniciar a implementação da V1-BETA B antes dessa decisão de arquitetura/identidade.**
+
+
+### Checkpoint automatizado final da V1-BETA A — 05/10/2026
+
+Validação executada no PR de fechamento:
+
+```text
+Backend Tests #527
+→ 211 testes
+→ 0 falhas
+→ 0 erros
+→ 0 skipped
+→ BUILD SUCCESS
+→ portal-testdata ✅
+
+Frontend Checks #233
+→ Gestão typecheck ✅
+→ Gestão build ✅
+
+Landing Checks #21
+→ Landing typecheck ✅
+→ Landing build ✅
+```
+
+Durante o fechamento, o primeiro run do backend revelou testes antigos desalinhados com regras já consolidadas. Os testes foram corrigidos para refletir os contratos atuais — sem relaxar as regras de negócio — e a suíte completa voltou a ficar verde.
+
+Com validação manual + CI final verde, a V1-BETA A está autorizada para merge em `main`.
