@@ -1,6 +1,6 @@
 # RasComp — Deploy Cloudflare
 
-Atualização 03/10/2026: o primeiro go-live foi antecipado para o **TRILHO V1 BETA**. Este ponteiro passa a orientar a V1-BETA B; ETAPA 16 fica como consolidação/hardening final.
+Atualização 05/10/2026: a **V1-BETA A foi concluída e validada**. Este ponteiro passa a orientar a discussão da V1-BETA B; a B ainda não foi iniciada. ETAPA 16 permanece como consolidação/hardening final.
 
 O guia canônico de deploy do projeto inteiro está no repositório de frontend:
 
@@ -40,3 +40,17 @@ banco               → MySQL gerenciado persistente externo inicialmente
 ```
 
 Não migrar MySQL/JPA/Hibernate/Flyway para D1 durante o primeiro deploy. Essa mudança, se desejada no futuro, deve ser tratada como uma migração de persistência separada.
+
+
+### Gate zero da V1-BETA B
+
+Antes de provisionar produção definitiva, decidir:
+
+- verificação de e-mail e ativação de conta;
+- recuperação segura de senha;
+- provedor de e-mail transacional;
+- ambiente remoto temporário/homologação para acesso externo imediato;
+- separação entre homologação e produção real;
+- manutenção do modo local e da opção Cloudflare Tunnel.
+
+Esse gate deve ser discutido e aprovado antes do início efetivo da B.
