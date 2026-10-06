@@ -25,25 +25,29 @@ class CompetitionLifecycleFlowTest extends IntegrationFlowTestSupport {
         CompetitionDTO criada = competitionService.criar(novaCompeticaoDto());
         assertEquals(StatusCompetition.PLANEJADA, criada.getStatus());
 
-        CompetitionDTO dto = competitionService.buscarPorId(criada.getId());
-        dto.setStatus(StatusCompetition.INSCRICOES_ABERTAS);
-        dto = competitionService.atualizar(criada.getId(), dto);
-        assertEquals(StatusCompetition.INSCRICOES_ABERTAS, dto.getStatus());
+        organizacaoAutenticada();
+        try {
+            CompetitionDTO dto = competitionService.alterarStatus(
+                    criada.getId(), StatusCompetition.INSCRICOES_ABERTAS);
+            assertEquals(StatusCompetition.INSCRICOES_ABERTAS, dto.getStatus());
 
-        dto.setStatus(StatusCompetition.INSCRICOES_ENCERRADAS);
-        dto = competitionService.atualizar(criada.getId(), dto);
-        assertEquals(StatusCompetition.INSCRICOES_ENCERRADAS, dto.getStatus());
+            dto = competitionService.alterarStatus(
+                    criada.getId(), StatusCompetition.INSCRICOES_ENCERRADAS);
+            assertEquals(StatusCompetition.INSCRICOES_ENCERRADAS, dto.getStatus());
 
-        dto.setStatus(StatusCompetition.EM_ANDAMENTO);
-        dto = competitionService.atualizar(criada.getId(), dto);
-        assertEquals(StatusCompetition.EM_ANDAMENTO, dto.getStatus());
+            dto = competitionService.alterarStatus(
+                    criada.getId(), StatusCompetition.EM_ANDAMENTO);
+            assertEquals(StatusCompetition.EM_ANDAMENTO, dto.getStatus());
 
-        dto.setStatus(StatusCompetition.FINALIZADA);
-        dto = competitionService.atualizar(criada.getId(), dto);
+            dto = competitionService.alterarStatus(
+                    criada.getId(), StatusCompetition.FINALIZADA);
 
-        assertEquals(StatusCompetition.FINALIZADA, dto.getStatus());
-        assertEquals(StatusCompetition.FINALIZADA,
-                competitionRepository.findById(criada.getId()).orElseThrow().getStatus());
+            assertEquals(StatusCompetition.FINALIZADA, dto.getStatus());
+            assertEquals(StatusCompetition.FINALIZADA,
+                    competitionRepository.findById(criada.getId()).orElseThrow().getStatus());
+        } finally {
+            limparAutenticacao();
+        }
     }
 
     @Test
