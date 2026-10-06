@@ -1,6 +1,6 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **05/10/2026**
+Última atualização: **06/10/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
@@ -26,7 +26,7 @@ rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md
 ```text
 ETAPAS 0–4    ✅ concluídas / validadas
 V1-BETA A     ✅ concluída / validada — Landing pública
-V1-BETA B     ⏭️ próxima — planejar identidade/e-mail + cloud + MySQL + storage/secrets
+V1-BETA B     🚧 Bloco 1 implementado — identidade/e-mail/recuperação aguardando validação manual
 V1-BETA C     ⏳ acesso/inscrições reais
 V1-BETA D     ⏳ smoke + estabilização
 ```
@@ -35,14 +35,14 @@ O roadmap oficial será retomado após a publicação/estabilização da V1 Beta
 
 Ajustes Gerais DEV avançados são pós-Beta e não bloqueiam o primeiro go-live.
 
-Migrations atuais: **V1–V30**. Próxima migration estrutural: **V31+**.
+Migrations atuais na branch V1-BETA B: **V1–V31**. Próxima migration estrutural: **V32+**.
 
 ---
 
 # 2. Estado funcional conhecido
 
 ```text
-AUTENTICAÇÃO / JWT                       ✅
+AUTENTICAÇÃO / JWT                       ✅ + verificação de e-mail/reset na branch B
 OWNERSHIP PARTICIPANTE                   ✅
 MYSQL + FLYWAY V1–V30                    ✅ schema versionado
 COMPETIÇÕES                              ✅ transições + prorrogação/reabertura
