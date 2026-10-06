@@ -2,6 +2,7 @@ package br.edu.ufrb.rascomp.teste;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -154,6 +155,7 @@ public class Block3ValidationDataInitializer implements CommandLineRunner {
         user.setPasswordHash(passwordEncoder.encode(PASSWORD));
         user.setRole(role);
         user.setAtivo(true);
+        user.setEmailVerificadoEm(LocalDateTime.now());
         if (user.getSessionVersion() == null) user.setSessionVersion(0L);
         return userAccountRepository.save(user);
     }
