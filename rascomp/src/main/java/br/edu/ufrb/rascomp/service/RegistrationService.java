@@ -59,6 +59,7 @@ public class RegistrationService {
     private final ParticipantCompetitionRegistrationService participantCompetitionRegistrationService;
     private final RegistrationReceiptStorageService receiptStorageService;
     private final RegistrationCompositionService compositionService;
+    private final RegistrationLotService registrationLotService;
 
     @Transactional
     public RegistrationDTO criar(RegistrationDTO dto) {
@@ -162,6 +163,7 @@ public class RegistrationService {
 
         Registration registration = new Registration();
         preencher(registration, dto, competition, category, team, robot, competitors);
+        registration.setRegistrationLot(registrationLotService.resolverParaNovaInscricao(competition));
         registration.setRequestedByUser(solicitante);
         registration.setStatus(StatusRegistration.PENDENTE);
         registration.setAtivo(true);

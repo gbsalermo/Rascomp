@@ -23,7 +23,9 @@ import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
 import br.edu.ufrb.rascomp.model.Institution;
 import br.edu.ufrb.rascomp.model.Registration;
+import br.edu.ufrb.rascomp.model.Competitor;
 import br.edu.ufrb.rascomp.model.Robot;
+import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
@@ -57,6 +59,9 @@ class RegistrationIntegrityServiceTest {
     @Mock private AusenciaTomadaSeguidorLinhaRepository ausenciaFollowRepository;
     @Mock private InspecaoSumoRepository inspecaoSumoRepository;
     @Mock private MatchRepository matchRepository;
+    @Mock private ParticipantCompetitionRegistrationService participantCompetitionRegistrationService;
+    @Mock private RegistrationCompositionService compositionService;
+    @Mock private RegistrationLotService registrationLotService;
 
     @InjectMocks
     private RegistrationService service;
@@ -139,6 +144,18 @@ class RegistrationIntegrityServiceTest {
         registration.setStatus(StatusRegistration.CANCELADA);
         registration.setAtivo(false);
         competition.setFimInscricoes(LocalDate.now().minusDays(1));
+
+        UserAccount participant = new UserAccount();
+        participant.setId(70L);
+        Competitor competitor = new Competitor();
+        competitor.setId(80L);
+        competitor.setTeam(registration.getTeam());
+        competitor.setAtivo(true);
+
+        when(userAccountService.buscarAtual()).thenReturn(participant);
+        when(competitorRepository.findByUserAccountId(70L)).thenReturn(Optional.of(competitor));
+        when(compositionService.prepararComposicaoInicial(50L, 30L))
+                .thenReturn(new LinkedHashSet<>());
 
         assertThrows(IllegalArgumentException.class, () -> service.reativarPorParticipante(1L));
 

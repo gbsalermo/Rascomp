@@ -1,6 +1,6 @@
 # RasComp Backend — Índice da Documentação
 
-Última revisão: **13/09/2026**
+Última revisão: **05/10/2026**
 
 A documentação global do RasComp é coordenada no repositório frontend para evitar roadmaps e dossiês duplicados.
 
@@ -20,14 +20,14 @@ A documentação global do RasComp é coordenada no repositório frontend para e
    → checkpoint vivo deste backend
 ```
 
-Estado oficial em 13/09/2026:
+Estado oficial em 05/10/2026:
 
 ```text
-ETAPA 0  ✅ concluída / validada
-ETAPA 1  ✅ concluída / validada
-ETAPA 2  ✅ concluída / validada
-ETAPA 3  ✅ concluída / validada
-ETAPA 4  🚧 em andamento — BLOCO 3 implementado / aguardando validação
+ETAPAS 0–4  ✅ concluídas / validadas
+V1-BETA A   ✅ concluída / validada — Landing pública
+V1-BETA B   ⏭️ próxima — planejamento de identidade + infraestrutura
+V1-BETA C   ⏳ acesso/inscrições reais
+V1-BETA D   ⏳ smoke + estabilização
 ```
 
 A ETAPA 1 foi concluída e validada após os cinco blocos funcionais. A ETAPA 2 foi concluída/validada em 13/09/2026. A ETAPA 3 foi concluída/validada em 19/09/2026 após integração, testes automatizados e validação prática da matriz de permissões.
@@ -81,8 +81,8 @@ CONTINUIDADE.md
 ```text
 backend = fonte de verdade de domínio/autorização
 banco ativo = MySQL
-V1–V27 = migrations existentes/imutáveis
-V28+ = próxima mudança estrutural
+V1–V30 = migrations existentes/imutáveis
+V31+ = próxima mudança estrutural
 roles atuais = DEV | GESTAO | MIDIA | PARTICIPANTE
 ETAPAS 0–4 = concluídas / validadas
 próximo ciclo = TRILHO V1 BETA
@@ -118,8 +118,8 @@ Esses itens foram executados na ETAPA 2 sem antecipação durante a ETAPA 1.
 ## Próximo trabalho
 
 ```text
-V1-BETA A — Landing pública
-→ V1-BETA B — cloud + banco/storage
+V1-BETA A — Landing pública ✅ concluída / validada
+→ V1-BETA B — identidade/e-mail + cloud + banco/storage ⏭️ próxima
 → V1-BETA C — acesso/inscrições reais
 → V1-BETA D — estabilização
 ```
@@ -142,3 +142,38 @@ A fonte canônica detalhada permanece em `gbsalermo/Rascomp-FRONT/docs/ETAPAS_PO
 ### `CHECKPOINT_ASSINATURA_PESSOAL.md`
 
 Acabamento autoral opcional do backend. Não é etapa própria; se adotado, continua opcional e pode ser preparado no fechamento da ETAPA 15 antes da consolidação final da produção.
+
+
+## Checkpoint de transição — V1-BETA A → V1-BETA B — 05/10/2026
+
+A **V1-BETA A está concluída e validada**. A próxima fase é a **V1-BETA B**, mas seu desenvolvimento ainda não foi iniciado.
+
+Antes do primeiro commit da B, deve haver uma decisão explícita sobre identidade e acesso real. O primeiro checkpoint obrigatório da B será:
+
+```text
+conta criada
+→ e-mail real verificável
+→ verificação de e-mail
+→ ativação da conta
+→ login
+→ recuperação segura de senha
+```
+
+Objetivos:
+
+- reduzir contas descartáveis/falsas sem exigir dados pessoais desnecessários;
+- garantir que o usuário controle de fato o endereço de e-mail informado;
+- permitir recuperação de senha sem intervenção manual como fluxo principal;
+- não expor se um e-mail existe no sistema;
+- tokens/códigos de verificação e recuperação devem ser de uso único e expirar;
+- não armazenar token de recuperação reutilizável em texto puro;
+- DEV pode continuar com fluxo assistido excepcional, auditado, sem conhecer a senha definitiva;
+- a escolha do provedor de envio de e-mail será decidida antes da implementação.
+
+Requisito operacional imediato para discussão da B:
+
+- permitir acesso remoto funcional ao RasComp em ambiente de teste/homologação já no início da fase;
+- esse acesso não significa abrir inscrições reais nem declarar produção;
+- manter modo local e contingência por servidor local + Cloudflare Tunnel como opções oficiais.
+
+**Não iniciar a implementação da V1-BETA B antes dessa decisão de arquitetura/identidade.**

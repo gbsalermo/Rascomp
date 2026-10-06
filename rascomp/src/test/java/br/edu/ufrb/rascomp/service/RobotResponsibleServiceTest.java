@@ -124,6 +124,7 @@ class RobotResponsibleServiceTest {
 
         when(accessPolicyService.exigirRoboDaEquipe(5L)).thenReturn(robot);
         when(accessPolicyService.usuarioAtual()).thenReturn(leader);
+        when(robotRepository.findById(5L)).thenReturn(Optional.of(robot));
         when(registrationRepository.findByRobotIdAndStatusIn(
                 org.mockito.ArgumentMatchers.eq(5L),
                 org.mockito.ArgumentMatchers.anyList()))

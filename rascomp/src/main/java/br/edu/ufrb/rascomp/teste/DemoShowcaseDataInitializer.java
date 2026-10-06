@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.ufrb.rascomp.dto.BracketDTO;
+import br.edu.ufrb.rascomp.dto.FollowTakeScheduleDTO;
 import br.edu.ufrb.rascomp.dto.InspecaoSumoDTO;
 import br.edu.ufrb.rascomp.dto.RoundSumoDTO;
 import br.edu.ufrb.rascomp.model.Bracket;
@@ -48,6 +49,8 @@ import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.model.Enum.MotivoResultadoRoundSumo;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
+import br.edu.ufrb.rascomp.model.Enum.StatusChamadaFollow;
+import br.edu.ufrb.rascomp.model.Enum.StatusConvocacaoFollow;
 import br.edu.ufrb.rascomp.model.Enum.StatusMatch;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.Enum.StatusRoundSumo;
@@ -61,6 +64,8 @@ import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.repository.ConfigFollowRepository;
 import br.edu.ufrb.rascomp.repository.ConfigSumoRepository;
 import br.edu.ufrb.rascomp.repository.InstitutionRepository;
+import br.edu.ufrb.rascomp.repository.FollowTakeScheduleEntryRepository;
+import br.edu.ufrb.rascomp.repository.FollowTakeScheduleRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotImageRepository;
@@ -71,6 +76,7 @@ import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
 import br.edu.ufrb.rascomp.repository.UserAccountRepository;
 import br.edu.ufrb.rascomp.service.BracketGenerationService;
 import br.edu.ufrb.rascomp.service.InspecaoSumoService;
+import br.edu.ufrb.rascomp.service.FollowTakeScheduleService;
 import br.edu.ufrb.rascomp.service.RoundSumoService;
 import lombok.RequiredArgsConstructor;
 
@@ -120,13 +126,19 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
     private final BracketRepository bracketRepository;
     private final MatchRepository matchRepository;
     private final RoundSumoRepository roundRepository;
+    private final FollowTakeScheduleRepository followTakeScheduleRepository;
+    private final FollowTakeScheduleEntryRepository followTakeScheduleEntryRepository;
     private final InspecaoSumoService inspecaoSumoService;
+    private final FollowTakeScheduleService followTakeScheduleService;
     private final BracketGenerationService bracketGenerationService;
     private final RoundSumoService roundSumoService;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.storage.robot-images-dir:./uploads/robots}")
     private String robotImagesDirectory;
+
+    @Value("${app.storage.team-logos-dir:./uploads/team-logos}")
+    private String teamLogosDirectory;
 
     @Override
     @Transactional
@@ -141,6 +153,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         Institution visitante = garantirInstituicao("ROBODEMO", "Instituto de Robótica Demo");
 
         Team teamParticipante = garantirEquipe("Equipe Demo RAS", ras, participante);
+        garantirLogoEquipeDemo(teamParticipante, "RAS DEMO", new Color(79, 25, 103));
         Competitor lider = garantirCompetidor("Líder Demo", PARTICIPANT_EMAIL, teamParticipante, participante);
         Competitor suporte = garantirCompetidor("Suporte Demo", "suporte.demo@rascomp.local", teamParticipante, null);
         Competitor membroFollow = garantirCompetidor("Membro Demo", MEMBER_EMAIL, teamParticipante, membro);
@@ -182,9 +195,14 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         prepararPendenciasDashboard(live, followCategory, miniCategory, visitante, organizacao);
         prepararHistoricoCompleto(history, historyCategory, visitante, organizacao);
 
+        competitionRepository.limparVigente();
         live.setStatus(StatusCompetition.EM_ANDAMENTO);
+        live.setVigente(true);
         competitionRepository.save(live);
+        prepararAgendaFollowAoVivo(live, followCategory);
+
         history.setStatus(StatusCompetition.FINALIZADA);
+        history.setVigente(false);
         competitionRepository.save(history);
 
         System.out.println("============================================================");
@@ -325,6 +343,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         item.setDataFim(hoje.plusDays(1));
         item.setStatus(StatusCompetition.INSCRICOES_ENCERRADAS);
         item.setAtivo(true);
+        item.setVigente(false);
         return competitionRepository.save(item);
     }
 
@@ -395,6 +414,12 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         String[] marcas = { "38.420", "40.210", "43.150", "45.800", "49.100" };
         for (int i = 0; i < nomes.length; i++) {
             Team team = garantirEquipe("Equipe Follow Demo " + (i + 1), i % 2 == 0 ? ras : visitante, null);
+            if (i < 2) {
+                garantirLogoEquipeDemo(
+                        team,
+                        "FOLLOW " + (i + 1),
+                        i == 0 ? new Color(159, 15, 59) : new Color(36, 112, 87));
+            }
             Robot robot = garantirRobo(nomes[i], team, "Robô de ranking pré-estabelecido.");
             Registration reg = garantirInscricao(
                     competition, category, team, robot, Set.of(), StatusRegistration.APROVADA,
@@ -404,6 +429,60 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
             if (i < 3) {
                 tentativa(reg, 2, 1, new BigDecimal(marcas[i]).add(new BigDecimal("1.100")).toPlainString(), 5, i == 1 ? 1 : 0, true, true, null);
             }
+        }
+    }
+
+    private void prepararAgendaFollowAoVivo(
+            Competition competition,
+            CompetitionCategory category) {
+
+        List<br.edu.ufrb.rascomp.model.FollowTakeSchedule> schedules =
+                followTakeScheduleRepository
+                        .findByCompetitionIdAndCategoryIdAndAtivoTrueOrderByTomadaAsc(
+                                competition.getId(), category.getId());
+
+        br.edu.ufrb.rascomp.model.FollowTakeSchedule tomada2 = schedules.stream()
+                .filter(item -> Integer.valueOf(2).equals(item.getTomada()))
+                .findFirst()
+                .orElseGet(() -> {
+                    FollowTakeScheduleDTO dto = new FollowTakeScheduleDTO();
+                    dto.setCompetitionId(competition.getId());
+                    dto.setCategoryId(category.getId());
+                    dto.setTomada(2);
+                    dto.setDataHora(LocalDateTime.now().minusMinutes(10));
+                    dto.setPista("Pista Follow A");
+                    dto.setOrdemExecucao(1);
+                    dto.setStatus(StatusChamadaFollow.EM_ANDAMENTO);
+                    FollowTakeScheduleDTO created = followTakeScheduleService.criar(dto);
+                    return followTakeScheduleRepository.findById(created.getId()).orElseThrow();
+                });
+
+        tomada2.setStatus(StatusChamadaFollow.EM_ANDAMENTO);
+        followTakeScheduleRepository.save(tomada2);
+
+        List<br.edu.ufrb.rascomp.model.FollowTakeScheduleEntry> queue =
+                followTakeScheduleEntryRepository
+                        .findByScheduleIdOrderByOrdemConvocacaoAsc(tomada2.getId());
+
+        if (!queue.isEmpty()) {
+            queue.get(0).setStatus(StatusConvocacaoFollow.EM_EXECUCAO);
+            followTakeScheduleEntryRepository.save(queue.get(0));
+        }
+        if (queue.size() > 1) {
+            queue.get(1).setStatus(StatusConvocacaoFollow.CONVOCADA);
+            followTakeScheduleEntryRepository.save(queue.get(1));
+        }
+
+        if (schedules.stream().noneMatch(item -> Integer.valueOf(3).equals(item.getTomada()))) {
+            FollowTakeScheduleDTO dto = new FollowTakeScheduleDTO();
+            dto.setCompetitionId(competition.getId());
+            dto.setCategoryId(category.getId());
+            dto.setTomada(3);
+            dto.setDataHora(LocalDateTime.now().plusMinutes(45));
+            dto.setPista("Pista Follow A");
+            dto.setOrdemExecucao(2);
+            dto.setStatus(StatusChamadaFollow.AGENDADA);
+            followTakeScheduleService.criar(dto);
         }
     }
 
@@ -568,6 +647,46 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
 
     private Long id(Registration registration) {
         return registration == null ? null : registration.getId();
+    }
+
+    private void garantirLogoEquipeDemo(Team team, String label, Color background) {
+        if (team.getLogoStorageKey() != null && !team.getLogoStorageKey().isBlank()) return;
+
+        String storageKey = team.getId() + "/demo-showcase.png";
+        Path root = Paths.get(teamLogosDirectory).toAbsolutePath().normalize();
+        Path target = root.resolve(storageKey).normalize();
+
+        if (!target.startsWith(root)) {
+            throw new IllegalArgumentException("Caminho de logo demo inválido.");
+        }
+
+        try {
+            Files.createDirectories(target.getParent());
+
+            BufferedImage image = new BufferedImage(420, 420, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = image.createGraphics();
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g.setColor(background);
+            g.fillRect(0, 0, 420, 420);
+            g.setColor(new Color(255, 255, 255, 42));
+            g.fillOval(210, -70, 300, 300);
+            g.fillOval(-110, 230, 280, 280);
+            g.setColor(Color.WHITE);
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 44));
+            g.drawString(label, 34, 215);
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
+            g.drawString("RASCOMP · TEAM", 36, 252);
+            g.dispose();
+
+            ImageIO.write(image, "png", target.toFile());
+        } catch (IOException ex) {
+            throw new IllegalStateException("Não foi possível gerar a logo de equipe da demonstração.", ex);
+        }
+
+        team.setLogoStorageKey(storageKey);
+        team.setLogoOriginalFilename("team-" + team.getId() + "-demo.png");
+        team.setLogoContentType("image/png");
+        teamRepository.save(team);
     }
 
     private void garantirFotoDemo(Robot robot, String label, Color background) {

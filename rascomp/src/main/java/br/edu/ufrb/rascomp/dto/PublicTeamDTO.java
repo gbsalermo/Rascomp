@@ -10,6 +10,7 @@ public class PublicTeamDTO {
     private final Long institutionId;
     private final String institutionNome;
     private final String institutionSigla;
+    private final String logoUrl;
 
     public PublicTeamDTO(Team entity) {
         this.id = entity.getId();
@@ -17,5 +18,8 @@ public class PublicTeamDTO {
         this.institutionId = entity.getInstitution().getId();
         this.institutionNome = entity.getInstitution().getNome();
         this.institutionSigla = entity.getInstitution().getSigla();
+        this.logoUrl = entity.getLogoStorageKey() == null || entity.getLogoStorageKey().isBlank()
+                ? null
+                : "/api/v1/public/equipes/" + entity.getId() + "/logo";
     }
 }

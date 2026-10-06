@@ -33,6 +33,8 @@ public class TeamDTO {
     private String responsibleUserNome;
     private String responsibleUserEmail;
 
+    private String logoUrl;
+
     private Boolean ativo;
     private LocalDateTime dataCadastro;
 
@@ -47,6 +49,10 @@ public class TeamDTO {
             this.responsibleUserId = entity.getResponsibleUser().getId();
             this.responsibleUserNome = entity.getResponsibleUser().getNome();
             this.responsibleUserEmail = entity.getResponsibleUser().getEmail();
+        }
+
+        if (entity.getLogoStorageKey() != null && !entity.getLogoStorageKey().isBlank()) {
+            this.logoUrl = "/api/v1/public/equipes/" + entity.getId() + "/logo";
         }
 
         this.ativo = entity.getAtivo();

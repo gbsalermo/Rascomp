@@ -28,7 +28,7 @@ ETAPA 3  ✅ concluída / validada
 ETAPA 4  ✅ concluída / validada — merge autorizado em 03/10/2026
 ```
 
-A fonte canônica cross-repo registra a bateria Portal 1–40 e regressão R1–R17 como concluídas. Migrations atuais: V1–V27.
+A fonte canônica cross-repo registra a bateria Portal 1–40 e regressão R1–R17 como concluídas. Migrations atuais: V1–V30.
 
 O antigo BLOCO 4.4 foi retirado da ETAPA 4. O polimento da Landing será consolidado futuramente com o trabalho já previsto de Landing/Galeria/conteúdo público; nome, numeração e escopo final serão decididos após o merge desta etapa.
 

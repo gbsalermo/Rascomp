@@ -36,3 +36,20 @@ Guia operacional detalhado:
 gbsalermo/Rascomp-FRONT
 docs/DEPLOY_CLOUDFLARE.md
 ```
+
+
+## Preservação obrigatória do modo local
+
+A decisão cloud não substitui o modo local.
+
+O RasComp deve continuar podendo operar com Spring Boot + MySQL + storage locais, inclusive como contingência de evento.
+
+A V1-BETA B deve documentar:
+
+- variáveis para local/staging/produção;
+- backup/restore cloud → local;
+- restauração de uploads;
+- acesso LAN;
+- retorno controlado à cloud.
+
+Também evitar acoplar toda chamada dinâmica a Worker/limite diário específico da Cloudflare. Limites comerciais devem ser revalidados antes do provisionamento e antes da competição.

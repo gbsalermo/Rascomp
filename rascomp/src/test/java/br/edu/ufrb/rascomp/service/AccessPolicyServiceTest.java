@@ -73,7 +73,7 @@ class AccessPolicyServiceTest {
     }
 
     @Test
-    void membroResponsavelPeloRoboPodeGerenciarInscricaoMesmoSemSerLider() {
+    void criadorDoRoboPodeGerenciarInscricaoMesmoSemSerLider() {
         UserAccount atual = usuario(5L);
         UserAccount lider = usuario(6L);
 
@@ -90,6 +90,7 @@ class AccessPolicyServiceTest {
         Robot robot = new Robot();
         robot.setId(30L);
         robot.setTeam(team);
+        robot.setCreatedByUser(atual);
         robot.setAtivo(true);
 
         Registration registration = new Registration();
@@ -99,10 +100,6 @@ class AccessPolicyServiceTest {
 
         when(userAccountService.buscarAtual()).thenReturn(atual);
         when(registrationRepository.findById(40L)).thenReturn(Optional.of(registration));
-        when(competitorRepository.findByUserAccountId(5L)).thenReturn(Optional.of(competitor));
-        when(robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(30L, 20L))
-                .thenReturn(true);
-
         assertEquals(40L, service.exigirInscricaoGerenciavelPeloParticipante(40L).getId());
     }
 
@@ -133,9 +130,6 @@ class AccessPolicyServiceTest {
 
         when(userAccountService.buscarAtual()).thenReturn(atual);
         when(registrationRepository.findById(40L)).thenReturn(Optional.of(registration));
-        when(competitorRepository.findByUserAccountId(5L)).thenReturn(Optional.of(competitor));
-        when(robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(30L, 20L))
-                .thenReturn(false);
 
         assertThrows(AccessDeniedException.class,
                 () -> service.exigirInscricaoGerenciavelPeloParticipante(40L));

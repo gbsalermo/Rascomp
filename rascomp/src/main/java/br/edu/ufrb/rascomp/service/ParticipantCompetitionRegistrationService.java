@@ -46,6 +46,7 @@ public class ParticipantCompetitionRegistrationService {
     private final RegistrationReceiptStorageService receiptStorageService;
     private final ParticipantRegistrationStatusHistoryRepository statusHistoryRepository;
     private final RegistrationCompositionService compositionService;
+    private final RegistrationLotService registrationLotService;
 
     @Transactional
     public ParticipantCompetitionRegistrationDTO criarParaParticipanteAtual(
@@ -73,6 +74,8 @@ public class ParticipantCompetitionRegistrationService {
                     "Você já possui uma inscrição pessoal nesta competição. Reabra ou acompanhe a inscrição existente.");
         }
 
+        var registrationLot = registrationLotService.resolverParaNovaInscricao(competition);
+
         RegistrationReceiptStorageService.StoredReceipt receipt = receiptStorageService.armazenar(
                 "participante",
                 competition.getId(),
@@ -81,6 +84,7 @@ public class ParticipantCompetitionRegistrationService {
 
         ParticipantCompetitionRegistration entity = new ParticipantCompetitionRegistration();
         entity.setCompetition(competition);
+        entity.setRegistrationLot(registrationLot);
         entity.setCompetitor(competitor);
         entity.setRequestedByUser(usuario);
         entity.setStatus(ParticipantCompetitionRegistrationStatus.PENDENTE);

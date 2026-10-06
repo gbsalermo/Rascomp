@@ -18,6 +18,8 @@ public class ParticipantCompetitionRegistrationDTO {
     private Long id;
     private Long competitionId;
     private String competitionNome;
+    private Long registrationLotId;
+    private String registrationLotNome;
     private Long competitorId;
     private String competitorNome;
     private Long teamId;
@@ -41,6 +43,10 @@ public class ParticipantCompetitionRegistrationDTO {
         id = entity.getId();
         competitionId = entity.getCompetition().getId();
         competitionNome = entity.getCompetition().getNome();
+        if (entity.getRegistrationLot() != null) {
+            registrationLotId = entity.getRegistrationLot().getId();
+            registrationLotNome = entity.getRegistrationLot().getNome();
+        }
         competitorId = entity.getCompetitor().getId();
         competitorNome = entity.getCompetitor().getNome();
         teamId = entity.getCompetitor().getTeam().getId();

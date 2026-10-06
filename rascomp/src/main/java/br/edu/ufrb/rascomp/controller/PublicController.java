@@ -20,15 +20,22 @@ import br.edu.ufrb.rascomp.dto.CompetitionDTO;
 import br.edu.ufrb.rascomp.dto.InstitutionDTO;
 import br.edu.ufrb.rascomp.dto.MatchDTO;
 import br.edu.ufrb.rascomp.dto.MatchResultDTO;
+import br.edu.ufrb.rascomp.dto.FollowTakeScheduleDTO;
+import br.edu.ufrb.rascomp.dto.FollowTakeScheduleEntryDTO;
+import br.edu.ufrb.rascomp.dto.TentativaSeguidorLinhaDTO;
 import br.edu.ufrb.rascomp.dto.PublicCompetitorDTO;
+import br.edu.ufrb.rascomp.dto.PublicCompetitionCategoryResultDTO;
 import br.edu.ufrb.rascomp.dto.PublicRegistrationDTO;
 import br.edu.ufrb.rascomp.dto.PublicRobotDTO;
 import br.edu.ufrb.rascomp.dto.PublicTeamDTO;
 import br.edu.ufrb.rascomp.dto.RankingFollowDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
+import br.edu.ufrb.rascomp.dto.RegistrationLotDTO;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
 import br.edu.ufrb.rascomp.service.PublicQueryService;
 import br.edu.ufrb.rascomp.service.RobotImageService;
+import br.edu.ufrb.rascomp.service.TeamLogoService;
+import br.edu.ufrb.rascomp.service.RegistrationLotService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -37,6 +44,8 @@ import lombok.RequiredArgsConstructor;
 public class PublicController {
 
     private final PublicQueryService publicQueryService;
+    private final TeamLogoService teamLogoService;
+    private final RegistrationLotService registrationLotService;
 
     @GetMapping("/competicoes")
     public ResponseEntity<List<CompetitionDTO>> competicoes() {
@@ -57,6 +66,19 @@ public class PublicController {
     @GetMapping("/equipes")
     public ResponseEntity<List<PublicTeamDTO>> equipes() {
         return ResponseEntity.ok(publicQueryService.equipes());
+    }
+
+    @GetMapping("/equipes/{teamId}/logo")
+    public ResponseEntity<Resource> logoEquipe(@PathVariable Long teamId) {
+        TeamLogoService.TeamLogoFile file = teamLogoService.carregarPublico(teamId);
+        ContentDisposition disposition = ContentDisposition.inline()
+                .filename(file.filename(), StandardCharsets.UTF_8)
+                .build();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(file.resource());
     }
 
     @GetMapping("/competidores")
@@ -93,11 +115,43 @@ public class PublicController {
         return ResponseEntity.ok(publicQueryService.inscricoes(competitionId));
     }
 
+    @GetMapping("/competicoes/{competitionId}/lote-atual")
+    public ResponseEntity<RegistrationLotDTO> loteAtual(@PathVariable Long competitionId) {
+        RegistrationLotDTO lote = registrationLotService.buscarAtualPublico(competitionId);
+        return lote == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(lote);
+    }
+
+    @GetMapping("/podios")
+    public ResponseEntity<List<PublicCompetitionCategoryResultDTO>> podios(
+            @RequestParam Long competitionId) {
+        return ResponseEntity.ok(publicQueryService.podios(competitionId));
+    }
+
     @GetMapping("/ranking/seguidor-linha")
     public ResponseEntity<List<RankingFollowDTO>> rankingFollow(
             @RequestParam Long competitionId,
             @RequestParam Long categoryId) {
         return ResponseEntity.ok(publicQueryService.rankingFollow(competitionId, categoryId));
+    }
+
+    @GetMapping("/follow/tentativas")
+    public ResponseEntity<List<TentativaSeguidorLinhaDTO>> tentativasFollow(
+            @RequestParam Long competitionId,
+            @RequestParam Long categoryId) {
+        return ResponseEntity.ok(publicQueryService.tentativasFollow(competitionId, categoryId));
+    }
+
+    @GetMapping("/follow/agenda")
+    public ResponseEntity<List<FollowTakeScheduleDTO>> agendaFollow(
+            @RequestParam Long competitionId,
+            @RequestParam Long categoryId) {
+        return ResponseEntity.ok(publicQueryService.agendaFollow(competitionId, categoryId));
+    }
+
+    @GetMapping("/follow/agenda/{scheduleId}/fila")
+    public ResponseEntity<List<FollowTakeScheduleEntryDTO>> filaFollow(
+            @PathVariable Long scheduleId) {
+        return ResponseEntity.ok(publicQueryService.filaFollow(scheduleId));
     }
 
     @GetMapping("/chaveamentos")

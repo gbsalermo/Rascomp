@@ -343,7 +343,7 @@ fluxos integrados H2                      ✅
 MySQL + Flyway V13 + profile testdata     ✅
 ```
 
-As ETAPAS 1–4 estão concluídas/validadas. O próximo ciclo é o **TRILHO V1 BETA**: Landing → infraestrutura cloud/banco → cadastro/acesso/inscrições reais → estabilização. Depois disso, o roadmap oficial é retomado em ambiente não-prod. A ETAPA 16 passa a representar consolidação/hardening final da produção, não o primeiro go-live. O roadmap também possui um **checkpoint transversal de Otimização Mobile do MVP** dentro da PRIORIDADE 1. Ele acompanha as interfaces revisadas/criadas nas ETAPAS 4, 7, 8 e 9 e deve estar concluído antes da ETAPA 10; hoje, apenas o login possui tratamento responsivo dedicado já revisado.
+As ETAPAS 1–4 e a **V1-BETA A** estão concluídas/validadas. O próximo ciclo é a **V1-BETA B**, ainda em planejamento: identidade/e-mail/recuperação de senha + infraestrutura cloud/banco/storage antes da abertura real. Depois disso, o roadmap oficial é retomado em ambiente não-prod. A ETAPA 16 passa a representar consolidação/hardening final da produção, não o primeiro go-live. O roadmap também possui um **checkpoint transversal de Otimização Mobile do MVP** dentro da PRIORIDADE 1. Ele acompanha as interfaces revisadas/criadas nas ETAPAS 4, 7, 8 e 9 e deve estar concluído antes da ETAPA 10; hoje, apenas o login possui tratamento responsivo dedicado já revisado.
 
 <p align="right">(<a href="#readme-top">voltar ao topo ⬆</a>)</p>
 
@@ -384,16 +384,51 @@ A documentação técnica detalhada permanece separada da apresentação do proj
 ETAPAS 0–4  ✅ concluídas / validadas
 
 TRILHO V1 BETA
-A — Landing pública                     🚧 próxima
-B — cloud + MySQL + storage/secrets    ⏳
+A — Landing pública                     ✅ concluída / validada
+B — cloud + MySQL + storage/secrets    ⏭️ próxima — planejamento obrigatório antes do início
 C — cadastro/acesso/inscrições reais   ⏳
 D — smoke + estabilização              ⏳
 ```
 
-Migrations atuais: **V1–V27**. Próxima migration estrutural: **V28+**.
+Migrations atuais: **V1–V30**. Próxima migration estrutural: **V31+**.
 
 Antes da abertura real de inscrições, são bloqueantes: banco persistente, backup/restore, Flyway íntegro, storage persistente de comprovantes, contas verificadas reais, Competition/categorias/janela corretas e smoke com conta nova criada do zero.
 
 Ajustes Gerais DEV avançados ficam para depois do primeiro go-live.
 
 Roadmap canônico: `Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md`.
+
+
+## Checkpoint de transição — V1-BETA A → V1-BETA B — 05/10/2026
+
+A **V1-BETA A está concluída e validada**. A próxima fase é a **V1-BETA B**, mas seu desenvolvimento ainda não foi iniciado.
+
+Antes do primeiro commit da B, deve haver uma decisão explícita sobre identidade e acesso real. O primeiro checkpoint obrigatório da B será:
+
+```text
+conta criada
+→ e-mail real verificável
+→ verificação de e-mail
+→ ativação da conta
+→ login
+→ recuperação segura de senha
+```
+
+Objetivos:
+
+- reduzir contas descartáveis/falsas sem exigir dados pessoais desnecessários;
+- garantir que o usuário controle de fato o endereço de e-mail informado;
+- permitir recuperação de senha sem intervenção manual como fluxo principal;
+- não expor se um e-mail existe no sistema;
+- tokens/códigos de verificação e recuperação devem ser de uso único e expirar;
+- não armazenar token de recuperação reutilizável em texto puro;
+- DEV pode continuar com fluxo assistido excepcional, auditado, sem conhecer a senha definitiva;
+- a escolha do provedor de envio de e-mail será decidida antes da implementação.
+
+Requisito operacional imediato para discussão da B:
+
+- permitir acesso remoto funcional ao RasComp em ambiente de teste/homologação já no início da fase;
+- esse acesso não significa abrir inscrições reais nem declarar produção;
+- manter modo local e contingência por servidor local + Cloudflare Tunnel como opções oficiais.
+
+**Não iniciar a implementação da V1-BETA B antes dessa decisão de arquitetura/identidade.**

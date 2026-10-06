@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +25,7 @@ import org.springframework.security.access.AccessDeniedException;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
+import br.edu.ufrb.rascomp.model.Competitor;
 import br.edu.ufrb.rascomp.model.Institution;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
@@ -55,6 +57,7 @@ class RegistrationReviewServiceTest {
     @Mock private UserAccountService userAccountService;
     @Mock private CompetitionContextService competitionContextService;
     @Mock private RegistrationStatusHistoryService statusHistoryService;
+    @Mock private RegistrationCompositionService compositionService;
 
     @InjectMocks private RegistrationService service;
 
@@ -111,6 +114,21 @@ class RegistrationReviewServiceTest {
         registration.setCompetitors(new java.util.LinkedHashSet<>());
         registration.setStatus(StatusRegistration.PENDENTE);
         registration.setAtivo(true);
+        registration.setPaymentReceiptStorageKey("robo/5/6/comprovante.pdf");
+
+        Competitor eligible = new Competitor();
+        eligible.setId(70L);
+        eligible.setNome("Responsável elegível");
+        eligible.setTeam(team);
+        eligible.setAtivo(true);
+
+        doAnswer(invocation -> {
+            registration.setCompetitors(
+                    new java.util.LinkedHashSet<>(java.util.List.of(eligible)));
+            return null;
+        }).when(compositionService).sincronizarParaAprovacao(
+                org.mockito.ArgumentMatchers.eq(registration),
+                org.mockito.ArgumentMatchers.any(UserAccount.class));
 
         when(registrationRepository.findById(6L)).thenReturn(Optional.of(registration));
         when(competitionRepository.findById(5L)).thenReturn(Optional.of(competition));

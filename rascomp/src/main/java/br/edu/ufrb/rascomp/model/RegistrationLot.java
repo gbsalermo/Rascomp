@@ -1,6 +1,7 @@
 package br.edu.ufrb.rascomp.model;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,12 +21,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "teams")
+@Table(name = "registration_lots")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Team implements Serializable {
+public class RegistrationLot implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -33,30 +34,23 @@ public class Team implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 120)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "competition_id", nullable = false)
+    private Competition competition;
+
+    @Column(nullable = false, length = 100)
     private String nome;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institution_id", nullable = false)
-    private Institution institution;
+    @Column(name = "data_inicio", nullable = false)
+    private LocalDate dataInicio;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "responsible_user_id")
-    private UserAccount responsibleUser;
-
-    @Column(name = "logo_storage_key", length = 500)
-    private String logoStorageKey;
-
-    @Column(name = "logo_original_filename", length = 255)
-    private String logoOriginalFilename;
-
-    @Column(name = "logo_content_type", length = 100)
-    private String logoContentType;
+    @Column(name = "data_fim", nullable = false)
+    private LocalDate dataFim;
 
     @Column(nullable = false)
     private Boolean ativo = true;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "data_cadastro", nullable = false, updatable = false)
     private LocalDateTime dataCadastro;
 }

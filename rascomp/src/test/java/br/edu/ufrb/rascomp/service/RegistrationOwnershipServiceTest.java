@@ -62,6 +62,7 @@ class RegistrationOwnershipServiceTest {
     @Mock private AusenciaTomadaSeguidorLinhaRepository ausenciaFollowRepository;
     @Mock private InspecaoSumoRepository inspecaoSumoRepository;
     @Mock private MatchRepository matchRepository;
+    @Mock private RegistrationLotService registrationLotService;
 
     @InjectMocks
     private RegistrationService service;
@@ -97,7 +98,6 @@ class RegistrationOwnershipServiceTest {
         Cenario c = cenario();
         RegistrationDTO dto = dto(c.team.getId(), c.robot.getId());
 
-        when(teamRepository.findById(c.team.getId())).thenReturn(Optional.of(c.team));
         when(competitorRepository.findByUserAccountId(c.user.getId()))
                 .thenReturn(Optional.of(c.competitor));
         doThrow(new IllegalArgumentException("Faça sua inscrição individual"))

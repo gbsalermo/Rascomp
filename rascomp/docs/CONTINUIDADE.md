@@ -1,6 +1,6 @@
 # Continuidade — RasComp Backend
 
-Última atualização: **03/10/2026**
+Última atualização: **05/10/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
@@ -25,8 +25,8 @@ rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md
 
 ```text
 ETAPAS 0–4    ✅ concluídas / validadas
-V1-BETA A     🚧 próxima — Landing pública
-V1-BETA B     ⏳ cloud + MySQL + storage/secrets
+V1-BETA A     ✅ concluída / validada — Landing pública
+V1-BETA B     ⏭️ próxima — planejar identidade/e-mail + cloud + MySQL + storage/secrets
 V1-BETA C     ⏳ acesso/inscrições reais
 V1-BETA D     ⏳ smoke + estabilização
 ```
@@ -35,7 +35,7 @@ O roadmap oficial será retomado após a publicação/estabilização da V1 Beta
 
 Ajustes Gerais DEV avançados são pós-Beta e não bloqueiam o primeiro go-live.
 
-Migrations atuais: **V1–V27**. Próxima migration estrutural: **V28+**.
+Migrations atuais: **V1–V30**. Próxima migration estrutural: **V31+**.
 
 ---
 
@@ -44,9 +44,10 @@ Migrations atuais: **V1–V27**. Próxima migration estrutural: **V28+**.
 ```text
 AUTENTICAÇÃO / JWT                       ✅
 OWNERSHIP PARTICIPANTE                   ✅
-MYSQL + FLYWAY V1–V26                    ✅
+MYSQL + FLYWAY V1–V30                    ✅ schema versionado
 COMPETIÇÕES                              ✅ transições + prorrogação/reabertura
 EQUIPES / COMPETIDORES / ROBÔS           ✅
+LOGO PÚBLICA DA EQUIPE                   ✅ V28 + upload pelo líder + endpoint público
 INSCRIÇÕES + REVISÃO                     ✅ invariantes + cancelamento + híbridos
 FOTOS DOS ROBÔS                          ✅
 FOLLOW LINE                              ✅ contrato RRC operacional
@@ -69,20 +70,14 @@ API PÚBLICA                              ✅
 PROFILE TESTDATA                         ✅
 ```
 
-Checkpoint automatizado atual confirmado no CI:
+Checkpoint automatizado final da V1-BETA A:
 
 ```text
-135 testes
-0 falhas
-0 erros
-0 skipped
-H2 flowtest integrado ✅
-SecurityAuthorizationFlowTest ✅
-DemoShowcaseDataInitializerTest ✅
-MySQL + Flyway V14 + testdata ✅
+Backend Tests #527
+211 testes / 0 falhas / 0 erros / 0 skipped ✅
+portal-testdata ✅
+compilação da aplicação ✅
 ```
-
-O workflow também compilou a aplicação e inicializou o cenário completo `testdata` contra MySQL real.
 
 ---
 
@@ -2458,7 +2453,7 @@ BLOCO 4.4
 → NÃO INICIADO
 ```
 
-Migrations atuais: **V1–V27**. Próxima migration estrutural: **V28+**.
+Migrations atuais: **V1–V30**. Próxima migration estrutural: **V31+**.
 
 
 ### Ajustes finais pós-regressão — 03/10/2026
@@ -2591,3 +2586,322 @@ Regras:
 - documentar recursos criados, ownership e passos de transferência.
 
 A conta temporária não pode virar dependência estrutural permanente.
+
+
+### Gate técnico antes da primeira competição oficial
+
+A Beta online não substitui hardening/capacidade.
+
+Antes do primeiro RRC oficial no RasComp:
+
+- revisar SQL injection e toda construção de query;
+- validar autorização/ownership em endpoints;
+- aplicar/testar rate limiting e proteção de rajadas;
+- limitar payloads/uploads;
+- revisar timeouts e pool de conexões;
+- validar menor privilégio do usuário MySQL;
+- configurar logs/observabilidade;
+- executar carga genérica;
+- executar cenário realista com **300–500 participantes**.
+
+O cenário 300–500 deve incluir concorrência entre:
+
+```text
+inscrições + comprovantes
+GESTAO aprovando
+consultas do Portal
+Follow registrando tempos
+Sumô registrando rounds/partidas
+chaves/progressão
+ranking/resultados públicos
+```
+
+Medir p50/p95/p99, erros, CPU/memória, MySQL/pool, timeouts e recuperação.
+
+Falha de carga, corrupção, corrida ou proteção inadequada bloqueia o uso na primeira competição oficial até correção e repetição dos testes.
+
+
+### Modo local é requisito permanente
+
+O backend deve continuar executável fora da cloud:
+
+```text
+Spring Boot local
+→ MySQL local/LAN
+→ storage local
+```
+
+Cloudflare, R2 e o provedor MySQL de produção não podem contaminar as regras de domínio com dependências obrigatórias.
+
+A configuração deve continuar por ambiente/profile.
+
+#### Contingência no dia da competição
+
+Antes da primeira competição oficial:
+
+- restaurar um snapshot representativo em MySQL local;
+- disponibilizar uploads necessários localmente;
+- subir Spring Boot em máquina da organização;
+- permitir acesso da Gestão/Portal pela LAN;
+- executar smoke de inscrições existentes, Follow, Sumô, chaves e ranking;
+- documentar mudança de URLs/variáveis;
+- definir fonte de verdade durante o modo contingência.
+
+Nunca executar cloud e local como dois bancos graváveis independentes e depois tentar "juntar" manualmente.
+
+#### Cloudflare
+
+Evitar exigir Worker para cada request dinâmica apenas por conveniência de roteamento. Limites/preços vigentes devem ser conferidos novamente na V1-BETA B; a operação do backend não deve ficar presa a uma quota diária específica.
+
+
+### Segunda via oficial — servidor local + Tunnel
+
+Além do backend hospedado em cloud, o RasComp deve suportar operação oficial com:
+
+```text
+Cloudflare Tunnel
+→ Spring Boot local
+→ MySQL local
+→ storage local
+```
+
+A aplicação continua acessível pela internet através do domínio/Tunnel e também pode ser acessada pela LAN.
+
+Essa via pode ser escolhida caso os testes de carga mostrem pouca confiança na capacidade/limites da infraestrutura cloud ou no caminho que utilize Workers.
+
+Nenhuma regra de negócio pode depender exclusivamente da VIA A.
+
+A troca deve ser feita por configuração/profile, não por alteração de código.
+
+
+---
+
+## Logo pública de equipe — Beta A
+
+Implementada para permitir que a Landing identifique visualmente as equipes participantes.
+
+Fluxo:
+
+```text
+líder da Team
+→ PUT /api/v1/participante/equipes/{teamId}/logo
+→ JPEG/PNG/WEBP até 5 MB
+→ TEAM_LOGOS_DIR
+→ teams.logo_*
+→ PublicTeamDTO.logoUrl
+→ GET /api/v1/public/equipes/{teamId}/logo
+→ Landing
+```
+
+A logo é opcional. A ausência não bloqueia cadastro, inscrição ou competição.
+
+
+---
+
+## Showcase completo para validação da Landing
+
+Existe um cenário local opt-in preparado por `DemoShowcaseDataInitializer`.
+
+Ativação:
+
+```text
+RASCOMP_DEMO_SHOWCASE_ENABLED=true
+```
+
+Ao iniciar o backend com a flag habilitada, o cenário cria/garante:
+
+- `RRC 2026 · Demonstração ao vivo` como competição `EM_ANDAMENTO` e `vigente=true`;
+- várias equipes e robôs com inscrições aprovadas;
+- mistura de equipes com logo pública e equipes sem logo, para validar o fallback da Landing;
+- Follow Line com ranking e tentativas/tomadas já registradas;
+- Mini Sumô com 16 participantes e chave parcialmente avançada;
+- Sumô 3 kg com 10 participantes e BYEs;
+- inscrições pendentes e rejeitadas para validar Gestão;
+- histórico finalizado com chave completa de 32 robôs;
+- usuários demo DEV, GESTAO, MIDIA e PARTICIPANTE.
+
+Senha comum dos usuários demo:
+
+```text
+Rascomp@2026
+```
+
+A flag permanece `false` por padrão e não deve ser ativada em produção.
+
+
+### Pódio público por categoria — 05/10/2026
+
+A Landing passa a consumir uma projeção pública consolidada dos resultados oficiais:
+
+```text
+GET /api/v1/public/podios?competitionId={id}
+```
+
+Contrato público:
+
+- somente leitura;
+- disponível durante o ciclo público e preenchido em `EM_ANDAMENTO`;
+- retorna apenas identificação da categoria/modalidade e 1º, 2º e 3º colocados;
+- não expõe justificativas, ator de decisão ou metadados administrativos;
+- `podiumCompleto=true` somente quando as três posições estiverem definidas;
+- Sumô reutiliza Final + disputa de 3º lugar;
+- Follow reutiliza ranking oficial ou decisão administrativa já consolidada pelo domínio.
+
+Regra de apresentação da Landing:
+
+```text
+pódio incompleto
+→ continua exibindo ranking/chave/histórico
+
+1º + 2º + 3º definidos
+→ esconde o histórico como destaque daquela categoria
+→ mostra somente o pódio oficial
+```
+
+A regra é independente por categoria; uma modalidade pode já exibir pódio enquanto outra continua em disputa.
+
+
+### Lotes de inscrição — 05/10/2026
+
+Implementação funcional adicionada antes da V1-BETA B.
+
+Modelo:
+
+```text
+Competition
+→ 0..N RegistrationLot
+   → nome
+   → dataInicio
+   → dataFim
+   → ativo
+```
+
+Regras:
+
+- lote é uma janela temporal nomeada dentro do período geral de inscrições;
+- lotes ativos da mesma competição não podem se sobrepor;
+- configuração permitida em `PLANEJADA` e `INSCRICOES_ABERTAS`;
+- depois do encerramento das inscrições/início da competição, lotes ficam somente para consulta;
+- lotes não criam preço/taxa automaticamente;
+- se a competição não possuir lotes, o fluxo de inscrição continua compatível e sem lote;
+- se existir pelo menos um lote ativo, nova inscrição normal exige que exista um lote vigente na data atual;
+- inscrição pessoal e inscrição de robô preservam `registration_lot_id` como histórico;
+- entrada manual DEV não depende de lote vigente;
+- remoção de lote é lógica (`ativo=false`) para não destruir histórico.
+
+Migrations:
+
+```text
+V29__add_registration_lots.sql
+V30__allow_reused_registration_lot_names.sql
+```
+
+Endpoints operacionais:
+
+```text
+GET    /api/v1/competicoes/{id}/lotes
+POST   /api/v1/competicoes/{id}/lotes
+PUT    /api/v1/competicoes/{id}/lotes/{lotId}
+DELETE /api/v1/competicoes/{id}/lotes/{lotId}
+```
+
+Endpoint público:
+
+```text
+GET /api/v1/public/competicoes/{competitionId}/lote-atual
+```
+
+A Landing usa esse endpoint no Hero competitivo. Nenhum nome de lote é hardcoded.
+
+
+### Fechamento dos lotes de inscrição — 05/10/2026
+
+Status: **✅ CONCLUÍDO E VALIDADO MANUALMENTE**
+
+Validação realizada:
+
+- criação de múltiplos lotes;
+- identificação automática do lote vigente pela data;
+- sincronização automática do lote vigente na Landing;
+- Hero exibindo o lote atual corretamente;
+- lotes futuros preservados e assumindo vigência automaticamente quando a data chegar;
+- prorrogação da janela geral de inscrições não altera automaticamente as datas dos lotes;
+- ausência de lote vigente em competição que usa lotes bloqueia novas inscrições normais;
+- histórico do lote permanece associado à inscrição já realizada.
+
+Regra consolidada:
+
+```text
+janela geral de inscrições
+→ pode ser prorrogada/reaberta separadamente
+
+lotes
+→ permanecem independentes
+→ não são estendidos automaticamente
+→ mudam de vigente pela data
+→ inscrição preserva o lote histórico
+```
+
+Nenhum ajuste adicional é necessário neste checkpoint.
+
+
+## Checkpoint de transição — V1-BETA A → V1-BETA B — 05/10/2026
+
+A **V1-BETA A está concluída e validada**. A próxima fase é a **V1-BETA B**, mas seu desenvolvimento ainda não foi iniciado.
+
+Antes do primeiro commit da B, deve haver uma decisão explícita sobre identidade e acesso real. O primeiro checkpoint obrigatório da B será:
+
+```text
+conta criada
+→ e-mail real verificável
+→ verificação de e-mail
+→ ativação da conta
+→ login
+→ recuperação segura de senha
+```
+
+Objetivos:
+
+- reduzir contas descartáveis/falsas sem exigir dados pessoais desnecessários;
+- garantir que o usuário controle de fato o endereço de e-mail informado;
+- permitir recuperação de senha sem intervenção manual como fluxo principal;
+- não expor se um e-mail existe no sistema;
+- tokens/códigos de verificação e recuperação devem ser de uso único e expirar;
+- não armazenar token de recuperação reutilizável em texto puro;
+- DEV pode continuar com fluxo assistido excepcional, auditado, sem conhecer a senha definitiva;
+- a escolha do provedor de envio de e-mail será decidida antes da implementação.
+
+Requisito operacional imediato para discussão da B:
+
+- permitir acesso remoto funcional ao RasComp em ambiente de teste/homologação já no início da fase;
+- esse acesso não significa abrir inscrições reais nem declarar produção;
+- manter modo local e contingência por servidor local + Cloudflare Tunnel como opções oficiais.
+
+**Não iniciar a implementação da V1-BETA B antes dessa decisão de arquitetura/identidade.**
+
+
+### Checkpoint automatizado final da V1-BETA A — 05/10/2026
+
+Validação executada no PR de fechamento:
+
+```text
+Backend Tests #527
+→ 211 testes
+→ 0 falhas
+→ 0 erros
+→ 0 skipped
+→ BUILD SUCCESS
+→ portal-testdata ✅
+
+Frontend Checks #233
+→ Gestão typecheck ✅
+→ Gestão build ✅
+
+Landing Checks #21
+→ Landing typecheck ✅
+→ Landing build ✅
+```
+
+Durante o fechamento, o primeiro run do backend revelou testes antigos desalinhados com regras já consolidadas. Os testes foram corrigidos para refletir os contratos atuais — sem relaxar as regras de negócio — e a suíte completa voltou a ficar verde.
+
+Com validação manual + CI final verde, a V1-BETA A está autorizada para merge em `main`.
