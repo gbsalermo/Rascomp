@@ -1,0 +1,12 @@
+# Valores de teste local do Worker/Container. Copie para .dev.vars.
+DB_URL="jdbc:mysql://host.docker.internal:3306/rascomp?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bahia"
+DB_USERNAME="root"
+DB_PASSWORD="CHANGE-ME"
+JWT_SECRET="CHANGE-ME-32-PLUS-CHARS"
+CORS_ALLOWED_ORIGINS="http://localhost:5173,http://localhost:5174"
+IDENTITY_FRONTEND_BASE_URL="http://localhost:5173"
+RASCOMP_DEV_NOME="Administrador RasComp"
+RASCOMP_DEV_EMAIL="dev@example.com"
+RASCOMP_DEV_PASSWORD="CHANGE-ME"
+EMAIL_PROVIDER="log"
+R2_ENABLED="false"

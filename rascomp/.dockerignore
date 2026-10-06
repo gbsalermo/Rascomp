@@ -1,0 +1,15 @@
+target
+bin
+.git
+.github
+.idea
+.vscode
+.settings
+.classpath
+.project
+*.iml
+.env
+.env.*
+uploads
+docs
+cloudflare-api/node_modules

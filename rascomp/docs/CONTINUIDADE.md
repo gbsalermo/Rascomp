@@ -26,7 +26,7 @@ rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md
 ```text
 ETAPAS 0–4    ✅ concluídas / validadas
 V1-BETA A     ✅ concluída / validada — Landing pública
-V1-BETA B     🚧 Bloco 1 ✅ validado · Bloco 2 homologação remota em implementação
+V1-BETA B     🚧 Bloco 1 ✅ · Landing remota ✅ · base Docker/Container cloud em preparação
 V1-BETA C     ⏳ acesso/inscrições reais
 V1-BETA D     ⏳ smoke + estabilização
 ```
@@ -2905,3 +2905,25 @@ Landing Checks #21
 Durante o fechamento, o primeiro run do backend revelou testes antigos desalinhados com regras já consolidadas. Os testes foram corrigidos para refletir os contratos atuais — sem relaxar as regras de negócio — e a suíte completa voltou a ficar verde.
 
 Com validação manual + CI final verde, a V1-BETA A está autorizada para merge em `main`.
+
+
+---
+
+## Checkpoint cloud base — 06/10/2026
+
+Preparação adicionada na V1-BETA B:
+
+```text
+Dockerfile                         ✅
+profile cloud                      ✅
+Actuator health                    ✅
+Worker/Container scaffold          ✅
+secrets fora do código             ✅
+testdata bloqueado no profile       ✅
+MySQL externo                      ⏳ configurar
+e-mail real                        ⏳ configurar
+storage operacional R2             ⏳ integrar/configurar
+provisionamento Cloudflare          ⏳ próxima sessão
+```
+
+A Landing externa por Quick Tunnel foi validada no frontend. O próximo objetivo é conectar a conta Cloudflare temporária e publicar primeiro os frontends, depois API/Container.
