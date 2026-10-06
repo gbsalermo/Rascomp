@@ -1,6 +1,6 @@
 # V1-BETA B — Bloco 1 — Backend de identidade
 
-Status: **implementado na branch `v1-beta-b-identidade-cloud` e aguardando validação manual**.
+Status: **✅ IMPLEMENTADO E VALIDADO — Bloco 1 concluído em 06/10/2026**.
 
 Fonte canônica cross-repo:
 
@@ -43,4 +43,4 @@ IDENTITY_RESEND_COOLDOWN_SECONDS=60
 
 Para a validação local, manter `EMAIL_PROVIDER=log`. O link aparece no console e não exige credencial externa.
 
-O próximo bloco só começa após validação manual: **homologação remota por Cloudflare Tunnel + Cloudflare Access**, preservando execução local.
+Próximo bloco autorizado: **homologação remota por Cloudflare Tunnel + Cloudflare Access**, preservando execução local.
