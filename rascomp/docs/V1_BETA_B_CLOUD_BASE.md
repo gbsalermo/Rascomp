@@ -123,3 +123,92 @@ Quando a conta Cloudflare temporária for configurada:
 8. configurar e-mail real;
 9. integrar storage operacional ao R2;
 10. smoke ponta a ponta.
+
+
+## Gate de higienização do primeiro banco cloud
+
+O primeiro deploy **não reutiliza o banco local/testdata**.
+
+Fluxo obrigatório:
+
+```text
+MySQL cloud NOVO e vazio
+→ Flyway V1..atual cria somente o schema
+→ profile cloud mantém TODOS os seeds/testdata desligados
+→ bootstrap cria somente o primeiro DEV real
+→ DEV entra no sistema
+→ cria contas GESTAO/MIDIA reais necessárias
+→ organização cadastra dados reais
+```
+
+### Dados permitidos no primeiro boot
+
+```text
+flyway_schema_history
+schema/tabelas vazias
+1 UserAccount DEV real (bootstrap)
+```
+
+Nenhum destes dados pode vir automaticamente:
+
+```text
+equipes demo
+competidores demo
+robôs demo
+competições demo
+inscrições demo
+tentativas/rounds
+chaves
+instituições de exemplo
+dev.b3/dev.b4
+gestao.b3/gestao.b4
+lider.demo/membro.demo
+organizacao.demo
+```
+
+O antigo `DataInitializer` cria massa completa de desenvolvimento e por isso é explicitamente desligado em `application-cloud.properties`.
+
+### Proteção de startup
+
+`CloudProfileSafetyGuard` aborta o startup se:
+
+- `cloud` e `testdata` forem ativados juntos;
+- qualquer flag conhecida de seed/testdata estiver `true`.
+
+Falhar no startup é preferível a popular silenciosamente um banco persistente.
+
+### Primeiro DEV
+
+O único bootstrap automático permitido é:
+
+```text
+RASCOMP_DEV_NOME
+RASCOMP_DEV_EMAIL
+RASCOMP_DEV_PASSWORD
+```
+
+Regras operacionais:
+
+1. usar dados reais;
+2. usar senha inicial forte;
+3. confirmar o primeiro login;
+4. criar as demais contas internas pelo módulo DEV;
+5. após confirmar o DEV persistido, remover `RASCOMP_DEV_PASSWORD` dos secrets do ambiente quando operacionalmente possível.
+
+O bootstrap não cria outra conta se já existir DEV.
+
+### Auditoria antes de abrir tráfego real
+
+Antes da divulgação/publicação real, conferir contagens:
+
+```text
+Team = 0
+Competitor = 0
+Robot = 0
+Competition = 0
+Registration = 0
+Match/Bracket/Round = 0
+UserAccount = somente contas reais aprovadas
+```
+
+Depois disso os dados reais são cadastrados normalmente pelo sistema.

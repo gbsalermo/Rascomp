@@ -2950,3 +2950,22 @@ Invariante: 1 derrota não elimina; 2 derrotas eliminam. A Final da Winners não
 Pódio: vencedor/perdedor da Final Geral decisiva e, em 3º, o perdedor da Final da Losers.
 
 Fonte canônica: `gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md` + `docs/CONTRATO_REGRAS_COMPETITIVAS.md`.
+
+
+---
+
+## Gate de banco limpo antes do go-live — 06/10/2026
+
+Decisão: **não migrar/copiar o banco local/testdata para cloud**.
+
+O MySQL cloud deve nascer vazio e receber apenas:
+
+```text
+Flyway
++
+primeiro DEV real via bootstrap
+```
+
+Todos os seeds de desenvolvimento/QA ficam explicitamente `false` no profile cloud, e `CloudProfileSafetyGuard` impede startup com `testdata` ou qualquer seed habilitado.
+
+Equipes, robôs, competidores, inscrições, competições, chaves e contas demo não entram no primeiro deploy.
