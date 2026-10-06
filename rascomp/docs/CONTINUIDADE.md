@@ -2818,3 +2818,34 @@ GET /api/v1/public/competicoes/{competitionId}/lote-atual
 ```
 
 A Landing usa esse endpoint no Hero competitivo. Nenhum nome de lote é hardcoded.
+
+
+### Fechamento dos lotes de inscrição — 05/10/2026
+
+Status: **✅ CONCLUÍDO E VALIDADO MANUALMENTE**
+
+Validação realizada:
+
+- criação de múltiplos lotes;
+- identificação automática do lote vigente pela data;
+- sincronização automática do lote vigente na Landing;
+- Hero exibindo o lote atual corretamente;
+- lotes futuros preservados e assumindo vigência automaticamente quando a data chegar;
+- prorrogação da janela geral de inscrições não altera automaticamente as datas dos lotes;
+- ausência de lote vigente em competição que usa lotes bloqueia novas inscrições normais;
+- histórico do lote permanece associado à inscrição já realizada.
+
+Regra consolidada:
+
+```text
+janela geral de inscrições
+→ pode ser prorrogada/reaberta separadamente
+
+lotes
+→ permanecem independentes
+→ não são estendidos automaticamente
+→ mudam de vigente pela data
+→ inscrição preserva o lote histórico
+```
+
+Nenhum ajuste adicional é necessário neste checkpoint.
