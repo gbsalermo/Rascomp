@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.edu.ufrb.rascomp.dto.CompetitionDTO;
 import br.edu.ufrb.rascomp.model.Competition;
+import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 
@@ -26,6 +27,12 @@ class CompetitionLifecycleServiceTest {
 
     @Mock
     private CompetitionRepository competitionRepository;
+
+    @Mock
+    private RegistrationCompositionService registrationCompositionService;
+
+    @Mock
+    private UserAccountService userAccountService;
 
     @InjectMocks
     private CompetitionService service;
@@ -55,11 +62,10 @@ class CompetitionLifecycleServiceTest {
     @Test
     void devePermitirAvancoPlanejadaParaInscricoesAbertas() {
         Competition competition = competition(StatusCompetition.PLANEJADA);
-        CompetitionDTO dto = dto(StatusCompetition.INSCRICOES_ABERTAS);
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
         when(competitionRepository.save(any(Competition.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        CompetitionDTO result = service.atualizar(1L, dto);
+        CompetitionDTO result = service.alterarStatus(1L, StatusCompetition.INSCRICOES_ABERTAS);
 
         assertEquals(StatusCompetition.INSCRICOES_ABERTAS, result.getStatus());
     }
@@ -67,7 +73,10 @@ class CompetitionLifecycleServiceTest {
     @Test
     void alterarStatusDeveAvancarSemReescreverDadosEstruturais() {
         Competition competition = competition(StatusCompetition.INSCRICOES_ENCERRADAS);
+        UserAccount actor = new UserAccount();
+        actor.setId(9L);
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
+        when(userAccountService.buscarAtual()).thenReturn(actor);
         when(competitionRepository.save(any(Competition.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CompetitionDTO result = service.alterarStatus(1L, StatusCompetition.EM_ANDAMENTO);
