@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import br.edu.ufrb.rascomp.dto.RegistrationDTO;
 import br.edu.ufrb.rascomp.model.Competition;
 import br.edu.ufrb.rascomp.model.CompetitionCategory;
+import br.edu.ufrb.rascomp.model.Competitor;
 import br.edu.ufrb.rascomp.model.Institution;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Robot;
@@ -36,6 +37,7 @@ import br.edu.ufrb.rascomp.repository.InspecaoSumoRepository;
 import br.edu.ufrb.rascomp.repository.MatchRepository;
 import br.edu.ufrb.rascomp.repository.RegistrationRepository;
 import br.edu.ufrb.rascomp.repository.RobotRepository;
+import br.edu.ufrb.rascomp.repository.RobotResponsibleRepository;
 import br.edu.ufrb.rascomp.repository.TeamRepository;
 import br.edu.ufrb.rascomp.repository.TentativaSeguidorLinhaRepository;
 
@@ -47,6 +49,7 @@ class RegistrationHybridRobotServiceTest {
     @Mock private CompetitionCategoryRepository categoryRepository;
     @Mock private TeamRepository teamRepository;
     @Mock private RobotRepository robotRepository;
+    @Mock private RobotResponsibleRepository robotResponsibleRepository;
     @Mock private CompetitorRepository competitorRepository;
     @Mock private UserAccountService userAccountService;
     @Mock private CompetitionContextService competitionContextService;
@@ -54,6 +57,7 @@ class RegistrationHybridRobotServiceTest {
     @Mock private TentativaSeguidorLinhaRepository tentativaRepository;
     @Mock private InspecaoSumoRepository inspecaoSumoRepository;
     @Mock private MatchRepository matchRepository;
+    @Mock private RegistrationLotService registrationLotService;
 
     @InjectMocks
     private RegistrationService service;
@@ -114,6 +118,7 @@ class RegistrationHybridRobotServiceTest {
                 4L, 3L, List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA)))
                 .thenReturn(List.of(existente));
         when(registrationRepository.existsByCompetitionIdAndCategoryIdAndRobotId(4L, 11L, 3L)).thenReturn(false);
+        stubCompetitorResponsavel();
         stubSave();
 
         RegistrationDTO result = service.criar(dto(11L));
@@ -144,6 +149,7 @@ class RegistrationHybridRobotServiceTest {
                 4L, 3L, List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA)))
                 .thenReturn(List.of(existenteFollow));
         when(registrationRepository.existsByCompetitionIdAndCategoryIdAndRobotId(4L, 12L, 3L)).thenReturn(false);
+        stubCompetitorResponsavel();
         stubSave();
 
         RegistrationDTO result = service.criar(dto(12L));
@@ -167,6 +173,18 @@ class RegistrationHybridRobotServiceTest {
             if (entity.getId() == null) entity.setId(100L);
             return entity;
         });
+    }
+
+    private void stubCompetitorResponsavel() {
+        Competitor competitor = new Competitor();
+        competitor.setId(20L);
+        competitor.setNome("Competidor");
+        competitor.setTeam(team);
+        competitor.setAtivo(true);
+
+        when(competitorRepository.findById(20L)).thenReturn(Optional.of(competitor));
+        when(robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(3L, 20L))
+                .thenReturn(true);
     }
 
     private CompetitionCategory categoria(Long id, String nome, Modalidade modalidade, SumoPhysicalClass physicalClass) {
@@ -197,6 +215,7 @@ class RegistrationHybridRobotServiceTest {
         dto.setCategoryId(categoryId);
         dto.setTeamId(2L);
         dto.setRobotId(3L);
+        dto.setCompetitorIds(List.of(20L));
         return dto;
     }
 }
