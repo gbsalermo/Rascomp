@@ -1,5 +1,6 @@
 package br.edu.ufrb.rascomp.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -76,7 +77,7 @@ public class UserAccountService {
 
     @Transactional
     public UserAccount iniciarNovaSessao(UserAccount usuario) {
-        usuario.setUltimoLogin(java.time.LocalDateTime.now());
+        usuario.setUltimoLogin(LocalDateTime.now());
         usuario.setSessionVersion(usuario.getSessionVersion() == null ? 1L : usuario.getSessionVersion() + 1L);
         return userAccountRepository.save(usuario);
     }
@@ -114,6 +115,11 @@ public class UserAccountService {
 
         if (alterouEmail) {
             usuario.setSessionVersion(usuario.getSessionVersion() == null ? 1L : usuario.getSessionVersion() + 1L);
+            if (usuario.getRole() == UserRole.PARTICIPANTE) {
+                usuario.setEmailVerificadoEm(null);
+            } else {
+                usuario.setEmailVerificadoEm(LocalDateTime.now());
+            }
         }
 
         UserAccount salvo = userAccountRepository.save(usuario);
@@ -256,6 +262,8 @@ public class UserAccountService {
         usuario.setTelefone(normalizarOpcional(request.getTelefone()));
         usuario.setRole(role);
         usuario.setAtivo(true);
+        usuario.setEmailVerificadoEm(
+                role == UserRole.PARTICIPANTE ? null : LocalDateTime.now());
         return userAccountRepository.save(usuario);
     }
 
