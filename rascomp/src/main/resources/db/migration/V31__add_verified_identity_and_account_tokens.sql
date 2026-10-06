@@ -9,7 +9,7 @@ CREATE TABLE account_tokens (
     id BIGINT NOT NULL AUTO_INCREMENT,
     user_account_id BIGINT NOT NULL,
     type VARCHAR(30) NOT NULL,
-    token_hash CHAR(64) NOT NULL,
+    token_hash VARCHAR(64) NOT NULL,
     expires_at DATETIME NOT NULL,
     used_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
