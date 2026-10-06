@@ -56,6 +56,15 @@ public class AuthController {
                 accountIdentityService.confirmEmail(request.getToken())));
     }
 
+    @PostMapping("/internal-account/activate")
+    public ResponseEntity<AccountActionResponse> activateInternalAccount(
+            @Valid @RequestBody PasswordResetRequest request) {
+        return ResponseEntity.ok(new AccountActionResponse(
+                accountIdentityService.activateInternalAccount(
+                        request.getToken(),
+                        request.getNovaSenha())));
+    }
+
     @PostMapping("/password/forgot")
     public ResponseEntity<AccountActionResponse> forgotPassword(
             @Valid @RequestBody EmailActionRequest request) {

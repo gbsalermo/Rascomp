@@ -212,3 +212,17 @@ UserAccount = somente contas reais aprovadas
 ```
 
 Depois disso os dados reais são cadastrados normalmente pelo sistema.
+
+
+## Primeiro acesso das contas internas
+
+Depois do DEV de bootstrap, nenhuma conta interna criada pela UI/API recebe senha escolhida pelo administrador.
+
+```text
+DEV cria identidade
+→ e-mail de convite
+→ titular define a primeira senha
+→ conta ativada
+```
+
+Isso deve ser validado no smoke cloud antes de criar contas reais de GESTAO/MIDIA.

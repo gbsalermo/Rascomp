@@ -37,6 +37,9 @@ public class AccountIdentityService {
     @Value("${app.identity.password-reset-minutes:30}")
     private long resetMinutes;
 
+    @Value("${app.identity.internal-account-setup-hours:24}")
+    private long internalSetupHours;
+
     @Value("${app.identity.resend-cooldown-seconds:60}")
     private long cooldownSeconds;
 
@@ -52,6 +55,16 @@ public class AccountIdentityService {
 
         UserAccount userAccount = optional.get();
         if (!Boolean.TRUE.equals(userAccount.getAtivo()) || userAccount.isEmailVerified()) {
+            return GENERIC_VERIFICATION_MESSAGE;
+        }
+
+        if (userAccount.getRole() != br.edu.ufrb.rascomp.model.Enum.UserRole.PARTICIPANTE) {
+            if (!accountTokenService.isInCooldown(
+                    userAccount,
+                    AccountTokenType.INTERNAL_ACCOUNT_SETUP,
+                    Duration.ofSeconds(cooldownSeconds))) {
+                sendInternalAccountSetup(userAccount);
+            }
             return GENERIC_VERIFICATION_MESSAGE;
         }
 
@@ -112,6 +125,59 @@ public class AccountIdentityService {
         return GENERIC_RECOVERY_MESSAGE;
     }
 
+    public void sendInternalAccountSetup(UserAccount userAccount) {
+        var issued = accountTokenService.issue(
+                userAccount,
+                AccountTokenType.INTERNAL_ACCOUNT_SETUP,
+                Duration.ofHours(internalSetupHours));
+
+        String link = normalizedBaseUrl() + "/ativar-conta?token=" + issued.rawToken();
+        transactionalEmailService.send(
+                userAccount.getEmail(),
+                "RasComp — ative sua conta",
+                internalAccountSetupEmailHtml(userAccount.getNome(), link));
+    }
+
+    public String resendInternalAccountSetup(UserAccount userAccount) {
+        if (userAccount.getRole() == br.edu.ufrb.rascomp.model.Enum.UserRole.PARTICIPANTE) {
+            throw new IllegalArgumentException("Conta PARTICIPANTE não usa convite interno.");
+        }
+        if (!Boolean.TRUE.equals(userAccount.getAtivo())) {
+            throw new IllegalArgumentException("A conta interna está inativa.");
+        }
+        if (userAccount.isEmailVerified()) {
+            throw new IllegalArgumentException("A conta interna já foi ativada.");
+        }
+        if (accountTokenService.isInCooldown(
+                userAccount,
+                AccountTokenType.INTERNAL_ACCOUNT_SETUP,
+                Duration.ofSeconds(cooldownSeconds))) {
+            return "Um convite foi enviado recentemente. Aguarde antes de solicitar outro.";
+        }
+
+        sendInternalAccountSetup(userAccount);
+        return "Convite de primeiro acesso enviado.";
+    }
+
+    @Transactional
+    public String activateInternalAccount(String rawToken, String newPassword) {
+        UserAccount userAccount =
+                accountTokenService.consume(rawToken, AccountTokenType.INTERNAL_ACCOUNT_SETUP);
+
+        if (userAccount.getRole() == br.edu.ufrb.rascomp.model.Enum.UserRole.PARTICIPANTE
+                || !Boolean.TRUE.equals(userAccount.getAtivo())
+                || userAccount.isEmailVerified()) {
+            throw new IllegalArgumentException("Este convite de primeiro acesso não pode mais ser utilizado.");
+        }
+
+        userAccount.setPasswordHash(passwordEncoder.encode(newPassword));
+        userAccount.setEmailVerificadoEm(LocalDateTime.now());
+        userAccount.setSessionVersion(nextSessionVersion(userAccount));
+        userAccountRepository.save(userAccount);
+
+        return "Conta ativada com sucesso. Entre no RasComp com a senha que você definiu.";
+    }
+
     @Transactional
     public String resetPassword(String rawToken, String newPassword) {
         UserAccount userAccount =
@@ -146,6 +212,14 @@ public class AccountIdentityService {
                 + "<p>Confirme o e-mail da sua conta RasComp pelo link abaixo:</p>"
                 + "<p><a href=\"" + link + "\">Confirmar e-mail</a></p>"
                 + "<p>O link é de uso único e expira em " + verificationHours + " horas.</p>";
+    }
+
+    private String internalAccountSetupEmailHtml(String name, String link) {
+        return "<p>Olá, " + safeName(name) + ".</p>"
+                + "<p>Uma conta interna do RasComp foi criada para o seu e-mail.</p>"
+                + "<p>O administrador não definiu sua senha. Use o link abaixo para ativar a conta e criar sua própria senha:</p>"
+                + "<p><a href=\"" + link + "\">Ativar conta e definir senha</a></p>"
+                + "<p>O link é de uso único e expira em " + internalSetupHours + " horas.</p>";
     }
 
     private String recoveryEmailHtml(String name, String link) {

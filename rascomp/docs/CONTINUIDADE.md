@@ -2969,3 +2969,55 @@ primeiro DEV real via bootstrap
 Todos os seeds de desenvolvimento/QA ficam explicitamente `false` no profile cloud, e `CloudProfileSafetyGuard` impede startup com `testdata` ou qualquer seed habilitado.
 
 Equipes, robôs, competidores, inscrições, competições, chaves e contas demo não entram no primeiro deploy.
+
+
+---
+
+## Primeiro acesso seguro de contas internas — 06/10/2026
+
+Regra implementada na V1-BETA B:
+
+```text
+DEV cria DEV/GESTAO/MIDIA
+→ informa nome + e-mail + telefone + role
+→ NÃO informa senha
+→ conta nasce ativa, porém não verificada
+→ backend grava somente uma credencial aleatória impossível de ser conhecida pelo DEV
+→ token INTERNAL_ACCOUNT_SETUP de uso único
+→ e-mail recebe /ativar-conta?token=...
+→ titular define a própria senha
+→ e-mail é verificado no mesmo ato
+→ sessões anteriores são invalidadas
+→ login liberado
+```
+
+Consequência: o DEV que cria a conta **nunca conhece a senha definitiva do outro usuário**.
+
+Exceção única:
+
+```text
+primeiro DEV do ambiente
+→ bootstrap por secrets RASCOMP_DEV_*
+```
+
+Essa exceção existe somente para tornar possível o primeiro acesso a um banco cloud vazio.
+
+Se o convite expirar, DEV pode usar:
+
+```text
+POST /api/v1/usuarios/{id}/reenviar-convite
+```
+
+O novo token invalida o anterior do mesmo tipo. O fluxo público de reenvio de confirmação também reconhece conta interna pendente e envia convite de ativação em vez de verificação simples.
+
+Endpoint público de ativação:
+
+```text
+POST /api/v1/auth/internal-account/activate
+{
+  "token": "...",
+  "novaSenha": "..."
+}
+```
+
+Conta PARTICIPANTE continua usando cadastro público + verificação de e-mail normal.

@@ -49,6 +49,7 @@ class AccountIdentityServiceTest {
         ReflectionTestUtils.setField(service, "frontendBaseUrl", "http://localhost:5173");
         ReflectionTestUtils.setField(service, "verificationHours", 24L);
         ReflectionTestUtils.setField(service, "resetMinutes", 30L);
+        ReflectionTestUtils.setField(service, "internalSetupHours", 24L);
         ReflectionTestUtils.setField(service, "cooldownSeconds", 60L);
     }
 
@@ -63,6 +64,26 @@ class AccountIdentityServiceTest {
                 "Se existir uma conta elegível para esse e-mail, enviaremos as instruções de recuperação.",
                 response);
         verify(accountTokenService, never()).issue(any(), any(), any());
+    }
+
+    @Test
+    void ativacaoInternaDeveDefinirSenhaVerificarEmailEInvalidarSessoes() {
+        UserAccount user = user();
+        user.setRole(br.edu.ufrb.rascomp.model.Enum.UserRole.GESTAO);
+        user.setEmailVerificadoEm(null);
+        user.setSessionVersion(2L);
+
+        when(accountTokenService.consume("setup-token", AccountTokenType.INTERNAL_ACCOUNT_SETUP))
+                .thenReturn(user);
+        when(passwordEncoder.encode("SenhaDoTitular123")).thenReturn("hash-do-titular");
+        when(userAccountRepository.save(user)).thenReturn(user);
+
+        service.activateInternalAccount("setup-token", "SenhaDoTitular123");
+
+        assertEquals("hash-do-titular", user.getPasswordHash());
+        assertEquals(3L, user.getSessionVersion());
+        org.junit.jupiter.api.Assertions.assertTrue(user.isEmailVerified());
+        verify(userAccountRepository).save(user);
     }
 
     @Test

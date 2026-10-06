@@ -62,13 +62,12 @@ class SecurityAuthorizationFlowTest {
                         .content("""
                                 {
                                   "nome": "Gestão Interna",
-                                  "email": "gestao.interna@rascomp.local",
-                                  "senha": "Rascomp@2026"
+                                  "email": "gestao.interna@rascomp.local"
                                 }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.role").value("GESTAO"))
-                .andExpect(jsonPath("$.emailVerificado").value(true));
+                .andExpect(jsonPath("$.emailVerificado").value(false));
     }
 
     @Test
@@ -80,8 +79,7 @@ class SecurityAuthorizationFlowTest {
                         .content("""
                                 {
                                   "nome": "Participante Interno",
-                                  "email": "participante.interno@rascomp.local",
-                                  "senha": "Rascomp@2026"
+                                  "email": "participante.interno@rascomp.local"
                                 }
                                 """))
                 .andExpect(status().isBadRequest());
@@ -112,8 +110,7 @@ class SecurityAuthorizationFlowTest {
                         .content("""
                                 {
                                   "nome": "Gestão Indevida",
-                                  "email": "gestao.nao.pode@rascomp.local",
-                                  "senha": "Rascomp@2026"
+                                  "email": "gestao.nao.pode@rascomp.local"
                                 }
                                 """))
                 .andExpect(status().isForbidden());

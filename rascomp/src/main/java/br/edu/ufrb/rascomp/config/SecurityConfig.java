@@ -51,6 +51,7 @@ public class SecurityConfig {
                         "/api/v1/auth/login",
                         "/api/v1/auth/email-verification/resend",
                         "/api/v1/auth/email-verification/confirm",
+                        "/api/v1/auth/internal-account/activate",
                         "/api/v1/auth/password/forgot",
                         "/api/v1/auth/password/reset").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
