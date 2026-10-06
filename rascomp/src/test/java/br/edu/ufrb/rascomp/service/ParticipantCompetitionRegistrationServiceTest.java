@@ -49,6 +49,7 @@ class ParticipantCompetitionRegistrationServiceTest {
     @Mock private RegistrationReceiptStorageService receiptStorageService;
     @Mock private ParticipantRegistrationStatusHistoryRepository statusHistoryRepository;
     @Mock private RegistrationCompositionService compositionService;
+    @Mock private RegistrationLotService registrationLotService;
 
     @InjectMocks
     private ParticipantCompetitionRegistrationService service;
