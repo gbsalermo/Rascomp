@@ -2927,3 +2927,26 @@ provisionamento Cloudflare          ⏳ próxima sessão
 ```
 
 A Landing externa por Quick Tunnel foi validada no frontend. O próximo objetivo é conectar a conta Cloudflare temporária e publicar primeiro os frontends, depois API/Container.
+
+
+---
+
+## Dupla eliminação pós-Beta — modelagem aprovada em 06/10/2026
+
+Não implementar nesta branch de deploy.
+
+Após V1-BETA D, Sumô/Mini Sumô evolui para:
+
+```text
+Bracket DOUBLE_ELIMINATION
+├─ WINNERS
+├─ LOSERS
+├─ GRAND_FINAL
+└─ GRAND_FINAL_RESET condicional
+```
+
+Invariante: 1 derrota não elimina; 2 derrotas eliminam. A Final da Winners não define campeão.
+
+Pódio: vencedor/perdedor da Final Geral decisiva e, em 3º, o perdedor da Final da Losers.
+
+Fonte canônica: `gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md` + `docs/CONTRATO_REGRAS_COMPETITIVAS.md`.
