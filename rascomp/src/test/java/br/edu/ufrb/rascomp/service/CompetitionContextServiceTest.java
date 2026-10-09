@@ -2,6 +2,7 @@ package br.edu.ufrb.rascomp.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -61,6 +62,26 @@ class CompetitionContextServiceTest {
 
         assertEquals(1, result.size());
         assertEquals(3L, result.get(0).getId());
+    }
+
+    @Test
+    void gestaoPodeNavegarSemCompeticaoVigente() {
+        autenticar(UserRole.GESTAO);
+        when(competitionRepository.findFirstByVigenteTrueAndAtivoTrue()).thenReturn(Optional.empty());
+
+        var result = service.listarVisiveis(false);
+
+        assertEquals(0, result.size());
+        assertEquals(null, service.buscarVigente());
+    }
+
+    @Test
+    void devPodeRemoverCompeticaoVigenteSemPerderFocoLocal() {
+        autenticar(UserRole.DEV);
+
+        service.removerVigente();
+
+        verify(competitionRepository).limparVigente();
     }
 
     @Test

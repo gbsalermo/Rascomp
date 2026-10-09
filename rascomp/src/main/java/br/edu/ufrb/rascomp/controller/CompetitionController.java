@@ -71,6 +71,13 @@ public class CompetitionController {
         return ResponseEntity.ok(competitionContextService.definirVigente(id));
     }
 
+    @DeleteMapping("/vigente")
+    @PreAuthorize("hasRole('DEV')")
+    public ResponseEntity<Void> removerVigente() {
+        competitionContextService.removerVigente();
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{id}/catalogo-administrativo")
     public ResponseEntity<CompetitionAdminCatalogDTO> catalogoAdministrativo(@PathVariable Long id) {
         return ResponseEntity.ok(competitionAdminCatalogService.buscar(id));

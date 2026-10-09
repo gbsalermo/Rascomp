@@ -54,3 +54,37 @@ Antes de provisionar produção definitiva, decidir:
 - manutenção do modo local e da opção Cloudflare Tunnel.
 
 Esse gate deve ser discutido e aprovado antes do início efetivo da B.
+
+
+---
+
+# Checkpoint V1-BETA B — Bloco 2 / homologação remota — 06/10/2026
+
+A homologação externa temporária preserva o backend local e não publica diretamente sua porta.
+
+Fluxo:
+
+```text
+Internet
+→ Cloudflare Tunnel / autenticação da homologação
+→ frontend Gestão/Participante local
+→ /api por proxy same-origin
+→ Spring Boot 127.0.0.1:8080
+→ MySQL local
+```
+
+Regras:
+
+- não publicar a porta 8080 diretamente;
+- não publicar a porta 3306;
+- não alterar regras do domínio para atender ao Tunnel;
+- `IDENTITY_FRONTEND_BASE_URL` deve apontar para a URL externa quando o fluxo de confirmação/reset for testado remotamente;
+- Quick Tunnel serve apenas para QA imediato;
+- o hostname estável será protegido por Cloudflare Access;
+- staging cloud/produção continuam separados deste ambiente.
+
+Fonte operacional canônica:
+
+```text
+gbsalermo/Rascomp-FRONT/docs/V1_BETA_B_HOMOLOGACAO_REMOTA.md
+```

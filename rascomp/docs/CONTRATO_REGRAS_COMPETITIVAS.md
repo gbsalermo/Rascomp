@@ -1,6 +1,6 @@
 # RasComp — Contrato de Regras Competitivas — Ponteiro do Backend
 
-Última revisão: **13/09/2026**
+Última revisão: **06/10/2026**
 
 O contrato competitivo canônico do RasComp é cross-repo e está mantido em:
 
@@ -57,3 +57,27 @@ regra competitiva alterada
 ```
 
 Não duplicar integralmente o contrato neste repositório para evitar divergência entre cópias.
+
+
+## Evolução competitiva aprovada pós-Beta
+
+O contrato canônico passou a registrar a evolução de Sumô/Mini Sumô para **dupla eliminação**, a ser implementada somente após deploy/estabilização da V1 Beta.
+
+Resumo:
+
+```text
+WINNERS → 1ª derrota → LOSERS
+LOSERS  → 2ª derrota → eliminado
+vencedor WINNERS + vencedor LOSERS → GRAND_FINAL
+invicto perde GRAND_FINAL → GRAND_FINAL_RESET obrigatória
+```
+
+Pódio aprovado no formato:
+
+```text
+1º = vencedor da Final Geral decisiva
+2º = perdedor da Final Geral decisiva
+3º = perdedor da Final da Losers
+```
+
+A eliminação simples atual continua sendo o comportamento implementado da Beta até essa camada ser desenvolvida.

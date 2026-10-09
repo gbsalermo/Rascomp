@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.edu.ufrb.rascomp.dto.RegisterRequest;
+import br.edu.ufrb.rascomp.dto.AccountActionResponse;
+import br.edu.ufrb.rascomp.dto.InternalAccountCreateRequest;
 import br.edu.ufrb.rascomp.dto.UserAccountDTO;
 import br.edu.ufrb.rascomp.dto.UserAccountUpdateRequest;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
@@ -32,17 +33,23 @@ public class UserAccountController {
     private final UserAccountService userAccountService;
 
     @PostMapping("/dev")
-    public ResponseEntity<UserAccountDTO> criarDev(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<UserAccountDTO> criarDev(@Valid @RequestBody InternalAccountCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(userAccountService.criarDev(request));
+                .body(userAccountService.criarInterno(request, UserRole.DEV));
     }
 
     @PostMapping("/internos")
     public ResponseEntity<UserAccountDTO> criarInterno(
-            @Valid @RequestBody RegisterRequest request,
+            @Valid @RequestBody InternalAccountCreateRequest request,
             @RequestParam UserRole role) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(userAccountService.criarInterno(request, role));
+    }
+
+    @PostMapping("/{id}/reenviar-convite")
+    public ResponseEntity<AccountActionResponse> reenviarConvite(@PathVariable Long id) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(new AccountActionResponse(userAccountService.reenviarConviteInterno(id)));
     }
 
     @GetMapping
