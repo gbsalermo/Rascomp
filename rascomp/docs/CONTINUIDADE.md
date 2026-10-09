@@ -1,3 +1,24 @@
+## PLANEJAMENTO CANÔNICO ATUALIZADO — 09/10/2026
+
+> **Correção de calendário:** a meta do MVP funcional era **04/10/2026**, não 04/11/2026. O escopo que o responsável esperava desse marco já foi atendido, mas isso **não significa que cloud, operação completa, documentação e validação final estejam concluídas**. Menções anteriores a "MVP de produção — 04/11" são histórico superado, não prazo vigente. A competição de novembro continua como marco operacional; não assumir que todas as entregas abaixo precisam aguardar a semana do evento.
+
+### Ordem prioritária aprovada
+
+1. **Até 14/10/2026 — fechar a V1-BETA B / Cloud:** MySQL persistente com backup/restore, Flyway, API/HTTPS, Gestão e Portal remotos, verificação de e-mail/recuperação de senha, storage R2 persistente, secrets, acesso local/contingência preservados e smoke cloud. Prazo-alvo, sujeito aos gates de segurança e verificação; não liberar inscrições reais sem cumprir os bloqueantes.
+2. **Após cloud — Gestão de Mídia da Landing (P1):** CRUD editorial de textos/fotos/heros, eventos e calendário, galeria, robôs, patrocinadores, publicações, controle institucional/competitivo e auditoria. MIDIA/DEV administra conteúdo sem deploy manual.
+3. **Em seguida — Futebol de Robôs (P2):** inscrição sem robô próprio (robôs eventualmente fornecidos pela organização), atribuição e regras, cronômetro/placar de gols, estados da partida, chaveamento, resultados, operação na Gestão e acompanhamento público. Validar regulamento e casos de empate/penalidades antes de fechar regras.
+4. **Depois — Central de Ajuda e manuais por perfil (P3):**
+   - **Ajuda administrativa dentro da Gestão:** como criar/gerir competição, inscrições e aprovações, equipes/robôs, Follow, Sumô/Mini Sumô, Futebol, tempo/placar/chaves/resultados, contingência, além de operar o Gestor de Mídia. Manual contextual por tela, navegação acessível e conteúdo versionado/revisável.
+   - **Ajuda do participante integrada ao Portal:** regras da competição, regras do ambiente de competição, inscrição pessoal/de equipe/de robô conforme modalidade, comprovantes, aprovação, como acompanhar situação, cronograma, chamadas, resultados, chaves, Follow e Sumô. Orientações práticas claras e acessíveis, incluindo estados de erro e dúvidas frequentes.
+   - **Fonte oficial:** regulamento e regras de ambiente validados pela organização; a documentação não inventará normas. Distinguir orientações gerais de regras específicas por edição/categoria; versionar/publicar atualizações com controle editorial.
+   - **Manter permissões:** informações administrativas apenas para perfis autorizados; materiais públicos/participante disponíveis sem conceder acesso a funções operacionais.
+5. **Fechamento do MVP ampliado:** concluir fluxos e manuais, testar ponta a ponta todos os perfis, categorias e cenários cloud/local. Só marcar concluído após validação.
+6. **Depois do MVP — revisão do roadmap original:** auditar pendências reais, classificar somente o indispensável, priorizar manutenção, estabilidade, correções, usabilidade, testes, segurança, desempenho e polimento. Novas funcionalidades deixam de ser o foco; requisitos restantes do roteiro original permanecem registrados e serão reavaliados, não apagados.
+
+**Princípio:** continuar desenvolvimento em homologação, liberar para produção apenas versões aprovadas; preservar modo local. A Etapa 13 (Regras, Ajuda e Segurança) passa a ter seu núcleo de **manuais e ajuda por perfil** antecipado para P3, sem necessariamente antecipar todos os seus outros itens.
+
+---
+
 ## PRIORIDADE IMEDIATA APÓS V1-BETA B CLOUD — 09/10/2026
 
 **Decisão de priorização (MVP de produção de 04/11/2026):** assim que estiver concluído o fluxo de MySQL persistente → backend/API cloud → Gestão e Portal autenticados → e-mail transacional/validação de contas → R2/uploads persistentes → smoke cloud, iniciar, nesta ordem, **(P1) Gestão de Mídia da Landing** e **(P2) Categoria Futebol de Robôs**. Ambas são prioridade máxima do ciclo seguinte, antes de polimentos não bloqueantes e funcionalidades pós-produção, sem apagar o roadmap original. Se necessário, poderão avançar em paralelo após os contratos e a infraestrutura cloud estarem estáveis.
