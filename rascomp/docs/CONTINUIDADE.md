@@ -1,3 +1,21 @@
+## ATUALIZAÇÃO DE PRIORIDADES — 10/10/2026
+
+Ordem de execução aprovada após a estabilização da Cloud/V1-BETA B:
+
+1. **Cloud + MySQL persistente** — concluir implantação segura, backups, restore, Flyway, API HTTPS, identidade/e-mail, R2, smoke e contingência local.
+2. **Gestor de Mídia** — Landing institucional/competitiva, conteúdo editorial, heros, imagens, eventos, galeria, robôs, patrocinadores e auditoria.
+3. **Futebol de Robôs** — inscrição e operação da modalidade, placar, cronômetro, chaves, resultados e projeção pública.
+4. **Central de Ajuda + Telegram** — manuais contextuais na Gestão e no Portal, regras aprovadas, tutoriais e canal Telegram integrado de suporte e notificações úteis. Diferenciar notificações automáticas opt-in, avisos operacionais e interação de ajuda via bot; validar privacidade, autorização, consentimento, frequência e política de atendimento. O Telegram complementa, **não substitui**, a ajuda dentro do sistema. Reaproveitar o escopo pertinente da antiga Etapa 11, evitando implementá-lo em duplicidade.
+5. **Testes de carga e resiliência** — imediatamente após a Central de Ajuda/Telegram, executar carga genérica e cenário operacional com **300–500 pessoas**, incluindo inscrições, uploads, aprovação, Gestão, Follow, Sumô, Futebol, chaves, ranking e consultas públicas. Revisar rate limit, injeção SQL, autorização, concorrência, falhas e recuperação. É gate obrigatório antes da competição oficial.
+6. **Fechamento do MVP ampliado** — regressões ponta a ponta cloud/local, documentação, estabilidade e validação.
+7. **Revisão das demais pendências históricas** — manutenção, segurança, responsividade, performance e polimento passam à frente de novas funcionalidades.
+
+**Esta ordem atual substitui trechos históricos conflitantes deste documento, sem excluir as etapas originais.** Meta para Cloud: 14/10/2026, sujeita a gates de persistência, backup e segurança.
+
+Arquitetura versionada: frontend `docs/ARQUITETURA_DEPLOY_DOCKER.md`. Docker empacota Spring Boot; hospedagem do container e MySQL persistente são decisões separadas. R2 é storage de arquivos, não banco.
+
+---
+
 ## PLANEJAMENTO CANÔNICO ATUALIZADO — 09/10/2026
 
 > **Correção de calendário:** a meta do MVP funcional era **04/10/2026**, não 04/11/2026. O escopo que o responsável esperava desse marco já foi atendido, mas isso **não significa que cloud, operação completa, documentação e validação final estejam concluídas**. Menções anteriores a "MVP de produção — 04/11" são histórico superado, não prazo vigente. A competição de novembro continua como marco operacional; não assumir que todas as entregas abaixo precisam aguardar a semana do evento.
