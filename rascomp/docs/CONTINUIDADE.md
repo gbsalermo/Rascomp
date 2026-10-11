@@ -3157,3 +3157,24 @@ DELETE /api/v1/competicoes/vigente
 ```
 
 Finalizar, cancelar ou desativar uma competição também remove sua marcação `vigente`, evitando que uma edição encerrada volte a aparecer como contexto operacional após reativação/reload.
+
+
+---
+
+## V1-BETA B — Infraestrutura Render Free e domínio (checkpoint 11/10/2026)
+
+Arquitetura definida para homologação e avaliação de produção, preservando backend Java 21/Spring Boot e MySQL remoto:
+- `https://rasufrb.site`: landing pública / institucional, frontend Cloudflare.
+- `https://app.rasufrb.site`: aplicação de gestão e portal do participante, frontend Cloudflare.
+- `https://api.rasufrb.site`: endereço planejado da API Spring Boot hospedada inicialmente no Render Free; DNS/custom domain ainda deve ser configurado e testado.
+- `https://homolog.rasufrb.site` e `https://app-homolog.rasufrb.site`: endereços reservados para homologação, não presumir que já estejam ativos.
+
+Render Web Service `rascomp-api`: GitHub `gbsalermo/Rascomp`, branch `v1-beta-b-identidade-cloud`, Docker, region Virginia US East (a validar frente à região do Aiven), root `rascomp/`, Docker build context `.`, Dockerfile `./Dockerfile`, instância Free (512 MB RAM, 0.1 CPU), healthcheck `/actuator/health`, auto-deploy **Off** recomendado. Na conclusão da Beta B, integrar branch à `main` após testes e atualizar branch do serviço com deploy controlado.
+
+Variáveis cadastradas pelo operador no painel Render (valores secretos **não** versionados): `SPRING_PROFILES_ACTIVE=cloud`, `DB_URL` no formato JDBC MySQL TLS `sslMode=VERIFY_IDENTITY`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `CORS_ALLOWED_ORIGINS=https://app.rasufrb.site,https://rasufrb.site`, `IDENTITY_FRONTEND_BASE_URL=https://app.rasufrb.site`, `EMAIL_PROVIDER=log` (apenas homologação), `JAVA_OPTS`, `TRUSTSTORE_BASE64`, `TRUSTSTORE_PASSWORD`. Valores de CORS/identidade pressupõem que os domínios correspondentes realmente sirvam os frontends; confirmar DNS/rotas antes de uso público. Testar também origem adicional explicitamente utilizada, se houver.
+
+A truststore PKCS12 foi validada no Docker local por bind mount; a branch possui `rascomp/docker-entrypoint.sh` e Dockerfile adaptado para restaurá-la no runtime a partir de `TRUSTSTORE_BASE64` e usar sua senha. Base64 é apenas codificação, não proteção criptográfica; valores só em segredos de ambiente, nunca no repositório/logs. O novo mecanismo ainda aguarda validação no Render. Revisar segurança de exposição das variáveis do container antes de produção.
+
+**Estado registrado**: usuário confirmou cadastro das variáveis e truststore no Render; deploy público, healthcheck remoto, DNS `api.rasufrb.site`, segurança/consumo e smoke test **ainda não validados**. Não confundir cadastro de variáveis com implantação funcional.
+
+Operação planejada: avaliar healthchecks externos a cada ~10 min entre 06h e 00h (America/Sao_Paulo) e permitir suspensão do Render Free entre 00h e 06h; acessos externos noturnos ainda podem acordar a instância. Verificar política/limites do provedor, disponibilidade e custos. Contingência com notebook Docker + Cloudflare Tunnel e o mesmo MySQL Aiven, ativação controlada de apenas uma versão principal, Flyway e dados compatíveis. Testes de inicialização em 512 MB e carga de 100/200/300/500 usuários são obrigatórios antes de considerar Render Free apto para competição real. Backups externos com teste de restauração, R2, e-mail real e validações de segurança são bloqueadores antes de inscrições reais.
