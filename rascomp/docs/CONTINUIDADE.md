@@ -1,3 +1,21 @@
+## POLÍTICA DE BACKUPS MYSQL AIVEN — 11/10/2026
+
+**Checkpoint inicial:** Aiven Free MySQL 8.4.11 `rascomp-mysql` e banco `rascomp` conectados ao Spring Boot (profile `cloud`, TLS), Flyway até V31, 36 tabelas e persistência confirmada após desligar a API. O painel Aiven exibiu um backup automático completo; **não confundir a existência desse backup com um restore validado ou com proteção do estado mais recente**.
+
+**Fase 1 — Agora, sem inscrições reais:** utilizar o backup automático do Aiven para proteção básica. Não bloquear o avanço técnico para Docker/API cloud por uma exportação manual adicional neste momento. O dump manual realizado exibiu avisos de GTID e consistência; **não deve ser tratado como cópia restaurável validada**. Não marcar restauração como testada.
+
+**Gate obrigatório antes de inscrições reais:** confirmar um backup posterior às migrations e ao bootstrap inicial, documentar retenção e limitações reais do plano Aiven Free, produzir dump consistente do banco `rascomp` (ex.: `mysqldump --single-transaction --set-gtid-purged=OFF` com TLS verificado), guardar cópia externa protegida e executar **restore de ensaio em banco/instância isolados**, validando schema, Flyway e dados. Nunca testar restore sobre produção. Registrar procedimento de recuperação, responsáveis, periodicidade e tolerância à perda de dados. Se esse gate falhar, não abrir inscrições.
+
+**Fase 2 — Durante inscrições:** manter backups do provedor, verificar existência e recência; realizar cópias externas periódicas com frequência ajustada ao volume de alterações e à retenção oferecida; proteger arquivos com criptografia/controle de acesso, não versionar no GitHub. Testar restauração regularmente e antes de alterações críticas/migrations.
+
+**Fase 3 — Pré-competição:** fazer snapshot/dump recente, testar recuperação no MySQL local ou staging isolado, sincronizar arquivos R2 necessários e executar ensaio da contingência LAN/Tunnel. Definir fonte única de escrita e procedimentos de retorno à cloud.
+
+**Fase 4 — Durante competição:** acompanhar backups, capacidade e integridade; manter plano operacional de recuperação e contingência, sem bancos cloud/local com escritas independentes.
+
+**Observação:** Flyway recria estrutura, mas não restaura inscrições, usuários, resultados ou comprovantes. Backup do MySQL também não inclui objetos R2; esses arquivos exigem estratégia própria.
+
+---
+
 ## REPLANEJAMENTO DE CAPACIDADE — 10/10/2026
 
 **Decisão atual (prevalece sobre sequências históricas abaixo):** após concluir a V1-BETA B/Cloud, **antecipar a primeira rodada de testes de carga antes do Gestor de Mídia e do Futebol**. Motivo: validar a capacidade real do MySQL gratuito (Aiven Free, se confirmado no provisionamento) e do caminho de API Docker/Cloudflare antes de expandir escopo.
