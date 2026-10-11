@@ -1,3 +1,21 @@
+## REPLANEJAMENTO DE CAPACIDADE — 10/10/2026
+
+**Decisão atual (prevalece sobre sequências históricas abaixo):** após concluir a V1-BETA B/Cloud, **antecipar a primeira rodada de testes de carga antes do Gestor de Mídia e do Futebol**. Motivo: validar a capacidade real do MySQL gratuito (Aiven Free, se confirmado no provisionamento) e do caminho de API Docker/Cloudflare antes de expandir escopo.
+
+Ordem revisada:
+
+1. Cloud + MySQL persistente / backups / Flyway / API / identidade / R2 / smoke;
+2. **Gate de capacidade antecipado:** cargas em estágios de 100, 200, 300 e 500 usuários simulados, com padrões de concorrência realistas para cadastro, autenticação, inscrições, comprovantes, consultas públicas, aprovação e fluxos competitivos já implementados. Medir p50/p95/p99, erros, throughput, CPU/RAM, conexões MySQL, disco, filas e recuperação; testar também backup/restore, limites e rate limiting. Não confundir quantidade de usuários com requisições simultâneas. Definir critérios de aprovação antes da execução. Usar staging/dados sintéticos, nunca sobrecarregar produção real.
+3. Gestão de Mídia da Landing;
+4. Futebol de Robôs;
+5. Central de Ajuda + Telegram (bot de auxílio e notificações com consentimento);
+6. **Gate final de carga/resiliência pré-competição** cobrindo também CMS, Futebol, Telegram e cenário competitivo de 300–500 pessoas; bloquear evento real se a infraestrutura falhar nos critérios.
+7. Validação e fechamento do MVP ampliado; em seguida manutenção/polimento.
+
+O teste antecipado **não substitui** o gate final; usar resultados para escolher entre manter Aiven Free, elevar capacidade ou adotar contingência local/tunnel. Preservar documentação de custo, riscos e portabilidade.
+
+---
+
 ## ATUALIZAÇÃO DE PRIORIDADES — 10/10/2026
 
 Ordem de execução aprovada após a estabilização da Cloud/V1-BETA B:
