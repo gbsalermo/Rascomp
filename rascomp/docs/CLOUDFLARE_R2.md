@@ -139,3 +139,31 @@ Quando houver o primeiro conjunto real de imagens:
 8. manter a Landing carregando apenas capa e pequenas prévias.
 
 Essa etapa deve ser implementada separadamente para preservar o funcionamento atual até o primeiro teste real com R2.
+
+
+## Política de cotas do bucket `rascomp-storage` — decisão 12/10/2026
+
+**Orçamento operacional planejado (capacidade de referência de 10 GB):**
+
+| Classe | Cota máxima | Uso previsto |
+|---|---:|---|
+| Competição | 3 GiB | fotos de robôs, logos, comprovantes, arquivos de inscrições |
+| Galeria e mídia editorial | 6 GiB | álbuns, fotografias, imagens públicas da landing, banners |
+| Reserva técnica | 1 GiB | margem para correções e contingência; não é área de upload regular |
+
+**Atenção**: a franquia gratuita do R2 é faturada em **GB-mês**, enquanto as cotas internas são limites de bytes em um instante; 10 GB-mês não representa automaticamente um teto de 10 GB permanentes nem impede cobrança por uso acima da franquia ou por operações. Adotar configuração conservadora e alertas de uso e faturamento. Verificar unidade contratual (GB decimal × GiB binário) ao definir os limites reais; não permitir que soma de cotas ultrapasse limite conservador ajustado à franquia. Esta política não está aplicada no bucket apenas pela documentação.
+
+**Estratégia de enforcement obrigatória antes de uploads reais**:
+
+- Categorizar todo objeto no upload: `competition/` versus `gallery/` (inclui `landing/`), reservando margem técnica fora desses prefixos.
+- O backend é autoridade para impor cotas; não confiar em dados do frontend ou na pasta escolhida pelo cliente. Não oferecer credenciais S3 diretamente ao navegador.
+- Registrar no MySQL tamanho real em bytes, object key, classe, estado do upload e dono; conciliar periodicamente com a listagem/tamanho reais do R2.
+- Antes de enviar, impor tamanho máximo por arquivo e por categoria; reservar capacidade de forma **atômica** no MySQL para impedir que uploads concorrentes ultrapassem a mesma cota. Para URLs presigned, finalizar só após confirmar tamanho real do objeto; tratar uploads incompletos/expirados e objetos órfãos.
+- Exclusões liberam espaço somente após exclusão confirmada no R2; substituições e reuploads consideram temporariamente o tamanho de ambos os objetos e limpeza posterior.
+- Bloquear novos uploads da categoria ao atingir o limite, mantendo acesso/download dos arquivos e exibindo mensagem administrativa orientando liberar espaço.
+- Limitar custos também por contagem de operações e tamanho máximo de arquivo; fornecer indicadores do consumo por categoria, global e reserva, com alertas antecipados (ex.: 70%, 85%, 95%).
+- Não usar o 1 GiB reservado para arquivos comuns sem decisão administrativa explícita. Preferir não permitir exceder a cota de categoria mesmo que a outra ainda tenha espaço.
+- Ao migrar conteúdo pré-existente, inventariar e contabilizar objetos antes de ativar a política.
+- Testar concorrência, uploads interrompidos, tentativas de bypass e discrepância entre metadados do banco e objetos antes de ativar `R2_ENABLED=true` no Render.
+
+**Estado:** decisão de produto documentada; ainda requer implementação e testes no backend/gestão. Acompanhar na conclusão da integração R2.
