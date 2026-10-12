@@ -1,3 +1,13 @@
+## Checkpoint de implantação R2 — 12/10/2026
+
+**Status: infraestrutura R2 implantada e fluxo de logo de equipe homologado em produção.** O usuário confirmou: testes automatizados verdes; Flyway V32 e cotas no banco local; upload/leitura/exclusão e atualização de cotas em homologação local; persistência após reiniciar o backend local; publicação no Render; API e Flyway V32 no Aiven; primeiro upload em produção inicialmente falhou por PKIX; correção do truststore JVM para manter certificados públicos e CA do Aiven (commit `019c0009`) publicada; **novo upload em produção funcionou, com conferência no Workbench**. Manter `R2_ENABLED=true` no Render.
+
+**Fechamento delimitado:** não declarar que toda a segurança de arquivos ou o Gestor de Mídia/Galeria estão concluídos. Permanecem obrigatórios antes de inscrições públicas: testar autorização real de acesso aos comprovantes; tratar atomicidade/exclusões em caso de rollback, concorrência, reservas órfãs e conciliação após upload interrompido; alertas e monitoramento de consumo e operações; inventariar/migrar eventuais arquivos legados locais. Os testes de galeria/landing serão feitos com o Gestor de Mídia. As cotas internas não garantem ausência de cobrança por operações.
+
+**Próxima prioridade:** e-mail transacional real para verificação de conta e recuperação de senha, substituindo o provedor de log antes de inscrições públicas.
+
+---
+
 # Cloudflare R2 — armazenamento de mídias
 
 ## Objetivo
