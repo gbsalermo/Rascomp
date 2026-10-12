@@ -167,3 +167,18 @@ Essa etapa deve ser implementada separadamente para preservar o funcionamento at
 - Testar concorrência, uploads interrompidos, tentativas de bypass e discrepância entre metadados do banco e objetos antes de ativar `R2_ENABLED=true` no Render.
 
 **Estado:** decisão de produto documentada; ainda requer implementação e testes no backend/gestão. Acompanhar na conclusão da integração R2.
+
+
+## Integração backend — 12/10/2026 (branch `v1-beta-b-identidade-cloud`)
+
+Implementação opt-in introduzida:
+- `RobotImageStorageService`, `TeamLogoStorageService`, `RegistrationReceiptStorageService` usam R2 com `R2_ENABLED=true`; o mesmo endpoint HTTP permanece responsável pela autorização.
+- Novas chaves no banco recebem prefixo `r2/` e os objetos físicos usam `competition/robots/`, `competition/teams/` ou `competition/receipts/`. Chaves antigas, sem prefixo, continuam representando arquivos no disco local e **não são migradas automaticamente**.
+- `R2ManagedFileStorage` mantém acesso privado mediado pelo backend; `R2QuotaService` reserva capacidade em MySQL (migração V32) antes de enviar.
+- Cotas operacionais iniciais, em bytes decimais: competition = 2.700.000.000; gallery = 5.400.000.000; aproximadamente 900 MB reservados dentro do orçamento de 9 GB e mais 1 GB adicional de folga perante 10 GB. A reserva não é um prefixo de uso comum.
+- Reservas são atômicas e independentes da transação de negócio. Em falha de upload, há tentativa de remover o objeto e devolver o espaço. Se o processo cair, pode sobrar reserva órfã: exige conciliação antes de liberar espaço.
+- Exclusão lógica/rollback do negócio e exclusão física do R2 ainda necessitam auditoria de consistência e testes de falha; não apagar arquivos antigos do container antes de migrá-los.
+- Quotas por categoria NÃO restringem faturamento por operações. Os indicadores administrativos, alertas de 70/85/95%, reconciliação automática de objetos órfãos e testes concorrentes ainda são pendências.
+- `gallery/` e `landing/` estão previstos na cota, mas a interface e endpoints da Gestão de Mídia **não foram implementados** nesta mudança.
+- **NÃO ativar R2_ENABLED em Render nem disparar deploy de produção até rodar build/testes Java, testar Flyway V32 em banco isolado e executar smoke tests reais** (upload/download/delete/restart, autorização de comprovantes, rollback, concorrência e quotas). As credenciais no Render permanecem guardadas; configuração de `R2_ENABLED=false` continua operacional.
+- Atenção: sem disco persistente, arquivos antigos no filesystem de instâncias Render podem não existir após reinicialização. Fazer inventário e migração antes de prometer acesso contínuo a mídias preexistentes.
