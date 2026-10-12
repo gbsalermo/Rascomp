@@ -1,7 +1,5 @@
 package br.edu.ufrb.rascomp.storage;
 
-import java.io.IOException;
-import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -26,16 +24,32 @@ public class R2ManagedFileStorage {
     private final R2ObjectStorageService objects;
     private final S3Client client;
     private final String bucket;
+    private final R2QuotaService quota;
 
     public R2ManagedFileStorage(R2ObjectStorageService objects, S3Client client,
-            @Value("${app.storage.r2.bucket}") String bucket) {
+            R2QuotaService quota, @Value("${app.storage.r2.bucket}") String bucket) {
+        this.quota = quota;
         this.objects = objects;
         this.client = client;
         this.bucket = bucket;
     }
 
     public void upload(String key, byte[] bytes, String contentType) {
-        objects.upload(key, bytes, contentType);
+        quota.reserve(key, bytes.length);
+        try {
+            objects.upload(key, bytes, contentType);
+            quota.confirm(key);
+        } catch (RuntimeException ex) {
+            // A failed request can still have written its object remotely; only
+            // release capacity if remote cleanup succeeds.
+            try {
+                objects.delete(key);
+                quota.release(key);
+            } catch (RuntimeException cleanup) {
+                ex.addSuppressed(cleanup);
+            }
+            throw ex;
+        }
     }
 
     public Resource read(String key) {
@@ -51,6 +65,7 @@ public class R2ManagedFileStorage {
     public void delete(String key) {
         if (key != null && !key.isBlank()) {
             objects.delete(key);
+            quota.release(key);
         }
     }
 }
