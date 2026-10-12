@@ -1,3 +1,25 @@
+## DECISÃO DE ATIVAÇÃO CONTROLADA DO R2 — 12/10/2026
+
+**Decisão:** concluir a implementação e testar antes de habilitar o R2 no Render; **não fazer redeploy manual da API agora**. Preservar `R2_ENABLED=false` até os critérios de liberação serem atendidos. O usuário confirmou bucket privado `rascomp-storage`, token S3 de acesso limitado ao bucket e variáveis de ambiente guardadas no Render; não registrar valores de tokens/secrets.
+
+**Estado do código na branch `v1-beta-b-identidade-cloud`:** serviços de fotos de robôs, logos de equipes e comprovantes foram adaptados para armazenamento opt-in no R2 com leitura/exclusão privada via backend. Foi adicionada a migration V32 com cotas atômicas no MySQL e testes unitários básicos. Mudanças enviadas ao GitHub **não representam build verde, homologação concluída ou deploy de produção**. A integração da Galeria/Gestor de Mídia permanece para etapa posterior.
+
+**Orçamento conservador:** 2,7 GB competição, 5,4 GB galeria/landing, 0,9 GB reserva operacional, mais 1 GB de folga perante os 10 GB de referência. O uso gratuito do R2 é medido em GB-mês e operações; cotas por categoria não impedem todos os tipos de cobrança.
+
+**Gate para ativação:**
+1. Verificar GitHub Actions `Backend Tests` nesta branch e corrigir falhas de build/testes.
+2. Verificar Flyway V32 em banco isolado e testar limites/concorrência.
+3. Revisar transações e tratamento de exclusões/substituições, inclusive falhas, uploads interrompidos e reservas órfãs; implementar conciliação e alertas antes do uso público.
+4. Inventariar e tratar mídias antigas gravadas localmente no Render; prefixos antigos não são migrados automaticamente.
+5. Homologar em ambiente controlado com credenciais R2 protegidas: upload, leitura com autorização, exclusão e persistência após reinicialização. **Não expor comprovantes por URL pública**.
+6. Só depois autorizar `R2_ENABLED=true` e redeploy manual, com plano de reversão. Manter operação local possível, mas evitar alternar perfis em produção sem garantir acesso às chaves de objetos já migrados.
+
+**Próxima etapa após concluir armazenamento R2:** configurar provedor de e-mail transacional real para verificação de contas e recuperação de senha, substituindo `EMAIL_PROVIDER=log` antes de abrir inscrições reais. Em seguida, Gestor de Mídia/Galeria; depois Futebol de Robôs e manuais de ajuda.
+
+**Referência detalhada:** `rascomp/docs/CLOUDFLARE_R2.md`.
+
+---
+
 ## POLÍTICA DE BACKUPS MYSQL AIVEN — 11/10/2026
 
 **Checkpoint inicial:** Aiven Free MySQL 8.4.11 `rascomp-mysql` e banco `rascomp` conectados ao Spring Boot (profile `cloud`, TLS), Flyway até V31, 36 tabelas e persistência confirmada após desligar a API. O painel Aiven exibiu um backup automático completo; **não confundir a existência desse backup com um restore validado ou com proteção do estado mais recente**.
