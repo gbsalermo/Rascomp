@@ -1,3 +1,15 @@
+## ENCERRAMENTO R2 E INÍCIO DA ÚLTIMA FASE CLOUD: E-MAIL REAL — 12/10/2026
+
+**Decisão do responsável:** encerrar implantação do R2 e iniciar a fase de e-mail transacional. Upload R2 no Render e contabilização no Aiven confirmados, além de testes locais e correção do truststore. O storage está operacional; a Gestão de Mídia/Galeria fica em trilho funcional posterior, não bloqueia a configuração do e-mail.
+
+**Incidente observado:** após deploy, login e recuperação de senha ficaram temporariamente indisponíveis e depois **voltaram a funcionar sem rollback, alteração de configuração ou intervenção confirmada**. Causa raiz não diagnosticada; NÃO atribuir à correção de SSL ou marcar rollback como realizado. Manter observabilidade e monitorar reincidência.
+
+**Pendências de hardening de storage pré-inscrições reais:** teste de acesso a comprovantes privados, concorrência e estados de upload interrompido, limpeza de reservas órfãs, integridade em rollback/exclusão, alertas de cotas e operações, migração de arquivos locais legados, e backup com restore validado.
+
+**Próxima etapa — identidade/e-mail:** o backend já possui `TransactionalEmailService`, serviço de verificação de e-mail, ativação de contas internas, recuperação com token de uso único, cooldown, `app.email.provider=${EMAIL_PROVIDER:log}`, `EMAIL_FROM`, `RESEND_API_KEY`. Configurar domínio remetente controlado no provedor de e-mail (Resend é opção existente no projeto); verificar DNS SPF/DKIM e, se possível, DMARC; criar chave API só com envio, armazenada apenas no Render; testar envio e recebimento em contas reais de QA, confirmação, reenvio e redefinição. Preservar `EMAIL_PROVIDER=log` até o DNS/provedor estarem validados; depois desabilitar logging de tokens de produção. Mensagens genéricas para contas desconhecidas devem permanecer por segurança. A franquia do provedor precisa ser validada, especialmente pico diário de abertura de inscrições, evitando ativar pagamentos adicionais sem decisão consciente.
+
+---
+
 ## Checkpoint de implantação R2 — 12/10/2026
 
 **Status: infraestrutura R2 implantada e fluxo de logo de equipe homologado em produção.** O usuário confirmou: testes automatizados verdes; Flyway V32 e cotas no banco local; upload/leitura/exclusão e atualização de cotas em homologação local; persistência após reiniciar o backend local; publicação no Render; API e Flyway V32 no Aiven; primeiro upload em produção inicialmente falhou por PKIX; correção do truststore JVM para manter certificados públicos e CA do Aiven (commit `019c0009`) publicada; **novo upload em produção funcionou, com conferência no Workbench**. Manter `R2_ENABLED=true` no Render.
