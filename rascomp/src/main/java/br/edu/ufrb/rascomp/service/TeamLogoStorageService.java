@@ -2,6 +2,8 @@ package br.edu.ufrb.rascomp.service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import org.springframework.beans.factory.ObjectProvider;
+import br.edu.ufrb.rascomp.storage.R2ManagedFileStorage;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,9 +22,15 @@ public class TeamLogoStorageService {
     private static final long MAX_BYTES = 5L * 1024L * 1024L;
 
     private final Path root;
+    private final R2ManagedFileStorage r2;
+
+    private static final String R2_PREFIX = "r2/";
+
 
     public TeamLogoStorageService(
-            @Value("${app.storage.team-logos-dir:./uploads/team-logos}") String directory) {
+            @Value("${app.storage.team-logos-dir:./uploads/team-logos}") String directory,
+            ObjectProvider<R2ManagedFileStorage> r2Provider) {
+        this.r2 = r2Provider.getIfAvailable();
         this.root = Paths.get(directory).toAbsolutePath().normalize();
     }
 
@@ -36,6 +44,15 @@ public class TeamLogoStorageService {
         };
 
         String storageKey = teamId + "/" + UUID.randomUUID() + extensao;
+        if (r2 != null) {
+            try {
+                r2.upload("competition/teams/" + storageKey, arquivo.getBytes(), contentType);
+                return new StoredLogo(R2_PREFIX + "competition/teams/" + storageKey,
+                        nomeSeguro(arquivo.getOriginalFilename()), contentType);
+            } catch (IOException ex) {
+                throw new IllegalStateException("Falha ao ler logo para R2.", ex);
+            }
+        }
         Path destino = resolverSeguro(storageKey);
 
         try {
@@ -71,6 +88,7 @@ public class TeamLogoStorageService {
     }
 
     public Resource carregar(String storageKey) {
+        if (storageKey.startsWith(R2_PREFIX)) return r2Required().read(storageKey.substring(R2_PREFIX.length()));
         Path arquivo = resolverSeguro(storageKey);
 
         try {
@@ -86,6 +104,10 @@ public class TeamLogoStorageService {
 
     public void remover(String storageKey) {
         if (storageKey == null || storageKey.isBlank()) return;
+        if (storageKey.startsWith(R2_PREFIX)) {
+            r2Required().delete(storageKey.substring(R2_PREFIX.length()));
+            return;
+        }
 
         try {
             Files.deleteIfExists(resolverSeguro(storageKey));
@@ -130,6 +152,11 @@ public class TeamLogoStorageService {
         String nome = original.replace('\\', '/');
         nome = nome.substring(nome.lastIndexOf('/') + 1);
         return nome.length() <= 255 ? nome : nome.substring(nome.length() - 255);
+    }
+
+    private R2ManagedFileStorage r2Required() {
+        if (r2 == null) throw new IllegalStateException("Arquivo armazenado no R2, mas R2_ENABLED não está ativo.");
+        return r2;
     }
 
     private Path resolverSeguro(String storageKey) {
