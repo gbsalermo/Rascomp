@@ -57,6 +57,21 @@ Resultados, rankings e chaves são disponibilizados
 
 **Público:** acompanha a competição pelas páginas públicas, conforme as informações disponibilizadas pela organização.
 
+## Arquitetura em uma visão
+
+O RasComp conecta os ambientes público e autenticado a uma única API, responsável pelas regras competitivas, permissões e persistência.
+
+```mermaid
+flowchart TD
+  A["Site público — Landing"] --> C["API RasComp — Java / Spring Boot"]
+  B["Gestão e Portal do Participante"] --> C
+  C --> D[("MySQL")]
+  C --> E["Armazenamento de arquivos"]
+  C --> F["Serviço de e-mail"]
+```
+
+A organização registra e acompanha provas pela Gestão; participantes interagem pelo Portal; a Landing apresenta os dados públicos da mesma competição.
+
 ## Estágio atual
 
 **Beta disponível online.** A experiência pública e o sistema autenticado estão publicados, com infraestrutura remota e fluxos de autenticação implementados. A abertura de inscrições reais e a operação oficial dependem da conclusão das validações operacionais.
