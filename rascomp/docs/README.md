@@ -1,3 +1,5 @@
+> **Estado oficial — 13/10/2026 | V1-BETA B Cloud implantada:** landing pública [rasufrb.site](https://rasufrb.site), Gestão/Portal [app.rasufrb.site](https://app.rasufrb.site) (Workers Static Assets `rascomp-landing`/`rascomp-app`), API Spring Boot Java 21 no **Render** via [api.rasufrb.site](https://api.rasufrb.site), MySQL **Aiven**, arquivos privados **Cloudflare R2** (`rascomp-storage`), e-mail transacional **Resend** (`mail.rasufrb.site`). Cadastro/verificação e recuperação de senha foram testados ponta a ponta. Galeria/Gestor de Mídia e Futebol de Robôs são próximos desenvolvimentos, **não funcionalidades já finalizadas**. Antes de inscrições reais: backup externo/restauração ensaiada, testes de carga/contingência, autorização de comprovantes e integridade/reconciliação de storage. Ambiente local continua suportado. **Deploy desejado:** branch `main` para produção; validar a troca de branch nos painéis Render/Cloudflare após o merge, pois merge sozinho não altera suas configurações. Trechos históricos abaixo preservam decisões anteriores, não a arquitetura vigente.
+
 # RasComp Backend — Índice da Documentação
 
 Última revisão: **05/10/2026**

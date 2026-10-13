@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - testes-automatizados
+      - v1-beta-b-identidade-cloud
     paths:
       - 'rascomp/src/**'
       - 'rascomp/pom.xml'

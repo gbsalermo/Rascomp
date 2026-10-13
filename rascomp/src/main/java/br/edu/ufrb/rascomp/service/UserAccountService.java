@@ -1,5 +1,8 @@
 package br.edu.ufrb.rascomp.service;
 
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -7,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.edu.ufrb.rascomp.dto.InternalAccountCreateRequest;
 import br.edu.ufrb.rascomp.dto.RegisterRequest;
 import br.edu.ufrb.rascomp.dto.UserAccountDTO;
 import br.edu.ufrb.rascomp.dto.UserAccountUpdateRequest;
@@ -22,27 +26,60 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserAccountService {
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private final UserAccountRepository userAccountRepository;
     private final CompetitorRepository competitorRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AccountIdentityService accountIdentityService;
 
     @Transactional
     public UserAccount cadastrarParticipante(RegisterRequest request) {
-        return criar(request, UserRole.PARTICIPANTE);
+        return criarComSenha(request, UserRole.PARTICIPANTE, false);
     }
 
+    /**
+     * Exceção de bootstrap: cria o primeiro DEV a partir de secret de ambiente.
+     * Não deve ser usado pelo fluxo administrativo comum.
+     */
     @Transactional
     public UserAccountDTO criarDev(RegisterRequest request) {
-        return criarInterno(request, UserRole.DEV);
+        return new UserAccountDTO(criarComSenha(request, UserRole.DEV, true));
     }
 
     @Transactional
-    public UserAccountDTO criarInterno(RegisterRequest request, UserRole role) {
+    public UserAccountDTO criarInterno(InternalAccountCreateRequest request, UserRole role) {
         if (role == null || role == UserRole.PARTICIPANTE) {
             throw new IllegalArgumentException(
                     "Contas PARTICIPANTE devem ser criadas pelo cadastro comum.");
         }
-        return new UserAccountDTO(criar(request, role));
+
+        String email = normalizarEmail(request.getEmail());
+        if (userAccountRepository.existsByEmailIgnoreCase(email)) {
+            throw new IllegalArgumentException("Já existe uma conta cadastrada com este e-mail.");
+        }
+
+        UserAccount usuario = new UserAccount();
+        usuario.setNome(request.getNome().trim());
+        usuario.setEmail(email);
+        usuario.setPasswordHash(passwordEncoder.encode(credencialInternaAleatoria()));
+        usuario.setTelefone(normalizarOpcional(request.getTelefone()));
+        usuario.setRole(role);
+        usuario.setAtivo(true);
+        usuario.setEmailVerificadoEm(null);
+
+        UserAccount salvo = userAccountRepository.save(usuario);
+        accountIdentityService.sendInternalAccountSetup(salvo);
+        return new UserAccountDTO(salvo);
+    }
+
+    @Transactional
+    public String reenviarConviteInterno(Long id) {
+        UserAccount usuario = buscarPorId(id);
+        if (usuario.getRole() == UserRole.PARTICIPANTE) {
+            throw new IllegalArgumentException("Conta PARTICIPANTE não usa convite interno.");
+        }
+        return accountIdentityService.resendInternalAccountSetup(usuario);
     }
 
     @Transactional(readOnly = true)
@@ -76,7 +113,7 @@ public class UserAccountService {
 
     @Transactional
     public UserAccount iniciarNovaSessao(UserAccount usuario) {
-        usuario.setUltimoLogin(java.time.LocalDateTime.now());
+        usuario.setUltimoLogin(LocalDateTime.now());
         usuario.setSessionVersion(usuario.getSessionVersion() == null ? 1L : usuario.getSessionVersion() + 1L);
         return userAccountRepository.save(usuario);
     }
@@ -114,6 +151,11 @@ public class UserAccountService {
 
         if (alterouEmail) {
             usuario.setSessionVersion(usuario.getSessionVersion() == null ? 1L : usuario.getSessionVersion() + 1L);
+            if (usuario.getRole() == UserRole.PARTICIPANTE) {
+                usuario.setEmailVerificadoEm(null);
+            } else {
+                usuario.setEmailVerificadoEm(LocalDateTime.now());
+            }
         }
 
         UserAccount salvo = userAccountRepository.save(usuario);
@@ -243,7 +285,7 @@ public class UserAccountService {
         return authentication.getName();
     }
 
-    private UserAccount criar(RegisterRequest request, UserRole role) {
+    private UserAccount criarComSenha(RegisterRequest request, UserRole role, boolean emailVerificado) {
         String email = normalizarEmail(request.getEmail());
         if (userAccountRepository.existsByEmailIgnoreCase(email)) {
             throw new IllegalArgumentException("Já existe uma conta cadastrada com este e-mail.");
@@ -256,7 +298,14 @@ public class UserAccountService {
         usuario.setTelefone(normalizarOpcional(request.getTelefone()));
         usuario.setRole(role);
         usuario.setAtivo(true);
+        usuario.setEmailVerificadoEm(emailVerificado ? LocalDateTime.now() : null);
         return userAccountRepository.save(usuario);
+    }
+
+    private String credencialInternaAleatoria() {
+        byte[] bytes = new byte[32];
+        SECURE_RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private String normalizarEmail(String email) {

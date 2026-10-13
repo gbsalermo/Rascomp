@@ -2,6 +2,8 @@ package br.edu.ufrb.rascomp.service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import org.springframework.beans.factory.ObjectProvider;
+import br.edu.ufrb.rascomp.storage.R2ManagedFileStorage;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,9 +23,15 @@ public class RegistrationReceiptStorageService {
     private static final long MAX_BYTES = 10L * 1024L * 1024L;
 
     private final Path root;
+    private final R2ManagedFileStorage r2;
+
+    private static final String R2_PREFIX = "r2/";
+
 
     public RegistrationReceiptStorageService(
-            @Value("${app.storage.registration-receipts-dir:./uploads/registration-receipts}") String directory) {
+            @Value("${app.storage.registration-receipts-dir:./uploads/registration-receipts}") String directory,
+            ObjectProvider<R2ManagedFileStorage> r2Provider) {
+        this.r2 = r2Provider.getIfAvailable();
         root = Paths.get(directory).toAbsolutePath().normalize();
     }
 
@@ -46,6 +54,15 @@ public class RegistrationReceiptStorageService {
                 : tipo.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_-]", "");
         String storageKey = namespace + "/" + competitionId + "/" + ownerId + "/"
                 + UUID.randomUUID() + extensao;
+        if (r2 != null) {
+            try {
+                r2.upload("competition/receipts/" + storageKey, arquivo.getBytes(), contentType);
+                return new StoredReceipt(R2_PREFIX + "competition/receipts/" + storageKey,
+                        nomeSeguro(arquivo.getOriginalFilename()), contentType);
+            } catch (IOException ex) {
+                throw new IllegalStateException("Falha ao ler comprovante para R2.", ex);
+            }
+        }
         Path destino = resolverSeguro(storageKey);
 
         try {
@@ -83,6 +100,8 @@ public class RegistrationReceiptStorageService {
     }
 
     public ReceiptFile carregar(String storageKey, String contentType, String filename) {
+        if (storageKey.startsWith(R2_PREFIX))
+            return new ReceiptFile(r2Required().read(storageKey.substring(R2_PREFIX.length())), contentType, filename);
         Path arquivo = resolverSeguro(storageKey);
         try {
             Resource resource = new UrlResource(arquivo.toUri());
@@ -97,6 +116,10 @@ public class RegistrationReceiptStorageService {
 
     public void remover(String storageKey) {
         if (storageKey == null || storageKey.isBlank()) return;
+        if (storageKey.startsWith(R2_PREFIX)) {
+            r2Required().delete(storageKey.substring(R2_PREFIX.length()));
+            return;
+        }
         try {
             Files.deleteIfExists(resolverSeguro(storageKey));
         } catch (IOException ex) {
@@ -149,6 +172,11 @@ public class RegistrationReceiptStorageService {
         String nome = original.replace('\\', '/');
         nome = nome.substring(nome.lastIndexOf('/') + 1);
         return nome.length() <= 255 ? nome : nome.substring(nome.length() - 255);
+    }
+
+    private R2ManagedFileStorage r2Required() {
+        if (r2 == null) throw new IllegalStateException("Arquivo armazenado no R2, mas R2_ENABLED não está ativo.");
+        return r2;
     }
 
     private Path resolverSeguro(String storageKey) {

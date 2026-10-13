@@ -1,6 +1,160 @@
+## CHECKPOINT: E-MAIL TRANSACIONAL REAL / RESEND — 13/10/2026
+
+**Confirmação do responsável:** domínio de envio `mail.rasufrb.site` verificado no Resend com DNS Cloudflare; API Key criada e configurações `EMAIL_PROVIDER=resend`, `EMAIL_FROM=RasComp <contas@mail.rasufrb.site>` e `RESEND_API_KEY` cadastradas no Render sem versionar segredos. O responsável relatou testes bem-sucedidos de **criação de conta** e **recuperação de senha** com o envio real de e-mail.
+
+**Estado:** integração de e-mail transacional operacional para os fluxos relatados. Não confundir recebimento de mensagem com validação completa de uso único, expiração, ativação de contas internas e proteção contra abuso: esses cenários precisam de testes específicos antes da abertura de inscrições reais. Se ainda não confirmados, testar o clique efetivo no link de confirmação e o reset de senha de ponta a ponta.
+
+**Resultado da infraestrutura Cloud V1-BETA B:** Landing e Gestão em Workers Cloudflare; API Spring Boot no Render; MySQL Aiven; storage R2; e-mail Resend. Integrações externas principais configuradas. Não declarar homologação final de inscrições públicas ou capacidade de carga: continuam necessários backup externo e restore ensaiado, testes de carga/contingência, auditoria de comprovantes privados, reconciliação de cotas e alertas de consumo; avaliar limite diário de envios no plano Resend e comportamento em picos.
+
+**Próxima prioridade funcional:** Gestor de Mídia e Galeria da Landing; depois Futebol de Robôs e manuais de ajuda, seguindo roadmap.
+
+---
+
+## ENCERRAMENTO R2 E INÍCIO DA ÚLTIMA FASE CLOUD: E-MAIL REAL — 12/10/2026
+
+**Decisão do responsável:** encerrar implantação do R2 e iniciar a fase de e-mail transacional. Upload R2 no Render e contabilização no Aiven confirmados, além de testes locais e correção do truststore. O storage está operacional; a Gestão de Mídia/Galeria fica em trilho funcional posterior, não bloqueia a configuração do e-mail.
+
+**Incidente observado:** após deploy, login e recuperação de senha ficaram temporariamente indisponíveis e depois **voltaram a funcionar sem rollback, alteração de configuração ou intervenção confirmada**. Causa raiz não diagnosticada; NÃO atribuir à correção de SSL ou marcar rollback como realizado. Manter observabilidade e monitorar reincidência.
+
+**Pendências de hardening de storage pré-inscrições reais:** teste de acesso a comprovantes privados, concorrência e estados de upload interrompido, limpeza de reservas órfãs, integridade em rollback/exclusão, alertas de cotas e operações, migração de arquivos locais legados, e backup com restore validado.
+
+**Próxima etapa — identidade/e-mail:** o backend já possui `TransactionalEmailService`, serviço de verificação de e-mail, ativação de contas internas, recuperação com token de uso único, cooldown, `app.email.provider=${EMAIL_PROVIDER:log}`, `EMAIL_FROM`, `RESEND_API_KEY`. Configurar domínio remetente controlado no provedor de e-mail (Resend é opção existente no projeto); verificar DNS SPF/DKIM e, se possível, DMARC; criar chave API só com envio, armazenada apenas no Render; testar envio e recebimento em contas reais de QA, confirmação, reenvio e redefinição. Preservar `EMAIL_PROVIDER=log` até o DNS/provedor estarem validados; depois desabilitar logging de tokens de produção. Mensagens genéricas para contas desconhecidas devem permanecer por segurança. A franquia do provedor precisa ser validada, especialmente pico diário de abertura de inscrições, evitando ativar pagamentos adicionais sem decisão consciente.
+
+---
+
+## Checkpoint de implantação R2 — 12/10/2026
+
+**Status: infraestrutura R2 implantada e fluxo de logo de equipe homologado em produção.** O usuário confirmou: testes automatizados verdes; Flyway V32 e cotas no banco local; upload/leitura/exclusão e atualização de cotas em homologação local; persistência após reiniciar o backend local; publicação no Render; API e Flyway V32 no Aiven; primeiro upload em produção inicialmente falhou por PKIX; correção do truststore JVM para manter certificados públicos e CA do Aiven (commit `019c0009`) publicada; **novo upload em produção funcionou, com conferência no Workbench**. Manter `R2_ENABLED=true` no Render.
+
+**Fechamento delimitado:** não declarar que toda a segurança de arquivos ou o Gestor de Mídia/Galeria estão concluídos. Permanecem obrigatórios antes de inscrições públicas: testar autorização real de acesso aos comprovantes; tratar atomicidade/exclusões em caso de rollback, concorrência, reservas órfãs e conciliação após upload interrompido; alertas e monitoramento de consumo e operações; inventariar/migrar eventuais arquivos legados locais. Os testes de galeria/landing serão feitos com o Gestor de Mídia. As cotas internas não garantem ausência de cobrança por operações.
+
+**Próxima prioridade:** e-mail transacional real para verificação de conta e recuperação de senha, substituindo o provedor de log antes de inscrições públicas.
+
+---
+
+## DECISÃO DE ATIVAÇÃO CONTROLADA DO R2 — 12/10/2026
+
+**Decisão:** concluir a implementação e testar antes de habilitar o R2 no Render; **não fazer redeploy manual da API agora**. Preservar `R2_ENABLED=false` até os critérios de liberação serem atendidos. O usuário confirmou bucket privado `rascomp-storage`, token S3 de acesso limitado ao bucket e variáveis de ambiente guardadas no Render; não registrar valores de tokens/secrets.
+
+**Estado do código na branch `v1-beta-b-identidade-cloud`:** serviços de fotos de robôs, logos de equipes e comprovantes foram adaptados para armazenamento opt-in no R2 com leitura/exclusão privada via backend. Foi adicionada a migration V32 com cotas atômicas no MySQL e testes unitários básicos. Mudanças enviadas ao GitHub **não representam build verde, homologação concluída ou deploy de produção**. A integração da Galeria/Gestor de Mídia permanece para etapa posterior.
+
+**Orçamento conservador:** 2,7 GB competição, 5,4 GB galeria/landing, 0,9 GB reserva operacional, mais 1 GB de folga perante os 10 GB de referência. O uso gratuito do R2 é medido em GB-mês e operações; cotas por categoria não impedem todos os tipos de cobrança.
+
+**Gate para ativação:**
+1. Verificar GitHub Actions `Backend Tests` nesta branch e corrigir falhas de build/testes.
+2. Verificar Flyway V32 em banco isolado e testar limites/concorrência.
+3. Revisar transações e tratamento de exclusões/substituições, inclusive falhas, uploads interrompidos e reservas órfãs; implementar conciliação e alertas antes do uso público.
+4. Inventariar e tratar mídias antigas gravadas localmente no Render; prefixos antigos não são migrados automaticamente.
+5. Homologar em ambiente controlado com credenciais R2 protegidas: upload, leitura com autorização, exclusão e persistência após reinicialização. **Não expor comprovantes por URL pública**.
+6. Só depois autorizar `R2_ENABLED=true` e redeploy manual, com plano de reversão. Manter operação local possível, mas evitar alternar perfis em produção sem garantir acesso às chaves de objetos já migrados.
+
+**Próxima etapa após concluir armazenamento R2:** configurar provedor de e-mail transacional real para verificação de contas e recuperação de senha, substituindo `EMAIL_PROVIDER=log` antes de abrir inscrições reais. Em seguida, Gestor de Mídia/Galeria; depois Futebol de Robôs e manuais de ajuda.
+
+**Referência detalhada:** `rascomp/docs/CLOUDFLARE_R2.md`.
+
+---
+
+## POLÍTICA DE BACKUPS MYSQL AIVEN — 11/10/2026
+
+**Checkpoint inicial:** Aiven Free MySQL 8.4.11 `rascomp-mysql` e banco `rascomp` conectados ao Spring Boot (profile `cloud`, TLS), Flyway até V31, 36 tabelas e persistência confirmada após desligar a API. O painel Aiven exibiu um backup automático completo; **não confundir a existência desse backup com um restore validado ou com proteção do estado mais recente**.
+
+**Fase 1 — Agora, sem inscrições reais:** utilizar o backup automático do Aiven para proteção básica. Não bloquear o avanço técnico para Docker/API cloud por uma exportação manual adicional neste momento. O dump manual realizado exibiu avisos de GTID e consistência; **não deve ser tratado como cópia restaurável validada**. Não marcar restauração como testada.
+
+**Gate obrigatório antes de inscrições reais:** confirmar um backup posterior às migrations e ao bootstrap inicial, documentar retenção e limitações reais do plano Aiven Free, produzir dump consistente do banco `rascomp` (ex.: `mysqldump --single-transaction --set-gtid-purged=OFF` com TLS verificado), guardar cópia externa protegida e executar **restore de ensaio em banco/instância isolados**, validando schema, Flyway e dados. Nunca testar restore sobre produção. Registrar procedimento de recuperação, responsáveis, periodicidade e tolerância à perda de dados. Se esse gate falhar, não abrir inscrições.
+
+**Fase 2 — Durante inscrições:** manter backups do provedor, verificar existência e recência; realizar cópias externas periódicas com frequência ajustada ao volume de alterações e à retenção oferecida; proteger arquivos com criptografia/controle de acesso, não versionar no GitHub. Testar restauração regularmente e antes de alterações críticas/migrations.
+
+**Fase 3 — Pré-competição:** fazer snapshot/dump recente, testar recuperação no MySQL local ou staging isolado, sincronizar arquivos R2 necessários e executar ensaio da contingência LAN/Tunnel. Definir fonte única de escrita e procedimentos de retorno à cloud.
+
+**Fase 4 — Durante competição:** acompanhar backups, capacidade e integridade; manter plano operacional de recuperação e contingência, sem bancos cloud/local com escritas independentes.
+
+**Observação:** Flyway recria estrutura, mas não restaura inscrições, usuários, resultados ou comprovantes. Backup do MySQL também não inclui objetos R2; esses arquivos exigem estratégia própria.
+
+---
+
+## REPLANEJAMENTO DE CAPACIDADE — 10/10/2026
+
+**Decisão atual (prevalece sobre sequências históricas abaixo):** após concluir a V1-BETA B/Cloud, **antecipar a primeira rodada de testes de carga antes do Gestor de Mídia e do Futebol**. Motivo: validar a capacidade real do MySQL gratuito (Aiven Free, se confirmado no provisionamento) e do caminho de API Docker/Cloudflare antes de expandir escopo.
+
+Ordem revisada:
+
+1. Cloud + MySQL persistente / backups / Flyway / API / identidade / R2 / smoke;
+2. **Gate de capacidade antecipado:** cargas em estágios de 100, 200, 300 e 500 usuários simulados, com padrões de concorrência realistas para cadastro, autenticação, inscrições, comprovantes, consultas públicas, aprovação e fluxos competitivos já implementados. Medir p50/p95/p99, erros, throughput, CPU/RAM, conexões MySQL, disco, filas e recuperação; testar também backup/restore, limites e rate limiting. Não confundir quantidade de usuários com requisições simultâneas. Definir critérios de aprovação antes da execução. Usar staging/dados sintéticos, nunca sobrecarregar produção real.
+3. Gestão de Mídia da Landing;
+4. Futebol de Robôs;
+5. Central de Ajuda + Telegram (bot de auxílio e notificações com consentimento);
+6. **Gate final de carga/resiliência pré-competição** cobrindo também CMS, Futebol, Telegram e cenário competitivo de 300–500 pessoas; bloquear evento real se a infraestrutura falhar nos critérios.
+7. Validação e fechamento do MVP ampliado; em seguida manutenção/polimento.
+
+O teste antecipado **não substitui** o gate final; usar resultados para escolher entre manter Aiven Free, elevar capacidade ou adotar contingência local/tunnel. Preservar documentação de custo, riscos e portabilidade.
+
+---
+
+## ATUALIZAÇÃO DE PRIORIDADES — 10/10/2026
+
+Ordem de execução aprovada após a estabilização da Cloud/V1-BETA B:
+
+1. **Cloud + MySQL persistente** — concluir implantação segura, backups, restore, Flyway, API HTTPS, identidade/e-mail, R2, smoke e contingência local.
+2. **Gestor de Mídia** — Landing institucional/competitiva, conteúdo editorial, heros, imagens, eventos, galeria, robôs, patrocinadores e auditoria.
+3. **Futebol de Robôs** — inscrição e operação da modalidade, placar, cronômetro, chaves, resultados e projeção pública.
+4. **Central de Ajuda + Telegram** — manuais contextuais na Gestão e no Portal, regras aprovadas, tutoriais e canal Telegram integrado de suporte e notificações úteis. Diferenciar notificações automáticas opt-in, avisos operacionais e interação de ajuda via bot; validar privacidade, autorização, consentimento, frequência e política de atendimento. O Telegram complementa, **não substitui**, a ajuda dentro do sistema. Reaproveitar o escopo pertinente da antiga Etapa 11, evitando implementá-lo em duplicidade.
+5. **Testes de carga e resiliência** — imediatamente após a Central de Ajuda/Telegram, executar carga genérica e cenário operacional com **300–500 pessoas**, incluindo inscrições, uploads, aprovação, Gestão, Follow, Sumô, Futebol, chaves, ranking e consultas públicas. Revisar rate limit, injeção SQL, autorização, concorrência, falhas e recuperação. É gate obrigatório antes da competição oficial.
+6. **Fechamento do MVP ampliado** — regressões ponta a ponta cloud/local, documentação, estabilidade e validação.
+7. **Revisão das demais pendências históricas** — manutenção, segurança, responsividade, performance e polimento passam à frente de novas funcionalidades.
+
+**Esta ordem atual substitui trechos históricos conflitantes deste documento, sem excluir as etapas originais.** Meta para Cloud: 14/10/2026, sujeita a gates de persistência, backup e segurança.
+
+Arquitetura versionada: frontend `docs/ARQUITETURA_DEPLOY_DOCKER.md`. Docker empacota Spring Boot; hospedagem do container e MySQL persistente são decisões separadas. R2 é storage de arquivos, não banco.
+
+---
+
+## PLANEJAMENTO CANÔNICO ATUALIZADO — 09/10/2026
+
+> **Correção de calendário:** a meta do MVP funcional era **04/10/2026**, não 04/11/2026. O escopo que o responsável esperava desse marco já foi atendido, mas isso **não significa que cloud, operação completa, documentação e validação final estejam concluídas**. Menções anteriores a "MVP de produção — 04/11" são histórico superado, não prazo vigente. A competição de novembro continua como marco operacional; não assumir que todas as entregas abaixo precisam aguardar a semana do evento.
+
+### Ordem prioritária aprovada
+
+1. **Até 14/10/2026 — fechar a V1-BETA B / Cloud:** MySQL persistente com backup/restore, Flyway, API/HTTPS, Gestão e Portal remotos, verificação de e-mail/recuperação de senha, storage R2 persistente, secrets, acesso local/contingência preservados e smoke cloud. Prazo-alvo, sujeito aos gates de segurança e verificação; não liberar inscrições reais sem cumprir os bloqueantes.
+2. **Após cloud — Gestão de Mídia da Landing (P1):** CRUD editorial de textos/fotos/heros, eventos e calendário, galeria, robôs, patrocinadores, publicações, controle institucional/competitivo e auditoria. MIDIA/DEV administra conteúdo sem deploy manual.
+3. **Em seguida — Futebol de Robôs (P2):** inscrição sem robô próprio (robôs eventualmente fornecidos pela organização), atribuição e regras, cronômetro/placar de gols, estados da partida, chaveamento, resultados, operação na Gestão e acompanhamento público. Validar regulamento e casos de empate/penalidades antes de fechar regras.
+4. **Depois — Central de Ajuda e manuais por perfil (P3):**
+   - **Ajuda administrativa dentro da Gestão:** como criar/gerir competição, inscrições e aprovações, equipes/robôs, Follow, Sumô/Mini Sumô, Futebol, tempo/placar/chaves/resultados, contingência, além de operar o Gestor de Mídia. Manual contextual por tela, navegação acessível e conteúdo versionado/revisável.
+   - **Ajuda do participante integrada ao Portal:** regras da competição, regras do ambiente de competição, inscrição pessoal/de equipe/de robô conforme modalidade, comprovantes, aprovação, como acompanhar situação, cronograma, chamadas, resultados, chaves, Follow e Sumô. Orientações práticas claras e acessíveis, incluindo estados de erro e dúvidas frequentes.
+   - **Fonte oficial:** regulamento e regras de ambiente validados pela organização; a documentação não inventará normas. Distinguir orientações gerais de regras específicas por edição/categoria; versionar/publicar atualizações com controle editorial.
+   - **Manter permissões:** informações administrativas apenas para perfis autorizados; materiais públicos/participante disponíveis sem conceder acesso a funções operacionais.
+5. **Fechamento do MVP ampliado:** concluir fluxos e manuais, testar ponta a ponta todos os perfis, categorias e cenários cloud/local. Só marcar concluído após validação.
+6. **Depois do MVP — revisão do roadmap original:** auditar pendências reais, classificar somente o indispensável, priorizar manutenção, estabilidade, correções, usabilidade, testes, segurança, desempenho e polimento. Novas funcionalidades deixam de ser o foco; requisitos restantes do roteiro original permanecem registrados e serão reavaliados, não apagados.
+
+**Princípio:** continuar desenvolvimento em homologação, liberar para produção apenas versões aprovadas; preservar modo local. A Etapa 13 (Regras, Ajuda e Segurança) passa a ter seu núcleo de **manuais e ajuda por perfil** antecipado para P3, sem necessariamente antecipar todos os seus outros itens.
+
+---
+
+## PRIORIDADE IMEDIATA APÓS V1-BETA B CLOUD — 09/10/2026
+
+**Decisão de priorização (MVP de produção de 04/11/2026):** assim que estiver concluído o fluxo de MySQL persistente → backend/API cloud → Gestão e Portal autenticados → e-mail transacional/validação de contas → R2/uploads persistentes → smoke cloud, iniciar, nesta ordem, **(P1) Gestão de Mídia da Landing** e **(P2) Categoria Futebol de Robôs**. Ambas são prioridade máxima do ciclo seguinte, antes de polimentos não bloqueantes e funcionalidades pós-produção, sem apagar o roadmap original. Se necessário, poderão avançar em paralelo após os contratos e a infraestrutura cloud estarem estáveis.
+
+### P1 — Gestão de Mídia da Landing (prioridade máxima)
+- Interface administrativa para editar conteúdo público sem modificar/republicar o frontend manualmente: heros, banners, seção Sobre, equipe/diretoria, conquistas, robôs, galeria, notícias, eventos, patrocinadores e apoiadores.
+- Upload e gerenciamento de imagens persistentes via R2/storage, metadados, ordenação, ativação/desativação, prévia e publicação controlada; permissões e auditoria.
+- Eventos com título, texto, imagens, localização, datas de início/fim e fuso; estados automáticos próximo / acontecendo / encerrado; histórico de eventos e possível vínculo explícito com competição RasComp.
+- Gestão do modo institucional/competitivo da Landing **independente de haver competição vigente**, impedindo exposição acidental de dados; publicação intencional e reversível.
+- Patrocinadores do carrossel em cadastro próprio; apoiadores institucionais permanecem separados no footer. Substituir imagens provisórias por marcas reais somente quando cadastradas/autorizadas.
+- Compatibilizar alterações com cache/invalidação e endpoints públicos sem prejudicar performance e disponibilidade.
+
+### P2 — Categoria Futebol de Robôs (prioridade máxima)
+- Consolidar regras próprias da modalidade: partidas entre robôs/equipes, gols por lado e placar, duração configurável com valor usual de referência **2 minutos** (não hardcode), cronômetro e comandos da organização.
+- Persistir placar e eventos de partida no backend, com validação de estado, retomada/finalização, histórico/auditoria e tratamento de correções administrativas.
+- Exibir andamento em tempo real ou atualização periódica confiável na Gestão e na Landing pública, além de resultados e progressão de chaveamento aplicáveis.
+- Tratar empate, prorrogação/desempate e critérios oficiais como regras a validar antes de implementá-los, sem pressupor regulamento inexistente.
+- Testes automatizados e manuais: início/pausa/fim, gols, sincronização, atualização pública, recuperação após falha e controle de acesso.
+
+**Critério de saída:** Gestão de Mídia opera conteúdo real publicado na Landing sem deploy; Futebol permite operar e acompanhar partidas completas com placar/tempo persistentes e refletidos nas interfaces.
+
+---
+
 # Continuidade — RasComp Backend
 
-Última atualização: **05/10/2026**
+Última atualização: **06/10/2026**
 
 Este arquivo registra o checkpoint funcional do backend. Não define roadmap próprio.
 
@@ -26,7 +180,7 @@ rascomp/docs/CONTRATO_REGRAS_COMPETITIVAS.md
 ```text
 ETAPAS 0–4    ✅ concluídas / validadas
 V1-BETA A     ✅ concluída / validada — Landing pública
-V1-BETA B     ⏭️ próxima — planejar identidade/e-mail + cloud + MySQL + storage/secrets
+V1-BETA B     🚧 Bloco 1 ✅ · Landing remota ✅ · base Docker/Container cloud em preparação
 V1-BETA C     ⏳ acesso/inscrições reais
 V1-BETA D     ⏳ smoke + estabilização
 ```
@@ -35,14 +189,14 @@ O roadmap oficial será retomado após a publicação/estabilização da V1 Beta
 
 Ajustes Gerais DEV avançados são pós-Beta e não bloqueiam o primeiro go-live.
 
-Migrations atuais: **V1–V30**. Próxima migration estrutural: **V31+**.
+Migrations atuais na branch V1-BETA B: **V1–V31**. Próxima migration estrutural: **V32+**.
 
 ---
 
 # 2. Estado funcional conhecido
 
 ```text
-AUTENTICAÇÃO / JWT                       ✅
+AUTENTICAÇÃO / JWT                       ✅ + verificação de e-mail/reset na branch B
 OWNERSHIP PARTICIPANTE                   ✅
 MYSQL + FLYWAY V1–V30                    ✅ schema versionado
 COMPETIÇÕES                              ✅ transições + prorrogação/reabertura
@@ -2905,3 +3059,190 @@ Landing Checks #21
 Durante o fechamento, o primeiro run do backend revelou testes antigos desalinhados com regras já consolidadas. Os testes foram corrigidos para refletir os contratos atuais — sem relaxar as regras de negócio — e a suíte completa voltou a ficar verde.
 
 Com validação manual + CI final verde, a V1-BETA A está autorizada para merge em `main`.
+
+
+---
+
+## Checkpoint cloud base — 06/10/2026
+
+Preparação adicionada na V1-BETA B:
+
+```text
+Dockerfile                         ✅
+profile cloud                      ✅
+Actuator health                    ✅
+Worker/Container scaffold          ✅
+secrets fora do código             ✅
+testdata bloqueado no profile       ✅
+MySQL externo                      ⏳ configurar
+e-mail real                        ⏳ configurar
+storage operacional R2             ⏳ integrar/configurar
+provisionamento Cloudflare          ⏳ próxima sessão
+```
+
+A Landing externa por Quick Tunnel foi validada no frontend. O próximo objetivo é conectar a conta Cloudflare temporária e publicar primeiro os frontends, depois API/Container.
+
+
+---
+
+## Dupla eliminação pós-Beta — modelagem aprovada em 06/10/2026
+
+Não implementar nesta branch de deploy.
+
+Após V1-BETA D, Sumô/Mini Sumô evolui para:
+
+```text
+Bracket DOUBLE_ELIMINATION
+├─ WINNERS
+├─ LOSERS
+├─ GRAND_FINAL
+└─ GRAND_FINAL_RESET condicional
+```
+
+Invariante: 1 derrota não elimina; 2 derrotas eliminam. A Final da Winners não define campeão.
+
+Pódio: vencedor/perdedor da Final Geral decisiva e, em 3º, o perdedor da Final da Losers.
+
+Fonte canônica: `gbsalermo/Rascomp-FRONT/docs/ETAPAS_POS_PROJETO.md` + `docs/CONTRATO_REGRAS_COMPETITIVAS.md`.
+
+
+---
+
+## Gate de banco limpo antes do go-live — 06/10/2026
+
+Decisão: **não migrar/copiar o banco local/testdata para cloud**.
+
+O MySQL cloud deve nascer vazio e receber apenas:
+
+```text
+Flyway
++
+primeiro DEV real via bootstrap
+```
+
+Todos os seeds de desenvolvimento/QA ficam explicitamente `false` no profile cloud, e `CloudProfileSafetyGuard` impede startup com `testdata` ou qualquer seed habilitado.
+
+Equipes, robôs, competidores, inscrições, competições, chaves e contas demo não entram no primeiro deploy.
+
+
+---
+
+## Primeiro acesso seguro de contas internas — 06/10/2026
+
+Regra implementada na V1-BETA B:
+
+```text
+DEV cria DEV/GESTAO/MIDIA
+→ informa nome + e-mail + telefone + role
+→ NÃO informa senha
+→ conta nasce ativa, porém não verificada
+→ backend grava somente uma credencial aleatória impossível de ser conhecida pelo DEV
+→ token INTERNAL_ACCOUNT_SETUP de uso único
+→ e-mail recebe /ativar-conta?token=...
+→ titular define a própria senha
+→ e-mail é verificado no mesmo ato
+→ sessões anteriores são invalidadas
+→ login liberado
+```
+
+Consequência: o DEV que cria a conta **nunca conhece a senha definitiva do outro usuário**.
+
+Exceção única:
+
+```text
+primeiro DEV do ambiente
+→ bootstrap por secrets RASCOMP_DEV_*
+```
+
+Essa exceção existe somente para tornar possível o primeiro acesso a um banco cloud vazio.
+
+Se o convite expirar, DEV pode usar:
+
+```text
+POST /api/v1/usuarios/{id}/reenviar-convite
+```
+
+O novo token invalida o anterior do mesmo tipo. O fluxo público de reenvio de confirmação também reconhece conta interna pendente e envia convite de ativação em vez de verificação simples.
+
+Endpoint público de ativação:
+
+```text
+POST /api/v1/auth/internal-account/activate
+{
+  "token": "...",
+  "novaSenha": "..."
+}
+```
+
+Conta PARTICIPANTE continua usando cadastro público + verificação de e-mail normal.
+
+
+---
+
+## Estado sem competição vigente — 06/10/2026
+
+A ausência de competição vigente é um estado operacional válido.
+
+Regras:
+
+```text
+DEV
+→ pode manter uma edição apenas como foco local
+→ pode definir uma edição como vigente
+→ pode remover a vigente explicitamente
+
+GESTAO
+→ pode autenticar e navegar pelo sistema sem competição vigente
+→ recebe lista vazia de competições operáveis
+→ operações competitivas continuam exigindo uma vigente
+
+LANDING / portal
+→ /api/v1/public/competicoes retorna somente a competição:
+   vigente=true
+   ativo=true
+   status público: INSCRICOES_ABERTAS | INSCRICOES_ENCERRADAS | EM_ANDAMENTO
+→ sem competição nessas condições, retorna []
+→ nenhuma edição antiga/futura é escolhida por fallback
+```
+
+Endpoint DEV para voltar ao modo sem competição vigente:
+
+```text
+DELETE /api/v1/competicoes/vigente
+→ 204
+```
+
+Finalizar, cancelar ou desativar uma competição também remove sua marcação `vigente`, evitando que uma edição encerrada volte a aparecer como contexto operacional após reativação/reload.
+
+
+---
+
+## V1-BETA B — Infraestrutura Render Free e domínio (checkpoint 11/10/2026)
+
+Arquitetura definida para homologação e avaliação de produção, preservando backend Java 21/Spring Boot e MySQL remoto:
+- `https://rasufrb.site`: landing pública / institucional, frontend Cloudflare.
+- `https://app.rasufrb.site`: aplicação de gestão e portal do participante, frontend Cloudflare.
+- `https://api.rasufrb.site`: endereço planejado da API Spring Boot hospedada inicialmente no Render Free; DNS/custom domain ainda deve ser configurado e testado.
+- `https://homolog.rasufrb.site` e `https://app-homolog.rasufrb.site`: endereços reservados para homologação, não presumir que já estejam ativos.
+
+Render Web Service `rascomp-api`: GitHub `gbsalermo/Rascomp`, branch `v1-beta-b-identidade-cloud`, Docker, region Virginia US East (a validar frente à região do Aiven), root `rascomp/`, Docker build context `.`, Dockerfile `./Dockerfile`, instância Free (512 MB RAM, 0.1 CPU), healthcheck `/actuator/health`, auto-deploy **Off** recomendado. Na conclusão da Beta B, integrar branch à `main` após testes e atualizar branch do serviço com deploy controlado.
+
+Variáveis cadastradas pelo operador no painel Render (valores secretos **não** versionados): `SPRING_PROFILES_ACTIVE=cloud`, `DB_URL` no formato JDBC MySQL TLS `sslMode=VERIFY_IDENTITY`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `CORS_ALLOWED_ORIGINS=https://app.rasufrb.site,https://rasufrb.site`, `IDENTITY_FRONTEND_BASE_URL=https://app.rasufrb.site`, `EMAIL_PROVIDER=log` (apenas homologação), `JAVA_OPTS`, `TRUSTSTORE_BASE64`, `TRUSTSTORE_PASSWORD`. Valores de CORS/identidade pressupõem que os domínios correspondentes realmente sirvam os frontends; confirmar DNS/rotas antes de uso público. Testar também origem adicional explicitamente utilizada, se houver.
+
+A truststore PKCS12 foi validada no Docker local por bind mount; a branch possui `rascomp/docker-entrypoint.sh` e Dockerfile adaptado para restaurá-la no runtime a partir de `TRUSTSTORE_BASE64` e usar sua senha. Base64 é apenas codificação, não proteção criptográfica; valores só em segredos de ambiente, nunca no repositório/logs. O novo mecanismo ainda aguarda validação no Render. Revisar segurança de exposição das variáveis do container antes de produção.
+
+**Estado registrado**: usuário confirmou cadastro das variáveis e truststore no Render; deploy público, healthcheck remoto, DNS `api.rasufrb.site`, segurança/consumo e smoke test **ainda não validados**. Não confundir cadastro de variáveis com implantação funcional.
+
+Operação planejada: avaliar healthchecks externos a cada ~10 min entre 06h e 00h (America/Sao_Paulo) e permitir suspensão do Render Free entre 00h e 06h; acessos externos noturnos ainda podem acordar a instância. Verificar política/limites do provedor, disponibilidade e custos. Contingência com notebook Docker + Cloudflare Tunnel e o mesmo MySQL Aiven, ativação controlada de apenas uma versão principal, Flyway e dados compatíveis. Testes de inicialização em 512 MB e carga de 100/200/300/500 usuários são obrigatórios antes de considerar Render Free apto para competição real. Backups externos com teste de restauração, R2, e-mail real e validações de segurança são bloqueadores antes de inscrições reais.
+
+
+### Pendente de avaliação — heartbeat leve do MySQL Aiven Free (12/10/2026)
+
+Incidente: Aiven MySQL Free `rascomp-mysql` encontrado em `Powered off` em 12/10; a API Render registrou `UnknownHostException` ao iniciar e o Worker `rascomp-automation` obteve timeouts. O motivo específico do desligamento não foi confirmado. O Aiven Free pode desligar instâncias sem atividade contínua, sem garantia de uptime para produção.
+
+Proposta solicitada: avaliar um heartbeat real, leve e autenticado do banco, acionado por agendador externo, inicialmente a cada 30 minutos na janela 06h–00h Brasília. Se optar por escrita técnica, manter **um único registro** (atualizando timestamp), isolado dos dados operacionais, sem crescimento de tabela; preferir primeiro `SELECT 1` ou verificação de conectividade, medindo se consultas bastam. Não expor endpoint administrativo de escrita ao público: autenticação serviço-a-serviço, proteção contra abuso e idempotência. Evitar writes desnecessários, carga ou mascarar falhas. Worker de health atual só comprova HTTP/Actuator e não garante atividade válida do MySQL. A configuração ainda **não foi implementada**, requer desenho/validação e eventual migration/testes.
+
+Critério de aceite: serviço Running, conexão TLS verificada, consulta real ao banco, múltiplas execuções agendadas consecutivas bem-sucedidas, registro de falhas; testar comportamento durante mais de 24h. Nenhum ping assegura que o Aiven não desligará por regras internas. Para inscrições reais, exigidos backup externo + restore testado e plano de infraestrutura de banco disponível durante evento.
+
+
+**Configuração escolhida — 12/10/2026:** `application-cloud.properties` explicita `management.health.db.enabled=true`, permitindo ao Actuator incluir o componente padrão de conectividade do datasource no endpoint `/actuator/health`. O Worker `rascomp-automation` já consulta esse endpoint nos cron triggers de 10 minutos (06h–00h Brasília), de modo que cada resposta de health deve verificar a disponibilidade do MySQL, sem gerar ou atualizar registros. Isso evita tabela adicional, escrita simbólica e migrations. **Esta configuração requer novo build/deploy manual no Render para entrar em vigor**. Não implica que o banco Aiven Free permanecerá ligado: a política de suspensão do provedor é independente e pode exigir mudança de plano/provedor ou contingência. Após deploy, validar `UP` com Aiven Running e verificar comportamento de erro quando DB indisponível sem fazer desligamento intencional em produção. Monitoramento e alertas ainda devem ser configurados. Registro simbólico de escrita fica como hipótese descartada por ora; revisitar só se houver evidência e permissão do provedor.

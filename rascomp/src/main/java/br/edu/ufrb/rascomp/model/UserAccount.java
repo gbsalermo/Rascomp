@@ -44,6 +44,9 @@ public class UserAccount implements UserDetails, Serializable {
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
+    @Column(name = "email_verified_at")
+    private LocalDateTime emailVerificadoEm;
+
     @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
 
@@ -66,6 +69,10 @@ public class UserAccount implements UserDetails, Serializable {
     @CreationTimestamp
     @Column(name = "data_cadastro", nullable = false, updatable = false)
     private LocalDateTime dataCadastro;
+
+    public boolean isEmailVerified() {
+        return emailVerificadoEm != null;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -1,6 +1,7 @@
 package br.edu.ufrb.rascomp.service;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +24,9 @@ import br.edu.ufrb.rascomp.dto.RankingFollowDTO;
 import br.edu.ufrb.rascomp.dto.RobotImageDTO;
 import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
+import br.edu.ufrb.rascomp.repository.CompetitionRepository;
 import br.edu.ufrb.rascomp.repository.CompetitorRepository;
 import br.edu.ufrb.rascomp.repository.FollowTakeScheduleEntryRepository;
 import br.edu.ufrb.rascomp.repository.FollowTakeScheduleRepository;
@@ -39,7 +42,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PublicQueryService {
 
-    private final CompetitionService competitionService;
+    private static final Set<StatusCompetition> PUBLIC_COMPETITION_STATUSES = Set.of(
+            StatusCompetition.INSCRICOES_ABERTAS,
+            StatusCompetition.INSCRICOES_ENCERRADAS,
+            StatusCompetition.EM_ANDAMENTO);
+
+    private final CompetitionRepository competitionRepository;
     private final CompetitionCategoryService categoryService;
     private final InstitutionService institutionService;
     private final TeamRepository teamRepository;
@@ -57,8 +65,12 @@ public class PublicQueryService {
     private final MatchResultService matchResultService;
     private final RobotImageService robotImageService;
 
+    @Transactional(readOnly = true)
     public List<CompetitionDTO> competicoes() {
-        return competitionService.listar(true);
+        return competitionRepository.findFirstByVigenteTrueAndAtivoTrue()
+                .filter(competition -> PUBLIC_COMPETITION_STATUSES.contains(competition.getStatus()))
+                .map(competition -> List.of(new CompetitionDTO(competition)))
+                .orElseGet(List::of);
     }
 
     public List<InstitutionDTO> instituicoes() {

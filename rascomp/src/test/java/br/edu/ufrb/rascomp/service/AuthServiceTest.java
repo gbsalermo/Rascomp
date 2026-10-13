@@ -1,8 +1,12 @@
 package br.edu.ufrb.rascomp.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,12 +14,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 import br.edu.ufrb.rascomp.dto.AuthResponse;
 import br.edu.ufrb.rascomp.dto.LoginRequest;
 import br.edu.ufrb.rascomp.dto.RegisterRequest;
+import br.edu.ufrb.rascomp.dto.RegisterResponse;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.UserRole;
 import br.edu.ufrb.rascomp.security.JwtService;
@@ -30,6 +36,9 @@ class AuthServiceTest {
     private UserAccountService userAccountService;
 
     @Mock
+    private AccountIdentityService accountIdentityService;
+
+    @Mock
     private JwtService jwtService;
 
     @InjectMocks
@@ -42,7 +51,7 @@ class AuthServiceTest {
         request.setSenha("Rascomp@2026");
         request.setLembrarDeMim(true);
 
-        UserAccount usuario = usuario();
+        UserAccount usuario = usuarioVerificado();
         when(userAccountService.buscarPorEmail("usuario@exemplo.com")).thenReturn(usuario);
         when(userAccountService.iniciarNovaSessao(usuario)).thenReturn(usuario);
         when(jwtService.gerarToken(usuario, true)).thenReturn("token-longo");
@@ -62,40 +71,56 @@ class AuthServiceTest {
     }
 
     @Test
-    void cadastroDeveGerarTokenComPersistenciaSolicitada() {
+    void loginDeveBloquearContaSemEmailVerificadoMesmoComSenhaCorreta() {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("usuario@exemplo.com");
+        request.setSenha("Rascomp@2026");
+
+        UserAccount usuario = usuarioVerificado();
+        usuario.setEmailVerificadoEm(null);
+        when(userAccountService.buscarPorEmail("usuario@exemplo.com")).thenReturn(usuario);
+
+        assertThrows(AccessDeniedException.class, () -> authService.login(request));
+
+        verify(userAccountService, never()).iniciarNovaSessao(usuario);
+        verify(jwtService, never()).gerarToken(usuario, false);
+    }
+
+    @Test
+    void cadastroDeveCriarContaPendenteEEnviarVerificacaoSemGerarJwt() {
         RegisterRequest request = new RegisterRequest();
         request.setNome("Participante");
         request.setEmail("participante@exemplo.com");
         request.setSenha("Rascomp@2026");
-        request.setLembrarDeMim(false);
 
-        UserAccount usuario = usuario();
+        UserAccount usuario = usuarioVerificado();
+        usuario.setEmail("participante@exemplo.com");
+        usuario.setEmailVerificadoEm(null);
         when(userAccountService.cadastrarParticipante(request)).thenReturn(usuario);
-        when(userAccountService.iniciarNovaSessao(usuario)).thenReturn(usuario);
-        when(jwtService.gerarToken(usuario, false)).thenReturn("token-sessao");
 
-        AuthResponse response = authService.cadastrarParticipante(request);
+        RegisterResponse response = authService.cadastrarParticipante(request);
 
         verify(userAccountService).cadastrarParticipante(request);
-        verify(userAccountService).iniciarNovaSessao(usuario);
-        verify(jwtService).gerarToken(usuario, false);
-        assertEquals("token-sessao", response.getToken());
+        verify(accountIdentityService).sendInitialVerification(usuario);
+        verify(userAccountService, never()).iniciarNovaSessao(usuario);
+        verify(jwtService, never()).gerarToken(usuario, false);
+        assertEquals("participante@exemplo.com", response.email());
     }
 
     @Test
     void logoutDeveInvalidarSessaoAtual() {
         authService.logout();
-
         verify(userAccountService).encerrarSessaoAtual();
     }
 
-    private UserAccount usuario() {
+    private UserAccount usuarioVerificado() {
         UserAccount usuario = new UserAccount();
         usuario.setId(1L);
         usuario.setNome("Usuário");
         usuario.setEmail("usuario@exemplo.com");
         usuario.setRole(UserRole.PARTICIPANTE);
         usuario.setAtivo(true);
+        usuario.setEmailVerificadoEm(LocalDateTime.now());
         return usuario;
     }
 }

@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import br.edu.ufrb.rascomp.dto.InternalAccountCreateRequest;
 import br.edu.ufrb.rascomp.dto.RegisterRequest;
 import br.edu.ufrb.rascomp.dto.UserAccountUpdateRequest;
 import br.edu.ufrb.rascomp.model.Competitor;
@@ -34,13 +35,20 @@ class UserAccountServiceTest {
     @Mock
     private CompetitorRepository competitorRepository;
 
+    @Mock
+    private AccountIdentityService accountIdentityService;
+
     private BCryptPasswordEncoder passwordEncoder;
     private UserAccountService service;
 
     @BeforeEach
     void setUp() {
         passwordEncoder = new BCryptPasswordEncoder(4);
-        service = new UserAccountService(userAccountRepository, competitorRepository, passwordEncoder);
+        service = new UserAccountService(
+                userAccountRepository,
+                competitorRepository,
+                passwordEncoder,
+                accountIdentityService);
     }
 
     @Test
@@ -76,8 +84,8 @@ class UserAccountServiceTest {
     }
 
     @Test
-    void criarInternoDeveCriarGestaoComRoleExplicita() {
-        RegisterRequest request = request("Gestão", "gestao@rascomp.com", "OutraSenha123");
+    void criarInternoDeveCriarGestaoPendenteESemSenhaDefinidaPeloDev() {
+        InternalAccountCreateRequest request = internalRequest("Gestão", "gestao@rascomp.com");
 
         when(userAccountRepository.existsByEmailIgnoreCase("gestao@rascomp.com")).thenReturn(false);
         when(userAccountRepository.save(any(UserAccount.class))).thenAnswer(invocation -> {
@@ -89,11 +97,13 @@ class UserAccountServiceTest {
         var dto = service.criarInterno(request, UserRole.GESTAO);
 
         assertEquals(UserRole.GESTAO, dto.getRole());
+        assertEquals(false, dto.getEmailVerificado());
+        verify(accountIdentityService).sendInternalAccountSetup(any(UserAccount.class));
     }
 
     @Test
     void criarInternoDeveRejeitarParticipante() {
-        RegisterRequest request = request("Participante", "participante.interno@rascomp.com", "OutraSenha123");
+        InternalAccountCreateRequest request = internalRequest("Participante", "participante.interno@rascomp.com");
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
@@ -374,6 +384,14 @@ class UserAccountServiceTest {
         var dto = service.criarDev(request);
 
         assertEquals(UserRole.DEV, dto.getRole());
+    }
+
+    private InternalAccountCreateRequest internalRequest(String nome, String email) {
+        InternalAccountCreateRequest request = new InternalAccountCreateRequest();
+        request.setNome(nome);
+        request.setEmail(email);
+        request.setTelefone(" 75999999999 ");
+        return request;
     }
 
     private RegisterRequest request(String nome, String email, String senha) {

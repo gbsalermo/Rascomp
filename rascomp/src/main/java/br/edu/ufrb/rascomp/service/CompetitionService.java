@@ -88,6 +88,10 @@ public class CompetitionService {
                     userAccountService.buscarAtual());
         }
         competition.setStatus(novoStatus);
+        if (novoStatus == StatusCompetition.FINALIZADA
+                || novoStatus == StatusCompetition.CANCELADA) {
+            competition.setVigente(false);
+        }
         return new CompetitionDTO(competitionRepository.save(competition));
     }
 
@@ -95,6 +99,7 @@ public class CompetitionService {
     public void deletar(Long id) {
         Competition competition = buscarCompetition(id);
         competition.setAtivo(false);
+        competition.setVigente(false);
         competitionRepository.save(competition);
     }
 

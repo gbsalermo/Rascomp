@@ -1,3 +1,13 @@
+## Checkpoint de implantação R2 — 12/10/2026
+
+**Status: infraestrutura R2 implantada e fluxo de logo de equipe homologado em produção.** O usuário confirmou: testes automatizados verdes; Flyway V32 e cotas no banco local; upload/leitura/exclusão e atualização de cotas em homologação local; persistência após reiniciar o backend local; publicação no Render; API e Flyway V32 no Aiven; primeiro upload em produção inicialmente falhou por PKIX; correção do truststore JVM para manter certificados públicos e CA do Aiven (commit `019c0009`) publicada; **novo upload em produção funcionou, com conferência no Workbench**. Manter `R2_ENABLED=true` no Render.
+
+**Fechamento delimitado:** não declarar que toda a segurança de arquivos ou o Gestor de Mídia/Galeria estão concluídos. Permanecem obrigatórios antes de inscrições públicas: testar autorização real de acesso aos comprovantes; tratar atomicidade/exclusões em caso de rollback, concorrência, reservas órfãs e conciliação após upload interrompido; alertas e monitoramento de consumo e operações; inventariar/migrar eventuais arquivos legados locais. Os testes de galeria/landing serão feitos com o Gestor de Mídia. As cotas internas não garantem ausência de cobrança por operações.
+
+**Próxima prioridade:** e-mail transacional real para verificação de conta e recuperação de senha, substituindo o provedor de log antes de inscrições públicas.
+
+---
+
 # Cloudflare R2 — armazenamento de mídias
 
 ## Objetivo
@@ -139,3 +149,46 @@ Quando houver o primeiro conjunto real de imagens:
 8. manter a Landing carregando apenas capa e pequenas prévias.
 
 Essa etapa deve ser implementada separadamente para preservar o funcionamento atual até o primeiro teste real com R2.
+
+
+## Política de cotas do bucket `rascomp-storage` — decisão 12/10/2026
+
+**Orçamento operacional planejado (capacidade de referência de 10 GB):**
+
+| Classe | Cota máxima | Uso previsto |
+|---|---:|---|
+| Competição | 3 GiB | fotos de robôs, logos, comprovantes, arquivos de inscrições |
+| Galeria e mídia editorial | 6 GiB | álbuns, fotografias, imagens públicas da landing, banners |
+| Reserva técnica | 1 GiB | margem para correções e contingência; não é área de upload regular |
+
+**Atenção**: a franquia gratuita do R2 é faturada em **GB-mês**, enquanto as cotas internas são limites de bytes em um instante; 10 GB-mês não representa automaticamente um teto de 10 GB permanentes nem impede cobrança por uso acima da franquia ou por operações. Adotar configuração conservadora e alertas de uso e faturamento. Verificar unidade contratual (GB decimal × GiB binário) ao definir os limites reais; não permitir que soma de cotas ultrapasse limite conservador ajustado à franquia. Esta política não está aplicada no bucket apenas pela documentação.
+
+**Estratégia de enforcement obrigatória antes de uploads reais**:
+
+- Categorizar todo objeto no upload: `competition/` versus `gallery/` (inclui `landing/`), reservando margem técnica fora desses prefixos.
+- O backend é autoridade para impor cotas; não confiar em dados do frontend ou na pasta escolhida pelo cliente. Não oferecer credenciais S3 diretamente ao navegador.
+- Registrar no MySQL tamanho real em bytes, object key, classe, estado do upload e dono; conciliar periodicamente com a listagem/tamanho reais do R2.
+- Antes de enviar, impor tamanho máximo por arquivo e por categoria; reservar capacidade de forma **atômica** no MySQL para impedir que uploads concorrentes ultrapassem a mesma cota. Para URLs presigned, finalizar só após confirmar tamanho real do objeto; tratar uploads incompletos/expirados e objetos órfãos.
+- Exclusões liberam espaço somente após exclusão confirmada no R2; substituições e reuploads consideram temporariamente o tamanho de ambos os objetos e limpeza posterior.
+- Bloquear novos uploads da categoria ao atingir o limite, mantendo acesso/download dos arquivos e exibindo mensagem administrativa orientando liberar espaço.
+- Limitar custos também por contagem de operações e tamanho máximo de arquivo; fornecer indicadores do consumo por categoria, global e reserva, com alertas antecipados (ex.: 70%, 85%, 95%).
+- Não usar o 1 GiB reservado para arquivos comuns sem decisão administrativa explícita. Preferir não permitir exceder a cota de categoria mesmo que a outra ainda tenha espaço.
+- Ao migrar conteúdo pré-existente, inventariar e contabilizar objetos antes de ativar a política.
+- Testar concorrência, uploads interrompidos, tentativas de bypass e discrepância entre metadados do banco e objetos antes de ativar `R2_ENABLED=true` no Render.
+
+**Estado:** decisão de produto documentada; ainda requer implementação e testes no backend/gestão. Acompanhar na conclusão da integração R2.
+
+
+## Integração backend — 12/10/2026 (branch `v1-beta-b-identidade-cloud`)
+
+Implementação opt-in introduzida:
+- `RobotImageStorageService`, `TeamLogoStorageService`, `RegistrationReceiptStorageService` usam R2 com `R2_ENABLED=true`; o mesmo endpoint HTTP permanece responsável pela autorização.
+- Novas chaves no banco recebem prefixo `r2/` e os objetos físicos usam `competition/robots/`, `competition/teams/` ou `competition/receipts/`. Chaves antigas, sem prefixo, continuam representando arquivos no disco local e **não são migradas automaticamente**.
+- `R2ManagedFileStorage` mantém acesso privado mediado pelo backend; `R2QuotaService` reserva capacidade em MySQL (migração V32) antes de enviar.
+- Cotas operacionais iniciais, em bytes decimais: competition = 2.700.000.000; gallery = 5.400.000.000; aproximadamente 900 MB reservados dentro do orçamento de 9 GB e mais 1 GB adicional de folga perante 10 GB. A reserva não é um prefixo de uso comum.
+- Reservas são atômicas e independentes da transação de negócio. Em falha de upload, há tentativa de remover o objeto e devolver o espaço. Se o processo cair, pode sobrar reserva órfã: exige conciliação antes de liberar espaço.
+- Exclusão lógica/rollback do negócio e exclusão física do R2 ainda necessitam auditoria de consistência e testes de falha; não apagar arquivos antigos do container antes de migrá-los.
+- Quotas por categoria NÃO restringem faturamento por operações. Os indicadores administrativos, alertas de 70/85/95%, reconciliação automática de objetos órfãos e testes concorrentes ainda são pendências.
+- `gallery/` e `landing/` estão previstos na cota, mas a interface e endpoints da Gestão de Mídia **não foram implementados** nesta mudança.
+- **NÃO ativar R2_ENABLED em Render nem disparar deploy de produção até rodar build/testes Java, testar Flyway V32 em banco isolado e executar smoke tests reais** (upload/download/delete/restart, autorização de comprovantes, rollback, concorrência e quotas). As credenciais no Render permanecem guardadas; configuração de `R2_ENABLED=false` continua operacional.
+- Atenção: sem disco persistente, arquivos antigos no filesystem de instâncias Render podem não existir após reinicialização. Fazer inventário e migração antes de prometer acesso contínuo a mídias preexistentes.

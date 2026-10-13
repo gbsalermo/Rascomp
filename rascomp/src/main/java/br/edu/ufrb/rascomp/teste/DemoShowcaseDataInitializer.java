@@ -243,6 +243,7 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         user.setPasswordHash(passwordEncoder.encode(DEMO_PASSWORD));
         user.setRole(role);
         user.setAtivo(true);
+        user.setEmailVerificadoEm(LocalDateTime.now());
         return userAccountRepository.save(user);
     }
 

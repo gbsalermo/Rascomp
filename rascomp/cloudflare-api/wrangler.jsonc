@@ -1,0 +1,37 @@
+{
+  "name": "rascomp-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-06",
+  "observability": {
+    "enabled": true
+  },
+  "containers": [
+    {
+      "class_name": "RascompApiContainer",
+      "scheduling_policy": "durable_object",
+      "observability": {
+        "enabled": true
+      },
+      "images": {
+        "base": {
+          "dockerfile": "../Dockerfile",
+          "build_context": ".."
+        }
+      }
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "RASCOMP_API",
+        "class_name": "RascompApiContainer"
+      }
+    ]
+  },
+  "exports": {
+    "RascompApiContainer": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  }
+}

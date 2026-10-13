@@ -2,6 +2,8 @@ package br.edu.ufrb.rascomp.service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import org.springframework.beans.factory.ObjectProvider;
+import br.edu.ufrb.rascomp.storage.R2ManagedFileStorage;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,9 +22,15 @@ public class RobotImageStorageService {
     private static final long MAX_BYTES = 5L * 1024L * 1024L;
 
     private final Path root;
+    private final R2ManagedFileStorage r2;
+
+    private static final String R2_PREFIX = "r2/";
+
 
     public RobotImageStorageService(
-            @Value("${app.storage.robot-images-dir:./uploads/robots}") String directory) {
+            @Value("${app.storage.robot-images-dir:./uploads/robots}") String directory,
+            ObjectProvider<R2ManagedFileStorage> r2Provider) {
+        this.r2 = r2Provider.getIfAvailable();
         this.root = Paths.get(directory).toAbsolutePath().normalize();
     }
 
@@ -36,6 +44,14 @@ public class RobotImageStorageService {
         };
 
         String storageKey = robotId + "/" + UUID.randomUUID() + extensao;
+        if (r2 != null) {
+            try {
+                r2.upload("competition/robots/" + storageKey, arquivo.getBytes(), contentType);
+                return R2_PREFIX + "competition/robots/" + storageKey;
+            } catch (IOException ex) {
+                throw new IllegalStateException("Falha ao ler imagem para R2.", ex);
+            }
+        }
         Path destino = resolverSeguro(storageKey);
 
         try {
@@ -66,6 +82,7 @@ public class RobotImageStorageService {
     }
 
     public Resource carregar(String storageKey) {
+        if (storageKey.startsWith(R2_PREFIX)) return r2Required().read(storageKey.substring(R2_PREFIX.length()));
         Path arquivo = resolverSeguro(storageKey);
         try {
             Resource resource = new UrlResource(arquivo.toUri());
@@ -79,6 +96,10 @@ public class RobotImageStorageService {
     }
 
     public void remover(String storageKey) {
+        if (storageKey.startsWith(R2_PREFIX)) {
+            r2Required().delete(storageKey.substring(R2_PREFIX.length()));
+            return;
+        }
         try {
             Files.deleteIfExists(resolverSeguro(storageKey));
         } catch (IOException ex) {
@@ -125,6 +146,11 @@ public class RobotImageStorageService {
                 && header[9] == 'E'
                 && header[10] == 'B'
                 && header[11] == 'P';
+    }
+
+    private R2ManagedFileStorage r2Required() {
+        if (r2 == null) throw new IllegalStateException("Arquivo armazenado no R2, mas R2_ENABLED não está ativo.");
+        return r2;
     }
 
     private Path resolverSeguro(String storageKey) {

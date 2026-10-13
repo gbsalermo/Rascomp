@@ -75,4 +75,31 @@ class CompetitionServiceTest {
         competition.setAtivo(true);
         return competition;
     }
+
+    @Test
+    void finalizarCompeticaoDeveRemoverMarcacaoVigente() {
+        Competition competition = competition(StatusCompetition.EM_ANDAMENTO);
+        competition.setVigente(true);
+        when(competitionRepository.findById(1L)).thenReturn(java.util.Optional.of(competition));
+        when(competitionRepository.save(competition)).thenReturn(competition);
+
+        var result = service.alterarStatus(1L, StatusCompetition.FINALIZADA);
+
+        assertEquals(StatusCompetition.FINALIZADA, result.getStatus());
+        assertEquals(false, result.getVigente());
+    }
+
+    @Test
+    void desativarCompeticaoDeveRemoverMarcacaoVigente() {
+        Competition competition = competition(StatusCompetition.PLANEJADA);
+        competition.setVigente(true);
+        when(competitionRepository.findById(1L)).thenReturn(java.util.Optional.of(competition));
+
+        service.deletar(1L);
+
+        assertEquals(false, competition.getAtivo());
+        assertEquals(false, competition.getVigente());
+        verify(competitionRepository).save(competition);
+    }
+
 }

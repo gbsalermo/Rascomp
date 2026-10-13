@@ -60,7 +60,8 @@ public class JwtService {
         return usuario.getEmail().equalsIgnoreCase(claims.getSubject())
                 && claims.getExpiration().after(new Date())
                 && tokenSessionVersion == currentSessionVersion
-                && usuario.isEnabled();
+                && usuario.isEnabled()
+                && usuario.isEmailVerified();
     }
 
     private Claims claims(String token) {

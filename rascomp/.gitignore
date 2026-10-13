@@ -41,3 +41,10 @@ build/
 
 # Arquivo local único de orientação para os CRUDs
 /docs/CODIGOS_REFERENCIA.md
+
+
+# Cloudflare/Wrangler local - nunca versionar secrets
+**/.dev.vars
+**/.dev.vars.*
+!**/.dev.vars.example
+.env.cloud

@@ -15,6 +15,8 @@ public class UserAccountDTO {
     private final String telefone;
     private final UserRole role;
     private final Boolean ativo;
+    private final Boolean emailVerificado;
+    private final LocalDateTime emailVerificadoEm;
     private final LocalDateTime ultimoLogin;
     private final LocalDateTime dataCadastro;
 
@@ -38,6 +40,8 @@ public class UserAccountDTO {
         this.telefone = entity.getTelefone();
         this.role = entity.getRole();
         this.ativo = entity.getAtivo();
+        this.emailVerificado = entity.isEmailVerified();
+        this.emailVerificadoEm = entity.getEmailVerificadoEm();
         this.ultimoLogin = entity.getUltimoLogin();
         this.dataCadastro = entity.getDataCadastro();
     }
