@@ -1,3 +1,15 @@
+## CHECKPOINT: E-MAIL TRANSACIONAL REAL / RESEND — 13/10/2026
+
+**Confirmação do responsável:** domínio de envio `mail.rasufrb.site` verificado no Resend com DNS Cloudflare; API Key criada e configurações `EMAIL_PROVIDER=resend`, `EMAIL_FROM=RasComp <contas@mail.rasufrb.site>` e `RESEND_API_KEY` cadastradas no Render sem versionar segredos. O responsável relatou testes bem-sucedidos de **criação de conta** e **recuperação de senha** com o envio real de e-mail.
+
+**Estado:** integração de e-mail transacional operacional para os fluxos relatados. Não confundir recebimento de mensagem com validação completa de uso único, expiração, ativação de contas internas e proteção contra abuso: esses cenários precisam de testes específicos antes da abertura de inscrições reais. Se ainda não confirmados, testar o clique efetivo no link de confirmação e o reset de senha de ponta a ponta.
+
+**Resultado da infraestrutura Cloud V1-BETA B:** Landing e Gestão em Workers Cloudflare; API Spring Boot no Render; MySQL Aiven; storage R2; e-mail Resend. Integrações externas principais configuradas. Não declarar homologação final de inscrições públicas ou capacidade de carga: continuam necessários backup externo e restore ensaiado, testes de carga/contingência, auditoria de comprovantes privados, reconciliação de cotas e alertas de consumo; avaliar limite diário de envios no plano Resend e comportamento em picos.
+
+**Próxima prioridade funcional:** Gestor de Mídia e Galeria da Landing; depois Futebol de Robôs e manuais de ajuda, seguindo roadmap.
+
+---
+
 ## ENCERRAMENTO R2 E INÍCIO DA ÚLTIMA FASE CLOUD: E-MAIL REAL — 12/10/2026
 
 **Decisão do responsável:** encerrar implantação do R2 e iniciar a fase de e-mail transacional. Upload R2 no Render e contabilização no Aiven confirmados, além de testes locais e correção do truststore. O storage está operacional; a Gestão de Mídia/Galeria fica em trilho funcional posterior, não bloqueia a configuração do e-mail.
