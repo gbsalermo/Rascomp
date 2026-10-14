@@ -276,6 +276,8 @@ public class MediaCmsService {
         if(expectedVersion!=null && !before.equals(expectedVersion))
             throw new ResponseStatusException(HttpStatus.CONFLICT,"Outra publicação ocorreu. Atualize o rascunho");
         JsonNode editorial=parse(state("draft_editorial"),emptyObject()).deepCopy();
+        // Dados de interface e aliases internos nunca podem sair no snapshot público.
+        if(editorial.isObject())((ObjectNode)editorial).remove("_editorState");
         if(!editorial.isObject())throw bad("Rascunho inválido");
         Set<Long> approved=new HashSet<>();
         for(Long id:referencedAssets(editorial)){require("media_asset",id);approved.add(id);}
@@ -325,6 +327,10 @@ public class MediaCmsService {
         return parse(state("published_editorial"),emptyObject());
     }
     public JsonNode publishedGallery() {
-        return parse(state("published_gallery"),mapper.createObjectNode().set("photos",emptyArray()));
+        ObjectNode empty=mapper.createObjectNode();
+        empty.set("photos",emptyArray());
+        empty.set("albums",emptyArray());
+        empty.set("featuredPhotoIds",emptyArray());
+        return parse(state("published_gallery"),empty);
     }
 }
