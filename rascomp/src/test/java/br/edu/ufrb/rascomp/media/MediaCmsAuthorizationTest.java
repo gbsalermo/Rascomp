@@ -75,19 +75,19 @@ class MediaCmsAuthorizationTest {
         mvc.perform(put("/api/v1/media/draft")
                 .with(SecurityMockMvcRequestPostProcessors.user("midia").roles("MIDIA"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\\"heroes\\":[{\\"id\\":\\"future\\",\\"title\\":\\"AINDA_RASCUNHO\\"}]}"))
+                .content("{\"heroes\":[{\"id\":\"future\",\"title\":\"AINDA_RASCUNHO\"}]}"))
             .andExpect(status().isOk());
 
         // A publicação da Galeria NÃO pode divulgar alterações pendentes na Landing.
         mvc.perform(post("/api/v1/media/publish/gallery")
                 .with(SecurityMockMvcRequestPostProcessors.user("gestao").roles("GESTAO"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\\"expectedVersion\\":1}"))
+                .content("{\"expectedVersion\":1}"))
             .andExpect(status().isForbidden());
         mvc.perform(post("/api/v1/media/publish/gallery")
                 .with(SecurityMockMvcRequestPostProcessors.user("midia").roles("MIDIA"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\\"expectedVersion\\":1}"))
+                .content("{\"expectedVersion\":1}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.version").value(2));
         mvc.perform(get("/api/v1/public/media/editorial"))
