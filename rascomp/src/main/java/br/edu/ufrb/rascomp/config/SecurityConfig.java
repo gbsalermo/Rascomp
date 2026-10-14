@@ -61,6 +61,7 @@ public class SecurityConfig {
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html").permitAll()
+                .requestMatchers("/api/v1/media/**").hasAnyRole("DEV", "MIDIA")
                 .requestMatchers("/api/v1/participante/**").hasRole("PARTICIPANTE")
                 .requestMatchers("/api/v1/usuarios/**").hasRole("DEV")
                 .requestMatchers("/api/v1/**").hasAnyRole("DEV", "GESTAO")
