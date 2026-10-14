@@ -80,7 +80,7 @@ public class MediaCmsController {
         Resource file=service.content(id,publicly);
         MediaType type=MediaType.parseMediaType(service.mime(id));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-            .header(HttpHeaders.X_CONTENT_TYPE_OPTIONS,"nosniff")
+            .header("X-Content-Type-Options","nosniff")
             .contentType(type).body(file);
     }
 }
