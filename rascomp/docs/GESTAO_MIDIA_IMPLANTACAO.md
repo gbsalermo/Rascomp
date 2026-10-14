@@ -40,3 +40,14 @@
 - CI Backend Tests: test (sucesso) e portal-testdata com container MySQL (sucesso) no commit 1ce60dc9302d5db0ba504d85723a9ec0e0e0d7fa.
 
 **Ainda exigido antes da produção:** confirmar Render com `R2_ENABLED=true` e variáveis `R2_ACCOUNT_ID`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, além de MySQL persistente; executar upload/preview/publicação reais no ambiente homologado e validar consulta após recarregamento, acesso anônimo a fotos privadas, comportamento com falha R2, cache/CDN, backups e restauração, exclusão de ativos referenciados, e teste visual online. O rollback editorial versionado completo ainda não está implementado. Não executar deploy automaticamente com este checkpoint.
+
+
+## Correção do gate R2 — configuração existente reutilizada (14/10/2026)
+
+A integração de **Cloudflare R2** não está pendente de instalação: foi concluída em **12/10/2026**, conforme `rascomp/docs/CONTINUIDADE.md` e `rascomp/docs/CLOUDFLARE_R2.md`. O usuário confirmou anteriormente as variáveis no Render; a API no Render com `R2_ENABLED=true`, Flyway **V32** no Aiven, upload real em produção, leitura/exclusão e contabilização de cotas foram homologados. Incidente PKIX foi corrigido via truststore e novo upload foi confirmado.
+
+**Cotas já implementadas na V32 e em `R2QuotaService`:** competição **2.700.000.000 bytes (2,7 GB)**; Galeria/Landing **5.400.000.000 bytes (5,4 GB)**; **0,9 GB** de reserva operacional proposta, mais **1 GB** de margem em relação à referência de 10 GB. Usar o bucket privado `rascomp-storage` e prefixos `competition/`, `gallery/`, `landing/`. Não criar novo bucket, novas chaves ou outra política de cotas para o CMS.
+
+**O gate não é reconfigurar o R2.** A validação adicional necessária é específica da **nova funcionalidade CMS/V33**: deploy migrando MySQL para V33; upload real de imagem editorial com prefixo `gallery/`, persistência do rascunho, publish/undo seguro, autorização e leitura pública controlada, atualização de Landing/Galeria e verificação de retrocompatibilidade. O status das credenciais em execução pode ser confirmado durante o smoke do serviço, mas não exigir que o usuário repita a configuração nem envie valores secretos.
+
+Limites R2 dizem respeito a **armazenamento em bytes**, e não ao limite de **RAM do Render**, que pertence ao dimensionamento do serviço Java.
