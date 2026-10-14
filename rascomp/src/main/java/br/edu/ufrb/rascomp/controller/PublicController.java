@@ -46,10 +46,16 @@ public class PublicController {
     private final PublicQueryService publicQueryService;
     private final TeamLogoService teamLogoService;
     private final RegistrationLotService registrationLotService;
+    private final br.edu.ufrb.rascomp.service.CompetitionCategoryAssignmentService categoryAssignments;
 
     @GetMapping("/competicoes")
     public ResponseEntity<List<CompetitionDTO>> competicoes() {
         return ResponseEntity.ok(publicQueryService.competicoes());
+    }
+
+    @GetMapping("/competicoes/{competitionId}/categorias-habilitadas")
+    public ResponseEntity<List<Long>> categoriasHabilitadas(@PathVariable Long competitionId) {
+        return ResponseEntity.ok(categoryAssignments.list(competitionId));
     }
 
     @GetMapping("/categorias")
