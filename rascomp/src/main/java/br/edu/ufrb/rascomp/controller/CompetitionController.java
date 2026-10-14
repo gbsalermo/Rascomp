@@ -40,6 +40,7 @@ public class CompetitionController {
     private final CompetitionAdminCatalogService competitionAdminCatalogService;
     private final CompetitionRegistrationWindowService registrationWindowService;
     private final RegistrationLotService registrationLotService;
+    private final br.edu.ufrb.rascomp.service.CompetitionCategoryAssignmentService categoryAssignments;
 
     @PostMapping
     @PreAuthorize("hasRole('DEV')")
@@ -75,6 +76,18 @@ public class CompetitionController {
     @PreAuthorize("hasRole('DEV')")
     public ResponseEntity<Void> removerVigente() {
         competitionContextService.removerVigente();
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/categorias-habilitadas")
+    public ResponseEntity<List<Long>> categoriasHabilitadas(@PathVariable Long id) {
+        return ResponseEntity.ok(categoryAssignments.list(id));
+    }
+
+    @PutMapping("/{id}/categorias-habilitadas")
+    @PreAuthorize("hasRole('DEV')")
+    public ResponseEntity<Void> salvarCategorias(@PathVariable Long id,@RequestBody List<Long> categoryIds) {
+        categoryAssignments.replace(id,categoryIds);
         return ResponseEntity.noContent().build();
     }
 
