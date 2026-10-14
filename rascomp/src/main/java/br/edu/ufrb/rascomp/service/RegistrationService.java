@@ -46,6 +46,7 @@ public class RegistrationService {
     private final CompetitionContextService competitionContextService;
     private final CompetitionRepository competitionRepository;
     private final CompetitionCategoryRepository categoryRepository;
+    private final CompetitionCategoryAssignmentService categoryAssignments;
     private final TeamRepository teamRepository;
     private final RobotRepository robotRepository;
     private final RobotResponsibleRepository robotResponsibleRepository;
@@ -704,6 +705,7 @@ public class RegistrationService {
     private void validarDisponibilidade(Competition c, CompetitionCategory category, Team team, Robot robot) {
         if (!Boolean.TRUE.equals(c.getAtivo())) throw new IllegalArgumentException("Competição inativa.");
         if (!Boolean.TRUE.equals(category.getAtivo())) throw new IllegalArgumentException("Categoria inativa.");
+        categoryAssignments.requireEnabled(c.getId(),category.getId());
         if (!Boolean.TRUE.equals(team.getAtivo())) throw new IllegalArgumentException("Equipe inativa.");
         if (!Boolean.TRUE.equals(team.getInstitution().getAtivo())) throw new IllegalArgumentException("Instituição inativa.");
         if (!Boolean.TRUE.equals(robot.getAtivo())) throw new IllegalArgumentException("Robô inativo.");
