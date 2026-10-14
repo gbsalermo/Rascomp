@@ -28,6 +28,13 @@ public class CompetitionCategoryAssignmentService {
         for(Long id:selected) {
             Integer available=db.queryForObject("SELECT COUNT(*) FROM competition_categories WHERE id=? AND ativo=TRUE",Integer.class,id);
             if(available==null||available==0)throw new IllegalArgumentException("Categoria inexistente ou inativa: "+id);
+            String modality=db.queryForObject("SELECT modalidade FROM competition_categories WHERE id=?",String.class,id);
+            if("FOLLOW_LINE".equals(modality)||"SUMO".equals(modality)){
+                String table="FOLLOW_LINE".equals(modality)?"config_follow":"config_sumo";
+                Integer configured=db.queryForObject("SELECT COUNT(*) FROM "+table+" WHERE competition_category_id=?",Integer.class,id);
+                if(configured==null||configured==0)throw new IllegalArgumentException(
+                    "Categoria "+id+" ainda não possui configuração operacional de "+modality+".");
+            }
         }
         List<Long> withRegistration=db.queryForList("SELECT DISTINCT category_id FROM registrations WHERE competition_id=?",Long.class,competitionId);
         if(!selected.containsAll(withRegistration))
