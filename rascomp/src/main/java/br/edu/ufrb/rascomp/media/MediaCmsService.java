@@ -272,10 +272,18 @@ public class MediaCmsService {
     }
     @Transactional
     public long publish(Long expectedVersion) {
+        return publishInternal(expectedVersion,true);
+    }
+    /** Publica apenas fotos, álbuns e destaques, sem aprovar mudanças editoriais pendentes. */
+    @Transactional
+    public long publishGallery(Long expectedVersion) {
+        return publishInternal(expectedVersion,false);
+    }
+    private long publishInternal(Long expectedVersion,boolean includeEditorialDraft) {
         Long before=db.queryForObject("SELECT version FROM media_site_state WHERE id=1 FOR UPDATE",Long.class);
         if(expectedVersion!=null && !before.equals(expectedVersion))
             throw new ResponseStatusException(HttpStatus.CONFLICT,"Outra publicação ocorreu. Atualize o rascunho");
-        JsonNode editorial=parse(state("draft_editorial"),emptyObject()).deepCopy();
+        JsonNode editorial=parse(state(includeEditorialDraft ? "draft_editorial" : "published_editorial"),emptyObject()).deepCopy();
         // Dados de interface e aliases internos nunca podem sair no snapshot público.
         if(editorial.isObject())((ObjectNode)editorial).remove("_editorState");
         if(!editorial.isObject())throw bad("Rascunho inválido");
@@ -319,8 +327,14 @@ public class MediaCmsService {
         snapshot.set("featuredPhotoIds",featured);
         db.update("DELETE FROM media_published_asset");
         for(Long id:approved)db.update("INSERT INTO media_published_asset(asset_id) VALUES (?)",id);
-        db.update("UPDATE media_site_state SET published_editorial=?,published_gallery=?,version=version+1,published_at=CURRENT_TIMESTAMP WHERE id=1",
-            json(editorial),json(snapshot));
+        if(includeEditorialDraft){
+            db.update("UPDATE media_site_state SET published_editorial=?,published_gallery=?,version=version+1,published_at=CURRENT_TIMESTAMP WHERE id=1",
+                json(editorial),json(snapshot));
+        }else{
+            // Manter o conteúdo editorial publicado inalterado quando o usuário publica só a Galeria.
+            db.update("UPDATE media_site_state SET published_gallery=?,version=version+1,published_at=CURRENT_TIMESTAMP WHERE id=1",
+                json(snapshot));
+        }
         return before+1;
     }
     public JsonNode publishedEditorial() {
