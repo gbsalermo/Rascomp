@@ -75,6 +75,14 @@ public class MediaCmsService {
         return db.queryForObject("SELECT "+column+" FROM media_site_state WHERE id=1",String.class);
     }
     private long version(){return db.queryForObject("SELECT version FROM media_site_state WHERE id=1",Long.class);}
+    /** Versão monotônica de publicação: não muda quando um rascunho é salvo. */
+    public long publishedVersion(){return version();}
+    /** Checagem antes de responder 304: mídia retirada da publicação não pode ser reutilizada. */
+    public void requirePublished(long id){
+        require("media_asset",id);
+        Integer count=db.queryForObject("SELECT COUNT(*) FROM media_published_asset WHERE asset_id=?",Integer.class,id);
+        if(count==null || count==0)throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Mídia não publicada");
+    }
 
     public List<Map<String,Object>> assets(){
         return db.query("SELECT id,file_name,content_type,bytes_size,gallery_draft FROM media_asset ORDER BY id DESC",
