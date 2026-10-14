@@ -13,6 +13,7 @@ import br.edu.ufrb.rascomp.model.InspecaoSumo;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.repository.ConfigSumoRepository;
@@ -35,6 +36,9 @@ public class InspecaoSumoService {
     public InspecaoSumoDTO registrar(InspecaoSumoDTO dto) {
         Registration registration = buscarRegistration(dto.getRegistrationId());
         exigirContexto(registration);
+        if (registration.getCompetition().getStatus() != StatusCompetition.EM_ANDAMENTO) {
+            throw new IllegalArgumentException("Inspeções de Sumô só podem ser registradas com a competição EM_ANDAMENTO.");
+        }
         validarRegistration(registration);
 
         ConfigSumo config = buscarConfig(registration);
