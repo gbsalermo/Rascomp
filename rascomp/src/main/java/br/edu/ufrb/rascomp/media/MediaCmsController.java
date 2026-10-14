@@ -76,6 +76,10 @@ public class MediaCmsController {
     public Map<String,Long> publish(@RequestBody(required=false) PublishInput input) {
         return Map.of("version",service.publish(input==null?null:input.expectedVersion()));
     }
+    @PostMapping("/publish/gallery")
+    public Map<String,Long> publishGallery(@RequestBody(required=false) PublishInput input) {
+        return Map.of("version",service.publishGallery(input==null?null:input.expectedVersion()));
+    }
     private ResponseEntity<Resource> content(long id,boolean publicly){
         Resource file=service.content(id,publicly);
         MediaType type=MediaType.parseMediaType(service.mime(id));
