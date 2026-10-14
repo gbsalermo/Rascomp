@@ -28,3 +28,15 @@
 - Deploy e smoke público sem revelar exemplos, uploads internos ou dados de teste.
 
 **Regra:** aprovação visual e pedido de produção não autorizam publicar um CMS que descarta alterações. Não mesclar as branches ou acionar deploy até que estas condições sejam atendidas.
+
+## Checkpoint de integração — 14/10/2026
+
+**Implementado na branch `v1-pos-cloud-gestao-midia` (ainda sem merge/deploy):**
+- Flyway `V33__media_cms_draft_publication.sql` (biblioteca, álbuns N:N, destaques, versão e snapshot publicado).
+- `MediaCmsService`, `MediaCmsController`, `MediaPublicController`: endpoints para workspace, upload de imagem R2, vínculos/capas de álbuns, visibilidade de Galeria, rascunho, publicação com comparação de versão, leitura pública somente de conteúdo aprovado.
+- `SecurityConfig` restringe /api/v1/media/** a DEV/MIDIA, mantendo endpoints competitivos em seus perfis existentes.
+- `GlobalExceptionHandler` retorna HTTP 409 para colisões de publicação e preserva códigos de erro de mídia.
+- `MediaCmsAuthorizationTest`: aplica o esquema V33 ao H2 modo MySQL de teste e verifica bloqueio sem autenticação, GESTAO impedido, MIDIA autorizado, isolamento rascunho/snapshot e conflito da versão.
+- CI Backend Tests: test (sucesso) e portal-testdata com container MySQL (sucesso) no commit 1ce60dc9302d5db0ba504d85723a9ec0e0e0d7fa.
+
+**Ainda exigido antes da produção:** confirmar Render com `R2_ENABLED=true` e variáveis `R2_ACCOUNT_ID`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, além de MySQL persistente; executar upload/preview/publicação reais no ambiente homologado e validar consulta após recarregamento, acesso anônimo a fotos privadas, comportamento com falha R2, cache/CDN, backups e restauração, exclusão de ativos referenciados, e teste visual online. O rollback editorial versionado completo ainda não está implementado. Não executar deploy automaticamente com este checkpoint.
