@@ -287,7 +287,7 @@ public class MediaCmsService {
             long id=((Number)row.get("id")).longValue();
             publicIds.add(id);approved.add(id);
             ObjectNode image=mapper.createObjectNode();
-            image.put("id",id);image.put("alt","Fotografia da IEEE RAS UFRB");
+            image.put("id",id);image.put("alt","Fotografia da IEEE RAS UFRB");image.put("published",true);
             image.put("src","/api/v1/public/media/assets/"+id+"/content");
             ArrayNode linked=image.putArray("albumIds");
             for(Long albumId:db.queryForList("SELECT album_id FROM media_album_asset WHERE asset_id=?",Long.class,id))
