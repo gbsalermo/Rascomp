@@ -26,7 +26,7 @@ public class MediaPublicController {
     public ResponseEntity<Resource> file(@PathVariable long id){
         Resource file=service.content(id,true);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-            .header(HttpHeaders.X_CONTENT_TYPE_OPTIONS,"nosniff")
+            .header("X-Content-Type-Options","nosniff")
             .contentType(MediaType.parseMediaType(service.mime(id))).body(file);
     }
 }
