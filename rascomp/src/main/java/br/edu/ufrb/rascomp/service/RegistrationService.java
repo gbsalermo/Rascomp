@@ -99,6 +99,7 @@ public class RegistrationService {
                 justificativa,
                 "Informe a justificativa da entrada manual.");
 
+        validarDuplicidadeFutebol(competition, category, competitors, null);
         Registration registration = new Registration();
         preencher(registration, dto, competition, category, team, robot, competitors);
         registration.setRequestedByUser(dev);
@@ -173,6 +174,7 @@ public class RegistrationService {
             if (robot != null) validarCompetidoresResponsaveis(robot, competitors);
         }
 
+        validarDuplicidadeFutebol(competition, category, competitors, null);
         Registration registration = new Registration();
         preencher(registration, dto, competition, category, team, robot, competitors);
         registration.setRegistrationLot(registrationLotService.resolverParaNovaInscricao(competition));
@@ -351,6 +353,7 @@ public class RegistrationService {
 
         Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, false);
         if (robot != null) validarCompetidoresResponsaveis(robot, competitors);
+        validarDuplicidadeFutebol(competition, category, competitors, id);
         preencher(registration, dto, competition, category, team, robot, competitors);
 
         StatusRegistration statusAnterior = registration.getStatus();
@@ -778,24 +781,28 @@ public class RegistrationService {
     }
 
     private void validarDuplicidade(RegistrationDTO dto, Long id) {
-        if (dto.getRobotId() == null) {
-            // O banco permite vários NULL na chave UNIQUE: impor a unicidade por equipe no Futebol.
-            boolean existe = registrationRepository.findByTeamIdOrderByDataCadastroDesc(dto.getTeamId())
-                .stream().anyMatch(r -> !r.getId().equals(id) &&
-                    r.getCompetition().getId().equals(dto.getCompetitionId()) &&
-                    r.getCategory().getId().equals(dto.getCategoryId()) &&
-                    r.getRobot() == null &&
-                    r.getStatus() != StatusRegistration.CANCELADA &&
-                    r.getStatus() != StatusRegistration.REJEITADA);
-            if (existe) throw new IllegalArgumentException("A equipe já possui inscrição nesta categoria.");
-            return;
-        }
+        if (dto.getRobotId() == null) return; // Futebol: unicidade por competidor validada após composição.
         boolean existe = id == null
                 ? registrationRepository.existsByCompetitionIdAndCategoryIdAndRobotId(
                         dto.getCompetitionId(), dto.getCategoryId(), dto.getRobotId())
                 : registrationRepository.existsByCompetitionIdAndCategoryIdAndRobotIdAndIdNot(
                         dto.getCompetitionId(), dto.getCategoryId(), dto.getRobotId(), id);
         if (existe) throw new IllegalArgumentException("Já existe inscrição deste robô para esta categoria na competição.");
+    }
+
+    private void validarDuplicidadeFutebol(
+            Competition competition, CompetitionCategory category,
+            Set<Competitor> competitors, Long ignorarId) {
+        if (category.getModalidade() != Modalidade.FUTEBOL || competitors == null || competitors.isEmpty()) return;
+        Set<Long> novos = competitors.stream().map(Competitor::getId).collect(java.util.stream.Collectors.toSet());
+        boolean repetido = registrationRepository.findByCompetitionIdOrderByDataCadastroDesc(competition.getId())
+            .stream().anyMatch(existing -> !existing.getId().equals(ignorarId)
+                && existing.getCategory().getId().equals(category.getId())
+                && existing.getRobot() == null
+                && existing.getStatus() != StatusRegistration.CANCELADA
+                && existing.getStatus() != StatusRegistration.REJEITADA
+                && existing.getCompetitors().stream().anyMatch(c -> novos.contains(c.getId())));
+        if (repetido) throw new IllegalArgumentException("Um dos competidores já possui inscrição em Futebol nesta competição.");
     }
 
     private Competition buscarCompetition(Long id) {
