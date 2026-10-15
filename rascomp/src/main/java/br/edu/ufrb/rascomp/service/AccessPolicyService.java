@@ -124,7 +124,9 @@ public class AccessPolicyService {
 
         if (ehResponsavel(registration.getTeam(), usuario)
                 || (registration.getRobot() != null && registration.getRobot().getCreatedByUser() != null
-                    && registration.getRobot().getCreatedByUser().getId().equals(usuario.getId()))) {
+                    && registration.getRobot().getCreatedByUser().getId().equals(usuario.getId()))
+                || (registration.getRobot() == null && registration.getCompetitors().stream()
+                    .anyMatch(c -> c.getUserAccount() != null && c.getUserAccount().getId().equals(usuario.getId())))) {
             return registration;
         }
 
