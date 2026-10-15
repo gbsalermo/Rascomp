@@ -146,7 +146,7 @@ public class RegistrationService {
         Competition competition = buscarCompetition(dto.getCompetitionId());
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         Team team = buscarTeam(dto.getTeamId());
-        Robot robot = buscarRobot(dto.getRobotId());
+        Robot robot = buscarRobotOpcional(dto.getRobotId(), category);
 
         validarDisponibilidade(competition, category, team, robot);
         validarInscricoesAbertas(competition);
@@ -344,7 +344,7 @@ public class RegistrationService {
         Competition competition = buscarCompetition(dto.getCompetitionId());
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         Team team = buscarTeam(dto.getTeamId());
-        Robot robot = buscarRobot(dto.getRobotId());
+        Robot robot = buscarRobotOpcional(dto.getRobotId(), category);
 
         validarDisponibilidade(competition, category, team, robot);
         if (robot != null) validarRobotDaEquipe(robot, team);
