@@ -35,7 +35,9 @@ public class HelpDocumentController {
  @GetMapping
  @PreAuthorize("hasAnyRole('PARTICIPANTE','DEV')")
  public List<Map<String,Object>> published(@RequestParam(required=false) Long competitionId) {
-  return db.queryForList("SELECT "+FIELDS+" FROM help_document WHERE published=true AND (scope_competition_id IS NULL OR scope_competition_id=?) ORDER BY type,title,id",competitionId==null?-1L:competitionId);
+  return competitionId==null
+   ? db.queryForList("SELECT "+FIELDS+" FROM help_document WHERE published=true ORDER BY type,title,id")
+   : db.queryForList("SELECT "+FIELDS+" FROM help_document WHERE published=true AND (scope_competition_id IS NULL OR scope_competition_id=?) ORDER BY type,title,id",competitionId);
  }
  @GetMapping("/admin")
  @PreAuthorize("hasRole('DEV')")
