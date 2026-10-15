@@ -21,6 +21,7 @@ import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.ParticipantCompetitionRegistrationStatus;
 import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
@@ -704,8 +705,16 @@ public class RegistrationService {
         }
 
         if (registration.getCompetitors() == null || registration.getCompetitors().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "A inscrição do robô precisa possuir ao menos um responsável elegível e aprovado.");
+            throw new IllegalArgumentException("A inscrição precisa possuir ao menos um participante.");
+        }
+        if (registration.getRobot() == null) {
+            for (Competitor competitor : registration.getCompetitors()) {
+                ParticipantCompetitionRegistration personal =
+                    participantCompetitionRegistrationService.findByCompetitionAndCompetitor(
+                        registration.getCompetition().getId(), competitor.getId());
+                if (personal == null || personal.getStatus() != ParticipantCompetitionRegistrationStatus.APROVADA)
+                    throw new IllegalArgumentException("A inscrição de Futebol só pode ser aprovada após aprovação individual dos participantes.");
+            }
         }
     }
 
