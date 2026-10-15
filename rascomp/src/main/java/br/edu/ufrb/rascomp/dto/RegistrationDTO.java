@@ -75,8 +75,8 @@ public class RegistrationDTO {
         this.categoryNome = entity.getCategory().getNome();
         this.teamId = entity.getTeam().getId();
         this.teamNome = entity.getTeam().getNome();
-        this.robotId = entity.getRobot().getId();
-        this.robotNome = entity.getRobot().getNome();
+        this.robotId = entity.getRobot() == null ? null : entity.getRobot().getId();
+        this.robotNome = entity.getRobot() == null ? null : entity.getRobot().getNome();
         this.robotDescricao = entity.getRobotDescription();
 
         this.competitorIds = entity.getCompetitors().stream()
