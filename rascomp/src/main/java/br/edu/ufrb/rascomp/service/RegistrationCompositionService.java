@@ -134,8 +134,11 @@ public class RegistrationCompositionService {
                         || registration.getStatus() == StatusRegistration.APROVADA)
                 .forEach(registration -> registrations.put(registration.getId(), registration));
 
-        registrations.values().forEach(registration ->
-                sincronizarInterno(registration, actor, true));
+        // Futebol não exige robô: seus participantes são definidos na inscrição,
+        // e não pela lista de responsáveis de um robô.
+        registrations.values().stream()
+                .filter(registration -> registration.getRobot() != null)
+                .forEach(registration -> sincronizarInterno(registration, actor, true));
     }
 
     @Transactional
