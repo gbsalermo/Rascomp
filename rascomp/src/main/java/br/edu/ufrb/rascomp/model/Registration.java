@@ -63,7 +63,7 @@ public class Registration implements Serializable {
     private Team team;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "robot_id", nullable = false)
+    @JoinColumn(name = "robot_id", nullable = true)
     private Robot robot;
 
     @ManyToMany(fetch = FetchType.LAZY)
