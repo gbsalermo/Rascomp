@@ -61,6 +61,7 @@ public class SecurityConfig {
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html").permitAll()
+                .requestMatchers("/api/v1/ajuda/**").hasAnyRole("DEV", "PARTICIPANTE")
                 .requestMatchers("/api/v1/media/**").hasAnyRole("DEV", "MIDIA")
                 // O participante precisa consultar as categorias habilitadas para inscrever seu robô.
                 .requestMatchers(HttpMethod.GET, "/api/v1/competicoes/*/categorias-habilitadas").hasAnyRole("DEV", "GESTAO", "PARTICIPANTE")
