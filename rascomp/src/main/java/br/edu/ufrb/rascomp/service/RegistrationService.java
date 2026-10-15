@@ -535,7 +535,8 @@ public class RegistrationService {
 
         validarCompatibilidadeFisicaSumo(
                 registration.getCompetition(), registration.getCategory(), registration.getRobot(), registration.getId());
-        validarCompetidoresResponsaveis(registration.getRobot(), registration.getCompetitors());
+        if (registration.getRobot() != null) validarCompetidoresResponsaveis(registration.getRobot(), registration.getCompetitors());
+        validarDuplicidadeFutebol(registration.getCompetition(), registration.getCategory(), registration.getCompetitors(), registration.getId());
 
         registration.setAtivo(true);
         registration.setStatus(StatusRegistration.PENDENTE);
