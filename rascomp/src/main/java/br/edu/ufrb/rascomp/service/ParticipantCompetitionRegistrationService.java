@@ -156,7 +156,7 @@ public class ParticipantCompetitionRegistrationService {
         return toDto(salva);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ParticipantCompetitionRegistrationDTO> minhas() {
         UserAccount usuario = userAccountService.buscarAtual();
         Competitor competitor = competitorRepository.findByUserAccountId(usuario.getId())
@@ -169,7 +169,7 @@ public class ParticipantCompetitionRegistrationService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ParticipantCompetitionRegistrationDTO> listarPorCompeticao(Long competitionId) {
         competitionContextService.exigirOperavel(competitionId);
         buscarCompetition(competitionId);
