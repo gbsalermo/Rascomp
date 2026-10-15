@@ -36,6 +36,9 @@ public class ParticipantCompetitionRegistrationDTO {
     private LocalDateTime reviewedAt;
     private String reviewReason;
     private Boolean ativo;
+    private Boolean competitiveLinkSuspended;
+    private LocalDateTime competitiveLinkDeadline;
+    private Boolean competitiveLinkSatisfied;
     private LocalDateTime dataCadastro;
     private List<ParticipantRobotLinkDTO> robots = new ArrayList<>();
 
@@ -68,6 +71,8 @@ public class ParticipantCompetitionRegistrationDTO {
         reviewedAt = entity.getReviewedAt();
         reviewReason = entity.getReviewReason();
         ativo = entity.getAtivo();
+        competitiveLinkSuspended = Boolean.TRUE.equals(entity.getCompetitiveLinkSuspended());
+        competitiveLinkDeadline = entity.getReviewedAt() == null ? null : entity.getReviewedAt().plusHours(24);
         dataCadastro = entity.getDataCadastro();
     }
 }
