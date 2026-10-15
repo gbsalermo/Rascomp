@@ -28,8 +28,8 @@ public class PublicRegistrationDTO {
         this.categoryNome = entity.getCategory().getNome();
         this.teamId = entity.getTeam().getId();
         this.teamNome = entity.getTeam().getNome();
-        this.robotId = entity.getRobot().getId();
-        this.robotNome = entity.getRobot().getNome();
+        this.robotId = entity.getRobot() == null ? null : entity.getRobot().getId();
+        this.robotNome = entity.getRobot() == null ? null : entity.getRobot().getNome();
         this.competidores = entity.getCompetitors().stream().map(c -> c.getNome()).toList();
         this.status = entity.getStatus();
     }
