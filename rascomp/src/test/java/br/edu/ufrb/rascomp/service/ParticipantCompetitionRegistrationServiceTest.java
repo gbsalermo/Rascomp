@@ -179,6 +179,65 @@ class ParticipantCompetitionRegistrationServiceTest {
         verify(compositionService).sincronizarPorInscricaoPessoal(entity, gestao);
     }
 
+    @Test
+    void prazoDeRegularizacaoBloqueiaSuspensaoAntesDe24Horas() {
+        Contexto c = contexto();
+        ParticipantCompetitionRegistration personal = inscricao(c);
+        personal.setStatus(ParticipantCompetitionRegistrationStatus.APROVADA);
+        personal.setReviewedAt(java.time.LocalDateTime.now().minusHours(3));
+        when(repository.findById(50L)).thenReturn(Optional.of(personal));
+        when(userAccountService.buscarAtual()).thenReturn(gestao());
+        when(registrationRepository.findByCompetitionIdAndCompetitorIdOrderByDataCadastroDesc(1L, 5L))
+                .thenReturn(List.of());
+
+        assertThrows(IllegalArgumentException.class, () -> service.suspenderSemVinculo(50L));
+    }
+
+    @Test
+    void gestaoSuspendeParticipacaoSemVinculoDepoisDoPrazo() {
+        Contexto c = contexto();
+        ParticipantCompetitionRegistration personal = inscricao(c);
+        personal.setStatus(ParticipantCompetitionRegistrationStatus.APROVADA);
+        personal.setReviewedAt(java.time.LocalDateTime.now().minusHours(25));
+        when(repository.findById(50L)).thenReturn(Optional.of(personal));
+        when(userAccountService.buscarAtual()).thenReturn(gestao());
+        when(registrationRepository.findByCompetitionIdAndCompetitorIdOrderByDataCadastroDesc(1L, 5L))
+                .thenReturn(List.of());
+        when(repository.save(personal)).thenReturn(personal);
+        when(robotResponsibleRepository.findByCompetitorIdAndAtivoTrueOrderByRobotNomeAsc(5L))
+                .thenReturn(List.of());
+
+        var result = service.suspenderSemVinculo(50L);
+        assertEquals(true, result.getCompetitiveLinkSuspended());
+        assertEquals(false, result.getCompetitiveLinkSatisfied());
+        assertEquals(UserRole.PARTICIPANTE, c.user().getRole());
+    }
+
+    @Test
+    void associacaoPendenteRegularizaParticipacaoSuspensaAutomaticamente() {
+        Contexto c = contexto();
+        ParticipantCompetitionRegistration personal = inscricao(c);
+        personal.setStatus(ParticipantCompetitionRegistrationStatus.APROVADA);
+        personal.setCompetitiveLinkSuspended(true);
+        personal.setReviewedAt(java.time.LocalDateTime.now().minusDays(2));
+        br.edu.ufrb.rascomp.model.Registration futebol = new br.edu.ufrb.rascomp.model.Registration();
+        futebol.setId(60L);
+        futebol.setStatus(br.edu.ufrb.rascomp.model.Enum.StatusRegistration.PENDENTE);
+        when(repository.findByCompetitorIdOrderByDataCadastroDesc(5L)).thenReturn(List.of(personal));
+        when(userAccountService.buscarAtual()).thenReturn(c.user());
+        when(competitorRepository.findByUserAccountId(7L)).thenReturn(Optional.of(c.competitor()));
+        when(registrationRepository.findByCompetitionIdAndCompetitorIdOrderByDataCadastroDesc(1L, 5L))
+                .thenReturn(List.of(futebol));
+        when(robotResponsibleRepository.findByCompetitorIdAndAtivoTrueOrderByRobotNomeAsc(5L))
+                .thenReturn(List.of());
+        when(repository.save(personal)).thenReturn(personal);
+
+        var result = service.minhas().get(0);
+        assertEquals(true, result.getCompetitiveLinkSatisfied());
+        assertEquals(false, result.getCompetitiveLinkSuspended());
+        verify(repository).save(personal);
+    }
+
     private ParticipantCompetitionRegistration inscricao(Contexto c) {
         ParticipantCompetitionRegistration entity = new ParticipantCompetitionRegistration();
         entity.setId(50L);
