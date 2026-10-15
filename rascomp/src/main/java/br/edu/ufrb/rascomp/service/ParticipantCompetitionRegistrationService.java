@@ -355,6 +355,32 @@ public class ParticipantCompetitionRegistrationService {
                 .orElse(null);
     }
 
+    private boolean possuiVinculoCompetitivo(ParticipantCompetitionRegistration personal) {
+        // Robô apenas cadastrado não constitui participação na competição.
+        return registrationRepository.findByCompetitionIdAndCompetitorIdOrderByDataCadastroDesc(
+                    personal.getCompetition().getId(), personal.getCompetitor().getId())
+                .stream()
+                .anyMatch(reg -> reg.getStatus() == br.edu.ufrb.rascomp.model.Enum.StatusRegistration.PENDENTE
+                        || reg.getStatus() == br.edu.ufrb.rascomp.model.Enum.StatusRegistration.APROVADA);
+    }
+
+    @Transactional
+    public ParticipantCompetitionRegistrationDTO suspenderSemVinculo(Long id) {
+        ParticipantCompetitionRegistration personal = buscar(id);
+        UserAccount reviewer = userAccountService.buscarAtual();
+        if (!reviewer.getRole().podeOperarCompeticao())
+            throw new AccessDeniedException("Somente Gestão ou DEV podem confirmar a suspensão.");
+        if (personal.getStatus() != ParticipantCompetitionRegistrationStatus.APROVADA)
+            throw new IllegalArgumentException("Somente inscrições individuais aprovadas podem ser suspensas.");
+        if (possuiVinculoCompetitivo(personal))
+            throw new IllegalArgumentException("O participante já está vinculado a uma inscrição competitiva.");
+        if (personal.getReviewedAt() == null || LocalDateTime.now().isBefore(personal.getReviewedAt().plusHours(24)))
+            throw new IllegalArgumentException("O prazo de regularização de 24 horas ainda não terminou.");
+        personal.setCompetitiveLinkSuspended(true);
+        personal.setCompetitiveLinkSuspendedAt(LocalDateTime.now());
+        return toDto(repository.save(personal));
+    }
+
     private ParticipantCompetitionRegistrationDTO toDto(ParticipantCompetitionRegistration entity) {
         ParticipantCompetitionRegistrationDTO dto = new ParticipantCompetitionRegistrationDTO(entity);
         List<ParticipantRobotLinkDTO> links = new ArrayList<>();
@@ -387,6 +413,14 @@ public class ParticipantCompetitionRegistrationService {
                 });
 
         dto.setRobots(links);
+        boolean associated = possuiVinculoCompetitivo(entity);
+        if (associated && Boolean.TRUE.equals(entity.getCompetitiveLinkSuspended())) {
+            entity.setCompetitiveLinkSuspended(false);
+            entity.setCompetitiveLinkSuspendedAt(null);
+            repository.save(entity);
+        }
+        dto.setCompetitiveLinkSatisfied(associated);
+        dto.setCompetitiveLinkSuspended(Boolean.TRUE.equals(entity.getCompetitiveLinkSuspended()));
         return dto;
     }
 
