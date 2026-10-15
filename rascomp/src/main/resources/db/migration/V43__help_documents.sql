@@ -12,6 +12,6 @@ CREATE TABLE help_document (
  created_by VARCHAR(255) NOT NULL,
  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- CONSTRAINT fk_help_document_competition FOREIGN KEY (scope_competition_id) REFERENCES competition(id)
+ CONSTRAINT fk_help_document_competition FOREIGN KEY (scope_competition_id) REFERENCES competitions(id)
 );
 CREATE INDEX idx_help_document_public ON help_document(published,type,scope_competition_id);
