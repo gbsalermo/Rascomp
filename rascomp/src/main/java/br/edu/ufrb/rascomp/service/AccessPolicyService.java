@@ -100,7 +100,7 @@ public class AccessPolicyService {
         UserAccount usuario = usuarioAtual();
 
         if (ehResponsavel(registration.getTeam(), usuario)
-                || usuarioEhResponsavelPeloRobo(registration.getRobot().getId(), usuario.getId())) {
+                || (registration.getRobot() != null && usuarioEhResponsavelPeloRobo(registration.getRobot().getId(), usuario.getId()))) {
             return registration;
         }
 
@@ -123,7 +123,7 @@ public class AccessPolicyService {
         UserAccount usuario = usuarioAtual();
 
         if (ehResponsavel(registration.getTeam(), usuario)
-                || (registration.getRobot().getCreatedByUser() != null
+                || (registration.getRobot() != null && registration.getRobot().getCreatedByUser() != null
                     && registration.getRobot().getCreatedByUser().getId().equals(usuario.getId()))) {
             return registration;
         }
