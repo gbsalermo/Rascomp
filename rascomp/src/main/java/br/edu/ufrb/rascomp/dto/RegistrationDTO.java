@@ -33,7 +33,7 @@ public class RegistrationDTO {
     private Long teamId;
     private String teamNome;
 
-    @NotNull
+    // Exigido pela validação de serviço apenas para SUMO/FOLLOW_LINE.
     private Long robotId;
     private String robotNome;
 
