@@ -37,6 +37,10 @@ public class BracketProgressionService {
 
         validarVencedorDaPartida(match, winner);
 
+        if ("DOUBLE_ELIMINATION".equals(match.getBracket().getBracketFormat())) {
+            avancarDuplaEliminacao(match, winner);
+            return;
+        }
         alimentarTerceiroLugarSeSemifinal(match, winner);
 
         Match proximaPartida = buscarProximaPartida(match);
@@ -55,6 +59,45 @@ public class BracketProgressionService {
 
         atualizarStatus(proximaPartida);
         matchRepository.save(proximaPartida);
+    }
+
+    private void avancarDuplaEliminacao(Match match, Registration winner) {
+        Registration loser = oponente(match, winner);
+        if (loser == null && match.getStatus() != StatusMatch.BYE) {
+            throw new IllegalArgumentException("A partida precisa de dois participantes para registrar uma derrota.");
+        }
+        if (match.getWinnerNextMatch() != null) {
+            enviarParaSlot(match.getWinnerNextMatch(), match.getWinnerNextSlot(), winner);
+        }
+        if (loser != null && match.getLoserNextMatch() != null) {
+            enviarParaSlot(match.getLoserNextMatch(), match.getLoserNextSlot(), loser);
+        }
+        if ("GRAND_FINAL".equals(match.getBracketSection()) && loser != null) {
+            // A final só termina sem reset quando o representante invicto vence.
+            if (match.getRegistrationA().getId().equals(winner.getId())) {
+                finalizarDuplaEliminacao(match.getBracket());
+            } else if (match.getWinnerNextMatch() != null) {
+                enviarParaSlot(match.getWinnerNextMatch(), "A", winner);
+                enviarParaSlot(match.getWinnerNextMatch(), "B", loser);
+            }
+        } else if ("GRAND_FINAL_RESET".equals(match.getBracketSection())) {
+            finalizarDuplaEliminacao(match.getBracket());
+        }
+    }
+
+    private void enviarParaSlot(Match target, String slot, Registration registration) {
+        validarProximaPartidaEditavel(target);
+        if ("A".equals(slot)) preencherSlotA(target, registration);
+        else if ("B".equals(slot)) preencherSlotB(target, registration);
+        else throw new IllegalArgumentException("Destino de partida sem slot configurado.");
+        atualizarStatus(target);
+        matchRepository.save(target);
+    }
+
+    private void finalizarDuplaEliminacao(Bracket bracket) {
+        Bracket atual = buscarBracket(bracket.getId());
+        atual.setStatus(StatusBracket.FINALIZADO);
+        bracketRepository.save(atual);
     }
 
     @Transactional
