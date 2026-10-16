@@ -39,6 +39,7 @@ public class BracketProgressionService {
 
         if ("DOUBLE_ELIMINATION".equals(match.getBracket().getBracketFormat())) {
             avancarDuplaEliminacao(match, winner);
+            resolverAvancosAutomaticos(match.getBracket().getId());
             return;
         }
         alimentarTerceiroLugarSeSemifinal(match, winner);
@@ -106,6 +107,70 @@ public class BracketProgressionService {
         Bracket atual = buscarBracket(bracket.getId());
         atual.setStatus(StatusBracket.FINALIZADO);
         bracketRepository.save(atual);
+    }
+
+    /**
+     * Só resolve um BYE quando TODAS as duas origens da partida estão decididas.
+     * Isso impede eliminar cedo um perdedor que ainda chegará da Winners.
+     * Partidas com zero participantes são caminhos vazios, nunca vitórias ou derrotas.
+     */
+    @Transactional
+    public void resolverAvancosAutomaticos(Long bracketId) {
+        List<Match> all = matchRepository.findByBracketIdOrderByRodadaAscOrdemAsc(bracketId);
+        boolean changed;
+        int guard = 0;
+        do {
+            changed = false;
+            for (Match target : all) {
+                if ("GRAND_FINAL_RESET".equals(target.getBracketSection())
+                        || target.getStatus() != StatusMatch.AGUARDANDO_PARTICIPANTES) continue;
+
+                boolean hasA = false, hasB = false, readyA = false, readyB = false;
+                for (Match source : all) {
+                    if (sameTarget(source.getWinnerNextMatch(), target)) {
+                        if ("A".equals(source.getWinnerNextSlot())) {
+                            hasA = true;
+                            readyA = source.getStatus() == StatusMatch.FINALIZADA;
+                        } else if ("B".equals(source.getWinnerNextSlot())) {
+                            hasB = true;
+                            readyB = source.getStatus() == StatusMatch.FINALIZADA;
+                        }
+                    }
+                    if (sameTarget(source.getLoserNextMatch(), target)) {
+                        if ("A".equals(source.getLoserNextSlot())) {
+                            hasA = true;
+                            readyA = source.getStatus() == StatusMatch.FINALIZADA;
+                        } else if ("B".equals(source.getLoserNextSlot())) {
+                            hasB = true;
+                            readyB = source.getStatus() == StatusMatch.FINALIZADA;
+                        }
+                    }
+                }
+                if (!hasA || !hasB || !readyA || !readyB) continue;
+
+                Registration a = target.getRegistrationA(), b = target.getRegistrationB();
+                if (a != null && b != null) {
+                    target.setStatus(StatusMatch.AGENDADA);
+                } else {
+                    target.setStatus(StatusMatch.FINALIZADA);
+                    matchRepository.save(target);
+                    if (a != null || b != null) {
+                        avancarDuplaEliminacao(target, a != null ? a : b);
+                    }
+                    // Empty paths carry no winner and automatically unblock
+                    // the next round through this fixed-point traversal.
+                }
+                matchRepository.save(target);
+                changed = true;
+            }
+            if (++guard > all.size() + 1) {
+                throw new IllegalStateException("Progressão automática não convergiu.");
+            }
+        } while (changed);
+    }
+
+    private boolean sameTarget(Match candidate, Match target) {
+        return candidate != null && candidate.getId().equals(target.getId());
     }
 
     @Transactional
