@@ -56,6 +56,9 @@ public class Bracket implements Serializable {
     @Column(nullable = false)
     private Boolean atual = true;
 
+    @Column(name = "bracket_format", nullable = false, length = 32)
+    private String bracketFormat = "SINGLE_ELIMINATION";
+
     @Column(name = "generation_reason", length = 500)
     private String generationReason;
 
