@@ -1,3 +1,15 @@
+## ESTADO OFICIAL — RASCOMP MVP V1 EM OPERAÇÃO (OUTUBRO/2026)
+
+**O responsável confirmou que o RasComp V1 já está no ar e sendo usado para a competição.** A versão V1 está com seu escopo funcional fechado: Landing institucional, autenticação e recuperação de acesso, gestão de competições, participantes/equipes/robôs, inscrição individual e competitiva (inclusive Futebol sem cadastro prévio de robô), comprovantes e revisão administrativa, Regras e Ajuda, operação existente de Sumô e Follow Line. A operação de partidas de Futebol não foi declarada concluída.
+
+**Estado da Galeria:** prévia institucional mantida na Landing; links para Galeria completa e entradas de Biblioteca/Álbuns da Gestão ocultados/suspensos; Gestão de seções da Landing e uploads institucionais continuam suportados. **Galeria independente de fotos e vídeos planejada para V2.0 após a competição**, em feature própria, sem remoção antecipada do acervo existente.
+
+**Próximo ciclo (manutenção da V1):** monitorar inscrições e operação, corrigir bugs, implementar configuração local para backup consistente do MySQL/Aiven e dos arquivos R2, armazenar cópias criptografadas e ensaiar restauração isolada. Manter contingência e possibilidade de execução local sem duas bases concorrentes de escrita. Não confundir operação real com backups/restore/carga já validados; verificações que não foram executadas permanecem pendentes.
+
+**Prevalência:** este checkpoint reflete o estado atual e substitui descrições históricas abaixo que ainda dizem «Beta aguardando inscrições», «Galeria no fechamento do MVP» ou «Futebol/Manuais ainda não implementados». Manter as seções antigas como histórico técnico, não como status vigente.
+
+---
+
 # RasComp — Roadmap Pós-Projeto — Ponteiro do Backend
 
 Última sincronização: **03/10/2026**
