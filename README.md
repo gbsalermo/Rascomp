@@ -12,7 +12,7 @@
   ![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
   ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white)
   ![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?logo=mysql&logoColor=white)
-  ![Status](https://img.shields.io/badge/Status-Beta%20online-5D2281)
+  ![Status](https://img.shields.io/badge/Status-MVP%20V1%20em%20opera%C3%A7%C3%A3o-17804A)
 </div>
 
 ---
@@ -74,9 +74,11 @@ A organização registra e acompanha provas pela Gestão; participantes interage
 
 ## Estágio atual
 
-**Beta disponível online.** A experiência pública e o sistema autenticado estão publicados, com infraestrutura remota e fluxos de autenticação implementados. A abertura de inscrições reais e a operação oficial dependem da conclusão das validações operacionais.
+**MVP V1 em operação (outubro de 2026).** O RasComp entrou em uso para a primeira competição, com inscrição de participantes e equipes, cadastros de robôs, comprovantes e análise da Gestão. A V1 inclui **inscrição de Futebol de Robôs sem exigir robô próprio**, com fluxo distinto do Sumô e Follow Line, e biblioteca de documentos **Regras e Ajuda**. A operação completa das partidas de Futebol permanece como evolução futura.
 
-A **Gestão de Mídia** e a operação completa da modalidade **Futebol de Robôs** estão em desenvolvimento planejado; não são apresentadas como recursos concluídos.
+A Galeria completa e sua administração estão temporariamente suspensas, mantendo-se a prévia institucional na Landing e a edição de imagens de suas seções. A nova Galeria de fotos/vídeos fica para a **V2.0, depois da competição**.
+
+As próximas prioridades são estabilidade operacional, resolução de bugs, configuração de backup local e recuperação verificável. O sistema estar em produção não significa que carga, restauração ou contingência tenham sido integralmente homologadas.
 
 ## Tecnologias principais
 
