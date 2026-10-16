@@ -46,3 +46,28 @@ Em 15/10/2026 o Render registrou repetidos encerramentos por falta de memória (
 
 ## Limites desta entrega
 Somente documento de planejamento na branch de futebol. **Nenhuma modificação de código, credencial, infraestrutura, produção ou merge.** Necessário validar o desenho exato da CDN privada/pública antes de executar.
+
+## Revisão de arquitetura e sequência para fechamento do MVP — 15/10/2026
+
+**Decisão:** a Galeria passa a ser uma aplicação exclusivamente de fotografias e vídeos, Vue 3 + Vite em Cloudflare Pages, proposta `galeria.rasufrb.site`. Preservar estilo visual da Galeria atual. O botão da Landing redireciona para esse domínio. Visitantes não precisam de login; administração usa autenticação do RasComp/Render com autorização específica para gestão de mídia, sem conceder poderes de upload a participantes comuns.
+
+**Separação de infraestrutura:** Cloudflare Pages serve a interface; armazenamento/distribuição de mídia pelo R2/CDN, sem encaminhar bytes pelo Render. Avaliar Worker + D1 para metadados, álbuns, destaques e autorização de transferência, integrando autenticação sem expor segredos JWT; validar acesso com backend ou chaves de verificação apropriadas. Manter apenas imagens de seções institucionais/Hero na Gestão de Mídia do RasComp; seus arquivos também devem sair do proxy Render, conforme plano original. Comprovantes permanecem privados e separados.
+
+### Ordem de entrega e gates
+0. **Antes de publicar novas funcionalidades na competição ativa:** executar backup mínimo consistente (MySQL/Aiven + objetos R2 relevantes, com confirmação de integridade), registrar SHAs e rollback. Esta salvaguarda não substitui o backup integral e restauração isolada exigidos antes da migração de mídia.
+1. **Estabilização/controle de risco:** suspender temporariamente **edição/novos uploads da Galeria no CMS do RasComp**, por configuração/flag reversível e comunicação aos operadores; **não** retirar visualização pública, apagar acervo, bloquear editor de Heroes/Sobre/Eventos ou quebrar publicação das seções. Avaliar operação de upload de imagens institucionais com limite e segurança; nenhuma ação disruptiva em competição.
+2. **Entrega funcional da branch:** concluir e validar inscrição de Futebol sem robô, fluxos de aprovação, regras de suspensão/associação e área Regras e Ajuda (documentos: regras de competição, conduta e manual; upload/gestão apenas DEV). Garantir testes de segurança, fluxos de participante, regressão Sumô/Follow e builds. **Não fazer merge/deploy antes de validação**.
+3. **Deploy conjunto e monitorado da etapa funcional:** após backup e testes, janela apropriada e autorização; acompanhar memória do Render, erros e integridade de inscrições/competição. Manter rollback sem perder dados novos.
+4. **Pré-migração da Galeria:** executar backup completo com teste de restauração em ambiente isolado (etapa zero detalhada abaixo), inventariar álbuns, capas, fotos, vídeos e referências. Validar estratégia de corte sincronizado e dados gerados durante competição.
+5. **Nova Galeria:** implantar aplicação separada, armazenamento e operações próprias, upload direto seguro por URL temporária, miniaturas/derivados, suporte controlado a vídeo (limites, formatos, custos; eventual streaming dedicado), metadados/álbuns/destaques, links e autenticação administrativa. Transferir e validar acervo e referências sem perda.
+6. **Corte gradual:** apontar botão Galeria para novo domínio após smoke e aceite; manter rota antiga com redirecionamento e rollback temporário; retirar gestão legada somente quando comprovada migração e sem perda de acesso.
+7. **Fechamento MVP:** verificar estabilidade da competição e Galeria independentemente, métricas de memória, segurança/autorização, custo, documentação e roteiro operacional.
+
+**Não é agendamento automático nem execução antecipada:** esta é a sequência registrada para a próxima sessão de trabalho. A suspensão administrativa e o novo domínio ainda não estão implantados.
+
+### Critérios adicionais
+- Operador consegue ajustar imagens das **seções** sem usar a administração da Galeria; nenhum dado do CMS desaparece.
+- Galeria acessível sem sessão RasComp; somente papel autorizado administra fotos/vídeos; upload não atravessa Render.
+- Falha da Galeria não derruba API de competição; publicação não expõe rascunhos, documentos ou comprovantes.
+- Backups anteriores aos deploys funcionais e anteriores à migração, com restauração verificável e rollback que preserve escritas novas.
+
