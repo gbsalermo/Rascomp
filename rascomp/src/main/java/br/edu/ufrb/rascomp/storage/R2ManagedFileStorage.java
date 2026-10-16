@@ -2,11 +2,10 @@ package br.edu.ufrb.rascomp.storage;
 
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
-import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
@@ -54,9 +53,10 @@ public class R2ManagedFileStorage {
 
     public Resource read(String key) {
         try {
-            ResponseBytes<?> bytes = client.getObjectAsBytes(
-                    GetObjectRequest.builder().bucket(bucket).key(key).build());
-            return new ByteArrayResource(bytes.asByteArray());
+            // Spring ResourceHttpMessageConverter envia InputStreamResource em fluxo.
+            // Evita carregar o objeto inteiro na heap de uma instância pequena.
+            return new InputStreamResource(client.getObject(
+                    GetObjectRequest.builder().bucket(bucket).key(key).build()));
         } catch (NoSuchKeyException ex) {
             throw new IllegalStateException("Arquivo não encontrado no R2.", ex);
         }
