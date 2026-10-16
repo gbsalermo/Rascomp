@@ -124,3 +124,12 @@ Requisito operacional imediato para discussão da B:
 - manter modo local e contingência por servidor local + Cloudflare Tunnel como opções oficiais.
 
 **Não iniciar a implementação da V1-BETA B antes dessa decisão de arquitetura/identidade.**
+
+
+## DECISÃO DE ESCOPO — MVP V1 ENCERRADO / GALERIA V2.0 (15/10/2026)
+
+**Decisão atual, prevalece sobre cronogramas anteriores:** o MVP V1 do RasComp fica limitado à operação da competição, inscrições (incluindo Futebol), gestão, regras/manuais do participante e Landing institucional. A **Galeria independente de fotografias e vídeos deixa de ser requisito do MVP V1**. A implementação da nova Galeria, extração do acervo e mudança para `galeria.rasufrb.site` serão tratadas **depois da competição**, em uma **feature/branch própria de V2.0**, com planejamento, testes, backup e migração sem perda de acervo.
+
+**Até a V2.0:** manter a **prévia institucional da Galeria na Landing**, sem link no cabeçalho e sem acesso à Galeria completa; manter ocultas as entradas Biblioteca/Álbuns da Gestão. Preservar o editor das seções (Heroes, Sobre, Eventos etc.) e os arquivos operacionais de robôs, comprovantes e logos. Não apagar dados, objetos R2 nem tabelas legadas da Galeria. Contenção de memória já aplicada permanece, e a estabilidade do Render/inscrições continua prioridade operacional da V1.
+
+**V2.0 planejada, não iniciada:** frontend Vue/Vite em Cloudflare Pages, R2/CDN para fotos/vídeos, autenticação administrativa reaproveitada do RasComp, metadados/álbuns em camada própria conforme validação de arquitetura. Nenhum deploy, agendamento automático ou migração de acervo decorre desta decisão documental.
