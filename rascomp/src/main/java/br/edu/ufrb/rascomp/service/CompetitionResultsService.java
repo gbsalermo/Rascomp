@@ -184,6 +184,10 @@ public class CompetitionResultsService {
         List<Match> matches =
                 matchRepository.findByBracketIdOrderByRodadaAscOrdemAsc(bracket.getId());
 
+        if ("DOUBLE_ELIMINATION".equals(bracket.getBracketFormat())) {
+            return consolidarPodioDuplo(dto, matches);
+        }
+
         Match finalMatch = matches.stream()
                 .filter(item -> item.getTipoPartida() != TipoPartidaSumo.TERCEIRO_LUGAR)
                 .max(Comparator.comparing(Match::getRodada)
@@ -230,6 +234,79 @@ public class CompetitionResultsService {
             dto.setThirdRegistrationId(thirdResult.getWinner().getId());
             dto.setThirdRobotNome(thirdResult.getWinner().getRobot().getNome());
             dto.setThirdTeamNome(thirdResult.getWinner().getTeam().getNome());
+        }
+
+        dto.setStatus("CONCLUIDO");
+        return dto;
+    }
+
+    /**
+     * A Final da Winners NÃO define campeão. Reset torna-se obrigatório
+     * quando a inscrição oriunda da Losers vence a primeira Final Geral.
+     */
+    private CompetitionCategoryResultDTO consolidarPodioDuplo(
+            CompetitionCategoryResultDTO dto, List<Match> matches) {
+
+        Match grand = matches.stream()
+                .filter(m -> "GRAND_FINAL".equals(m.getBracketSection()))
+                .findFirst().orElse(null);
+        Match reset = matches.stream()
+                .filter(m -> "GRAND_FINAL_RESET".equals(m.getBracketSection()))
+                .findFirst().orElse(null);
+        if (grand == null) return dto;
+
+        MatchResult grandResult = matchResultRepository.findByMatchId(grand.getId()).orElse(null);
+        if (grandResult == null || grandResult.getWinner() == null) return dto;
+
+        boolean needsReset = grand.getRegistrationA() == null
+                || !grand.getRegistrationA().getId().equals(grandResult.getWinner().getId());
+
+        Match deciding = grand;
+        MatchResult decidingResult = grandResult;
+        if (needsReset) {
+            if (reset == null) return dto;
+            MatchResult resetResult = matchResultRepository.findByMatchId(reset.getId()).orElse(null);
+            if (resetResult == null || resetResult.getWinner() == null) {
+                dto.setStatus("PARCIAL");
+                return dto;
+            }
+            deciding = reset;
+            decidingResult = resetResult;
+        }
+
+        Registration champion = decidingResult.getWinner();
+        Registration vice = deciding.getRegistrationA() != null
+                && deciding.getRegistrationA().getId().equals(champion.getId())
+                ? deciding.getRegistrationB() : deciding.getRegistrationA();
+        if (vice == null) return dto;
+
+        dto.setWinnerRegistrationId(champion.getId());
+        dto.setWinnerRobotNome(champion.getRobot().getNome());
+        dto.setWinnerTeamNome(champion.getTeam().getNome());
+        dto.setSecondRegistrationId(vice.getId());
+        dto.setSecondRobotNome(vice.getRobot().getNome());
+        dto.setSecondTeamNome(vice.getTeam().getNome());
+        dto.setPontosA(decidingResult.getPontosA());
+        dto.setPontosB(decidingResult.getPontosB());
+        dto.setFinalMatchId(deciding.getId());
+
+        Match lastLosers = matches.stream()
+                .filter(m -> "LOSERS".equals(m.getBracketSection()))
+                .max(Comparator.comparing(Match::getRodada)).orElse(null);
+        if (lastLosers != null) {
+            MatchResult losersResult = matchResultRepository.findByMatchId(lastLosers.getId()).orElse(null);
+            if (losersResult == null || losersResult.getWinner() == null) {
+                dto.setStatus("PARCIAL");
+                return dto;
+            }
+            Registration third = lastLosers.getRegistrationA() != null
+                    && lastLosers.getRegistrationA().getId().equals(losersResult.getWinner().getId())
+                    ? lastLosers.getRegistrationB() : lastLosers.getRegistrationA();
+            if (third == null) return dto;
+            dto.setThirdRegistrationId(third.getId());
+            dto.setThirdRobotNome(third.getRobot().getNome());
+            dto.setThirdTeamNome(third.getTeam().getNome());
+            dto.setThirdPlaceMatchId(lastLosers.getId());
         }
 
         dto.setStatus("CONCLUIDO");
