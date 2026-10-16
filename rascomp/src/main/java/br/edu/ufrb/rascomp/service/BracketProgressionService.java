@@ -68,8 +68,9 @@ public class BracketProgressionService {
     private void avancarDuplaEliminacao(Match match, Registration winner) {
         Registration loser = oponente(match, winner);
         String section = match.getBracketSection();
-        if (loser == null && match.getStatus() != StatusMatch.BYE) {
-            throw new IllegalArgumentException("A partida precisa de dois participantes para registrar uma derrota.");
+        if (loser == null && (match.getRegistrationA() == null && match.getRegistrationB() == null
+                || (match.getStatus() != StatusMatch.BYE && match.getStatus() != StatusMatch.FINALIZADA))) {
+            throw new IllegalArgumentException("Partida sem adversário só pode avançar como BYE decidido.");
         }
         if ("GRAND_FINAL".equals(section)) {
             if (loser == null) throw new IllegalArgumentException("Final geral não permite BYE.");
