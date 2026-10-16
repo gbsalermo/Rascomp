@@ -139,4 +139,50 @@ class DoubleEliminationProgressionTest {
         assertSame(a, winnersFinal.getRegistrationA());
         assertSame(p, winnersFinal.getRegistrationB());
     }
+
+    @Test
+    void correcaoDaFinalGeralAntesDoResetReabreEReconfiguraConfronto() {
+        Bracket b = bracket();
+        b.setStatus(StatusBracket.FINALIZADO);
+        Registration a = registration(1);
+        Registration challenger = registration(2);
+        Match grand = match(30, b, 5, "GRAND_FINAL", a, challenger, StatusMatch.FINALIZADA);
+        Match reset = match(31, b, 6, "GRAND_FINAL_RESET", null, null, StatusMatch.AGUARDANDO_PARTICIPANTES);
+        grand.setWinnerNextMatch(reset);
+        grand.setWinnerNextSlot("A");
+        grand.setLoserNextMatch(reset);
+        grand.setLoserNextSlot("B");
+        when(matchRepository.findByBracketIdOrderByRodadaAscOrdemAsc(10L)).thenReturn(List.of(grand, reset));
+        when(bracketRepository.findById(10L)).thenReturn(Optional.of(b));
+
+        service.corrigirVencedor(grand, a, challenger);
+
+        assertEquals(StatusBracket.EM_ANDAMENTO, b.getStatus());
+        assertSame(challenger, reset.getRegistrationA());
+        assertSame(a, reset.getRegistrationB());
+        assertEquals(StatusMatch.AGENDADA, reset.getStatus());
+    }
+
+    @Test
+    void rejeitaCorrecaoQuandoPartidaDependenteJaTemRound() {
+        Bracket b = bracket();
+        Registration a = registration(1);
+        Registration p = registration(2);
+        Match source = match(1, b, 1, "WINNERS", a, p, StatusMatch.FINALIZADA);
+        Match winnerTarget = match(2, b, 2, "WINNERS", a, null, StatusMatch.AGUARDANDO_PARTICIPANTES);
+        Match loserTarget = match(3, b, 3, "LOSERS", null, p, StatusMatch.AGUARDANDO_PARTICIPANTES);
+        source.setWinnerNextMatch(winnerTarget);
+        source.setWinnerNextSlot("A");
+        source.setLoserNextMatch(loserTarget);
+        source.setLoserNextSlot("B");
+
+        when(matchRepository.findByBracketIdOrderByRodadaAscOrdemAsc(10L))
+                .thenReturn(List.of(source, winnerTarget, loserTarget));
+        when(roundSumoRepository.existsByMatchId(2L)).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> service.corrigirVencedor(source, a, p));
+        assertSame(a, winnerTarget.getRegistrationA());
+        assertSame(p, loserTarget.getRegistrationB());
+    }
+
 }
