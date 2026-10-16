@@ -71,3 +71,6 @@ Somente documento de planejamento na branch de futebol. **Nenhuma modificação 
 - Falha da Galeria não derruba API de competição; publicação não expõe rascunhos, documentos ou comprovantes.
 - Backups anteriores aos deploys funcionais e anteriores à migração, com restauração verificável e rollback que preserve escritas novas.
 
+
+## Estado da contenção pré-lote
+**Implementado apenas na branch:** leitura de objetos R2 por `InputStreamResource` (sem `getObjectAsBytes`), bloqueio reversível das mutações administrativas de Galeria pelo parâmetro `app.media.gallery-management-enabled` (padrão `false`; testes específicos do CMS habilitam o modo antigo). Upload de imagem de seção por `/api/v1/media/assets` com `galleryDraft=false` e publicação editorial preservados. **Não implementado:** bypass completo de mídia via CDN e URLs assinadas. **Não publicado em produção.** O CI geral mantém falhas anteriores de testes; não fazer merge sem verificação de migrations e backup pré-deploy.
