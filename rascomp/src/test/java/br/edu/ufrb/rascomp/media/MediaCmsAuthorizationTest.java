@@ -21,7 +21,7 @@ import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequ
  * H2 em modo MySQL, aplicando V33 no ambiente de testes (Flyway desabilitado
  * nos flowtests existentes). Nunca usa armazenamento R2 real.
  */
-@SpringBootTest
+@SpringBootTest(properties = "app.media.gallery-management-enabled=true")
 @AutoConfigureMockMvc
 @ActiveProfiles("flowtest")
 @Sql(scripts="classpath:db/migration/V33__media_cms_draft_publication.sql",
