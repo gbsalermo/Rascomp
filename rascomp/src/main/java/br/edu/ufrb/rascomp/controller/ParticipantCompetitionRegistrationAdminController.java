@@ -54,6 +54,11 @@ public class ParticipantCompetitionRegistrationAdminController {
         return ResponseEntity.ok(service.revisar(id, request));
     }
 
+    @PatchMapping("/{id}/suspender-sem-vinculo")
+    public ResponseEntity<ParticipantCompetitionRegistrationDTO> suspenderSemVinculo(@PathVariable Long id) {
+        return ResponseEntity.ok(service.suspenderSemVinculo(id));
+    }
+
     @GetMapping("/{id}/comprovante")
     public ResponseEntity<Resource> comprovante(@PathVariable Long id) {
         RegistrationReceiptStorageService.ReceiptFile file =

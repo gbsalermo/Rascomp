@@ -268,9 +268,11 @@ public class ParticipantPortalService {
             ParticipantRegistrationRequest request,
             MultipartFile comprovante) {
         accessPolicyService.exigirEquipeDoParticipante(teamId);
-        Robot robot = accessPolicyService.exigirRoboInscrevivelPeloParticipante(request.getRobotId());
-        if (!robot.getTeam().getId().equals(teamId)) {
-            throw new IllegalArgumentException("O robô deve pertencer à equipe informada.");
+        if (request.getRobotId() != null) {
+            Robot robot = accessPolicyService.exigirRoboInscrevivelPeloParticipante(request.getRobotId());
+            if (!robot.getTeam().getId().equals(teamId)) {
+                throw new IllegalArgumentException("O robô deve pertencer à equipe informada.");
+            }
         }
         RegistrationDTO dto = new RegistrationDTO();
         dto.setCompetitionId(request.getCompetitionId());

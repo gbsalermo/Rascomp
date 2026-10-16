@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -123,6 +125,31 @@ class RegistrationCompositionServiceTest {
 
         assertEquals(StatusRegistration.PENDENTE, c.registration().getStatus());
         assertTrue(c.registration().getCompetitors().isEmpty());
+    }
+
+    @Test
+    void aprovarInscricaoIndividualNaoTentaSincronizarFutebolSemRobo() {
+        Contexto c = contexto();
+        Competitor pessoa = competitor(10L, "Competidor Futebol", c.team());
+        ParticipantCompetitionRegistration pessoal = personal(
+                c.competition(), pessoa, ParticipantCompetitionRegistrationStatus.APROVADA);
+        Registration futebol = new Registration();
+        futebol.setId(25L);
+        futebol.setCompetition(c.competition());
+        futebol.setTeam(c.team());
+        futebol.setRobot(null);
+        futebol.setStatus(StatusRegistration.PENDENTE);
+        futebol.setCompetitors(java.util.Set.of(pessoa));
+
+        when(robotResponsibleRepository.findByCompetitorIdAndAtivoTrueOrderByRobotNomeAsc(10L))
+                .thenReturn(List.of());
+        when(registrationRepository.findByCompetitionIdAndCompetitorIdOrderByDataCadastroDesc(1L, 10L))
+                .thenReturn(List.of(futebol));
+
+        service.sincronizarPorInscricaoPessoal(pessoal, null);
+
+        verify(registrationRepository, never()).save(any(Registration.class));
+        assertEquals(StatusRegistration.PENDENTE, futebol.getStatus());
     }
 
     private Contexto contexto() {

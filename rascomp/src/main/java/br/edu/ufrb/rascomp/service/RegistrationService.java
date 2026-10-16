@@ -21,6 +21,7 @@ import br.edu.ufrb.rascomp.model.Robot;
 import br.edu.ufrb.rascomp.model.Team;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.Modalidade;
+import br.edu.ufrb.rascomp.model.Enum.ParticipantCompetitionRegistrationStatus;
 import br.edu.ufrb.rascomp.model.Enum.RegistrationStatusChangeType;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
 import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
@@ -84,20 +85,21 @@ public class RegistrationService {
         Competition competition = buscarCompetition(dto.getCompetitionId());
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         Team team = buscarTeam(dto.getTeamId());
-        Robot robot = buscarRobot(dto.getRobotId());
+        Robot robot = buscarRobotOpcional(dto.getRobotId(), category);
 
         validarEstadoParaEntradaManual(competition);
         validarDisponibilidade(competition, category, team, robot);
-        validarRobotDaEquipe(robot, team);
+        if (robot != null) validarRobotDaEquipe(robot, team);
         validarCompatibilidadeFisicaSumo(competition, category, robot, null);
         validarDuplicidade(dto, null);
 
         Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, true);
-        validarCompetidoresResponsaveis(robot, competitors);
+        if (robot != null) validarCompetidoresResponsaveis(robot, competitors);
         String motivo = normalizarObrigatorio(
                 justificativa,
                 "Informe a justificativa da entrada manual.");
 
+        validarDuplicidadeFutebol(competition, category, competitors, null);
         Registration registration = new Registration();
         preencher(registration, dto, competition, category, team, robot, competitors);
         registration.setRequestedByUser(dev);
@@ -144,24 +146,35 @@ public class RegistrationService {
         Competition competition = buscarCompetition(dto.getCompetitionId());
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         Team team = buscarTeam(dto.getTeamId());
-        Robot robot = buscarRobot(dto.getRobotId());
+        Robot robot = buscarRobotOpcional(dto.getRobotId(), category);
 
         validarDisponibilidade(competition, category, team, robot);
         validarInscricoesAbertas(competition);
-        validarRobotDaEquipe(robot, team);
+        if (robot != null) validarRobotDaEquipe(robot, team);
         validarCompatibilidadeFisicaSumo(competition, category, robot, null);
         validarDuplicidade(dto, null);
 
         Set<Competitor> competitors;
-        if (solicitante != null && solicitante.getRole() == UserRole.PARTICIPANTE) {
+        if (category.getModalidade() == Modalidade.FUTEBOL && robot == null) {
+            if (solicitante != null && solicitante.getRole() == UserRole.PARTICIPANTE) {
+                Competitor participant = competitorRepository.findByUserAccountId(solicitante.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Participante não está associado a um competidor."));
+                if (!participant.getTeam().getId().equals(team.getId()))
+                    throw new IllegalArgumentException("O participante deve integrar a equipe informada.");
+                competitors = new java.util.LinkedHashSet<>(java.util.Set.of(participant));
+            } else {
+                competitors = buscarCompetidores(dto.getCompetitorIds(), team, true);
+            }
+        } else if (solicitante != null && solicitante.getRole() == UserRole.PARTICIPANTE) {
             competitors = compositionService.prepararComposicaoInicial(
                     competition.getId(),
                     robot.getId());
         } else {
             competitors = buscarCompetidores(dto.getCompetitorIds(), team, exigirCompetidor);
-            validarCompetidoresResponsaveis(robot, competitors);
+            if (robot != null) validarCompetidoresResponsaveis(robot, competitors);
         }
 
+        validarDuplicidadeFutebol(competition, category, competitors, null);
         Registration registration = new Registration();
         preencher(registration, dto, competition, category, team, robot, competitors);
         registration.setRegistrationLot(registrationLotService.resolverParaNovaInscricao(competition));
@@ -247,9 +260,11 @@ public class RegistrationService {
         competitionContextService.exigirOperavel(registration.getCompetition().getId());
 
         java.util.Map<Long, Competitor> relacionados = new java.util.LinkedHashMap<>();
-        robotResponsibleRepository
+        if (registration.getRobot() != null) {
+            robotResponsibleRepository
                 .findByRobotIdAndAtivoTrueOrderByCompetitorNomeAsc(registration.getRobot().getId())
                 .forEach(link -> relacionados.put(link.getCompetitor().getId(), link.getCompetitor()));
+        }
         registration.getCompetitors()
                 .forEach(competitor -> relacionados.putIfAbsent(competitor.getId(), competitor));
 
@@ -263,7 +278,7 @@ public class RegistrationService {
                     return new RegistrationCompetitorContextDTO(
                             competitor.getId(),
                             competitor.getNome(),
-                            robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(
+                            registration.getRobot() == null || robotResponsibleRepository.existsByRobotIdAndCompetitorIdAndAtivoTrue(
                                     registration.getRobot().getId(),
                                     competitor.getId()),
                             registration.getCompetitors().contains(competitor),
@@ -286,10 +301,13 @@ public class RegistrationService {
         UserAccount atual = userAccountService.buscarAtual();
         boolean lider = registration.getTeam().getResponsibleUser() != null
                 && registration.getTeam().getResponsibleUser().getId().equals(atual.getId());
-        boolean criador = registration.getRobot().getCreatedByUser() != null
+        boolean criador = registration.getRobot() != null && registration.getRobot().getCreatedByUser() != null
                 && registration.getRobot().getCreatedByUser().getId().equals(atual.getId());
+        boolean participanteFutebol = registration.getCategory().getModalidade() == Modalidade.FUTEBOL
+                && registration.getCompetitors().stream().anyMatch(c -> c.getUserAccount() != null
+                    && c.getUserAccount().getId().equals(atual.getId()));
 
-        if (!lider && !criador) {
+        if (!lider && !criador && !participanteFutebol) {
             throw new org.springframework.security.access.AccessDeniedException(
                     "Você não pode acessar o comprovante desta inscrição.");
         }
@@ -326,15 +344,16 @@ public class RegistrationService {
         Competition competition = buscarCompetition(dto.getCompetitionId());
         CompetitionCategory category = buscarCategory(dto.getCategoryId());
         Team team = buscarTeam(dto.getTeamId());
-        Robot robot = buscarRobot(dto.getRobotId());
+        Robot robot = buscarRobotOpcional(dto.getRobotId(), category);
 
         validarDisponibilidade(competition, category, team, robot);
-        validarRobotDaEquipe(robot, team);
+        if (robot != null) validarRobotDaEquipe(robot, team);
         validarCompatibilidadeFisicaSumo(competition, category, robot, id);
         validarDuplicidade(dto, id);
 
         Set<Competitor> competitors = buscarCompetidores(dto.getCompetitorIds(), team, false);
-        validarCompetidoresResponsaveis(robot, competitors);
+        if (robot != null) validarCompetidoresResponsaveis(robot, competitors);
+        validarDuplicidadeFutebol(competition, category, competitors, id);
         preencher(registration, dto, competition, category, team, robot, competitors);
 
         StatusRegistration statusAnterior = registration.getStatus();
@@ -492,10 +511,11 @@ public class RegistrationService {
                 registration.getCompetition().getId(),
                 solicitante.getId());
 
-        Set<Competitor> composicao = compositionService.prepararComposicaoInicial(
-                registration.getCompetition().getId(),
-                registration.getRobot().getId());
-        registration.setCompetitors(composicao);
+        if (registration.getRobot() != null) {
+            Set<Competitor> composicao = compositionService.prepararComposicaoInicial(
+                    registration.getCompetition().getId(), registration.getRobot().getId());
+            registration.setCompetitors(composicao);
+        }
 
         return reativarInterno(registration, true);
     }
@@ -515,7 +535,8 @@ public class RegistrationService {
 
         validarCompatibilidadeFisicaSumo(
                 registration.getCompetition(), registration.getCategory(), registration.getRobot(), registration.getId());
-        validarCompetidoresResponsaveis(registration.getRobot(), registration.getCompetitors());
+        if (registration.getRobot() != null) validarCompetidoresResponsaveis(registration.getRobot(), registration.getCompetitors());
+        validarDuplicidadeFutebol(registration.getCompetition(), registration.getCategory(), registration.getCompetitors(), registration.getId());
 
         registration.setAtivo(true);
         registration.setStatus(StatusRegistration.PENDENTE);
@@ -681,13 +702,23 @@ public class RegistrationService {
                     "A inscrição do robô ainda não possui comprovante de pagamento.");
         }
 
-        compositionService.sincronizarParaAprovacao(
-                registration,
-                userAccountService.buscarAtual());
+        if (registration.getRobot() != null) {
+            compositionService.sincronizarParaAprovacao(
+                    registration,
+                    userAccountService.buscarAtual());
+        }
 
         if (registration.getCompetitors() == null || registration.getCompetitors().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "A inscrição do robô precisa possuir ao menos um responsável elegível e aprovado.");
+            throw new IllegalArgumentException("A inscrição precisa possuir ao menos um participante.");
+        }
+        if (registration.getRobot() == null) {
+            for (Competitor competitor : registration.getCompetitors()) {
+                ParticipantCompetitionRegistration personal =
+                    participantCompetitionRegistrationService.findByCompetitionAndCompetitor(
+                        registration.getCompetition().getId(), competitor.getId());
+                if (personal == null || personal.getStatus() != ParticipantCompetitionRegistrationStatus.APROVADA)
+                    throw new IllegalArgumentException("A inscrição de Futebol só pode ser aprovada após aprovação individual dos participantes.");
+            }
         }
     }
 
@@ -708,7 +739,10 @@ public class RegistrationService {
         categoryAssignments.requireEnabled(c.getId(),category.getId());
         if (!Boolean.TRUE.equals(team.getAtivo())) throw new IllegalArgumentException("Equipe inativa.");
         if (!Boolean.TRUE.equals(team.getInstitution().getAtivo())) throw new IllegalArgumentException("Instituição inativa.");
-        if (!Boolean.TRUE.equals(robot.getAtivo())) throw new IllegalArgumentException("Robô inativo.");
+        if (robot == null && category.getModalidade() != Modalidade.FUTEBOL)
+            throw new IllegalArgumentException("Esta categoria exige um robô cadastrado.");
+        if (robot != null && !Boolean.TRUE.equals(robot.getAtivo()))
+            throw new IllegalArgumentException("Robô inativo.");
     }
 
     private String normalizarObrigatorio(String value, String message) {
@@ -748,12 +782,28 @@ public class RegistrationService {
     }
 
     private void validarDuplicidade(RegistrationDTO dto, Long id) {
+        if (dto.getRobotId() == null) return; // Futebol: unicidade por competidor validada após composição.
         boolean existe = id == null
                 ? registrationRepository.existsByCompetitionIdAndCategoryIdAndRobotId(
                         dto.getCompetitionId(), dto.getCategoryId(), dto.getRobotId())
                 : registrationRepository.existsByCompetitionIdAndCategoryIdAndRobotIdAndIdNot(
                         dto.getCompetitionId(), dto.getCategoryId(), dto.getRobotId(), id);
         if (existe) throw new IllegalArgumentException("Já existe inscrição deste robô para esta categoria na competição.");
+    }
+
+    private void validarDuplicidadeFutebol(
+            Competition competition, CompetitionCategory category,
+            Set<Competitor> competitors, Long ignorarId) {
+        if (category.getModalidade() != Modalidade.FUTEBOL || competitors == null || competitors.isEmpty()) return;
+        Set<Long> novos = competitors.stream().map(Competitor::getId).collect(java.util.stream.Collectors.toSet());
+        boolean repetido = registrationRepository.findByCompetitionIdOrderByDataCadastroDesc(competition.getId())
+            .stream().anyMatch(existing -> !existing.getId().equals(ignorarId)
+                && existing.getCategory().getId().equals(category.getId())
+                && existing.getRobot() == null
+                && existing.getStatus() != StatusRegistration.CANCELADA
+                && existing.getStatus() != StatusRegistration.REJEITADA
+                && existing.getCompetitors().stream().anyMatch(c -> novos.contains(c.getId())));
+        if (repetido) throw new IllegalArgumentException("Um dos competidores já possui inscrição em Futebol nesta competição.");
     }
 
     private Competition buscarCompetition(Long id) {
@@ -769,6 +819,15 @@ public class RegistrationService {
     private Team buscarTeam(Long id) {
         return teamRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Equipe não encontrada com o id: " + id));
+    }
+
+    private Robot buscarRobotOpcional(Long id, CompetitionCategory category) {
+        if (id == null) {
+            if (category.getModalidade() != Modalidade.FUTEBOL)
+                throw new IllegalArgumentException("Selecione um robô para esta categoria.");
+            return null;
+        }
+        return buscarRobot(id);
     }
 
     private Robot buscarRobot(Long id) {
@@ -796,7 +855,7 @@ public class RegistrationService {
         registration.setCompetitors(competitors);
         String robotDescricao = dto.getRobotDescricao();
         if (robotDescricao == null || robotDescricao.isBlank()) {
-            robotDescricao = robot.getDescricao();
+            robotDescricao = robot == null ? null : robot.getDescricao();
         }
         registration.setRobotDescription(
                 robotDescricao == null || robotDescricao.isBlank() ? null : robotDescricao.trim());

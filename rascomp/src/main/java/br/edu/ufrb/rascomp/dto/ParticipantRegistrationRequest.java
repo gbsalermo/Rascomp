@@ -16,7 +16,8 @@ public class ParticipantRegistrationRequest {
     @NotNull
     private Long categoryId;
 
-    @NotNull
+    // Obrigatório para Sumô e Follow Line; opcional apenas para Futebol.
+    // A obrigatoriedade por modalidade é validada no service.
     private Long robotId;
 
     private List<@NotNull Long> competitorIds;

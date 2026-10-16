@@ -85,6 +85,12 @@ public class ParticipantCompetitionRegistration implements Serializable {
     @Column(name = "payment_receipt_content_type", length = 100)
     private String paymentReceiptContentType;
 
+    @Column(name = "competitive_link_suspended", nullable = false)
+    private Boolean competitiveLinkSuspended = false;
+
+    @Column(name = "competitive_link_suspended_at")
+    private LocalDateTime competitiveLinkSuspendedAt;
+
     @Column(nullable = false)
     private Boolean ativo = true;
 
