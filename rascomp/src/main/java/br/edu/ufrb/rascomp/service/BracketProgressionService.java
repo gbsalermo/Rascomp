@@ -63,25 +63,33 @@ public class BracketProgressionService {
 
     private void avancarDuplaEliminacao(Match match, Registration winner) {
         Registration loser = oponente(match, winner);
+        String section = match.getBracketSection();
         if (loser == null && match.getStatus() != StatusMatch.BYE) {
             throw new IllegalArgumentException("A partida precisa de dois participantes para registrar uma derrota.");
+        }
+        if ("GRAND_FINAL".equals(section)) {
+            if (loser == null) throw new IllegalArgumentException("Final geral não permite BYE.");
+            if (match.getRegistrationA().getId().equals(winner.getId())) {
+                finalizarDuplaEliminacao(match.getBracket());
+            } else {
+                Match reset = match.getWinnerNextMatch();
+                if (reset == null || !"GRAND_FINAL_RESET".equals(reset.getBracketSection())) {
+                    throw new IllegalStateException("Final de reset não configurada.");
+                }
+                enviarParaSlot(reset, "A", winner);
+                enviarParaSlot(reset, "B", loser);
+            }
+            return;
+        }
+        if ("GRAND_FINAL_RESET".equals(section)) {
+            finalizarDuplaEliminacao(match.getBracket());
+            return;
         }
         if (match.getWinnerNextMatch() != null) {
             enviarParaSlot(match.getWinnerNextMatch(), match.getWinnerNextSlot(), winner);
         }
         if (loser != null && match.getLoserNextMatch() != null) {
             enviarParaSlot(match.getLoserNextMatch(), match.getLoserNextSlot(), loser);
-        }
-        if ("GRAND_FINAL".equals(match.getBracketSection()) && loser != null) {
-            // A final só termina sem reset quando o representante invicto vence.
-            if (match.getRegistrationA().getId().equals(winner.getId())) {
-                finalizarDuplaEliminacao(match.getBracket());
-            } else if (match.getWinnerNextMatch() != null) {
-                enviarParaSlot(match.getWinnerNextMatch(), "A", winner);
-                enviarParaSlot(match.getWinnerNextMatch(), "B", loser);
-            }
-        } else if ("GRAND_FINAL_RESET".equals(match.getBracketSection())) {
-            finalizarDuplaEliminacao(match.getBracket());
         }
     }
 
@@ -110,6 +118,10 @@ public class BracketProgressionService {
         if (novoVencedor != null) validarVencedorDaPartida(match, novoVencedor);
 
         if (mesmaInscricao(vencedorAnterior, novoVencedor)) return;
+        if ("DOUBLE_ELIMINATION".equals(match.getBracket().getBracketFormat())) {
+            throw new IllegalArgumentException(
+                    "Correção de resultado em dupla eliminação bloqueada até validar todos os destinos.");
+        }
 
         Match proximaPartida = buscarProximaPartida(match);
         if (proximaPartida == null) {
