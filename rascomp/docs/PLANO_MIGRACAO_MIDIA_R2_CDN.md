@@ -14,6 +14,19 @@ Em 15/10/2026 o Render registrou repetidos encerramentos por falta de memória (
 - **Comprovantes e outros arquivos privados:** caminho privado permanece protegido; não incluir no domínio público.
 - **Metadados:** Render/Aiven; respostas do CMS devem retornar referências e flags de publicação, não bytes.
 
+## Etapa zero obrigatória — backup do estado de produção (competição em andamento)
+**Bloqueante:** antes de modificar armazenamento, contratos de mídia, deploy ou executar migração, obter uma cópia recuperável do estado operacional de produção, preservando competidores, inscrições, comprovantes, equipes, robôs, categorias, chaves, partidas, resultados, rankings e configuração da competição atual.
+
+1. Registrar data/hora e versões exatas implantadas (SHA backend e frontend), versões Flyway, variáveis de ambiente **sem registrar segredos em texto puro**, serviços e respectivas configurações. Fazer exportação segura da configuração sensível para cofre restrito.
+2. Gerar **snapshot/backup consistente do MySQL de produção (Aiven)**, validando transações e consistência, sem apagar nem sobrescrever dados ativos. Guardar cópia externa criptografada com controle de acesso.
+3. Fazer **inventário e cópia de segurança dos objetos R2 existentes**, tanto mídias públicas quanto documentos/comprovantes privados, incluindo chaves, metadados e mapeamento com registros do banco. Nunca publicar ou expor o backup dos comprovantes.
+4. Exportar snapshots editoriais publicados e rascunhos do CMS (separando-os e preservando versões), configurações de publicação da Landing/Galeria e referências das imagens.
+5. Conferir contagem, integridade, hashes/amostras, espaço ocupado e correspondência banco↔objetos. **Testar restauração em ambiente isolado**, com banco e armazenamento separados de produção, sem disparar notificações, integrações ou ações sobre a competição real.
+6. Definir ponto de retorno: instruções documentadas para restaurar versões de aplicação, banco e arquivos de maneira coordenada. Para rollback durante competição ativa, avaliar gravações ocorridas após o snapshot: **não restaurar banco antigo por cima de inscrições ou resultados novos**. Pausar operações somente com janela autorizada e considerar backup incremental/captura de alterações até o corte.
+7. Registrar responsável, horário, local seguro do backup, confirmação da restauração e autorização expressa antes da execução da migração. Nenhuma alteração disruptiva deve ocorrer durante partidas ou operações críticas.
+
+**Critério de início da migração:** backup integral verificado e restauração isolada comprovada, plano de retorno viável e janela operacional aprovada. Um commit Git, sozinho, não faz backup do banco ou dos objetos R2.
+
 ## Etapas previstas (executar amanhã após revisão de configurações)
 1. **Inventário e medição:** mapear todos os consumidores da mídia (editor, prévia, Sobre, Hero, Galeria, eventos, equipes, comprovantes); medir tamanho/quantidade, memória do Render, códigos 5xx e tempos de resposta. Conferir quotas/limites reais do R2 e Cloudflare, origem do CORS e comportamento do proxy.
 2. **Segurança e distribuição:** definir duas classes de objetos (público publicado x privado), namespace e políticas sem tornar o bucket de origem indiscriminadamente público. Configurar domínio CDN, CORS restrito a `https://rasufrb.site` e `https://app.rasufrb.site` onde aplicável, cache de conteúdo versionado, invalidação/alteração de visibilidade. **Exigirá configuração externa Cloudflare/R2 e possível segredo/variável de ambiente**; não inserir chaves no repositório.
