@@ -3258,3 +3258,22 @@ Critério de aceite: serviço Running, conexão TLS verificada, consulta real ao
 
 
 **Configuração escolhida — 12/10/2026:** `application-cloud.properties` explicita `management.health.db.enabled=true`, permitindo ao Actuator incluir o componente padrão de conectividade do datasource no endpoint `/actuator/health`. O Worker `rascomp-automation` já consulta esse endpoint nos cron triggers de 10 minutos (06h–00h Brasília), de modo que cada resposta de health deve verificar a disponibilidade do MySQL, sem gerar ou atualizar registros. Isso evita tabela adicional, escrita simbólica e migrations. **Esta configuração requer novo build/deploy manual no Render para entrar em vigor**. Não implica que o banco Aiven Free permanecerá ligado: a política de suspensão do provedor é independente e pode exigir mudança de plano/provedor ou contingência. Após deploy, validar `UP` com Aiven Running e verificar comportamento de erro quando DB indisponível sem fazer desligamento intencional em produção. Monitoramento e alertas ainda devem ser configurados. Registro simbólico de escrita fica como hipótese descartada por ora; revisitar só se houver evidência e permissão do provedor.
+
+
+---
+
+## Dupla eliminação — antecipada para a competição (16/10/2026)
+
+Decisão anterior de implementação apenas pós-Beta foi superada pelo pedido de prontidão **antes da competição**, inclusive antes da alternativa de hospedagem local.
+
+Branch de trabalho isolada nos dois repositórios: `feat/sumo-double-elimination`.
+
+- Migração aditiva `V47__double_elimination_structure.sql` com formato do bracket e destinos de cada match;
+- `BracketGenerationService`: árvore Winners + Losers + Final Geral + reset, suportando BYEs;
+- `BracketProgressionService`: encaminha vencedor/perdedor e processa caminhos vazios sem derrota falsa;
+- `CompetitionResultsService`: título, vice e terceiro via final decisiva e final da Losers;
+- `MatchResultService`: vencedor obrigatório e correção excepcional DEV com dependências verificadas;
+- Frontend Gestão: seleção de formato e `TournamentBracket` por seção; estado competitivo com duas derrotas;
+- Testes adicionados para árvore e progressão; não declarar homologados até executar a suíte.
+
+**Gate de entrega:** build e testes Java, migração Flyway em ambiente de homologação, build do Vue e teste manual completo 2/3/5/8/9 inscritos, inclusive Grand Final Reset e tentativa de correção após round dependente. **Não fazer merge/deploy na produção sem validação.**
