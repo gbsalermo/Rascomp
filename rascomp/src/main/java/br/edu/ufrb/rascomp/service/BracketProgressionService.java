@@ -268,10 +268,9 @@ public class BracketProgressionService {
         queue.add(source);
         while (!queue.isEmpty()) {
             Match current = queue.removeFirst();
-            for (Match target : List.of(current.getWinnerNextMatch() == null
-                    ? current : current.getWinnerNextMatch(),
-                    current.getLoserNextMatch() == null ? current : current.getLoserNextMatch())) {
-                if (target.getId().equals(source.getId()) || !affected.add(target.getId())) continue;
+            for (Match target : new Match[]{current.getWinnerNextMatch(), current.getLoserNextMatch()}) {
+                if (target == null || target.getId().equals(source.getId())
+                        || !affected.add(target.getId())) continue;
                 queue.add(target);
             }
         }
