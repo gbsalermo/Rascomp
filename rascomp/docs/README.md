@@ -1,3 +1,15 @@
+## ESTADO OFICIAL — RASCOMP MVP V1 EM OPERAÇÃO (OUTUBRO/2026)
+
+**O responsável confirmou que o RasComp V1 já está no ar e sendo usado para a competição.** A versão V1 está com seu escopo funcional fechado: Landing institucional, autenticação e recuperação de acesso, gestão de competições, participantes/equipes/robôs, inscrição individual e competitiva (inclusive Futebol sem cadastro prévio de robô), comprovantes e revisão administrativa, Regras e Ajuda, operação existente de Sumô e Follow Line. A operação de partidas de Futebol não foi declarada concluída.
+
+**Estado da Galeria:** prévia institucional mantida na Landing; links para Galeria completa e entradas de Biblioteca/Álbuns da Gestão ocultados/suspensos; Gestão de seções da Landing e uploads institucionais continuam suportados. **Galeria independente de fotos e vídeos planejada para V2.0 após a competição**, em feature própria, sem remoção antecipada do acervo existente.
+
+**Próximo ciclo (manutenção da V1):** monitorar inscrições e operação, corrigir bugs, implementar configuração local para backup consistente do MySQL/Aiven e dos arquivos R2, armazenar cópias criptografadas e ensaiar restauração isolada. Manter contingência e possibilidade de execução local sem duas bases concorrentes de escrita. Não confundir operação real com backups/restore/carga já validados; verificações que não foram executadas permanecem pendentes.
+
+**Prevalência:** este checkpoint reflete o estado atual e substitui descrições históricas abaixo que ainda dizem «Beta aguardando inscrições», «Galeria no fechamento do MVP» ou «Futebol/Manuais ainda não implementados». Manter as seções antigas como histórico técnico, não como status vigente.
+
+---
+
 > **Estado oficial — 13/10/2026 | V1-BETA B Cloud implantada:** landing pública [rasufrb.site](https://rasufrb.site), Gestão/Portal [app.rasufrb.site](https://app.rasufrb.site) (Workers Static Assets `rascomp-landing`/`rascomp-app`), API Spring Boot Java 21 no **Render** via [api.rasufrb.site](https://api.rasufrb.site), MySQL **Aiven**, arquivos privados **Cloudflare R2** (`rascomp-storage`), e-mail transacional **Resend** (`mail.rasufrb.site`). Cadastro/verificação e recuperação de senha foram testados ponta a ponta. Galeria/Gestor de Mídia e Futebol de Robôs são próximos desenvolvimentos, **não funcionalidades já finalizadas**. Antes de inscrições reais: backup externo/restauração ensaiada, testes de carga/contingência, autorização de comprovantes e integridade/reconciliação de storage. Ambiente local continua suportado. **Deploy desejado:** branch `main` para produção; validar a troca de branch nos painéis Render/Cloudflare após o merge, pois merge sozinho não altera suas configurações. Trechos históricos abaixo preservam decisões anteriores, não a arquitetura vigente.
 
 # RasComp Backend — Índice da Documentação
