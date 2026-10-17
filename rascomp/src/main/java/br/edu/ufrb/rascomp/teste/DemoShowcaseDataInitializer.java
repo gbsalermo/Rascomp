@@ -182,6 +182,12 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         Competition live = garantirCompeticaoAoVivo();
         Competition history = garantirCompeticaoHistorica();
 
+        // As inspecoes e rodadas simuladas exigem competicao EM_ANDAMENTO.
+        live.setStatus(StatusCompetition.EM_ANDAMENTO);
+        competitionRepository.save(live);
+        history.setStatus(StatusCompetition.EM_ANDAMENTO);
+        competitionRepository.save(history);
+
         Registration chronosFollow = garantirInscricao(
                 live, followCategory, teamParticipante, chronos, Set.of(lider, suporte, membroFollow),
                 StatusRegistration.APROVADA, participante, organizacao,
@@ -198,7 +204,6 @@ public class DemoShowcaseDataInitializer implements CommandLineRunner {
         prepararHistoricoCompleto(history, historyCategory, visitante, organizacao);
 
         competitionRepository.limparVigente();
-        live.setStatus(StatusCompetition.EM_ANDAMENTO);
         live.setVigente(true);
         competitionRepository.save(live);
         prepararAgendaFollowAoVivo(live, followCategory);
