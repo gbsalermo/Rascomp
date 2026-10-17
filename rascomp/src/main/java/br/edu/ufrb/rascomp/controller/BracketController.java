@@ -40,9 +40,10 @@ public class BracketController {
     @PostMapping("/gerar")
     public ResponseEntity<BracketDTO> gerar(
             @RequestParam Long competitionId,
-            @RequestParam Long categoryId) {
+            @RequestParam Long categoryId,
+            @RequestParam(defaultValue = "SINGLE_ELIMINATION") String format) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(bracketGenerationService.gerar(competitionId, categoryId));
+                .body(bracketGenerationService.gerar(competitionId, categoryId, format));
     }
 
     @PostMapping("/regenerar-excepcional")

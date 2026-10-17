@@ -27,6 +27,7 @@ public class BracketDTO {
     private Boolean ativo;
     private Boolean atual;
     private String generationReason;
+    private String bracketFormat;
     private Long generatedByUserId;
     private String generatedByUserNome;
     private LocalDateTime dataCadastro;
@@ -42,6 +43,7 @@ public class BracketDTO {
         this.ativo = entity.getAtivo();
         this.atual = entity.getAtual();
         this.generationReason = entity.getGenerationReason();
+        this.bracketFormat = entity.getBracketFormat();
         if (entity.getGeneratedByUser() != null) {
             this.generatedByUserId = entity.getGeneratedByUser().getId();
             this.generatedByUserNome = entity.getGeneratedByUser().getNome();

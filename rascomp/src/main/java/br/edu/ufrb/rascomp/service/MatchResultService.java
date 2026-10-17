@@ -352,6 +352,10 @@ public class MatchResultService {
             Integer pontosB,
             String observacao) {
 
+        if ("DOUBLE_ELIMINATION".equals(match.getBracket().getBracketFormat()) && winner == null) {
+            throw new IllegalArgumentException("Partidas de dupla eliminação exigem vencedor definido.");
+        }
+
         MatchResult result = new MatchResult();
         result.setMatch(match);
         result.setWinner(winner);

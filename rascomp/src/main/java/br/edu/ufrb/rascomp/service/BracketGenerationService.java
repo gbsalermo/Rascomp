@@ -2,6 +2,8 @@ package br.edu.ufrb.rascomp.service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -46,6 +48,11 @@ public class BracketGenerationService {
 
     @Transactional
     public BracketDTO gerar(Long competitionId, Long categoryId) {
+        return gerar(competitionId, categoryId, "SINGLE_ELIMINATION");
+    }
+
+    @Transactional
+    public BracketDTO gerar(Long competitionId, Long categoryId, String format) {
         competitionContextService.exigirOperavel(competitionId);
         Competition competition = buscarCompetitionParaAtualizacao(competitionId);
         CompetitionCategory category = buscarCategory(categoryId);
@@ -54,7 +61,8 @@ public class BracketGenerationService {
         validarCategoriaSumo(category);
         bracketIntegrityService.validarEstadoParaGeracao(competition);
 
-        return gerarInterno(competition, category, null, null);
+        validarFormato(format);
+        return gerarInterno(competition, category, null, null, format);
     }
 
     @Transactional
@@ -90,14 +98,17 @@ public class BracketGenerationService {
             motivo = motivo.substring(0, 500);
         }
 
-        return gerarInterno(competition, category, dev, motivo);
+        List<Bracket> vigentes = bracketRepository.findByCompetitionIdAndCategoryIdAndAtualTrue(competitionId, categoryId);
+        String format = vigentes.isEmpty() ? "SINGLE_ELIMINATION" : vigentes.get(0).getBracketFormat();
+        return gerarInterno(competition, category, dev, motivo, format);
     }
 
     private BracketDTO gerarInterno(
             Competition competition,
             CompetitionCategory category,
             UserAccount generatedBy,
-            String generationReason) {
+            String generationReason,
+            String format) {
 
         Long competitionId = competition.getId();
         Long categoryId = category.getId();
@@ -122,8 +133,11 @@ public class BracketGenerationService {
         Bracket bracket = criarBracket(competition, category);
         bracket.setGeneratedByUser(generatedBy);
         bracket.setGenerationReason(generationReason);
+        bracket.setBracketFormat(format);
 
-        List<Match> primeiraRodada = gerarArvoreCompleta(bracket, participantesSorteados);
+        List<Match> primeiraRodada = "DOUBLE_ELIMINATION".equals(format)
+                ? gerarArvoreDupla(bracket, participantesSorteados)
+                : gerarArvoreCompleta(bracket, participantesSorteados);
 
         bracket.setStatus(StatusBracket.GERADO);
         Bracket salvo = bracketRepository.save(bracket);
@@ -131,6 +145,9 @@ public class BracketGenerationService {
         primeiraRodada.stream()
                 .filter(match -> match.getStatus() == StatusMatch.BYE)
                 .forEach(bracketProgressionService::avancarBye);
+        if ("DOUBLE_ELIMINATION".equals(format)) {
+            bracketProgressionService.resolverAvancosAutomaticos(salvo.getId());
+        }
 
         return new BracketDTO(salvo);
     }
@@ -165,6 +182,117 @@ public class BracketGenerationService {
         bracket.setAtivo(true);
         bracket.setAtual(true);
         return bracketRepository.save(bracket);
+    }
+
+
+    private void validarFormato(String format) {
+        if (!"SINGLE_ELIMINATION".equals(format) && !"DOUBLE_ELIMINATION".equals(format)) {
+            throw new IllegalArgumentException("Formato de chaveamento inválido.");
+        }
+    }
+
+    /**
+     * Cria Winners e Losers dentro do MESMO bracket. Os números de rodada são
+     * globais para respeitar a chave única (bracket_id, rodada, ordem).
+     * O avanço depende exclusivamente das referências, nunca da aritmética da rodada.
+     */
+    private List<Match> gerarArvoreDupla(Bracket bracket, List<Registration> participantes) {
+        int size = proximaPotenciaDeDois(participantes.size());
+        int k = calcularTotalRodadas(size);
+        Map<String, Match> winners = new HashMap<>();
+        Map<String, Match> losers = new HashMap<>();
+        List<Match> all = new ArrayList<>();
+        List<Match> first = criarPrimeiraRodada(bracket, participantes, size);
+        for (Match m : first) winners.put(key(1, m.getOrdem()), m);
+        all.addAll(first);
+
+        for (int r = 2; r <= k; r++) {
+            int count = size >> r;
+            for (int j = 1; j <= count; j++) {
+                Match m = novaPartida(bracket, r, j, "WINNERS");
+                winners.put(key(r, j), m);
+                all.add(m);
+            }
+        }
+
+        for (int s = 1; s <= 2 * (k - 1); s++) {
+            int phase = (s + 1) / 2;
+            int count = size >> (phase + 1);
+            for (int j = 1; j <= count; j++) {
+                Match m = novaPartida(bracket, k + s, j, "LOSERS");
+                losers.put(key(s, j), m);
+                all.add(m);
+            }
+        }
+
+        Match grand = novaPartida(bracket, 3 * k - 1, 1, "GRAND_FINAL");
+        Match reset = novaPartida(bracket, 3 * k, 1, "GRAND_FINAL_RESET");
+        all.add(grand);
+        all.add(reset);
+
+        // Primeiro persiste os nós, depois as arestas (FKs self-referential).
+        matchRepository.saveAll(all);
+
+        for (int r = 1; r <= k; r++) {
+            int count = size >> r;
+            for (int j = 1; j <= count; j++) {
+                Match source = winners.get(key(r, j));
+                Match winnerTarget = r == k ? grand : winners.get(key(r + 1, (j + 1) / 2));
+                String winnerSlot = r == k ? "A" : slot(j);
+                Match loserTarget;
+                String loserSlot;
+                if (k == 1) {
+                    loserTarget = grand;
+                    loserSlot = "B";
+                } else if (r == 1) {
+                    loserTarget = losers.get(key(1, (j + 1) / 2));
+                    loserSlot = slot(j);
+                } else {
+                    loserTarget = losers.get(key(2 * r - 2, j));
+                    loserSlot = "B";
+                }
+                ligar(source, winnerTarget, winnerSlot, loserTarget, loserSlot);
+            }
+        }
+
+        for (int s = 1; s <= 2 * (k - 1); s++) {
+            int phase = (s + 1) / 2;
+            int count = size >> (phase + 1);
+            for (int j = 1; j <= count; j++) {
+                Match source = losers.get(key(s, j));
+                Match target = s == 2 * (k - 1)
+                        ? grand
+                        : losers.get(key(s + 1, s % 2 == 1 ? j : (j + 1) / 2));
+                String targetSlot = s == 2 * (k - 1) ? "B" : (s % 2 == 1 ? "A" : slot(j));
+                ligar(source, target, targetSlot, null, null);
+            }
+        }
+
+        ligar(grand, reset, "A", reset, "B");
+        matchRepository.saveAll(all);
+        return first;
+    }
+
+    private String key(int r, int j) { return r + ":" + j; }
+    private String slot(int j) { return j % 2 == 1 ? "A" : "B"; }
+
+    private Match novaPartida(Bracket bracket, int round, int order, String section) {
+        Match m = new Match();
+        m.setBracket(bracket);
+        m.setRodada(round);
+        m.setOrdem(order);
+        m.setBracketSection(section);
+        m.setTipoPartida(TipoPartidaSumo.ELIMINATORIA);
+        m.setStatus(StatusMatch.AGUARDANDO_PARTICIPANTES);
+        m.setAtivo(true);
+        return m;
+    }
+
+    private void ligar(Match origin, Match winner, String winnerSlot, Match loser, String loserSlot) {
+        origin.setWinnerNextMatch(winner);
+        origin.setWinnerNextSlot(winnerSlot);
+        origin.setLoserNextMatch(loser);
+        origin.setLoserNextSlot(loserSlot);
     }
 
     private List<Match> gerarArvoreCompleta(Bracket bracket, List<Registration> participantes) {

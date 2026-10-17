@@ -25,6 +25,7 @@ public class ParticipantCompetitionRegistrationDTO {
     private Long teamId;
     private String teamNome;
     private Boolean teamLeader;
+    private Boolean teamHasOtherActiveCompetitors;
     private ParticipantCompetitionRegistrationStatus status;
     private String observacao;
     private Boolean comprovanteDisponivel;
