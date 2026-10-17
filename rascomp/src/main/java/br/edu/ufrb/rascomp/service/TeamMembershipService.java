@@ -172,12 +172,6 @@ public class TeamMembershipService {
 
         Competitor porConta = competitorRepository.findByUserAccountId(participante.getId()).orElse(null);
         if (porConta != null) {
-            if (porConta.getTeam() == null) {
-                porConta.setTeam(team);
-                porConta.setAtivo(true);
-                competitorRepository.save(porConta);
-                return;
-            }
             if (porConta.getTeam().getId().equals(team.getId()) && Boolean.TRUE.equals(porConta.getAtivo())) {
                 return;
             }
@@ -187,7 +181,7 @@ public class TeamMembershipService {
 
         Competitor porEmail = competitorRepository.findByEmailIgnoreCase(participante.getEmail()).orElse(null);
         if (porEmail != null) {
-            if (porEmail.getTeam() != null && !porEmail.getTeam().getId().equals(team.getId())) {
+            if (!porEmail.getTeam().getId().equals(team.getId())) {
                 throw new IllegalArgumentException(
                         "Já existe um competidor com este e-mail em outra equipe.");
             }
@@ -196,7 +190,6 @@ public class TeamMembershipService {
                 throw new IllegalArgumentException("O competidor já está associado a outra conta.");
             }
 
-            porEmail.setTeam(team);
             porEmail.setUserAccount(participante);
             porEmail.setNome(participante.getNome());
             porEmail.setTelefone(participante.getTelefone());
@@ -222,8 +215,7 @@ public class TeamMembershipService {
     }
 
     private void validarSemEquipe(UserAccount participante) {
-        competitorRepository.findByUserAccountId(participante.getId())
-                .filter(existing -> existing.getTeam() != null).ifPresent(existing -> {
+        competitorRepository.findByUserAccountId(participante.getId()).ifPresent(existing -> {
             throw new IllegalArgumentException(
                     "A conta já está associada à equipe " + existing.getTeam().getNome() + ".");
         });
