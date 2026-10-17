@@ -220,7 +220,8 @@ public class ParticipantCompetitionRegistrationService {
         }
 
         if (request.getStatus() == ParticipantCompetitionRegistrationStatus.REJEITADA
-                && ehLiderAtualDaEquipe(entity)) {
+                && ehLiderAtualDaEquipe(entity)
+                && equipePossuiOutrosCompetidoresAtivos(entity)) {
             throw new IllegalArgumentException(
                     "A inscrição do líder da equipe não pode ser rejeitada diretamente. "
                             + "Solicite correção ao próprio líder ou peça ao DEV para transferir a liderança "
@@ -397,6 +398,7 @@ public class ParticipantCompetitionRegistrationService {
 
     private ParticipantCompetitionRegistrationDTO toDto(ParticipantCompetitionRegistration entity) {
         ParticipantCompetitionRegistrationDTO dto = new ParticipantCompetitionRegistrationDTO(entity);
+        dto.setTeamHasOtherActiveCompetitors(equipePossuiOutrosCompetidoresAtivos(entity));
         List<ParticipantRobotLinkDTO> links = new ArrayList<>();
 
         robotResponsibleRepository
@@ -471,6 +473,10 @@ public class ParticipantCompetitionRegistrationService {
         if (competition.getStatus() != StatusCompetition.INSCRICOES_ABERTAS || !dentroDaJanela) {
             throw new IllegalArgumentException("As inscrições não estão abertas para esta competição.");
         }
+    }
+
+    private boolean equipePossuiOutrosCompetidoresAtivos(ParticipantCompetitionRegistration entity) {
+        return competitorRepository.countByTeamIdAndAtivoTrue(entity.getCompetitor().getTeam().getId()) > 1;
     }
 
     private boolean ehLiderAtualDaEquipe(ParticipantCompetitionRegistration entity) {
