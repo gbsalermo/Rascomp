@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -49,8 +50,9 @@ public class ParticipantCompetitionRegistrationController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ParticipantCompetitionRegistrationDTO> reenviarCorrecao(
             @PathVariable Long id,
-            @RequestPart("comprovante") MultipartFile comprovante) {
-        return ResponseEntity.ok(service.reenviarCorrecao(id, comprovante));
+            @RequestParam(value = "observacao", required = false) String observacao,
+            @RequestPart(value = "comprovante", required = false) MultipartFile comprovante) {
+        return ResponseEntity.ok(service.reenviarCorrecao(id, observacao, comprovante));
     }
 
     @DeleteMapping("/{id}")
