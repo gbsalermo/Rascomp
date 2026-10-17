@@ -190,7 +190,7 @@ public class ParticipantCompetitionRegistrationService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ParticipantCompetitionRegistrationDTO> listarPorCompeticao(Long competitionId) {
         competitionContextService.exigirOperavel(competitionId);
         buscarCompetition(competitionId);
@@ -239,7 +239,14 @@ public class ParticipantCompetitionRegistrationService {
                 }
             }
             dto.setRobots(links);
-            dto.setCompetitiveLinkSatisfied(competitivelyLinked.contains(competitorId));
+            boolean associated = competitivelyLinked.contains(competitorId);
+            if (associated && Boolean.TRUE.equals(entity.getCompetitiveLinkSuspended())) {
+                entity.setCompetitiveLinkSuspended(false);
+                entity.setCompetitiveLinkSuspendedAt(null);
+                repository.save(entity);
+            }
+            dto.setCompetitiveLinkSatisfied(associated);
+            dto.setCompetitiveLinkSuspended(Boolean.TRUE.equals(entity.getCompetitiveLinkSuspended()));
             return dto;
         }).toList();
     }
