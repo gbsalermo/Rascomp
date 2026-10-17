@@ -52,12 +52,9 @@ public class ParticipantCompetitionRegistrationDTO {
         }
         competitorId = entity.getCompetitor().getId();
         competitorNome = entity.getCompetitor().getNome();
-        if (entity.getCompetitor().getTeam() != null) {
-            teamId = entity.getCompetitor().getTeam().getId();
-            teamNome = entity.getCompetitor().getTeam().getNome();
-        }
+        teamId = entity.getCompetitor().getTeam().getId();
+        teamNome = entity.getCompetitor().getTeam().getNome();
         teamLeader = entity.getCompetitor().getUserAccount() != null
-                && entity.getCompetitor().getTeam() != null
                 && entity.getCompetitor().getTeam().getResponsibleUser() != null
                 && entity.getCompetitor().getUserAccount().getId()
                         .equals(entity.getCompetitor().getTeam().getResponsibleUser().getId());
