@@ -19,6 +19,13 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     List<Registration> findAllByOrderByDataCadastroDesc();
     List<Registration> findByAtivoTrueOrderByDataCadastroDesc();
     List<Registration> findByCompetitionIdOrderByDataCadastroDesc(Long competitionId);
+
+    @Query("""
+            select c.id, r.status
+            from Registration r join r.competitors c
+            where r.competition.id = :competitionId
+            """)
+    List<Object[]> findCompetitorRegistrationStatuses(@Param("competitionId") Long competitionId);
     List<Registration> findByTeamIdOrderByDataCadastroDesc(Long teamId);
     List<Registration> findByTeamIdAndAtivoTrueOrderByDataCadastroDesc(Long teamId);
     List<Registration> findByRequestedByUserIdOrderByDataCadastroDesc(Long userId);
