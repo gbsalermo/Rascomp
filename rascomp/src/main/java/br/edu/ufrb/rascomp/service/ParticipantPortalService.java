@@ -61,8 +61,7 @@ public class ParticipantPortalService {
     public TeamDTO criarEquipe(ParticipantTeamRequest request) {
         UserAccount usuario = accessPolicyService.usuarioAtual();
 
-        competitorRepository.findByUserAccountId(usuario.getId())
-                .filter(existing -> existing.getTeam() != null).ifPresent(existing -> {
+        competitorRepository.findByUserAccountId(usuario.getId()).ifPresent(existing -> {
             throw new IllegalArgumentException(
                     "Sua conta já está associada à equipe " + existing.getTeam().getNome()
                             + ". Um PARTICIPANTE deve possuir um único vínculo competitivo de equipe.");
@@ -78,12 +77,7 @@ public class ParticipantPortalService {
         self.setTeamId(team.getId());
         self.setUserAccountId(usuario.getId());
         self.setAtivo(true);
-        Competitor existente = competitorRepository.findByUserAccountId(usuario.getId()).orElse(null);
-        if (existente != null) {
-            competitorService.atualizar(existente.getId(), self);
-        } else {
-            competitorService.criar(self);
-        }
+        competitorService.criar(self);
 
         return team;
     }
