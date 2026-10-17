@@ -4,6 +4,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -19,6 +24,8 @@ import br.edu.ufrb.rascomp.model.Competitor;
 import br.edu.ufrb.rascomp.model.ParticipantCompetitionRegistration;
 import br.edu.ufrb.rascomp.model.ParticipantRegistrationStatusHistory;
 import br.edu.ufrb.rascomp.model.Registration;
+import br.edu.ufrb.rascomp.model.RobotResponsible;
+import br.edu.ufrb.rascomp.model.Enum.StatusRegistration;
 import br.edu.ufrb.rascomp.model.UserAccount;
 import br.edu.ufrb.rascomp.model.Enum.ParticipantCompetitionRegistrationStatus;
 import br.edu.ufrb.rascomp.model.Enum.StatusCompetition;
@@ -187,10 +194,61 @@ public class ParticipantCompetitionRegistrationService {
     public List<ParticipantCompetitionRegistrationDTO> listarPorCompeticao(Long competitionId) {
         competitionContextService.exigirOperavel(competitionId);
         buscarCompetition(competitionId);
-        return repository.findByCompetitionIdOrderByDataCadastroDesc(competitionId)
-                .stream()
-                .map(this::toDto)
-                .toList();
+        List<ParticipantCompetitionRegistration> participants =
+                repository.findByCompetitionIdOrderByDataCadastroDesc(competitionId);
+        if (participants.isEmpty()) return List.of();
+
+        Set<Long> competitorIds = participants.stream()
+                .map(p -> p.getCompetitor().getId()).collect(Collectors.toSet());
+        Map<Long, List<RobotResponsible>> responsibles = robotResponsibleRepository
+                .findByCompetitorIdInAndAtivoTrue(competitorIds).stream()
+                .collect(Collectors.groupingBy(r -> r.getCompetitor().getId()));
+        List<Registration> registrations = registrationRepository
+                .findByCompetitionIdOrderByDataCadastroDesc(competitionId);
+        Map<Long, List<Registration>> byRobot = registrations.stream()
+                .filter(r -> r.getRobot() != null)
+                .collect(Collectors.groupingBy(r -> r.getRobot().getId()));
+        Set<Long> competitivelyLinked = new HashSet<>();
+        for (Object[] link : registrationRepository.findCompetitorRegistrationStatuses(competitionId)) {
+            StatusRegistration registrationStatus = (StatusRegistration) link[1];
+            if (registrationStatus == StatusRegistration.PENDENTE
+                    || registrationStatus == StatusRegistration.APROVADA) {
+                competitivelyLinked.add((Long) link[0]);
+            }
+        }
+        Map<Long, Boolean> teamHasOthers = new HashMap<>();
+        return participants.stream().map(entity -> {
+            ParticipantCompetitionRegistrationDTO dto = new ParticipantCompetitionRegistrationDTO(entity);
+            Long competitorId = entity.getCompetitor().getId();
+            Long teamId = entity.getCompetitor().getTeam().getId();
+            dto.setTeamHasOtherActiveCompetitors(teamHasOthers.computeIfAbsent(teamId,
+                    id -> competitorRepository.countByTeamIdAndAtivoTrue(id) > 1));
+            List<ParticipantRobotLinkDTO> links = new ArrayList<>();
+            for (RobotResponsible responsible : responsibles.getOrDefault(competitorId, List.of())) {
+                var robot = responsible.getRobot();
+                List<Registration> robotRegistrations = byRobot.getOrDefault(robot.getId(), List.of());
+                if (robotRegistrations.isEmpty()) {
+                    links.add(new ParticipantRobotLinkDTO(robot.getId(), robot.getNome(),
+                            null, null, null, null));
+                } else {
+                    for (Registration registration : robotRegistrations) {
+                        links.add(new ParticipantRobotLinkDTO(robot.getId(), robot.getNome(),
+                                registration.getId(), registration.getCategory().getId(),
+                                registration.getCategory().getNome(), registration.getStatus()));
+                    }
+                }
+            }
+            dto.setRobots(links);
+            boolean associated = competitivelyLinked.contains(competitorId);
+            if (associated && Boolean.TRUE.equals(entity.getCompetitiveLinkSuspended())) {
+                entity.setCompetitiveLinkSuspended(false);
+                entity.setCompetitiveLinkSuspendedAt(null);
+                repository.save(entity);
+            }
+            dto.setCompetitiveLinkSatisfied(associated);
+            dto.setCompetitiveLinkSuspended(Boolean.TRUE.equals(entity.getCompetitiveLinkSuspended()));
+            return dto;
+        }).toList();
     }
 
     @Transactional

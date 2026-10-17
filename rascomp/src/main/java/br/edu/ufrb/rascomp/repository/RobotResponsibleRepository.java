@@ -1,6 +1,7 @@
 package br.edu.ufrb.rascomp.repository;
 
 import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,6 +17,8 @@ public interface RobotResponsibleRepository extends JpaRepository<RobotResponsib
     List<RobotResponsible> findByRobotIdAndAtivoTrueOrderByCompetitorNomeAsc(Long robotId);
 
     List<RobotResponsible> findByCompetitorIdAndAtivoTrueOrderByRobotNomeAsc(Long competitorId);
+
+    List<RobotResponsible> findByCompetitorIdInAndAtivoTrue(Collection<Long> competitorIds);
 
     Optional<RobotResponsible> findByRobotIdAndCompetitorId(Long robotId, Long competitorId);
 
