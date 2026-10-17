@@ -18,7 +18,7 @@ COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod 755 /app/docker-entrypoint.sh
 
 ENV PORT=8080
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=55.0 -XX:InitialRAMPercentage=10.0 -Djava.security.egd=file:/dev/./urandom"
 EXPOSE 8080
 USER rascomp
 
