@@ -91,7 +91,7 @@ BEGIN
                      '[LOCAL TESTE] Dupla eliminacao 8')
     GROUP BY c.id,c.nome
     ORDER BY c.nome;
-END$
+END$$
 DELIMITER ;
 CALL seed_local_double_elimination();
 DROP PROCEDURE seed_local_double_elimination;
