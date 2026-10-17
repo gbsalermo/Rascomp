@@ -48,28 +48,6 @@ public class ParticipantCompetitionRegistrationService {
     private final RegistrationCompositionService compositionService;
     private final RegistrationLotService registrationLotService;
 
-    private Competitor obterOuCriarCompetidorIndividual(UserAccount usuario) {
-        return competitorRepository.findByUserAccountId(usuario.getId())
-                .orElseGet(() -> {
-                    Competitor existente = competitorRepository.findByEmailIgnoreCase(usuario.getEmail()).orElse(null);
-                    if (existente != null) {
-                        if (existente.getUserAccount() != null
-                                && !existente.getUserAccount().getId().equals(usuario.getId())) {
-                            throw new IllegalArgumentException("E-mail já vinculado a outra conta.");
-                        }
-                        existente.setUserAccount(usuario);
-                        return competitorRepository.save(existente);
-                    }
-                    Competitor novo = new Competitor();
-                    novo.setNome(usuario.getNome());
-                    novo.setEmail(usuario.getEmail());
-                    novo.setTelefone(usuario.getTelefone());
-                    novo.setUserAccount(usuario);
-                    novo.setAtivo(usuario.getAtivo());
-                    return competitorRepository.save(novo);
-                });
-    }
-
     @Transactional
     public ParticipantCompetitionRegistrationDTO criarParaParticipanteAtual(
             ParticipantCompetitionRegistrationRequest request,
@@ -80,7 +58,9 @@ public class ParticipantCompetitionRegistrationService {
             throw new AccessDeniedException("Somente PARTICIPANTE pode enviar inscrição pessoal.");
         }
 
-        Competitor competitor = obterOuCriarCompetidorIndividual(usuario);
+        Competitor competitor = competitorRepository.findByUserAccountId(usuario.getId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Associe sua conta a uma equipe antes de se inscrever na competição."));
 
         if (!Boolean.TRUE.equals(competitor.getAtivo())) {
             throw new IllegalArgumentException("Seu vínculo de competidor está inativo.");
@@ -193,8 +173,9 @@ public class ParticipantCompetitionRegistrationService {
     @Transactional
     public List<ParticipantCompetitionRegistrationDTO> minhas() {
         UserAccount usuario = userAccountService.buscarAtual();
-        Competitor competitor = competitorRepository.findByUserAccountId(usuario.getId()).orElse(null);
-        if (competitor == null) return List.of();
+        Competitor competitor = competitorRepository.findByUserAccountId(usuario.getId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Sua conta ainda não possui vínculo de competidor com uma equipe."));
 
         return repository.findByCompetitorIdOrderByDataCadastroDesc(competitor.getId())
                 .stream()
@@ -494,7 +475,6 @@ public class ParticipantCompetitionRegistrationService {
 
     private boolean ehLiderAtualDaEquipe(ParticipantCompetitionRegistration entity) {
         return entity.getCompetitor().getUserAccount() != null
-                && entity.getCompetitor().getTeam() != null
                 && entity.getCompetitor().getTeam().getResponsibleUser() != null
                 && entity.getCompetitor().getUserAccount().getId()
                         .equals(entity.getCompetitor().getTeam().getResponsibleUser().getId());
