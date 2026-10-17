@@ -282,6 +282,7 @@ public class ParticipantCompetitionRegistrationService {
     @Transactional
     public ParticipantCompetitionRegistrationDTO reenviarCorrecao(
             Long id,
+            String observacao,
             MultipartFile comprovante) {
 
         ParticipantCompetitionRegistration entity = buscar(id);
@@ -300,20 +301,40 @@ public class ParticipantCompetitionRegistrationService {
                     "Não é possível corrigir a inscrição depois do início da competição.");
         }
 
-        RegistrationReceiptStorageService.StoredReceipt receipt = receiptStorageService.armazenar(
-                "participante",
-                entity.getCompetition().getId(),
-                entity.getCompetitor().getId(),
-                comprovante);
-
-        if (entity.getPaymentReceiptStorageKey() != null) {
-            receiptStorageService.remover(entity.getPaymentReceiptStorageKey());
+        if (observacao != null && observacao.length() > 500) {
+            throw new IllegalArgumentException("A observação deve possuir no máximo 500 caracteres.");
         }
 
-        ParticipantCompetitionRegistrationStatus anterior = entity.getStatus();
-        entity.setPaymentReceiptStorageKey(receipt.storageKey());
-        entity.setPaymentReceiptOriginalName(receipt.originalFilename());
-        entity.setPaymentReceiptContentType(receipt.contentType());
+        String anterior = entity.getObservacao() == null ? "" : entity.getObservacao().trim();
+        String atual = observacao == null ? anterior : observacao.trim();
+        boolean alterouObservacao = observacao != null && !anterior.equals(atual);
+        boolean alterouComprovante = comprovante != null;
+
+        if (!alterouObservacao && !alterouComprovante) {
+            throw new IllegalArgumentException(
+                    "Altere a observação ou selecione um novo comprovante antes de reenviar.");
+        }
+
+        String chaveComprovanteAnterior = entity.getPaymentReceiptStorageKey();
+        if (alterouComprovante) {
+            RegistrationReceiptStorageService.StoredReceipt receipt = receiptStorageService.armazenar(
+                    "participante",
+                    entity.getCompetition().getId(),
+                    entity.getCompetitor().getId(),
+                    comprovante);
+            entity.setPaymentReceiptStorageKey(receipt.storageKey());
+            entity.setPaymentReceiptOriginalName(receipt.originalFilename());
+            entity.setPaymentReceiptContentType(receipt.contentType());
+        } else if (chaveComprovanteAnterior == null || chaveComprovanteAnterior.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Esta inscrição não possui comprovante anterior. Anexe um comprovante.");
+        }
+
+        if (alterouObservacao) {
+            entity.setObservacao(atual.isEmpty() ? null : atual);
+        }
+
+        ParticipantCompetitionRegistrationStatus statusAnterior = entity.getStatus();
         entity.setStatus(ParticipantCompetitionRegistrationStatus.PENDENTE);
         entity.setAtivo(true);
         entity.setReviewedByUser(null);
@@ -321,13 +342,21 @@ public class ParticipantCompetitionRegistrationService {
         entity.setReviewReason(null);
 
         ParticipantCompetitionRegistration salva = repository.save(entity);
+        String detalhes = alterouObservacao && alterouComprovante
+                ? "observação e comprovante atualizados"
+                : alterouObservacao ? "observação atualizada" : "comprovante substituído";
         registrarHistorico(
                 salva,
-                anterior,
+                statusAnterior,
                 ParticipantCompetitionRegistrationStatus.PENDENTE,
                 usuario,
-                "Correção reenviada pelo participante.");
+                "Correção reenviada pelo participante: " + detalhes + ".");
         compositionService.sincronizarPorInscricaoPessoal(salva, usuario);
+
+        if (alterouComprovante && chaveComprovanteAnterior != null
+                && !chaveComprovanteAnterior.equals(salva.getPaymentReceiptStorageKey())) {
+            receiptStorageService.remover(chaveComprovanteAnterior);
+        }
         return toDto(salva);
     }
 

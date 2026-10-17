@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -235,6 +236,112 @@ class ParticipantCompetitionRegistrationServiceTest {
         assertEquals(true, result.getCompetitiveLinkSatisfied());
         assertEquals(false, result.getCompetitiveLinkSuspended());
         verify(repository).save(personal);
+    }
+
+    @Test
+    void correcaoDaObservacaoNaoExigeNovoComprovante() {
+        Contexto c = contexto();
+        ParticipantCompetitionRegistration entity = inscricao(c);
+        entity.setStatus(ParticipantCompetitionRegistrationStatus.CORRECAO_SOLICITADA);
+        entity.setObservacao("Texto antigo.");
+        entity.setPaymentReceiptStorageKey("participante/comprovante-anterior.pdf");
+        entity.setPaymentReceiptOriginalName("antigo.pdf");
+        entity.setPaymentReceiptContentType("application/pdf");
+
+        when(repository.findById(50L)).thenReturn(Optional.of(entity));
+        when(userAccountService.buscarAtual()).thenReturn(c.user());
+        when(repository.save(entity)).thenReturn(entity);
+
+        var result = service.reenviarCorrecao(50L, "Texto corrigido.", null);
+
+        assertEquals(ParticipantCompetitionRegistrationStatus.PENDENTE, result.getStatus());
+        assertEquals("Texto corrigido.", result.getObservacao());
+        assertEquals("antigo.pdf", result.getComprovanteNome());
+        assertEquals("participante/comprovante-anterior.pdf", entity.getPaymentReceiptStorageKey());
+        verifyNoInteractions(receiptStorageService);
+        verify(compositionService).sincronizarPorInscricaoPessoal(entity, c.user());
+        verify(statusHistoryRepository).save(org.mockito.ArgumentMatchers.argThat(h ->
+                h.getReason().contains("observação atualizada")));
+    }
+
+    @Test
+    void correcaoDoComprovantePreservaObservacaoExistente() {
+        Contexto c = contexto();
+        ParticipantCompetitionRegistration entity = inscricao(c);
+        entity.setStatus(ParticipantCompetitionRegistrationStatus.CORRECAO_SOLICITADA);
+        entity.setObservacao("Observação original.");
+        entity.setPaymentReceiptStorageKey("participante/anterior.pdf");
+        entity.setPaymentReceiptOriginalName("anterior.pdf");
+        entity.setPaymentReceiptContentType("application/pdf");
+        MockMultipartFile novo = comprovante();
+
+        when(repository.findById(50L)).thenReturn(Optional.of(entity));
+        when(userAccountService.buscarAtual()).thenReturn(c.user());
+        when(repository.save(entity)).thenReturn(entity);
+        when(receiptStorageService.armazenar("participante", 1L, 5L, novo))
+                .thenReturn(new RegistrationReceiptStorageService.StoredReceipt(
+                        "participante/novo.pdf", "novo.pdf", "application/pdf"));
+
+        var result = service.reenviarCorrecao(50L, null, novo);
+
+        assertEquals(ParticipantCompetitionRegistrationStatus.PENDENTE, result.getStatus());
+        assertEquals("Observação original.", result.getObservacao());
+        assertEquals("novo.pdf", result.getComprovanteNome());
+        verify(receiptStorageService).remover("participante/anterior.pdf");
+    }
+
+    @Test
+    void correcaoPodeAtualizarObservacaoEComprovanteJuntos() {
+        Contexto c = contexto();
+        ParticipantCompetitionRegistration entity = inscricao(c);
+        entity.setStatus(ParticipantCompetitionRegistrationStatus.CORRECAO_SOLICITADA);
+        entity.setObservacao("Antes");
+        entity.setPaymentReceiptStorageKey("participante/antigo.pdf");
+        MockMultipartFile novo = comprovante();
+
+        when(repository.findById(50L)).thenReturn(Optional.of(entity));
+        when(userAccountService.buscarAtual()).thenReturn(c.user());
+        when(repository.save(entity)).thenReturn(entity);
+        when(receiptStorageService.armazenar("participante", 1L, 5L, novo))
+                .thenReturn(new RegistrationReceiptStorageService.StoredReceipt(
+                        "participante/novo.pdf", "novo.pdf", "application/pdf"));
+
+        var result = service.reenviarCorrecao(50L, "Depois", novo);
+
+        assertEquals("Depois", result.getObservacao());
+        assertEquals("novo.pdf", result.getComprovanteNome());
+        verify(statusHistoryRepository).save(org.mockito.ArgumentMatchers.argThat(h ->
+                h.getReason().contains("observação e comprovante atualizados")));
+    }
+
+    @Test
+    void correcaoSemAlteracoesOuMuitoLongaNaoEEnviada() {
+        Contexto c = contexto();
+        ParticipantCompetitionRegistration entity = inscricao(c);
+        entity.setStatus(ParticipantCompetitionRegistrationStatus.CORRECAO_SOLICITADA);
+        entity.setObservacao("Texto igual.");
+        entity.setPaymentReceiptStorageKey("participante/antigo.pdf");
+
+        when(repository.findById(50L)).thenReturn(Optional.of(entity));
+        when(userAccountService.buscarAtual()).thenReturn(c.user());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.reenviarCorrecao(50L, "Texto igual.", null));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.reenviarCorrecao(50L, "A".repeat(501), null));
+        assertEquals(ParticipantCompetitionRegistrationStatus.CORRECAO_SOLICITADA, entity.getStatus());
+        verifyNoInteractions(receiptStorageService);
+    }
+
+    @Test
+    void correcaoNaoPodeSerFeitaForaDoStatusSolicitado() {
+        Contexto c = contexto();
+        ParticipantCompetitionRegistration entity = inscricao(c);
+        when(repository.findById(50L)).thenReturn(Optional.of(entity));
+        when(userAccountService.buscarAtual()).thenReturn(c.user());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.reenviarCorrecao(50L, "Alteração", null));
     }
 
     private ParticipantCompetitionRegistration inscricao(Contexto c) {
