@@ -70,9 +70,6 @@ class ParticipantCompetitionRegistrationServiceTest {
                 .thenReturn(Optional.of(c.competitor()));
         when(competitionRepository.findById(c.competition().getId()))
                 .thenReturn(Optional.of(c.competition()));
-        when(repository.existsByCompetitionIdAndCompetitorId(
-                c.competition().getId(), c.competitor().getId()))
-                .thenReturn(false);
         when(receiptStorageService.armazenar(
                 "participante",
                 c.competition().getId(),
@@ -142,6 +139,7 @@ class ParticipantCompetitionRegistrationServiceTest {
 
         when(repository.findById(50L)).thenReturn(Optional.of(entity));
         when(userAccountService.buscarAtual()).thenReturn(gestao);
+        when(competitorRepository.countByTeamIdAndAtivoTrue(c.team().getId())).thenReturn(2L);
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
@@ -176,6 +174,7 @@ class ParticipantCompetitionRegistrationServiceTest {
         assertEquals(
                 ParticipantCompetitionRegistrationStatus.CORRECAO_SOLICITADA,
                 resultado.getStatus());
+        assertEquals("Reenvie um comprovante legível.", resultado.getReviewReason());
         verify(compositionService).sincronizarPorInscricaoPessoal(entity, gestao);
     }
 
