@@ -52,18 +52,16 @@ public class CompetitorDTO {
         this.nome = entity.getNome();
         this.email = entity.getEmail();
         this.telefone = entity.getTelefone();
-        if (entity.getTeam() != null) {
-            this.teamId = entity.getTeam().getId();
-            this.teamNome = entity.getTeam().getNome();
-            this.institutionId = entity.getTeam().getInstitution().getId();
-            this.institutionNome = entity.getTeam().getInstitution().getNome();
-            this.institutionSigla = entity.getTeam().getInstitution().getSigla();
-        }
+        this.teamId = entity.getTeam().getId();
+        this.teamNome = entity.getTeam().getNome();
+        this.institutionId = entity.getTeam().getInstitution().getId();
+        this.institutionNome = entity.getTeam().getInstitution().getNome();
+        this.institutionSigla = entity.getTeam().getInstitution().getSigla();
 
         if (entity.getUserAccount() != null) {
             this.userAccountId = entity.getUserAccount().getId();
             this.userAccountNome = entity.getUserAccount().getNome();
-            this.teamLeader = entity.getTeam() != null && entity.getTeam().getResponsibleUser() != null
+            this.teamLeader = entity.getTeam().getResponsibleUser() != null
                     && entity.getTeam().getResponsibleUser().getId()
                             .equals(entity.getUserAccount().getId());
         } else {
