@@ -69,9 +69,15 @@ public class ParticipantCompetitionRegistrationService {
         Competition competition = buscarCompetition(request.getCompetitionId());
         validarInscricoesAbertas(competition);
 
-        if (repository.existsByCompetitionIdAndCompetitorId(competition.getId(), competitor.getId())) {
+        ParticipantCompetitionRegistration entity = repository
+                .findByCompetitionIdAndCompetitorId(competition.getId(), competitor.getId())
+                .orElse(null);
+        if (entity != null && entity.getStatus() != ParticipantCompetitionRegistrationStatus.REJEITADA) {
             throw new IllegalArgumentException(
                     "Você já possui uma inscrição pessoal nesta competição. Reabra ou acompanhe a inscrição existente.");
+        }
+        if (entity != null && !entity.getRequestedByUser().getId().equals(usuario.getId())) {
+            throw new AccessDeniedException("Você não pode reenviar a inscrição pessoal de outra pessoa.");
         }
 
         var registrationLot = registrationLotService.resolverParaNovaInscricao(competition);
@@ -82,12 +88,20 @@ public class ParticipantCompetitionRegistrationService {
                 competitor.getId(),
                 comprovante);
 
-        ParticipantCompetitionRegistration entity = new ParticipantCompetitionRegistration();
-        entity.setCompetition(competition);
+        boolean reenviandoRejeitada = entity != null;
+        if (entity == null) {
+            entity = new ParticipantCompetitionRegistration();
+            entity.setCompetition(competition);
+            entity.setCompetitor(competitor);
+            entity.setRequestedByUser(usuario);
+        }
         entity.setRegistrationLot(registrationLot);
-        entity.setCompetitor(competitor);
-        entity.setRequestedByUser(usuario);
         entity.setStatus(ParticipantCompetitionRegistrationStatus.PENDENTE);
+        entity.setReviewedByUser(null);
+        entity.setReviewedAt(null);
+        entity.setReviewReason(null);
+        entity.setCompetitiveLinkSuspended(false);
+        entity.setCompetitiveLinkSuspendedAt(null);
         entity.setObservacao(request.getObservacao());
         entity.setPaymentReceiptStorageKey(receipt.storageKey());
         entity.setPaymentReceiptOriginalName(receipt.originalFilename());
@@ -97,10 +111,10 @@ public class ParticipantCompetitionRegistrationService {
         ParticipantCompetitionRegistration salva = repository.save(entity);
         registrarHistorico(
                 salva,
-                null,
+                reenviandoRejeitada ? ParticipantCompetitionRegistrationStatus.REJEITADA : null,
                 ParticipantCompetitionRegistrationStatus.PENDENTE,
                 usuario,
-                null);
+                reenviandoRejeitada ? "Nova tentativa após rejeição." : null);
         return toDto(salva);
     }
 
@@ -206,7 +220,8 @@ public class ParticipantCompetitionRegistrationService {
         }
 
         if (request.getStatus() == ParticipantCompetitionRegistrationStatus.REJEITADA
-                && ehLiderAtualDaEquipe(entity)) {
+                && ehLiderAtualDaEquipe(entity)
+                && equipePossuiOutrosCompetidoresAtivos(entity)) {
             throw new IllegalArgumentException(
                     "A inscrição do líder da equipe não pode ser rejeitada diretamente. "
                             + "Solicite correção ao próprio líder ou peça ao DEV para transferir a liderança "
@@ -383,6 +398,7 @@ public class ParticipantCompetitionRegistrationService {
 
     private ParticipantCompetitionRegistrationDTO toDto(ParticipantCompetitionRegistration entity) {
         ParticipantCompetitionRegistrationDTO dto = new ParticipantCompetitionRegistrationDTO(entity);
+        dto.setTeamHasOtherActiveCompetitors(equipePossuiOutrosCompetidoresAtivos(entity));
         List<ParticipantRobotLinkDTO> links = new ArrayList<>();
 
         robotResponsibleRepository
@@ -457,6 +473,10 @@ public class ParticipantCompetitionRegistrationService {
         if (competition.getStatus() != StatusCompetition.INSCRICOES_ABERTAS || !dentroDaJanela) {
             throw new IllegalArgumentException("As inscrições não estão abertas para esta competição.");
         }
+    }
+
+    private boolean equipePossuiOutrosCompetidoresAtivos(ParticipantCompetitionRegistration entity) {
+        return competitorRepository.countByTeamIdAndAtivoTrue(entity.getCompetitor().getTeam().getId()) > 1;
     }
 
     private boolean ehLiderAtualDaEquipe(ParticipantCompetitionRegistration entity) {

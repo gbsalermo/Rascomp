@@ -66,6 +66,23 @@ public class Match implements Serializable {
     @JoinColumn(name = "registration_b_id")
     private Registration registrationB;
 
+    @Column(name = "bracket_section", nullable = false, length = 24)
+    private String bracketSection = "WINNERS";
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "winner_next_match_id")
+    private Match winnerNextMatch;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "loser_next_match_id")
+    private Match loserNextMatch;
+
+    @Column(name = "winner_next_slot", length = 1)
+    private String winnerNextSlot;
+
+    @Column(name = "loser_next_slot", length = 1)
+    private String loserNextSlot;
+
     @Column
     private LocalDateTime dataHora;
 

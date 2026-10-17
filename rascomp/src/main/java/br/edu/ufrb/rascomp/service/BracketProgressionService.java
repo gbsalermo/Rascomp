@@ -1,6 +1,9 @@
 package br.edu.ufrb.rascomp.service;
 
 import java.util.Comparator;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayDeque;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -37,6 +40,11 @@ public class BracketProgressionService {
 
         validarVencedorDaPartida(match, winner);
 
+        if ("DOUBLE_ELIMINATION".equals(match.getBracket().getBracketFormat())) {
+            avancarDuplaEliminacao(match, winner);
+            resolverAvancosAutomaticos(match.getBracket().getId());
+            return;
+        }
         alimentarTerceiroLugarSeSemifinal(match, winner);
 
         Match proximaPartida = buscarProximaPartida(match);
@@ -57,6 +65,118 @@ public class BracketProgressionService {
         matchRepository.save(proximaPartida);
     }
 
+    private void avancarDuplaEliminacao(Match match, Registration winner) {
+        Registration loser = oponente(match, winner);
+        String section = match.getBracketSection();
+        if (loser == null && (match.getRegistrationA() == null && match.getRegistrationB() == null
+                || (match.getStatus() != StatusMatch.BYE && match.getStatus() != StatusMatch.FINALIZADA))) {
+            throw new IllegalArgumentException("Partida sem adversário só pode avançar como BYE decidido.");
+        }
+        if ("GRAND_FINAL".equals(section)) {
+            if (loser == null) throw new IllegalArgumentException("Final geral não permite BYE.");
+            if (match.getRegistrationA().getId().equals(winner.getId())) {
+                finalizarDuplaEliminacao(match.getBracket());
+            } else {
+                Match reset = match.getWinnerNextMatch();
+                if (reset == null || !"GRAND_FINAL_RESET".equals(reset.getBracketSection())) {
+                    throw new IllegalStateException("Final de reset não configurada.");
+                }
+                enviarParaSlot(reset, "A", winner);
+                enviarParaSlot(reset, "B", loser);
+            }
+            return;
+        }
+        if ("GRAND_FINAL_RESET".equals(section)) {
+            finalizarDuplaEliminacao(match.getBracket());
+            return;
+        }
+        if (match.getWinnerNextMatch() != null) {
+            enviarParaSlot(match.getWinnerNextMatch(), match.getWinnerNextSlot(), winner);
+        }
+        if (loser != null && match.getLoserNextMatch() != null) {
+            enviarParaSlot(match.getLoserNextMatch(), match.getLoserNextSlot(), loser);
+        }
+    }
+
+    private void enviarParaSlot(Match target, String slot, Registration registration) {
+        validarProximaPartidaEditavel(target);
+        if ("A".equals(slot)) preencherSlotA(target, registration);
+        else if ("B".equals(slot)) preencherSlotB(target, registration);
+        else throw new IllegalArgumentException("Destino de partida sem slot configurado.");
+        atualizarStatus(target);
+        matchRepository.save(target);
+    }
+
+    private void finalizarDuplaEliminacao(Bracket bracket) {
+        Bracket atual = buscarBracket(bracket.getId());
+        atual.setStatus(StatusBracket.FINALIZADO);
+        bracketRepository.save(atual);
+    }
+
+    /**
+     * Só resolve um BYE quando TODAS as duas origens da partida estão decididas.
+     * Isso impede eliminar cedo um perdedor que ainda chegará da Winners.
+     * Partidas com zero participantes são caminhos vazios, nunca vitórias ou derrotas.
+     */
+    @Transactional
+    public void resolverAvancosAutomaticos(Long bracketId) {
+        List<Match> all = matchRepository.findByBracketIdOrderByRodadaAscOrdemAsc(bracketId);
+        boolean changed;
+        int guard = 0;
+        do {
+            changed = false;
+            for (Match target : all) {
+                if ("GRAND_FINAL_RESET".equals(target.getBracketSection())
+                        || target.getStatus() != StatusMatch.AGUARDANDO_PARTICIPANTES) continue;
+
+                boolean hasA = false, hasB = false, readyA = false, readyB = false;
+                for (Match source : all) {
+                    if (sameTarget(source.getWinnerNextMatch(), target)) {
+                        if ("A".equals(source.getWinnerNextSlot())) {
+                            hasA = true;
+                            readyA = source.getStatus() == StatusMatch.FINALIZADA;
+                        } else if ("B".equals(source.getWinnerNextSlot())) {
+                            hasB = true;
+                            readyB = source.getStatus() == StatusMatch.FINALIZADA;
+                        }
+                    }
+                    if (sameTarget(source.getLoserNextMatch(), target)) {
+                        if ("A".equals(source.getLoserNextSlot())) {
+                            hasA = true;
+                            readyA = source.getStatus() == StatusMatch.FINALIZADA;
+                        } else if ("B".equals(source.getLoserNextSlot())) {
+                            hasB = true;
+                            readyB = source.getStatus() == StatusMatch.FINALIZADA;
+                        }
+                    }
+                }
+                if (!hasA || !hasB || !readyA || !readyB) continue;
+
+                Registration a = target.getRegistrationA(), b = target.getRegistrationB();
+                if (a != null && b != null) {
+                    target.setStatus(StatusMatch.AGENDADA);
+                } else {
+                    target.setStatus(StatusMatch.FINALIZADA);
+                    matchRepository.save(target);
+                    if (a != null || b != null) {
+                        avancarDuplaEliminacao(target, a != null ? a : b);
+                    }
+                    // Empty paths carry no winner and automatically unblock
+                    // the next round through this fixed-point traversal.
+                }
+                matchRepository.save(target);
+                changed = true;
+            }
+            if (++guard > all.size() + 1) {
+                throw new IllegalStateException("Progressão automática não convergiu.");
+            }
+        } while (changed);
+    }
+
+    private boolean sameTarget(Match candidate, Match target) {
+        return candidate != null && candidate.getId().equals(target.getId());
+    }
+
     @Transactional
     public void corrigirVencedor(
             Match match,
@@ -67,6 +187,10 @@ public class BracketProgressionService {
         if (novoVencedor != null) validarVencedorDaPartida(match, novoVencedor);
 
         if (mesmaInscricao(vencedorAnterior, novoVencedor)) return;
+        if ("DOUBLE_ELIMINATION".equals(match.getBracket().getBracketFormat())) {
+            corrigirDuplaEliminacao(match, novoVencedor);
+            return;
+        }
 
         Match proximaPartida = buscarProximaPartida(match);
         if (proximaPartida == null) {
@@ -130,6 +254,84 @@ public class BracketProgressionService {
                         proximaRodada,
                         proximaOrdem)
                 .orElse(null);
+    }
+
+    /**
+     * Reconstitui os destinos da partida corrigida. Descendentes que já possuem
+     * rounds/resultados são imutáveis pelo fluxo excepcional: alterações nesses
+     * casos exigem uma intervenção auditada específica, sem apagar disputas.
+     */
+    private void corrigirDuplaEliminacao(Match source, Registration correctedWinner) {
+        List<Match> all = matchRepository.findByBracketIdOrderByRodadaAscOrdemAsc(source.getBracket().getId());
+        Set<Long> affected = new HashSet<>();
+        ArrayDeque<Match> queue = new ArrayDeque<>();
+        queue.add(source);
+        while (!queue.isEmpty()) {
+            Match current = queue.removeFirst();
+            for (Match target : new Match[]{current.getWinnerNextMatch(), current.getLoserNextMatch()}) {
+                if (target == null || target.getId().equals(source.getId())
+                        || !affected.add(target.getId())) continue;
+                queue.add(target);
+            }
+        }
+
+        for (Match downstream : all) {
+            if (!affected.contains(downstream.getId())) continue;
+            if (matchResultRepository.existsByMatchId(downstream.getId())
+                    || roundSumoRepository.existsByMatchId(downstream.getId())
+                    || downstream.getStatus() == StatusMatch.EM_ANDAMENTO
+                    || downstream.getStatus() == StatusMatch.CANCELADA) {
+                throw new IllegalArgumentException(
+                        "Uma partida dependente já possui disputa, resultado ou bloqueio. Não é seguro corrigir o vencedor.");
+            }
+        }
+
+        for (Match downstream : all) {
+            if (!affected.contains(downstream.getId())) continue;
+            downstream.setRegistrationA(null);
+            downstream.setRegistrationB(null);
+            downstream.setStatus(StatusMatch.AGUARDANDO_PARTICIPANTES);
+            downstream.setStatusConvocacao(StatusConvocacaoPartida.NAO_CONVOCADA);
+            matchRepository.save(downstream);
+        }
+
+        reabrirChaveamento(source.getBracket());
+        if (correctedWinner == null) {
+            source.setStatus(StatusMatch.AGENDADA);
+            matchRepository.save(source);
+        }
+
+        // Reaplica exclusivamente contribuições de origens fora da região
+        // afetada (inclusive a nova decisão da partida de origem).
+        for (Match upstream : all) {
+            if (affected.contains(upstream.getId()) || upstream.getStatus() != StatusMatch.FINALIZADA) continue;
+            Registration winner;
+            if (upstream.getId().equals(source.getId())) {
+                winner = correctedWinner;
+            } else {
+                var result = matchResultRepository.findByMatchId(upstream.getId()).orElse(null);
+                winner = result != null ? result.getWinner()
+                        : upstream.getRegistrationA() == null ? upstream.getRegistrationB()
+                        : upstream.getRegistrationB() == null ? upstream.getRegistrationA() : null;
+            }
+            if (winner == null) continue;
+            Registration loser = oponente(upstream, winner);
+            if ("GRAND_FINAL".equals(upstream.getBracketSection())) {
+                if (upstream.getRegistrationA().getId().equals(winner.getId())) {
+                    finalizarDuplaEliminacao(upstream.getBracket());
+                    continue;
+                }
+            }
+            if (upstream.getWinnerNextMatch() != null
+                    && affected.contains(upstream.getWinnerNextMatch().getId())) {
+                enviarParaSlot(upstream.getWinnerNextMatch(), upstream.getWinnerNextSlot(), winner);
+            }
+            if (loser != null && upstream.getLoserNextMatch() != null
+                    && affected.contains(upstream.getLoserNextMatch().getId())) {
+                enviarParaSlot(upstream.getLoserNextMatch(), upstream.getLoserNextSlot(), loser);
+            }
+        }
+        resolverAvancosAutomaticos(source.getBracket().getId());
     }
 
     private void preencherSlotA(Match proximaPartida, Registration winner) {

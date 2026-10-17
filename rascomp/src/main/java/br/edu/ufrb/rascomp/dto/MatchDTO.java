@@ -32,6 +32,8 @@ public class MatchDTO {
     @NotNull @Min(1) private Integer rodada;
     @NotNull @Min(1) private Integer ordem;
     private TipoPartidaSumo tipoPartida;
+    private String bracketSection;
+    private String bracketFormat;
     private Long registrationAId;
     private StatusRegistration registrationAStatus;
     private Long robotAId;
@@ -63,6 +65,8 @@ public class MatchDTO {
         this.rodada = entity.getRodada();
         this.ordem = entity.getOrdem();
         this.tipoPartida = entity.getTipoPartida();
+        this.bracketSection = entity.getBracketSection();
+        this.bracketFormat = entity.getBracket().getBracketFormat();
         preencherParticipanteA(entity.getRegistrationA());
         preencherParticipanteB(entity.getRegistrationB());
         this.dataHora = entity.getDataHora();
