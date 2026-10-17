@@ -77,7 +77,6 @@ public class TeamService {
         competitorRepository.findByUserAccountId(userId)
                 .filter(competitor -> Boolean.TRUE.equals(competitor.getAtivo()))
                 .map(Competitor::getTeam)
-                .filter(java.util.Objects::nonNull)
                 .filter(team -> Boolean.TRUE.equals(team.getAtivo()))
                 .filter(team -> relacionadas.stream().noneMatch(item -> item.getId().equals(team.getId())))
                 .ifPresent(relacionadas::add);
