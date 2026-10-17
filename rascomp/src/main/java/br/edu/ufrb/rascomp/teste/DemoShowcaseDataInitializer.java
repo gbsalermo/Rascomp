@@ -24,6 +24,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,6 +96,7 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "rascomp.test-data.demo-showcase-enabled", havingValue = "true")
+@Profile("!testdata")
 public class DemoShowcaseDataInitializer implements CommandLineRunner {
 
     public static final String PARTICIPANT_EMAIL = "lider.demo@rascomp.local";
