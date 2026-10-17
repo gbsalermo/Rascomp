@@ -78,7 +78,12 @@ public class ParticipantPortalService {
         self.setTeamId(team.getId());
         self.setUserAccountId(usuario.getId());
         self.setAtivo(true);
-        competitorService.criar(self);
+        Competitor existente = competitorRepository.findByUserAccountId(usuario.getId()).orElse(null);
+        if (existente != null) {
+            competitorService.atualizar(existente.getId(), self);
+        } else {
+            competitorService.criar(self);
+        }
 
         return team;
     }
