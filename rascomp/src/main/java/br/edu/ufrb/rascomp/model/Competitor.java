@@ -43,8 +43,8 @@ public class Competitor implements Serializable {
     @Column(length = 20)
     private String telefone;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "team_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id"
     private Team team;
 
     @OneToOne(fetch = FetchType.LAZY)
