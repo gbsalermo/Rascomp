@@ -1,3 +1,29 @@
+## ROADMAP — DOSSIÊ TÉCNICO E OPERACIONAL DA COMPETIÇÃO (PLANEJADO — 18/10/2026)
+
+**Posição na sequência:** executar após os testes das chaves/modalidades, estabilização do MVP e validação da operação local/contingência com as mudanças atuais. Não introduzir novas funcionalidades para produzir o dossiê. **Status: planejado, não executado.**
+
+**Objetivo:** produzir estudo de caso profissional, auditável e visual sobre a construção e o uso real do RasComp na competição, para preservar histórico técnico e demonstrar resultados a recrutadores, mantendo um material de apresentação no repositório.
+
+**Escopo de documentação:**
+1. Arquitetura real implantada e evolução: frontend Vue, backend Spring Boot, MySQL Aiven, Render, Cloudflare Workers/R2, Resend, Docker/local; diagramas de componentes, fluxos de dados, autenticação, armazenamento, implantação e contingência.
+2. Engenharia do produto: requisitos, modelagem de competições/equipes/participantes/robôs, regras de negócio, decisões e trade-offs, Git/branches, migrations, testes e integração/deploy.
+3. Adoção e uso real: total de contas, participantes, equipes, robôs, inscrições por modalidade, partidas e operações administrativas; evolução temporal e picos, com dados agregados.
+4. Operação e responsividade: usuários ativos simultaneamente **somente se medidos**, requisições concorrentes, throughput, tempos de resposta p50/p95/p99, tempos de carregamento frontend, taxas de erro, CPU/RAM, conexões MySQL, gargalos e disponibilidade; identificar fonte, período e método de medição. Distinguir usuários cadastrados, ativos, sessões e requisições simultâneas.
+5. Incidentes e soluções: cronologia, sintomas, impacto, causa raiz confirmada ou hipótese, logs sanitizados, commits/PRs corretivos, comparação antes/depois e lições aprendidas (incluindo conexões, filtros, consultas pesadas, recargas, tela branca e limites free).
+6. Limitações e estratégias: custos/quotas de planos gratuitos, decisões de escopo MVP, segurança, backup/restore, contingência cloud-local, riscos remanescentes e melhorias pós-evento.
+7. Evidências visuais: screenshots anonimizados do sistema, dashboards, métricas, diagramas, gráficos, timeline e imagens da competição com autorização. Cada evidência deve trazer data, contexto e fonte.
+8. Síntese para recrutadores: resumo executivo, papel do desenvolvedor, desafio, solução, escala efetivamente observada, resultados demonstráveis, decisões difíceis e links para código/documentação.
+
+**Entregáveis sugeridos:** `docs/dossie-competicao/README.md` (índice), `ARQUITETURA.md`, `METRICAS_E_USO_REAL.md`, `INCIDENTES_E_SOLUCOES.md`, `LIMITACOES_E_LICOES.md`, `ESTUDO_DE_CASO.md` e `evidencias/` com imagens e gráficos sanitizados. Manter documentação detalhada e versão resumida para portfólio.
+
+**Coleta desde já:** preservar registros e capturas agregadas ao longo da operação e do dia da competição, pois logs e métricas dos provedores podem expirar antes da redação final. Evitar observabilidade nova onerosa ou que comprometa a estabilidade do MVP; preferir métricas existentes, capturas pontuais e medições seguras. Nunca executar teste de carga agressivo na produção durante inscrições/competição.
+
+**Privacidade e precisão:** não versionar credenciais, tokens, comprovantes, e-mails, dados pessoais, dumps ou logs sensíveis. Anonimizar e agregar; obter autorização para imagens identificáveis. Rotular dados como medidos em produção, simulados, estimados ou indisponíveis; não inventar números nem confundir teste local com desempenho real. Documentar limitações de medição.
+
+**Critério de conclusão:** dossiê versionado, links verificáveis, gráficos legíveis, números com período/fonte, decisões e incidentes rastreáveis e revisão de privacidade concluída.
+
+---
+
 ## ESTADO OFICIAL — RASCOMP MVP V1 EM OPERAÇÃO (OUTUBRO/2026)
 
 **O responsável confirmou que o RasComp V1 já está no ar e sendo usado para a competição.** A versão V1 está com seu escopo funcional fechado: Landing institucional, autenticação e recuperação de acesso, gestão de competições, participantes/equipes/robôs, inscrição individual e competitiva (inclusive Futebol sem cadastro prévio de robô), comprovantes e revisão administrativa, Regras e Ajuda, operação existente de Sumô e Follow Line. A operação de partidas de Futebol não foi declarada concluída.
