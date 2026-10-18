@@ -1,4 +1,4 @@
-## ROADMAP — DOSSIÊ TÉCNICO E OPERACIONAL DA COMPETIÇÃO (PLANEJADO — 18/10/2026)
+> **Atualização 18/10/2026 — histórico de produção:** criado [PRODUCAO_INCIDENTES_E_LICOES.md](https://github.com/gbsalermo/Rascomp/blob/main/rascomp/docs/PRODUCAO_INCIDENTES_E_LICOES.md) no backend para registrar desde já sintomas, correções, resultados e decisões após o lançamento. A coleta detalhada de métricas quantitativas para o dossiê fica para mais perto da competição, após os testes das chaves e validação local. O episódio da galeria e a decisão de congelar o MVP são o caso central inicial.\n\n## ROADMAP — DOSSIÊ TÉCNICO E OPERACIONAL DA COMPETIÇÃO (PLANEJADO — 18/10/2026)
 
 **Posição na sequência:** executar após os testes das chaves/modalidades, estabilização do MVP e validação da operação local/contingência com as mudanças atuais. Não introduzir novas funcionalidades para produzir o dossiê. **Status: planejado, não executado.**
 
