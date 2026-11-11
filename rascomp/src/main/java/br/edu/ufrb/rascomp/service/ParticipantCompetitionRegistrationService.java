@@ -192,10 +192,18 @@ public class ParticipantCompetitionRegistrationService {
 
     @Transactional
     public List<ParticipantCompetitionRegistrationDTO> listarPorCompeticao(Long competitionId) {
+        return listarPorCompeticao(competitionId, null);
+    }
+
+    @Transactional
+    public List<ParticipantCompetitionRegistrationDTO> listarPorCompeticao(
+            Long competitionId, ParticipantCompetitionRegistrationStatus status) {
         competitionContextService.exigirOperavel(competitionId);
         buscarCompetition(competitionId);
         List<ParticipantCompetitionRegistration> participants =
-                repository.findByCompetitionIdOrderByDataCadastroDesc(competitionId);
+                status == null
+                        ? repository.findByCompetitionIdOrderByDataCadastroDesc(competitionId)
+                        : repository.findByCompetitionIdAndStatusOrderByDataCadastroDesc(competitionId, status);
         if (participants.isEmpty()) return List.of();
 
         Set<Long> competitorIds = participants.stream()

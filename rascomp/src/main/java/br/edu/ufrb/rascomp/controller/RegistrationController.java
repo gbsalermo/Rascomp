@@ -93,8 +93,10 @@ public class RegistrationController {
     }
 
     @GetMapping("/por-competicao")
-    public ResponseEntity<List<RegistrationDTO>> listarPorCompeticao(@RequestParam Long competitionId) {
-        return ResponseEntity.ok(registrationService.listarPorCompeticao(competitionId));
+    public ResponseEntity<List<RegistrationDTO>> listarPorCompeticao(
+            @RequestParam Long competitionId,
+            @RequestParam(required = false) StatusRegistration status) {
+        return ResponseEntity.ok(registrationService.listarPorCompeticao(competitionId, status));
     }
 
     @GetMapping("/por-status")

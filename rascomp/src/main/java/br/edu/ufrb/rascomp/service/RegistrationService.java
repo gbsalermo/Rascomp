@@ -330,6 +330,15 @@ public class RegistrationService {
     }
 
     @Transactional(readOnly = true)
+    public List<RegistrationDTO> listarPorCompeticao(Long competitionId, StatusRegistration status) {
+        if (status == null) return listarPorCompeticao(competitionId);
+        competitionContextService.exigirOperavel(competitionId);
+        buscarCompetition(competitionId);
+        return registrationRepository.findByCompetitionIdAndStatusOrderByDataCadastroDesc(competitionId, status)
+                .stream().map(RegistrationDTO::new).toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<RegistrationDTO> listarPorStatus(StatusRegistration status) {
         return registrationRepository.findByStatusOrderByDataCadastroDesc(status)
                 .stream().map(RegistrationDTO::new).toList();
