@@ -27,4 +27,6 @@ public interface ParticipantCompetitionRegistrationRepository
     List<ParticipantCompetitionRegistration> findByCompetitorIdOrderByDataCadastroDesc(Long competitorId);
 
     List<ParticipantCompetitionRegistration> findByCompetitionIdOrderByDataCadastroDesc(Long competitionId);
+    List<ParticipantCompetitionRegistration> findByCompetitionIdAndStatusOrderByDataCadastroDesc(
+            Long competitionId, ParticipantCompetitionRegistrationStatus status);
 }
