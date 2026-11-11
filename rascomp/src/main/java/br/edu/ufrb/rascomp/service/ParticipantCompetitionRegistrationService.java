@@ -211,8 +211,14 @@ public class ParticipantCompetitionRegistrationService {
         Map<Long, List<RobotResponsible>> responsibles = robotResponsibleRepository
                 .findByCompetitorIdInAndAtivoTrue(competitorIds).stream()
                 .collect(Collectors.groupingBy(r -> r.getCompetitor().getId()));
-        List<Registration> registrations = registrationRepository
-                .findByCompetitionIdOrderByDataCadastroDesc(competitionId);
+        Set<Long> robotIds = responsibles.values().stream()
+                .flatMap(List::stream)
+                .map(link -> link.getRobot().getId())
+                .collect(Collectors.toSet());
+        List<Registration> registrations = robotIds.isEmpty()
+                ? List.of()
+                : registrationRepository.findByCompetitionIdAndRobotIdInOrderByDataCadastroDesc(
+                        competitionId, robotIds);
         Map<Long, List<Registration>> byRobot = registrations.stream()
                 .filter(r -> r.getRobot() != null)
                 .collect(Collectors.groupingBy(r -> r.getRobot().getId()));
