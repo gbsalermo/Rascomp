@@ -43,8 +43,9 @@ public class ParticipantCompetitionRegistrationAdminController {
 
     @GetMapping("/por-competicao")
     public ResponseEntity<List<ParticipantCompetitionRegistrationDTO>> listar(
-            @RequestParam Long competitionId) {
-        return ResponseEntity.ok(service.listarPorCompeticao(competitionId));
+            @RequestParam Long competitionId,
+            @RequestParam(required = false) br.edu.ufrb.rascomp.model.Enum.ParticipantCompetitionRegistrationStatus status) {
+        return ResponseEntity.ok(service.listarPorCompeticao(competitionId, status));
     }
 
     @PatchMapping("/{id}/revisao")
