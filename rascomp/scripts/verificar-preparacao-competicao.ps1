@@ -1,4 +1,4 @@
-# RASCOMP — verificacao NAO destrutiva do servidor Windows.
+# RASCOMP - verificacao NAO destrutiva do servidor Windows.
 # Executar: powershell -ExecutionPolicy Bypass -File .\scripts\verificar-preparacao-competicao.ps1
 # Nao configura DNS, nao inicia backend e nao acessa credenciais.
 $ErrorActionPreference = 'Continue'
@@ -15,11 +15,11 @@ if ($svc) { Write-Host "[INFO] Servico cloudflared: $($svc.Status) ($($svc.Start
 else { Write-Host '[PENDENTE] Servico cloudflared nao instalado' }
 try {
   $local = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/actuator/health' -UseBasicParsing -TimeoutSec 8
-  Write-Host "[INFO] API local health HTTP $($local.StatusCode) — NAO valida banco"
+  Write-Host "[INFO] API local health HTTP $($local.StatusCode) - NAO valida banco"
 } catch { Write-Host "[INFO] API local indisponivel: $($_.Exception.Message)" }
 try {
   $remote = Invoke-WebRequest -Uri 'https://api-teste.rasufrb.site/actuator/health' -UseBasicParsing -TimeoutSec 15
-  Write-Host "[INFO] API pelo tunnel HTTP $($remote.StatusCode) — NAO valida banco"
+  Write-Host "[INFO] API pelo tunnel HTTP $($remote.StatusCode) - NAO valida banco"
 } catch { Write-Host "[INFO] API pelo tunnel indisponivel: $($_.Exception.Message)" }
 Write-Host '=== Teste CORS (preflight; sem login nem escrita) ==='
 try {
