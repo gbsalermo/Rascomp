@@ -6,6 +6,26 @@
 ## Objetivo
 Reproduzir os volumes e os relacionamentos atuais da competicao sem copiar dados pessoais. Priorizar Sumô em dupla eliminacao e fazer uma regressao reduzida do Follow Line.
 
+## Regra de rastreabilidade dos dados e operabilidade (obrigatoria)
+
+**Nenhum dado de teste manual pode depender de INSERT/UPDATE SQL, ID inventado ou estado artificial para contornar uma funcionalidade ausente.** A simulacao manual comeca de um banco isolado migrado pelo Flyway e deve percorrer somente acoes disponiveis nas interfaces/APIs operacionais suportadas. Dados internos criados diretamente por fixtures sao permitidos **somente nos testes automatizados**, sem servir como prova de operabilidade manual.
+
+Antes de executar cada etapa, preencher a matriz:
+| Etapa | Dado necessario | Origem real no sistema | Tela/botao/acao | Quem pode executar | Validado? |
+|---|---|---|---|---|---|
+| Acesso | gestor autorizado | fluxo atual de autenticacao e permissoes | verificar na interface | gestor | pendente |
+| Inscricao | competidor, equipe, robo e inscricao | fluxo publico de cadastro/inscricao existente | verificar na interface | participante | pendente |
+| Aprovacao | inscricao aprovada | gestao de inscricoes | verificar na interface | gestor | pendente |
+| Juiz | juiz apto | gestao de juizes | verificar na interface | gestor | pendente |
+| Inspecao | robo apto | inspecao de Sumô | verificar na interface | gestor | pendente |
+| Chave | partidas, BYEs e dependencias | geracao de chaveamento | verificar na interface | gestor | pendente |
+| Agenda Sumô | partida agendavel | partida gerada e com participantes definidos | Agenda > Agenda | gestor | pendente |
+| Agenda Follow | tomada e fila | chamada Follow criada pela Agenda e inscricoes aprovadas | Agenda > Agendar tomada Follow / Fila | gestor | pendente |
+| Resultado | rounds e vencedor | fluxo competitivo da partida | verificar na interface | juiz/gestor | pendente |
+| Podio | classificacao final | consolidacao dos resultados | verificar na interface | sistema | pendente |
+
+**Portao:** se um dado necessario nao tiver origem operacional demonstravel, marcar BLOQUEADO, registrar tela/acao ausente e nao inserir o dado manualmente no banco. A origem de permissao inicial/usuario gestor tambem precisa ser documentada, sem inventar um botao de cadastro. Os testes automatizados podem usar mocks/fixtures para cobertura tecnica, mas nao resolvem lacunas operacionais.
+
 ## Massa sintetica
 - Sumô 13 robos: 16 posicoes, 3 BYEs.
 - Sumô 15 robos: 16 posicoes, 1 BYE.
@@ -13,7 +33,7 @@ Reproduzir os volumes e os relacionamentos atuais da competicao sem copiar dados
 - Follow Line: 4 a 6 robos.
 - Equipes, usuarios de gestao, juizes, categorias, inscricoes, responsaveis e inspecoes com relacionamentos validos.
 - Incluir pelo menos um robo reprovado na inspecao e um inscrito nao aprovado para confirmar exclusao da chave.
-- A massa precisa respeitar Flyway, restricoes e validacoes de dominio. Nao inserir diretamente em tabelas sem verificar as entidades e servicos.
+- A massa automatizada precisa respeitar Flyway, restricoes e validacoes de dominio. Para homologacao manual, construir a massa pelos fluxos reais de cadastro, aprovacao, inspecao e geracao; nao inserir diretamente em tabelas.
 
 ## Testes automatizados — criterios de aceite
 Para cada quantidade de Sumô (13, 15, 20):
