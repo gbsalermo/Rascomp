@@ -45,3 +45,12 @@ Referencia: `OPERACAO_COMPETICAO_2026.md`, `HOMOLOGACAO_COMPETICAO_2026.md` e `M
 
 ## Evidencias e criterios
 Registrar para cada teste: ID, commit, horario, ambiente, seed, resultado esperado/observado, PASSOU/FALHOU/BLOQUEADO, screenshot/log e responsavel. Nunca anexar tokens, credenciais ou dados pessoais.
+
+
+## Decisao operacional de infraestrutura - 12/11/2026
+
+**Sequencia aprovada:** (1) finalizar configuracao do backend local, Cloudflare Tunnel e homologacao completa no notebook atual; (2) somente apos validacao, transferir a configuracao testada para o PC mais estavel, planejado como servidor principal; (3) organizar e testar os planos B e C: Render como contingencia externa e notebook como contingencia local. Nao antecipar a migracao nem modificar DNS de producao ou dados reais durante homologacao.
+
+**Pontos de validacao antes da troca:** conectividade HTTP/2 do tunnel, reinicio automatico do servico, Java/build, acesso ao banco, login/CORS, operabilidade real de inscricoes e aprovacoes, inspecao, chaveamento de Sumô, agenda de Sumô e Follow, filas, convocacoes, resultados, podio, carga e recuperacao. O fluxo manual deve ser executavel pelas opcoes existentes na interface, sem SQL corretivo ou dados artificiais inseridos para suprir controles ausentes.
+
+**Contingencia ainda nao implementada:** documentar passo a passo de failover/failback, evitar processamento concorrente por dois backends, verificar dependencia comum do Aiven, disponibilidade de internet/energia do PC principal e comportamento de inicializacao do Render. Nao tratar o Render ou notebook como failover automatico antes de teste explicito.
