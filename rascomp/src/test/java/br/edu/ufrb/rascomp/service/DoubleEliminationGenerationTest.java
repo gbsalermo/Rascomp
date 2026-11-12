@@ -37,7 +37,7 @@ class DoubleEliminationGenerationTest {
     @InjectMocks BracketGenerationService service;
 
     @ParameterizedTest
-    @ValueSource(ints = {2, 3, 4, 5, 8, 9})
+    @ValueSource(ints = {2, 3, 4, 5, 8, 9, 13, 15, 20})
     void geraWinnersLosersEFinaisSemSobreposicaoEComByes(int quantity) {
         Competition competition = new Competition();
         competition.setId(1L);
@@ -104,6 +104,21 @@ class DoubleEliminationGenerationTest {
         }
         assertEquals(size - quantity,
                 saved.stream().filter(m -> m.getRodada() == 1 && m.getStatus() == StatusMatch.BYE).count());
+        // Os tamanhos reais de homologacao devem produzir exatamente
+        // a arvore estrutural esperada, incluindo as rodadas de repescagem.
+        assertEquals(size / 2,
+                saved.stream().filter(m -> m.getRodada() == 1).count());
+        assertEquals(size - 1,
+                saved.stream().filter(m -> "WINNERS".equals(m.getBracketSection())).count());
+        assertEquals(size - 2,
+                saved.stream().filter(m -> "LOSERS".equals(m.getBracketSection())).count());
+        for (Match m : saved) {
+            if ("GRAND_FINAL_RESET".equals(m.getBracketSection())) continue;
+            assertNotNull(m.getWinnerNextMatch(),
+                    "Toda partida anterior ao reset deve ter destino para o vencedor");
+            assertNotNull(m.getWinnerNextSlot(),
+                    "Destino do vencedor deve indicar slot");
+        }
         verify(bracketProgressionService).resolverAvancosAutomaticos(50L);
     }
 }
