@@ -59,7 +59,18 @@ public class BracketGenerationService {
 
         validarAtivos(competition, category);
         validarCategoriaSumo(category);
-        bracketIntegrityService.validarEstadoParaGeracao(competition);
+        // A primeira chave pode ser criada com a competicao em andamento.
+        // Regeneracoes durante a disputa exigem o fluxo excepcional auditado do DEV.
+        if (competition.getStatus() == StatusCompetition.EM_ANDAMENTO) {
+            List<Bracket> existentes = bracketRepository
+                    .findByCompetitionIdAndCategoryIdAndAtualTrue(competitionId, categoryId);
+            if (!existentes.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Com a competicao em andamento, use a regeneracao excepcional auditada para substituir uma chave vigente.");
+            }
+        } else {
+            bracketIntegrityService.validarEstadoParaGeracao(competition);
+        }
 
         validarFormato(format);
         return gerarInterno(competition, category, null, null, format);
