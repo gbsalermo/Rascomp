@@ -10,6 +10,7 @@ import java.util.List;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,8 @@ import lombok.RequiredArgsConstructor;
 public class Homologacao2026DataInitializer implements CommandLineRunner {
     private static final String NAME = "H26 | RASCOMP - SIMULACAO OPERACIONAL";
     private final Environment environment;
+    private final JdbcTemplate jdbcTemplate;
+    private final RobotResponsibleRepository robotResponsibles;
     private final CompetitionRepository competitions;
     private final CompetitionCategoryRepository categories;
     private final InstitutionRepository institutions;
@@ -103,6 +106,11 @@ public class Homologacao2026DataInitializer implements CommandLineRunner {
             sumo("H26 | Sumo 3kg 20", SumoPhysicalClass.SUMO_3KG, new BigDecimal("3.000")),
             follow("H26 | Follow 4"), follow("H26 | Follow 6")
         };
+        for (CompetitionCategory category : cats) {
+            jdbcTemplate.update(
+                    "INSERT INTO competition_enabled_categories (competition_id, category_id) VALUES (?, ?)",
+                    competition.getId(), category.getId());
+        }
         int[] sizes = {13, 15, 20, 4, 6};
         int index = 0;
         for (int k = 0; k < cats.length; k++) {
@@ -115,6 +123,14 @@ public class Homologacao2026DataInitializer implements CommandLineRunner {
                 robot.setTeam(team);
                 robot.setAtivo(true);
                 robot = robots.save(robot);
+
+                for (Competitor responsible : members.get(teamIndex).subList(0, 2)) {
+                    RobotResponsible link = new RobotResponsible();
+                    link.setRobot(robot);
+                    link.setCompetitor(responsible);
+                    link.setAtivo(true);
+                    robotResponsibles.save(link);
+                }
 
                 Registration registration = new Registration();
                 registration.setCompetition(competition);
