@@ -325,6 +325,34 @@ public class ParticipantCompetitionRegistrationService {
         return toDto(salva);
     }
 
+    /** Reabre rejeicao administrativa sem exigir novo comprovante ou periodo de inscricao. */
+    @Transactional
+    public ParticipantCompetitionRegistrationDTO reativarRejeitada(Long id) {
+        ParticipantCompetitionRegistration entity = buscar(id);
+        competitionContextService.exigirOperavel(entity.getCompetition().getId());
+        if (competicaoIniciada(entity.getCompetition())) {
+            throw new IllegalArgumentException("Nao e possivel reativar apos o inicio da competicao.");
+        }
+        UserAccount revisor = userAccountService.buscarAtual();
+        if (!revisor.getRole().podeOperarCompeticao()) {
+            throw new AccessDeniedException("Apenas DEV ou GESTAO podem reativar inscricoes pessoais.");
+        }
+        if (entity.getStatus() != ParticipantCompetitionRegistrationStatus.REJEITADA) {
+            throw new IllegalArgumentException("Somente inscricao pessoal REJEITADA pode ser reativada.");
+        }
+        ParticipantCompetitionRegistrationStatus anterior = entity.getStatus();
+        entity.setStatus(ParticipantCompetitionRegistrationStatus.PENDENTE);
+        entity.setReviewedByUser(null);
+        entity.setReviewedAt(null);
+        entity.setReviewReason(null);
+        entity.setAtivo(true);
+        ParticipantCompetitionRegistration salva = repository.save(entity);
+        registrarHistorico(salva, anterior, ParticipantCompetitionRegistrationStatus.PENDENTE,
+                revisor, "Reativacao administrativa de inscricao pessoal rejeitada.");
+        compositionService.sincronizarPorInscricaoPessoal(salva, revisor);
+        return toDto(salva);
+    }
+
     @Transactional
     public void cancelarMinha(Long id) {
         ParticipantCompetitionRegistration entity = buscar(id);
