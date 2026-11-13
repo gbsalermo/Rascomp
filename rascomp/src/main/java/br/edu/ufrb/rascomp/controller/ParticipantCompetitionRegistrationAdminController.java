@@ -55,6 +55,12 @@ public class ParticipantCompetitionRegistrationAdminController {
         return ResponseEntity.ok(service.revisar(id, request));
     }
 
+    @PatchMapping("/{id}/reativar")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('DEV', 'GESTAO')")
+    public ResponseEntity<ParticipantCompetitionRegistrationDTO> reativar(@PathVariable Long id) {
+        return ResponseEntity.ok(service.reativarRejeitada(id));
+    }
+
     @PatchMapping("/{id}/suspender-sem-vinculo")
     public ResponseEntity<ParticipantCompetitionRegistrationDTO> suspenderSemVinculo(@PathVariable Long id) {
         return ResponseEntity.ok(service.suspenderSemVinculo(id));
