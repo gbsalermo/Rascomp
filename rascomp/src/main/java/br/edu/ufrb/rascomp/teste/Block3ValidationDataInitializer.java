@@ -458,9 +458,13 @@ public class Block3ValidationDataInitializer implements CommandLineRunner {
         // Mantém o seed idempotente: no máximo uma histórica + uma vigente.
         if (existentes == 0) {
             bracketGenerationService.gerar(competition.getId(), category.getId());
-            bracketGenerationService.gerar(competition.getId(), category.getId());
+            bracketGenerationService.regenerarExcepcionalDev(
+                    competition.getId(), category.getId(),
+                    "Homologacao Bloco 3: criar chave historica e chave vigente para testes.");
         } else if (existentes == 1) {
-            bracketGenerationService.gerar(competition.getId(), category.getId());
+            bracketGenerationService.regenerarExcepcionalDev(
+                    competition.getId(), category.getId(),
+                    "Homologacao Bloco 3: preparar chave vigente para testes.");
         }
     }
 }
