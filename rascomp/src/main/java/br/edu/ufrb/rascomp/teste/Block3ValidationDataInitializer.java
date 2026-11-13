@@ -122,6 +122,11 @@ public class Block3ValidationDataInitializer implements CommandLineRunner {
 
         criarFollowPrincipal(competition, followMain, teams);
         criarFollowExcecao(competition, followException, teams);
+
+        // Inspecoes de Sumo exigem a competicao em andamento.
+        competition.setStatus(StatusCompetition.EM_ANDAMENTO);
+        competitionRepository.saveAndFlush(competition);
+
         criarSumo(competition, sumoMain, teams);
 
         garantirJuizes(competition);
