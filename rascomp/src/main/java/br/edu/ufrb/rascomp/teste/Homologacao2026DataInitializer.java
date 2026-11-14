@@ -12,6 +12,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.ufrb.rascomp.model.*;
@@ -25,6 +26,11 @@ import lombok.RequiredArgsConstructor;
 @ConditionalOnProperty(name = "rascomp.test-data.homologacao-2026-enabled", havingValue = "true")
 public class Homologacao2026DataInitializer implements CommandLineRunner {
     private static final String NAME = "H26 | RASCOMP - SIMULACAO OPERACIONAL";
+    public static final String DEV_EMAIL = "dev.h26@rascomp.local";
+    public static final String GESTAO_EMAIL = "gestao.h26@rascomp.local";
+    public static final String PASSWORD = "Rascomp@2026";
+    private final UserAccountRepository userAccounts;
+    private final PasswordEncoder passwordEncoder;
     private final Environment environment;
     private final JdbcTemplate jdbcTemplate;
     private final RobotResponsibleRepository robotResponsibles;
@@ -49,8 +55,12 @@ public class Homologacao2026DataInitializer implements CommandLineRunner {
         if (!(url.contains("localhost") || url.contains("127.0.0.1"))
                 || !(url.contains("/rascomp_b4_validation") || url.contains("/rascomp_homologacao_2026")))
             throw new IllegalStateException("H26 requer MySQL local e banco exclusivo de homologacao");
+        // As contas de homologacao sao garantidas mesmo quando a competicao ja existe.
+        garantirUsuarioInterno(DEV_EMAIL, "DEV Homologacao 2026", UserRole.DEV);
+        garantirUsuarioInterno(GESTAO_EMAIL, "Gestao Homologacao 2026", UserRole.GESTAO);
         if (competitions.findAll().stream().anyMatch(c -> NAME.equals(c.getNome()))) {
-            System.out.println("[H26] Cenario existente; carga ignorada.");
+            System.out.println("[H26] Cenario existente; contas DEV/GESTAO conferidas.");
+            imprimirAcessoHomologacao();
             return;
         }
 
@@ -154,6 +164,27 @@ public class Homologacao2026DataInitializer implements CommandLineRunner {
         }
         System.out.println("[H26] 1 competicao, 4 instituicoes, 12 equipes, 60 competidores, 58 robos/inscricoes, 3 arbitros.");
         System.out.println("[H26] Inspecoes, chaves, agenda e resultados permanecem livres para teste manual.");
+        imprimirAcessoHomologacao();
+    }
+
+    private void garantirUsuarioInterno(String email, String nome, UserRole role) {
+        UserAccount user = userAccounts.findByEmailIgnoreCase(email).orElseGet(UserAccount::new);
+        if (user.getId() != null && user.getRole() != role) {
+            throw new IllegalStateException("[H26] Conta reservada de homologacao ja existe com papel diferente: " + email);
+        }
+        user.setNome(nome);
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(PASSWORD));
+        user.setRole(role);
+        user.setAtivo(true);
+        user.setEmailVerificadoEm(LocalDateTime.now());
+        if (user.getSessionVersion() == null) user.setSessionVersion(0L);
+        userAccounts.save(user);
+    }
+
+    private void imprimirAcessoHomologacao() {
+        System.out.println("[H26] DEV: " + DEV_EMAIL + " / " + PASSWORD);
+        System.out.println("[H26] GESTAO: " + GESTAO_EMAIL + " / " + PASSWORD);
     }
 
     private CompetitionCategory sumo(String name, SumoPhysicalClass physical, BigDecimal weight) {
