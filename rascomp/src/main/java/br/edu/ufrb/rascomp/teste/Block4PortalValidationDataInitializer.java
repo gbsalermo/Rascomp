@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.env.Environment;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -72,6 +73,7 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
     private static final String RESPONSIBLE_ROBOT = "B4 · Vespa";
     private static final String LEADER_ONLY_ROBOT = "B4 · Atlas";
 
+    private final Environment environment;
     private final UserAccountRepository userAccountRepository;
     private final InstitutionRepository institutionRepository;
     private final TeamRepository teamRepository;
@@ -87,6 +89,8 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
     @Override
     @Transactional
     public void run(String... args) {
+        // O cenario H26 substitui o Portal Bloco 4 para nao misturar contas e competicoes.
+        if (environment.getProperty("rascomp.test-data.homologacao-2026-enabled", Boolean.class, false)) return;
         garantirUsuario(DEV_EMAIL, "DEV B4", UserRole.DEV);
         garantirUsuario(GESTAO_EMAIL, "Gestão B4", UserRole.GESTAO);
         UserAccount liderUser = garantirUsuario(LEADER_EMAIL, "Líder B4", UserRole.PARTICIPANTE);
