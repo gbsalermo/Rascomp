@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.env.Environment;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -72,6 +73,7 @@ public class Block3ValidationDataInitializer implements CommandLineRunner {
     private static final String SUMO_MAIN = "B3 · Mini Sumô RC";
     private static final String INSTITUTION_SIGLA = "B3-QA";
 
+    private final Environment environment;
     private final UserAccountRepository userAccountRepository;
     private final CompetitionRepository competitionRepository;
     private final CompetitionCategoryRepository categoryRepository;
@@ -92,6 +94,8 @@ public class Block3ValidationDataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
+        // O cenario H26 substitui este seed para nao misturar competicoes locais.
+        if (environment.getProperty("rascomp.test-data.homologacao-2026-enabled", Boolean.class, false)) return;
         UserAccount dev = garantirUsuario(
                 DEV_EMAIL,
                 "DEV Bloco 3",
