@@ -23,9 +23,10 @@ public class BracketIntegrityService {
     private final RoundSumoRepository roundSumoRepository;
 
     public void validarEstadoParaGeracao(Competition competition) {
-        if (competition.getStatus() != StatusCompetition.INSCRICOES_ENCERRADAS) {
+        if (competition.getStatus() != StatusCompetition.INSCRICOES_ENCERRADAS
+                && competition.getStatus() != StatusCompetition.EM_ANDAMENTO) {
             throw new IllegalArgumentException(
-                    "Chaveamento só pode ser gerado ou regenerado com as inscrições encerradas.");
+                    "Chaveamento só pode ser gerado ou regenerado com inscrições encerradas ou competição em andamento, desde que a chave atual não possua atividade competitiva.");
         }
     }
 
