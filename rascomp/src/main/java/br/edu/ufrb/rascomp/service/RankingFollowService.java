@@ -48,10 +48,19 @@ public class RankingFollowService {
                 .filter(registration -> registration.getStatus() == StatusRegistration.APROVADA)
                 .toList();
 
+        // Evita uma consulta por robô: todas as tentativas da categoria já estão no banco.
+        Map<Long, List<TentativaSeguidorLinha>> tentativasPorInscricao =
+                tentativaRepository
+                        .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
+                                competitionId, categoryId)
+                        .stream()
+                        .collect(Collectors.groupingBy(item -> item.getRegistration().getId()));
+
         List<RankingFollowDTO> ranking = new ArrayList<>();
 
         for (Registration registration : inscricoes) {
-            melhorTomada(registration).ifPresent(tentativaRepresentante -> {
+            melhorTomada(tentativasPorInscricao.getOrDefault(registration.getId(), List.of()))
+                    .ifPresent(tentativaRepresentante -> {
                 BigDecimal tempoFinal = calcularTempoFinal(tentativaRepresentante);
 
                 ranking.add(new RankingFollowDTO(
@@ -89,10 +98,8 @@ public class RankingFollowService {
      * 3) o DTO preserva numeroTomada e numeroTentativa para auditoria da passagem
      *    que representou aquela tomada.
      */
-    private Optional<TentativaSeguidorLinha> melhorTomada(Registration registration) {
-        Map<Integer, List<TentativaSeguidorLinha>> porTomada = tentativaRepository
-                .findByRegistrationIdOrderByTomadaAscNumeroTentativaAsc(registration.getId())
-                .stream()
+    private Optional<TentativaSeguidorLinha> melhorTomada(List<TentativaSeguidorLinha> tentativas) {
+        Map<Integer, List<TentativaSeguidorLinha>> porTomada = tentativas.stream()
                 .filter(this::tentativaClassificavel)
                 .collect(Collectors.groupingBy(TentativaSeguidorLinha::getTomada));
 
