@@ -77,6 +77,7 @@ jobs:
           DB_PASSWORD: rascomp_ci
           JWT_SECRET: rascomp-b4-ci-secret-key-with-more-than-thirty-two-characters
           SPRING_PROFILES_ACTIVE: testdata
+          RASCOMP_BLOCK4_PORTAL_VALIDATION_ENABLED: 'true'
         run: |
           set -euo pipefail
 
