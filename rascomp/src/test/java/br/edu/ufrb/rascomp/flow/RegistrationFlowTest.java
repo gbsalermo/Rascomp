@@ -41,6 +41,7 @@ import br.edu.ufrb.rascomp.service.TentativaSeguidorLinhaService;
 class RegistrationFlowTest extends IntegrationFlowTestSupport {
 
     @Autowired private RegistrationService registrationService;
+    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     @Autowired private RegistrationStatusHistoryService statusHistoryService;
     @Autowired private TentativaSeguidorLinhaService tentativaService;
     @Autowired private CompetitorRepository competitorRepository;
@@ -61,6 +62,14 @@ class RegistrationFlowTest extends IntegrationFlowTestSupport {
         Robot robot = robot(team);
         Competitor competitor = competitor(team);
         responsibility(robot, competitor, organizacao);
+
+        // O Flyway está desativado no perfil flowtest: disponibilizar a tabela operacional
+        // que é criada pela migração V40 em produção e habilitar a categoria usada no teste.
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS competition_enabled_categories "
+                + "(competition_id BIGINT NOT NULL, category_id BIGINT NOT NULL, "
+                + "PRIMARY KEY (competition_id, category_id))");
+        jdbcTemplate.update("INSERT INTO competition_enabled_categories(competition_id, category_id) VALUES (?, ?)",
+                competition.getId(), category.getId());
 
         RegistrationDTO criada = registrationService.criar(
                 request(competition, category, team, robot, competitor));
