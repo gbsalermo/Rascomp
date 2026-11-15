@@ -141,20 +141,16 @@ public class RobotResponsibleService {
                         List.of(StatusRegistration.PENDENTE, StatusRegistration.APROVADA))
                 .stream()
                 .map(registration -> registration.getCompetition())
-                .filter(competition -> competition.getStatus() != StatusCompetition.FINALIZADA
-                        && competition.getStatus() != StatusCompetition.CANCELADA)
                 .anyMatch(competition ->
                         competition.getStatus() == StatusCompetition.EM_ANDAMENTO
-                                || (competition.getDataInicio() != null
-                                    && !LocalDate.now().isBefore(competition.getDataInicio())));
+                        || competition.getStatus() == StatusCompetition.FINALIZADA
+                        || competition.getStatus() == StatusCompetition.CANCELADA);
 
         if (bloqueada) {
             throw new IllegalArgumentException(
-                    "Os responsáveis do robô estão bloqueados porque existe competição já iniciada. "
-                            + "A composição não pode ser alterada durante a prova.");
+                    "Os responsáveis do robô estão bloqueados porque a competição não permite alterações.");
         }
     }
-
     @Transactional
     public void associarCriador(Long robotId, UserAccount usuario) {
         Robot robot = robotRepository.findById(robotId)

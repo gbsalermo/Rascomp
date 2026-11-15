@@ -512,14 +512,10 @@ public class RegistrationCompositionService {
 
     private boolean competicaoIniciada(Registration registration) {
         StatusCompetition status = registration.getCompetition().getStatus();
-        if (status == StatusCompetition.EM_ANDAMENTO
-                || status == StatusCompetition.FINALIZADA
-                || status == StatusCompetition.CANCELADA) {
-            return true;
-        }
 
-        LocalDate dataInicio = registration.getCompetition().getDataInicio();
-        return dataInicio != null && !LocalDate.now().isBefore(dataInicio);
+        return status == StatusCompetition.EM_ANDAMENTO
+                || status == StatusCompetition.FINALIZADA
+                || status == StatusCompetition.CANCELADA;
     }
 
     private void exigirComposicaoEditavel(Registration registration) {

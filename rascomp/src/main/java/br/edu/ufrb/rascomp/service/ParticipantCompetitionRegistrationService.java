@@ -272,10 +272,6 @@ public class ParticipantCompetitionRegistrationService {
 
         ParticipantCompetitionRegistration entity = buscar(id);
         competitionContextService.exigirOperavel(entity.getCompetition().getId());
-        if (competicaoIniciada(entity.getCompetition())) {
-            throw new IllegalArgumentException(
-                    "A inscrição pessoal não pode ser alterada pelo fluxo normal após o início da competição.");
-        }
 
         UserAccount revisor = userAccountService.buscarAtual();
         if (!revisor.getRole().podeOperarCompeticao()) {
@@ -588,13 +584,11 @@ public class ParticipantCompetitionRegistrationService {
     }
 
     private boolean competicaoIniciada(Competition competition) {
-        if (competition.getStatus() == StatusCompetition.EM_ANDAMENTO
-                || competition.getStatus() == StatusCompetition.FINALIZADA
-                || competition.getStatus() == StatusCompetition.CANCELADA) {
-            return true;
-        }
-        return competition.getDataInicio() != null
-                && !LocalDate.now().isBefore(competition.getDataInicio());
+        StatusCompetition status = competition.getStatus();
+
+        return status == StatusCompetition.EM_ANDAMENTO
+                || status == StatusCompetition.FINALIZADA
+                || status == StatusCompetition.CANCELADA;
     }
 
     private void registrarHistorico(
