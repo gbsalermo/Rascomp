@@ -157,11 +157,11 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
         System.out.println("RASCOMP · ETAPA 4 / BLOCO 4.3 · CENARIO PORTAL PRONTO");
         System.out.println("Competição aberta: " + COMPETITION_NAME);
         System.out.println("Equipe: " + TEAM_NAME);
-        System.out.println("DEV: " + DEV_EMAIL + " / " + PASSWORD);
-        System.out.println("GESTAO: " + GESTAO_EMAIL + " / " + PASSWORD);
-        System.out.println("LIDER: " + LEADER_EMAIL + " / " + PASSWORD);
-        System.out.println("MEMBRO: " + MEMBER_EMAIL + " / " + PASSWORD);
-        System.out.println("APOIO: " + SUPPORT_EMAIL + " / " + PASSWORD);
+        System.out.println("DEV: " + DEV_EMAIL);
+        System.out.println("GESTAO: " + GESTAO_EMAIL);
+        System.out.println("LIDER: " + LEADER_EMAIL);
+        System.out.println("MEMBRO: " + MEMBER_EMAIL);
+        System.out.println("APOIO: " + SUPPORT_EMAIL);
         System.out.println("Membro criou: " + RESPONSIBLE_ROBOT);
         System.out.println("Membro responsável por: " + RESPONSIBLE_ROBOT);
         System.out.println("Apoio criou: " + LEADER_ONLY_ROBOT);
