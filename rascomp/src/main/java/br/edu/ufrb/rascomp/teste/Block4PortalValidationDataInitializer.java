@@ -81,6 +81,7 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
     private final RobotRepository robotRepository;
     private final RobotResponsibleRepository robotResponsibleRepository;
     private final CompetitionRepository competitionRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     private final CompetitionCategoryRepository categoryRepository;
     private final ConfigFollowRepository configFollowRepository;
     private final ConfigSumoRepository configSumoRepository;
@@ -138,7 +139,19 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
         garantirConfigFollow(follow);
         garantirConfigSumo(mini, new BigDecimal("0.500"));
         garantirConfigSumo(sumo3kg, new BigDecimal("3.000"));
-        garantirCompeticaoAberta();
+        Competition competition = garantirCompeticaoAberta();
+        // As categorias precisam estar habilitadas para o fluxo real de inscrição.
+        // Mantém o seed idempotente e isolado do profile testdata.
+        for (CompetitionCategory enabledCategory : List.of(follow, mini, sumo3kg)) {
+            Long count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM competition_enabled_categories WHERE competition_id=? AND category_id=?",
+                    Long.class, competition.getId(), enabledCategory.getId());
+            if (count == null || count == 0L) {
+                jdbcTemplate.update(
+                        "INSERT INTO competition_enabled_categories (competition_id, category_id) VALUES (?, ?)",
+                        competition.getId(), enabledCategory.getId());
+            }
+        }
 
         System.out.println("============================================================");
         System.out.println("RASCOMP · ETAPA 4 / BLOCO 4.3 · CENARIO PORTAL PRONTO");
