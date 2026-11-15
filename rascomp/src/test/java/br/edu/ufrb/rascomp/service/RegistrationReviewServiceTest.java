@@ -59,6 +59,8 @@ class RegistrationReviewServiceTest {
     @Mock private RegistrationStatusHistoryService statusHistoryService;
     @Mock private RegistrationCompositionService compositionService;
 
+    @Mock private CompetitionCategoryAssignmentService categoryAssignments;
+
     @InjectMocks private RegistrationService service;
 
     private Registration registration;
