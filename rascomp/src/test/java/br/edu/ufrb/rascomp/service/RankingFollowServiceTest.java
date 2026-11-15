@@ -63,7 +63,7 @@ class RankingFollowServiceTest {
 
         when(registrationRepository.findByCompetitionIdOrderByDataCadastroDesc(1L))
                 .thenReturn(List.of(registration));
-        when(tentativaRepository.findByRegistrationIdOrderByTomadaAscNumeroTentativaAsc(1L))
+        when(tentativaRepository.findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(1L, 3L))
                 .thenReturn(List.of(tentativa1, tentativa2));
 
         List<RankingFollowDTO> ranking = service.gerarRanking(1L, 3L);
@@ -87,7 +87,7 @@ class RankingFollowServiceTest {
 
         when(registrationRepository.findByCompetitionIdOrderByDataCadastroDesc(1L))
                 .thenReturn(List.of(registration));
-        when(tentativaRepository.findByRegistrationIdOrderByTomadaAscNumeroTentativaAsc(1L))
+        when(tentativaRepository.findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(1L, 3L))
                 .thenReturn(List.of(
                         tomada1Tentativa1,
                         tomada1Tentativa2,
@@ -150,6 +150,9 @@ class RankingFollowServiceTest {
         tentativa.setPenalidadeSegundos(penalidade);
         tentativa.setTomada(tomada);
         tentativa.setNumeroTentativa(numeroTentativa);
+        Registration source = new Registration();
+        source.setId(1L);
+        tentativa.setRegistration(source);
         return tentativa;
     }
 }
