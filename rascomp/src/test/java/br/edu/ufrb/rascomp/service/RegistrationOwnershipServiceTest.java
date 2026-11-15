@@ -64,6 +64,8 @@ class RegistrationOwnershipServiceTest {
     @Mock private MatchRepository matchRepository;
     @Mock private RegistrationLotService registrationLotService;
 
+    @Mock private CompetitionCategoryAssignmentService categoryAssignments;
+
     @InjectMocks
     private RegistrationService service;
 
