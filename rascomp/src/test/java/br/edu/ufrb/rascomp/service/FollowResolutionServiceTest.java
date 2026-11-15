@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.edu.ufrb.rascomp.model.ConfigFollow;
+import br.edu.ufrb.rascomp.model.AusenciaTomadaSeguidorLinha;
 import br.edu.ufrb.rascomp.model.FollowTakeSchedule;
 import br.edu.ufrb.rascomp.model.Registration;
 import br.edu.ufrb.rascomp.model.Enum.StatusChamadaFollow;
@@ -64,10 +65,9 @@ class FollowResolutionServiceTest {
                         br.edu.ufrb.rascomp.model.Enum.StatusRegistration.APROVADA))
                 .thenReturn(List.of(registration));
 
-        for (int tomada = 1; tomada <= 3; tomada++) {
-            when(ausenciaRepository.existsByRegistrationIdAndTomada(10L, tomada))
-                    .thenReturn(true);
-        }
+        lenient().when(ausenciaRepository
+                .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(1L, 2L))
+                .thenReturn(List.of(ausencia(1), ausencia(2), ausencia(3)));
 
         lenient().when(tentativaRepository
                 .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
@@ -98,10 +98,6 @@ class FollowResolutionServiceTest {
 
         when(scheduleRepository.findByCompetitionIdAndCategoryIdAndTomada(1L, 2L, 4))
                 .thenReturn(Optional.of(extra));
-        when(ausenciaRepository.existsByRegistrationIdAndTomada(10L, 4))
-                .thenReturn(false);
-        lenient().when(tentativaRepository.countByRegistrationIdAndTomada(10L, 4))
-                .thenReturn(0L);
 
         assertTrue(service.tomadaExtraAtiva(1L, 2L));
         assertTrue(service.tomadaPermitida(1L, 2L, 4));
@@ -117,10 +113,17 @@ class FollowResolutionServiceTest {
 
         when(scheduleRepository.findByCompetitionIdAndCategoryIdAndTomada(1L, 2L, 4))
                 .thenReturn(Optional.of(extra));
-        when(ausenciaRepository.existsByRegistrationIdAndTomada(10L, 4))
-                .thenReturn(true);
+        when(ausenciaRepository
+                .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(1L, 2L))
+                .thenReturn(List.of(ausencia(1), ausencia(2), ausencia(3), ausencia(4)));
 
         assertTrue(service.programaConcluido(1L, 2L));
         assertTrue(service.podeDecidirManualmente(1L, 2L));
+    }
+    private AusenciaTomadaSeguidorLinha ausencia(int tomada) {
+        AusenciaTomadaSeguidorLinha ausencia = new AusenciaTomadaSeguidorLinha();
+        ausencia.setRegistration(registration);
+        ausencia.setTomada(tomada);
+        return ausencia;
     }
 }

@@ -2,6 +2,10 @@ package br.edu.ufrb.rascomp.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -143,14 +147,26 @@ public class FollowResolutionService {
 
         if (participantes.isEmpty()) return false;
 
+        // A consulta anterior fazia duas viagens ao banco para cada (robô, tomada).
+        // As ausências e tentativas são carregadas uma vez por categoria.
+        Set<String> ausencias = new HashSet<>();
+        ausenciaRepository
+                .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
+                        competitionId, categoryId)
+                .forEach(item -> ausencias.add(item.getRegistration().getId() + ":" + item.getTomada()));
+
+        Map<String, Long> tentativasPorTomada = new HashMap<>();
+        tentativaRepository
+                .findByRegistrationCompetitionIdAndRegistrationCategoryIdOrderByDataCadastroDesc(
+                        competitionId, categoryId)
+                .forEach(item -> tentativasPorTomada.merge(
+                        item.getRegistration().getId() + ":" + item.getTomada(), 1L, Long::sum));
+
         for (Registration registration : participantes) {
             for (Integer tomada : tomadas) {
-                boolean ausente = ausenciaRepository
-                        .existsByRegistrationIdAndTomada(registration.getId(), tomada);
-                long tentativas = tentativaRepository
-                        .countByRegistrationIdAndTomada(registration.getId(), tomada);
-
-                if (!ausente && tentativas < config.getTentativasPorTomada()) {
+                String chave = registration.getId() + ":" + tomada;
+                if (!ausencias.contains(chave)
+                        && tentativasPorTomada.getOrDefault(chave, 0L) < config.getTentativasPorTomada()) {
                     return false;
                 }
             }

@@ -53,7 +53,7 @@ public class CompetitionResultsService {
                         "Competição não encontrada com o id: " + competitionId));
 
         boolean statusPublico = switch (competition.getStatus()) {
-            case INSCRICOES_ABERTAS, INSCRICOES_ENCERRADAS, EM_ANDAMENTO -> true;
+            case INSCRICOES_ABERTAS, INSCRICOES_ENCERRADAS, EM_ANDAMENTO, FINALIZADA -> true;
             default -> false;
         };
 
@@ -62,7 +62,8 @@ public class CompetitionResultsService {
                     "Resultados públicos indisponíveis para a competição: " + competitionId);
         }
 
-        if (competition.getStatus() != br.edu.ufrb.rascomp.model.Enum.StatusCompetition.EM_ANDAMENTO) {
+        if (competition.getStatus() != br.edu.ufrb.rascomp.model.Enum.StatusCompetition.EM_ANDAMENTO
+                && competition.getStatus() != br.edu.ufrb.rascomp.model.Enum.StatusCompetition.FINALIZADA) {
             return List.of();
         }
 
