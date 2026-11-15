@@ -63,6 +63,8 @@ class RegistrationIntegrityServiceTest {
     @Mock private RegistrationCompositionService compositionService;
     @Mock private RegistrationLotService registrationLotService;
 
+    @Mock private CompetitionCategoryAssignmentService categoryAssignments;
+
     @InjectMocks
     private RegistrationService service;
 
