@@ -79,7 +79,8 @@ jobs:
           SPRING_PROFILES_ACTIVE: testdata
           RASCOMP_BLOCK4_PORTAL_VALIDATION_ENABLED: 'true'
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+          trap 'echo "Falha no fluxo portal-testdata, linha $LINENO" >&2' ERR
 
           timeout 120s mvn -B spring-boot:run > portal-profile.log 2>&1 &
           APP_PID=$!
