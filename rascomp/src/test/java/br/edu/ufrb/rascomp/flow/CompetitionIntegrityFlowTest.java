@@ -105,6 +105,7 @@ class CompetitionIntegrityFlowTest extends IntegrationFlowTestSupport {
     }
 
     @Test
+    @org.springframework.transaction.annotation.Transactional
     void correcaoDeSemifinalDeveSerBloqueadaDepoisQueFinalComecou() {
         organizacaoAutenticada();
         Competition competition = competition(StatusCompetition.INSCRICOES_ENCERRADAS);
