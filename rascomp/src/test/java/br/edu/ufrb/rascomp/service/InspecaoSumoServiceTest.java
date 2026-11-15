@@ -59,6 +59,7 @@ class InspecaoSumoServiceTest {
 
         br.edu.ufrb.rascomp.model.Competition competition = new br.edu.ufrb.rascomp.model.Competition();
         competition.setId(99L);
+        competition.setStatus(br.edu.ufrb.rascomp.model.Enum.StatusCompetition.EM_ANDAMENTO);
 
         registration = new Registration();
         registration.setId(10L);

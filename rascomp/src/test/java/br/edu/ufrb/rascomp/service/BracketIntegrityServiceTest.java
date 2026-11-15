@@ -35,7 +35,7 @@ class BracketIntegrityServiceTest {
     private BracketIntegrityService service;
 
     @Test
-    void somenteInscricoesEncerradasDevemPermitirGeracaoComum() {
+    void inscricoesEncerradasOuEmAndamentoDevemPermitirGeracaoComum() {
         Competition competition = new Competition();
         competition.setStatus(StatusCompetition.INSCRICOES_ENCERRADAS);
         assertDoesNotThrow(() -> service.validarEstadoParaGeracao(competition));
@@ -44,7 +44,7 @@ class BracketIntegrityServiceTest {
         assertThrows(IllegalArgumentException.class, () -> service.validarEstadoParaGeracao(competition));
 
         competition.setStatus(StatusCompetition.EM_ANDAMENTO);
-        assertThrows(IllegalArgumentException.class, () -> service.validarEstadoParaGeracao(competition));
+        assertDoesNotThrow(() -> service.validarEstadoParaGeracao(competition));
     }
 
     @Test

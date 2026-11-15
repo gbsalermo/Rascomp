@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.env.Environment;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -72,6 +73,7 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
     private static final String RESPONSIBLE_ROBOT = "B4 · Vespa";
     private static final String LEADER_ONLY_ROBOT = "B4 · Atlas";
 
+    private final Environment environment;
     private final UserAccountRepository userAccountRepository;
     private final InstitutionRepository institutionRepository;
     private final TeamRepository teamRepository;
@@ -79,6 +81,7 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
     private final RobotRepository robotRepository;
     private final RobotResponsibleRepository robotResponsibleRepository;
     private final CompetitionRepository competitionRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     private final CompetitionCategoryRepository categoryRepository;
     private final ConfigFollowRepository configFollowRepository;
     private final ConfigSumoRepository configSumoRepository;
@@ -87,6 +90,8 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
     @Override
     @Transactional
     public void run(String... args) {
+        // O cenario H26 substitui o Portal Bloco 4 para nao misturar contas e competicoes.
+        if (environment.getProperty("rascomp.test-data.homologacao-2026-enabled", Boolean.class, false)) return;
         garantirUsuario(DEV_EMAIL, "DEV B4", UserRole.DEV);
         garantirUsuario(GESTAO_EMAIL, "Gestão B4", UserRole.GESTAO);
         UserAccount liderUser = garantirUsuario(LEADER_EMAIL, "Líder B4", UserRole.PARTICIPANTE);
@@ -134,17 +139,29 @@ public class Block4PortalValidationDataInitializer implements CommandLineRunner 
         garantirConfigFollow(follow);
         garantirConfigSumo(mini, new BigDecimal("0.500"));
         garantirConfigSumo(sumo3kg, new BigDecimal("3.000"));
-        garantirCompeticaoAberta();
+        Competition competition = garantirCompeticaoAberta();
+        // As categorias precisam estar habilitadas para o fluxo real de inscrição.
+        // Mantém o seed idempotente e isolado do profile testdata.
+        for (CompetitionCategory enabledCategory : List.of(follow, mini, sumo3kg)) {
+            Long count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM competition_enabled_categories WHERE competition_id=? AND category_id=?",
+                    Long.class, competition.getId(), enabledCategory.getId());
+            if (count == null || count == 0L) {
+                jdbcTemplate.update(
+                        "INSERT INTO competition_enabled_categories (competition_id, category_id) VALUES (?, ?)",
+                        competition.getId(), enabledCategory.getId());
+            }
+        }
 
         System.out.println("============================================================");
         System.out.println("RASCOMP · ETAPA 4 / BLOCO 4.3 · CENARIO PORTAL PRONTO");
         System.out.println("Competição aberta: " + COMPETITION_NAME);
         System.out.println("Equipe: " + TEAM_NAME);
-        System.out.println("DEV: " + DEV_EMAIL + " / " + PASSWORD);
-        System.out.println("GESTAO: " + GESTAO_EMAIL + " / " + PASSWORD);
-        System.out.println("LIDER: " + LEADER_EMAIL + " / " + PASSWORD);
-        System.out.println("MEMBRO: " + MEMBER_EMAIL + " / " + PASSWORD);
-        System.out.println("APOIO: " + SUPPORT_EMAIL + " / " + PASSWORD);
+        System.out.println("DEV: " + DEV_EMAIL);
+        System.out.println("GESTAO: " + GESTAO_EMAIL);
+        System.out.println("LIDER: " + LEADER_EMAIL);
+        System.out.println("MEMBRO: " + MEMBER_EMAIL);
+        System.out.println("APOIO: " + SUPPORT_EMAIL);
         System.out.println("Membro criou: " + RESPONSIBLE_ROBOT);
         System.out.println("Membro responsável por: " + RESPONSIBLE_ROBOT);
         System.out.println("Apoio criou: " + LEADER_ONLY_ROBOT);

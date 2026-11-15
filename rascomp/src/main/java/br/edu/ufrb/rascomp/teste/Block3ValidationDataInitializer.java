@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.env.Environment;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -72,6 +73,7 @@ public class Block3ValidationDataInitializer implements CommandLineRunner {
     private static final String SUMO_MAIN = "B3 · Mini Sumô RC";
     private static final String INSTITUTION_SIGLA = "B3-QA";
 
+    private final Environment environment;
     private final UserAccountRepository userAccountRepository;
     private final CompetitionRepository competitionRepository;
     private final CompetitionCategoryRepository categoryRepository;
@@ -92,6 +94,8 @@ public class Block3ValidationDataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
+        // O cenario H26 substitui este seed para nao misturar competicoes locais.
+        if (environment.getProperty("rascomp.test-data.homologacao-2026-enabled", Boolean.class, false)) return;
         UserAccount dev = garantirUsuario(
                 DEV_EMAIL,
                 "DEV Bloco 3",
@@ -122,6 +126,11 @@ public class Block3ValidationDataInitializer implements CommandLineRunner {
 
         criarFollowPrincipal(competition, followMain, teams);
         criarFollowExcecao(competition, followException, teams);
+
+        // Inspecoes de Sumo exigem a competicao em andamento.
+        competition.setStatus(StatusCompetition.EM_ANDAMENTO);
+        competitionRepository.saveAndFlush(competition);
+
         criarSumo(competition, sumoMain, teams);
 
         garantirJuizes(competition);
@@ -453,9 +462,13 @@ public class Block3ValidationDataInitializer implements CommandLineRunner {
         // Mantém o seed idempotente: no máximo uma histórica + uma vigente.
         if (existentes == 0) {
             bracketGenerationService.gerar(competition.getId(), category.getId());
-            bracketGenerationService.gerar(competition.getId(), category.getId());
+            bracketGenerationService.regenerarExcepcionalDev(
+                    competition.getId(), category.getId(),
+                    "Homologacao Bloco 3: criar chave historica e chave vigente para testes.");
         } else if (existentes == 1) {
-            bracketGenerationService.gerar(competition.getId(), category.getId());
+            bracketGenerationService.regenerarExcepcionalDev(
+                    competition.getId(), category.getId(),
+                    "Homologacao Bloco 3: preparar chave vigente para testes.");
         }
     }
 }

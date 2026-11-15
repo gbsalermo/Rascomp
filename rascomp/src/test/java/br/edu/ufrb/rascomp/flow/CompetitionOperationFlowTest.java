@@ -301,6 +301,11 @@ class CompetitionOperationFlowTest extends IntegrationFlowTestSupport {
     }
 
     private void inspecionar(Registration registration) {
+        // Inspeções reais só podem ocorrer após a transição operacional da competição.
+        Competition competition = registration.getCompetition();
+        competition.setStatus(StatusCompetition.EM_ANDAMENTO);
+        competitionRepository.saveAndFlush(competition);
+
         InspecaoSumoDTO dto = new InspecaoSumoDTO();
         dto.setRegistrationId(registration.getId());
         dto.setPesoMedido(new BigDecimal("0.450"));
